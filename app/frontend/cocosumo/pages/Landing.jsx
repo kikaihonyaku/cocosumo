@@ -1,0 +1,112 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
+
+export default function Landing() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+      {/* ヘッダー */}
+      <header className="bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <img src="/cocosmo-logo.png" alt="CoCoスモ" className="h-8" />
+          <button
+            onClick={() => navigate('/login')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+          >
+            ログイン
+          </button>
+        </div>
+      </header>
+
+      {/* ヒーローセクション */}
+      <section className="container mx-auto px-4 py-20 text-center">
+        <h1 className="text-5xl font-bold text-gray-900 mb-6">
+          不動産業務を革新する
+          <br />
+          <span className="text-blue-600">CoCoスモ</span>
+        </h1>
+        <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+          AI画像生成、VRツアー作成、物件管理を一つのプラットフォームで。
+          <br />
+          不動産会社の業務効率を劇的に向上させます。
+        </p>
+        <button
+          onClick={() => navigate('/login')}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-lg text-lg font-medium transition-colors shadow-lg"
+        >
+          今すぐ始める
+        </button>
+      </section>
+
+      {/* 機能紹介セクション */}
+      <section className="container mx-auto px-4 py-16">
+        <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+          主な機能
+        </h2>
+        <div className="grid md:grid-cols-3 gap-8">
+          {/* 機能1: 物件管理 */}
+          <div className="bg-white rounded-xl p-8 shadow-md hover:shadow-xl transition-shadow">
+            <div className="text-4xl mb-4">🏢</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">物件管理</h3>
+            <p className="text-gray-600">
+              建物・部屋情報をGoogleマップ連携のGISシステムで一元管理。位置情報と共に効率的に物件を管理できます。
+            </p>
+          </div>
+
+          {/* 機能2: AI画像生成 */}
+          <div className="bg-white rounded-xl p-8 shadow-md hover:shadow-xl transition-shadow">
+            <div className="text-4xl mb-4">🤖</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">AI画像生成</h3>
+            <p className="text-gray-600">
+              Gemini NanoBananaを活用し、室内写真から「家具なし」「家具あり」の画像を自動生成。Before/After表示で効果的な訴求が可能です。
+            </p>
+          </div>
+
+          {/* 機能3: VRツアー */}
+          <div className="bg-white rounded-xl p-8 shadow-md hover:shadow-xl transition-shadow">
+            <div className="text-4xl mb-4">🥽</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">VRルームツアー</h3>
+            <p className="text-gray-600">
+              360度パノラマビューでVRルームツアーを簡単に作成・編集。遠隔地の顧客にもリアルな物件体験を提供できます。
+            </p>
+          </div>
+
+          {/* 機能4: 埋め込み機能 */}
+          <div className="bg-white rounded-xl p-8 shadow-md hover:shadow-xl transition-shadow">
+            <div className="text-4xl mb-4">🔗</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">簡単埋め込み</h3>
+            <p className="text-gray-600">
+              作成したコンテンツはiframeで簡単に外部サイトへ埋め込み可能。自社ホームページへシームレスに統合できます。
+            </p>
+          </div>
+
+          {/* 機能5: マルチテナント */}
+          <div className="bg-white rounded-xl p-8 shadow-md hover:shadow-xl transition-shadow">
+            <div className="text-4xl mb-4">👥</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">マルチテナント対応</h3>
+            <p className="text-gray-600">
+              会社ごとに独立した環境を提供。チームメンバー間で物件情報を共有し、効率的に業務を進められます。
+            </p>
+          </div>
+
+          {/* 機能6: 管理機能 */}
+          <div className="bg-white rounded-xl p-8 shadow-md hover:shadow-xl transition-shadow">
+            <div className="text-4xl mb-4">⚙️</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">管理者機能</h3>
+            <p className="text-gray-600">
+              ユーザーアカウントの発行・管理を管理者画面から簡単に実行。権限管理も柔軟に設定できます。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* フッター */}
+      <footer className="bg-gray-900 text-white py-8 mt-20">
+        <div className="container mx-auto px-4 text-center">
+          <p>© {new Date().getFullYear()} CoCoスモ. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
