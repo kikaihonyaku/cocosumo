@@ -87,4 +87,8 @@ Rails.application.configure do
   #
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+
+  # Cloudflare Tunnel 経由でアクセスするホストを許可
+  config.hosts << "cocosumo.space"
+  config.hosts << "www.cocosumo.space"  # www も使うなら追加
 end
