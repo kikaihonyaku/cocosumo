@@ -1,5 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Container,
   Typography,
@@ -8,14 +8,40 @@ import {
   CardContent,
   CardActions,
   Grid,
-  Box
+  Box,
+  CircularProgress
 } from "@mui/material";
 import {
   Map as MapIcon,
   Settings as SettingsIcon
 } from "@mui/icons-material";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Home() {
+  const { isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // ログイン状態のチェックが完了し、未ログインの場合はログインページへリダイレクト
+    if (!loading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, loading, navigate]);
+
+  // ログイン状態チェック中はローディング表示
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  // 未ログインの場合は何も表示しない（リダイレクト中）
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h3" component="h1" gutterBottom sx={{ mb: 4 }}>

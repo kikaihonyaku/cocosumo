@@ -1,8 +1,9 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 
 export default function Landing() {
-  const navigate = useNavigate();
+  const handleOpenHome = () => {
+    window.open('/home', '_blank');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
@@ -11,7 +12,7 @@ export default function Landing() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <img src="/cocosmo-logo.png" alt="CoCoスモ" className="h-8" />
           <button
-            onClick={() => navigate('/login')}
+            onClick={handleOpenHome}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
           >
             ログイン
@@ -32,7 +33,7 @@ export default function Landing() {
           不動産会社の業務効率を劇的に向上させます。
         </p>
         <button
-          onClick={() => navigate('/login')}
+          onClick={handleOpenHome}
           className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-lg text-lg font-medium transition-colors shadow-lg"
         >
           今すぐ始める
