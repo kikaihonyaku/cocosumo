@@ -33,7 +33,8 @@ export default function HotspotEditor({
   currentSceneId,
   onHotspotsChange,
   onAddHotspotRequest,
-  pendingPosition
+  pendingPosition,
+  onHotspotEdit
 }) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingHotspot, setEditingHotspot] = useState(null);
@@ -56,6 +57,18 @@ export default function HotspotEditor({
     }
   }, [pendingPosition, editDialogOpen, editingHotspot]);
 
+  // 外部からホットスポット編集を開始
+  React.useEffect(() => {
+    if (onHotspotEdit) {
+      onHotspotEdit((hotspotId) => {
+        const hotspot = hotspots.find(h => h.id === hotspotId);
+        if (hotspot) {
+          handleEditHotspot(hotspot);
+        }
+      });
+    }
+  }, []);
+
   const handleAddHotspot = () => {
     setEditingHotspot(null);
     setHotspotForm({
@@ -74,7 +87,7 @@ export default function HotspotEditor({
     setHotspotForm({
       type: hotspot.data?.type || 'scene_link',
       text: hotspot.text || '',
-      target_scene_id: hotspot.data?.target_scene_id || '',
+      target_scene_id: hotspot.data?.target_scene_id ? String(hotspot.data.target_scene_id) : '',
       yaw: hotspot.yaw || 0,
       pitch: hotspot.pitch || 0
     });
@@ -273,7 +286,7 @@ export default function HotspotEditor({
                   {scenes
                     .filter(s => s.id !== currentSceneId)
                     .map((scene) => (
-                      <MenuItem key={scene.id} value={scene.id}>
+                      <MenuItem key={scene.id} value={String(scene.id)}>
                         {scene.title}
                       </MenuItem>
                     ))}

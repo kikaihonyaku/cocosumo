@@ -86,8 +86,9 @@ export default function PanoramaViewer({
         });
 
         // マーカークリックイベント
+        const markersPlugin = viewer.getPlugin(MarkersPlugin);
+
         if (onMarkerClick) {
-          const markersPlugin = viewer.getPlugin(MarkersPlugin);
           markersPlugin.addEventListener('select-marker', (e) => {
             onMarkerClick(e.marker);
           });
@@ -132,7 +133,7 @@ export default function PanoramaViewer({
           const markerConfig = {
             id: marker.id,
             position: { yaw: marker.yaw || 0, pitch: marker.pitch || 0 },
-            html: marker.html || `<div style="background: rgba(33, 150, 243, 0.9); color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.5); cursor: pointer;">${marker.text || 'ホットスポット'}</div>`,
+            html: marker.html || `<div class="hotspot-marker" style="background: rgba(33, 150, 243, 0.9); color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.5); cursor: pointer; user-select: none;">${marker.text || 'ホットスポット'}</div>`,
             tooltip: marker.tooltip,
             data: marker.data
           };

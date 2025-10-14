@@ -40,6 +40,7 @@ export default function VrTourEditor() {
   const [addingHotspot, setAddingHotspot] = useState(false);
   const [pendingPosition, setPendingPosition] = useState(null);
   const [viewerKey, setViewerKey] = useState(0);
+  const [editHotspotCallback, setEditHotspotCallback] = useState(null);
 
   useEffect(() => {
     if (!isNew) {
@@ -307,6 +308,11 @@ export default function VrTourEditor() {
                             if (marker.type === 'add') {
                               setPendingPosition(marker.position);
                               setAddingHotspot(false);
+                            } else {
+                              // 既存のホットスポットをクリックしたら編集ダイアログを開く
+                              if (editHotspotCallback) {
+                                editHotspotCallback(marker.id);
+                              }
                             }
                           }}
                           onViewChange={(view) => {
@@ -343,6 +349,7 @@ export default function VrTourEditor() {
                     setPendingPosition(null);
                   }}
                   pendingPosition={pendingPosition}
+                  onHotspotEdit={(callback) => setEditHotspotCallback(() => callback)}
                 />
               ) : (
                 <Box sx={{ p: 3, textAlign: 'center' }}>
