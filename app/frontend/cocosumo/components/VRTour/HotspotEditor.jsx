@@ -17,7 +17,8 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
-  Chip
+  Chip,
+  Alert
 } from "@mui/material";
 import {
   Delete as DeleteIcon,
@@ -170,6 +171,11 @@ export default function HotspotEditor({
         <Typography variant="subtitle1" gutterBottom>
           ホットスポット
         </Typography>
+        <Alert severity="info" sx={{ mb: 2, py: 0.5 }}>
+          <Typography variant="caption">
+            変更は自動的に保存されます
+          </Typography>
+        </Alert>
         <Button
           fullWidth
           variant="outlined"

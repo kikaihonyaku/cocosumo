@@ -12,7 +12,8 @@ import {
   Alert,
   AppBar,
   Toolbar,
-  IconButton
+  IconButton,
+  Snackbar
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -32,6 +33,11 @@ export default function VrTourEditor() {
     description: '',
     status: 'draft'
   });
+  const [originalVrTour, setOriginalVrTour] = useState({
+    title: '',
+    description: '',
+    status: 'draft'
+  });
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -41,6 +47,13 @@ export default function VrTourEditor() {
   const [pendingPosition, setPendingPosition] = useState(null);
   const [viewerKey, setViewerKey] = useState(0);
   const [editHotspotCallback, setEditHotspotCallback] = useState(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  // 未保存変更の検出
+  const hasUnsavedChanges =
+    vrTour.title !== originalVrTour.title ||
+    vrTour.description !== originalVrTour.description;
 
   useEffect(() => {
     if (!isNew) {
@@ -61,6 +74,7 @@ export default function VrTourEditor() {
       if (response.ok) {
         const data = await response.json();
         setVrTour(data);
+        setOriginalVrTour(data);
       } else {
         setError('VRツアーの取得に失敗しました');
       }
@@ -101,7 +115,10 @@ export default function VrTourEditor() {
         if (isNew) {
           navigate(`/room/${roomId}/vr-tour/${data.id}/edit`);
         } else {
-          alert('保存しました');
+          setVrTour(data);
+          setOriginalVrTour(data);
+          setSnackbarMessage('基本情報を保存しました');
+          setSnackbarOpen(true);
         }
       } else {
         const data = await response.json();
@@ -202,14 +219,6 @@ export default function VrTourEditor() {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             {isNew ? '新規VRツアー作成' : 'VRツアー編集'}
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<SaveIcon />}
-            onClick={handleSave}
-            disabled={saving || !vrTour.title}
-          >
-            {saving ? '保存中...' : '保存'}
-          </Button>
         </Toolbar>
       </AppBar>
 
@@ -222,9 +231,26 @@ export default function VrTourEditor() {
         )}
 
         <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            基本情報
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6">
+              基本情報
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<SaveIcon />}
+              onClick={handleSave}
+              disabled={saving || !vrTour.title}
+              color={hasUnsavedChanges ? 'primary' : 'inherit'}
+            >
+              {saving ? '保存中...' : '基本情報を保存'}
+            </Button>
+          </Box>
+
+          {hasUnsavedChanges && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              未保存の変更があります
+            </Alert>
+          )}
 
           <Grid container spacing={3}>
             <Grid item xs={12}>
@@ -368,6 +394,15 @@ export default function VrTourEditor() {
           </Alert>
         )}
       </Container>
+
+      {/* Snackbar for feedback */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Box>
   );
 }
