@@ -25,6 +25,9 @@ gem "bcrypt", "~> 3.1.7"
 # Geocoding for address to coordinates conversion [https://github.com/alexreisner/geocoder]
 gem "geocoder"
 
+# Soft deletion for models [https://github.com/jhawthorn/discard]
+gem "discard", "~> 1.3"
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 

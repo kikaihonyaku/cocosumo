@@ -19,6 +19,11 @@ import {
   Tooltip,
   Alert,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -32,6 +37,7 @@ import {
   Build as BuildIcon,
   Settings as SettingsIcon,
   Search as SearchIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 
 export default function PropertyInfoPanel({ property, onSave, loading, isMaximized, onToggleMaximize, isMobile = false, onFormChange }) {
@@ -51,6 +57,8 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
   const [geocoding, setGeocoding] = useState(false);
   const [geocodeError, setGeocodeError] = useState('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [expanded, setExpanded] = useState({
     basic: true,
@@ -179,6 +187,47 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
       ...prev,
       [panel]: isExpanded
     }));
+  };
+
+  // 削除ダイアログを開く
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  // 削除ダイアログを閉じる
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+  };
+
+  // 物件を削除
+  const handleDeleteConfirm = async () => {
+    setDeleting(true);
+
+    try {
+      const response = await fetch(`/api/v1/buildings/${property.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // 削除成功 - 地図画面にリダイレクト
+        window.location.href = '/map';
+      } else {
+        alert(data.error || '削除に失敗しました');
+        setDeleting(false);
+        setDeleteDialogOpen(false);
+      }
+    } catch (err) {
+      console.error('削除エラー:', err);
+      alert('ネットワークエラーが発生しました');
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
   };
 
   const buildingTypes = [
@@ -513,7 +562,7 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
         </Box>
       </Box>
 
-      {/* 保存ボタン */}
+      {/* 保存ボタンと削除ボタン */}
       <Box sx={{ p: 2, borderTop: '1px solid #ddd', bgcolor: 'grey.50' }}>
         <Button
           fullWidth
@@ -524,7 +573,50 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
         >
           {loading ? '保存中...' : '変更を保存'}
         </Button>
+        <Button
+          fullWidth
+          variant="outlined"
+          color="error"
+          startIcon={<DeleteIcon />}
+          onClick={handleDeleteClick}
+          disabled={loading || deleting}
+        >
+          物件を削除
+        </Button>
       </Box>
+
+      {/* 削除確認ダイアログ */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">
+          物件を削除しますか？
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-dialog-description">
+            この物件「{property?.name}」を削除してもよろしいですか？
+            <br />
+            削除後も履歴から復元することができます。
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} disabled={deleting}>
+            キャンセル
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            disabled={deleting}
+            startIcon={deleting ? <CircularProgress size={16} /> : <DeleteIcon />}
+          >
+            {deleting ? '削除中...' : '削除する'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

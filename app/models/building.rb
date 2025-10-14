@@ -1,4 +1,6 @@
 class Building < ApplicationRecord
+  include Discard::Model
+
   # Associations
   belongs_to :tenant
   has_many :rooms, dependent: :destroy

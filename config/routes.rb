@@ -25,7 +25,15 @@ Rails.application.routes.draw do
         resources :photos, only: [:index, :create, :destroy]
         resources :owners
         resources :rooms, only: [:index, :create]
+
+        # 物件個別アクション
+        member do
+          post :restore  # 論理削除からの復元
+        end
       end
+
+      # 削除済み物件一覧
+      get 'buildings_archived', to: 'buildings#archived'
 
       # 部屋詳細・更新・削除はスタンドアロン
       resources :rooms, only: [:show, :update, :destroy]

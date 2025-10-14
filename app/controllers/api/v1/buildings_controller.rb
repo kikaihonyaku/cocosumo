@@ -5,7 +5,7 @@ class Api::V1::BuildingsController < ApplicationController
 
   # GET /api/v1/buildings
   def index
-    @buildings = current_tenant.buildings.includes(:rooms)
+    @buildings = current_tenant.buildings.kept.includes(:rooms)
 
     # 検索条件によるフィルタリング
     @buildings = @buildings.where("name LIKE ?", "%#{params[:name]}%") if params[:name].present?
@@ -59,10 +59,43 @@ class Api::V1::BuildingsController < ApplicationController
     end
   end
 
-  # DELETE /api/v1/buildings/:id
+  # DELETE /api/v1/buildings/:id (論理削除)
   def destroy
-    @building.destroy
-    head :no_content
+    if @building.discard
+      render json: {
+        success: true,
+        message: '物件を削除しました',
+        deleted_at: @building.discarded_at
+      }
+    else
+      render json: {
+        success: false,
+        error: '削除に失敗しました'
+      }, status: :unprocessable_entity
+    end
+  end
+
+  # GET /api/v1/buildings/archived (削除済み物件一覧)
+  def archived
+    @buildings = current_tenant.buildings.discarded.includes(:rooms).order(discarded_at: :desc)
+    render json: @buildings.as_json(methods: [:room_cnt, :free_cnt])
+  end
+
+  # POST /api/v1/buildings/:id/restore (物件の復元)
+  def restore
+    @building = current_tenant.buildings.discarded.find(params[:id])
+
+    if @building.undiscard
+      render json: {
+        success: true,
+        message: '物件を復元しました'
+      }
+    else
+      render json: {
+        success: false,
+        error: '復元に失敗しました'
+      }, status: :unprocessable_entity
+    end
   end
 
   private

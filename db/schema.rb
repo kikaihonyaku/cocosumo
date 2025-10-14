@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_13_204327) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_14_012744) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -68,6 +68,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_13_204327) do
     t.string "postcode"
     t.string "structure"
     t.integer "floors"
+    t.datetime "discarded_at"
+    t.index ["discarded_at"], name: "index_buildings_on_discarded_at"
     t.index ["tenant_id"], name: "index_buildings_on_tenant_id"
   end
 
