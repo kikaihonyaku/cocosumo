@@ -6,10 +6,15 @@ class Building < ApplicationRecord
   has_one_attached :exterior_image
   has_many_attached :photos
 
+  # Geocoding
+  geocoded_by :address
+  after_validation :geocode, if: ->(obj) { obj.new_record? && obj.address.present? }
+
   # Validations
   validates :name, presence: true
   validates :address, presence: true
-  validates :latitude, :longitude, presence: true, numericality: true
+  validates :latitude, numericality: true, allow_nil: true
+  validates :longitude, numericality: true, allow_nil: true
   validates :building_type, presence: true
 
   # Enum for building types

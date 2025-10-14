@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   ThemeProvider,
   CssBaseline,
@@ -34,6 +34,7 @@ import OwnersPanel from '../components/PropertyDetail/OwnersPanel';
 export default function PropertyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // 状態管理
   const [property, setProperty] = useState(null);
@@ -45,6 +46,7 @@ export default function PropertyDetail() {
   const [isPropertyInfoMaximized, setIsPropertyInfoMaximized] = useState(false);
   const [isPhotosMaximized, setIsPhotosMaximized] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState(0); // モバイル用タブ管理
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // 未保存の変更
 
   // レスポンシブ設定
   const isMdUp = useMediaQuery(muiTheme.breakpoints.up('md'));
@@ -55,6 +57,35 @@ export default function PropertyDetail() {
   useEffect(() => {
     fetchPropertyData();
   }, [id]);
+
+  // geocoding失敗アラートの表示
+  useEffect(() => {
+    if (location.state?.geocodingFailed && !loading) {
+      showSnackbar(
+        '物件は登録されましたが、住所から位置情報を取得できませんでした。地図上で手動で位置を設定してください。',
+        'error'
+      );
+      // location stateをクリア（リロード時に再度表示されないように）
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, loading]);
+
+  // 未保存の変更がある場合、ページ離脱時に警告を表示
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = ''; // Chrome requires returnValue to be set
+        return '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
 
   const fetchPropertyData = async () => {
     try {
@@ -189,6 +220,10 @@ export default function PropertyDetail() {
     setMobileActiveTab(newValue);
   };
 
+  const handleFormChange = (hasChanges) => {
+    setHasUnsavedChanges(hasChanges);
+  };
+
   // TabPanelコンポーネント
   function TabPanel({ children, value, index, ...other }) {
     return (
@@ -321,6 +356,7 @@ export default function PropertyDetail() {
                   isMaximized={false} // モバイルでは最大化無効
                   onToggleMaximize={() => {}} // 無効化
                   isMobile={true}
+                  onFormChange={handleFormChange}
                 />
               </TabPanel>
 
@@ -399,6 +435,7 @@ export default function PropertyDetail() {
               loading={saving}
               isMaximized={isPropertyInfoMaximized}
               onToggleMaximize={handleTogglePropertyInfoMaximize}
+              onFormChange={handleFormChange}
             />
           </Paper>
 

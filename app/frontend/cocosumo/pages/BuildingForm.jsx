@@ -12,7 +12,6 @@ import {
   MenuItem,
   Grid
 } from "@mui/material";
-import { ArrowBack as ArrowBackIcon } from "@mui/icons-material";
 
 export default function BuildingForm() {
   const navigate = useNavigate();
@@ -25,8 +24,6 @@ export default function BuildingForm() {
   const [formData, setFormData] = useState({
     name: "",
     address: "",
-    latitude: "",
-    longitude: "",
     building_type: "mansion",
     total_units: "",
     built_year: "",
@@ -53,8 +50,6 @@ export default function BuildingForm() {
         setFormData({
           name: data.name || "",
           address: data.address || "",
-          latitude: data.latitude || "",
-          longitude: data.longitude || "",
           building_type: data.building_type || "mansion",
           total_units: data.total_units || "",
           built_year: data.built_year || "",
@@ -100,7 +95,17 @@ export default function BuildingForm() {
       const data = await response.json();
 
       if (response.ok) {
-        navigate('/buildings');
+        // 新規登録時は物件詳細画面へ、更新時は物件一覧へ遷移
+        if (isEdit) {
+          navigate('/buildings');
+        } else {
+          // geocodingが失敗しているかチェック（latitude/longitudeがnullまたは存在しない場合）
+          const geocodingFailed = !data.latitude || !data.longitude;
+
+          navigate(`/property/${data.id}`, {
+            state: { geocodingFailed }
+          });
+        }
       } else {
         setError(data.errors?.join(', ') || '保存に失敗しました');
       }
@@ -122,14 +127,6 @@ export default function BuildingForm() {
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={() => navigate('/buildings')}
-        sx={{ mb: 2 }}
-      >
-        物件一覧に戻る
-      </Button>
-
       <Paper sx={{ p: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           {isEdit ? '物件情報編集' : '新規物件登録'}
@@ -164,34 +161,7 @@ export default function BuildingForm() {
                 value={formData.address}
                 onChange={handleChange}
                 disabled={submitting}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="緯度"
-                name="latitude"
-                type="number"
-                inputProps={{ step: "any" }}
-                value={formData.latitude}
-                onChange={handleChange}
-                disabled={submitting}
-                helperText="地図上の位置（オプション）"
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="経度"
-                name="longitude"
-                type="number"
-                inputProps={{ step: "any" }}
-                value={formData.longitude}
-                onChange={handleChange}
-                disabled={submitting}
-                helperText="地図上の位置（オプション）"
+                helperText="住所から自動的に地図上の位置を取得します"
               />
             </Grid>
 

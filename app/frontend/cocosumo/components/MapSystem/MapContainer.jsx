@@ -17,6 +17,7 @@ import {
   FullscreenExit as FullscreenExitIcon,
   Visibility as StreetViewIcon,
   Info as InfoIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import { useGoogleMaps } from '../../hooks/useGoogleMaps';
 
@@ -413,6 +414,23 @@ export default function MapContainer({
             </Fab>
           </Tooltip>
         )}
+
+        {/* 物件新規登録ボタン */}
+        <Tooltip title="物件新規登録" placement="left">
+          <Fab
+            size="small"
+            color="secondary"
+            onClick={() => window.open('/buildings/new', '_blank')}
+            sx={{
+              boxShadow: 2,
+              '&:hover': {
+                transform: 'scale(1.1)',
+              },
+            }}
+          >
+            <AddIcon />
+          </Fab>
+        </Tooltip>
       </Box>
 
     </Box>

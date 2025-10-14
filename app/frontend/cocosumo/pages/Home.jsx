@@ -12,7 +12,6 @@ import {
 } from "@mui/material";
 import {
   Map as MapIcon,
-  Business as BusinessIcon,
   Settings as SettingsIcon
 } from "@mui/icons-material";
 
@@ -47,34 +46,6 @@ export default function Home() {
                 fullWidth
               >
                 物件管理を開く
-              </Button>
-            </CardActions>
-          </Card>
-        </Grid>
-
-        {/* 物件一覧カード */}
-        <Grid item xs={12} md={6} lg={4}>
-          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <CardContent sx={{ flexGrow: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <BusinessIcon sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
-                <Typography variant="h5" component="h2">
-                  物件一覧
-                </Typography>
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                登録されている全ての物件を一覧で確認・検索できます。
-              </Typography>
-            </CardContent>
-            <CardActions>
-              <Button
-                component={Link}
-                to="/buildings"
-                size="large"
-                variant="outlined"
-                fullWidth
-              >
-                物件一覧を開く
               </Button>
             </CardActions>
           </Card>

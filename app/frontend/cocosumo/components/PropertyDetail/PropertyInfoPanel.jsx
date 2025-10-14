@@ -17,6 +17,8 @@ import {
   AccordionDetails,
   Stack,
   Tooltip,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -29,9 +31,10 @@ import {
   Domain as DomainIcon,
   Build as BuildIcon,
   Settings as SettingsIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 
-export default function PropertyInfoPanel({ property, onSave, loading, isMaximized, onToggleMaximize, isMobile = false }) {
+export default function PropertyInfoPanel({ property, onSave, loading, isMaximized, onToggleMaximize, isMobile = false, onFormChange }) {
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -44,6 +47,10 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
     floors: '',
     ...property
   });
+
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodeError, setGeocodeError] = useState('');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const [expanded, setExpanded] = useState({
     basic: true,
@@ -101,10 +108,70 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
       ...prev,
       [field]: event.target.value
     }));
+    setHasUnsavedChanges(true);
   };
 
   const handleSubmit = () => {
     onSave(formData);
+    setHasUnsavedChanges(false);
+  };
+
+  // 未保存の変更を親コンポーネントに通知
+  useEffect(() => {
+    if (onFormChange) {
+      onFormChange(hasUnsavedChanges);
+    }
+  }, [hasUnsavedChanges, onFormChange]);
+
+  // Google Maps Geocoding APIを使用して住所から座標を取得
+  const handleGeocodeAddress = async () => {
+    if (!formData.address) {
+      setGeocodeError('住所を入力してください');
+      return;
+    }
+
+    setGeocoding(true);
+    setGeocodeError('');
+
+    try {
+      // Google Maps Geocoding APIを使用
+      const geocoder = new window.google.maps.Geocoder();
+
+      geocoder.geocode({ address: formData.address }, (results, status) => {
+        if (status === 'OK' && results[0]) {
+          const location = results[0].geometry.location;
+          const lat = location.lat();
+          const lng = location.lng();
+
+          // formDataを更新
+          setFormData(prev => ({
+            ...prev,
+            latitude: lat,
+            longitude: lng
+          }));
+
+          // 親コンポーネントにも通知（地図を更新するため）
+          if (property.id) {
+            // 即座にサーバーに保存
+            onSave({
+              ...formData,
+              latitude: lat,
+              longitude: lng
+            });
+            setHasUnsavedChanges(false);
+          }
+
+          setGeocoding(false);
+        } else {
+          setGeocodeError('住所から位置情報を取得できませんでした');
+          setGeocoding(false);
+        }
+      });
+    } catch (err) {
+      console.error('Geocoding error:', err);
+      setGeocodeError('位置情報の取得に失敗しました');
+      setGeocoding(false);
+    }
   };
 
   const handleAccordionChange = (panel) => (event, isExpanded) => {
@@ -283,14 +350,31 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
                 sx={{ maxWidth: 200 }}
               />
 
-              <TextField
-                fullWidth
-                label="住所"
-                value={formData.address || ''}
-                onChange={handleChange('address')}
-                variant="outlined"
-                size="small"
-              />
+              <Box>
+                <TextField
+                  fullWidth
+                  label="住所"
+                  value={formData.address || ''}
+                  onChange={handleChange('address')}
+                  variant="outlined"
+                  size="small"
+                />
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={geocoding ? <CircularProgress size={16} /> : <SearchIcon />}
+                  onClick={handleGeocodeAddress}
+                  disabled={geocoding || !formData.address}
+                  sx={{ mt: 1 }}
+                >
+                  {geocoding ? '検索中...' : '住所から位置情報を取得'}
+                </Button>
+                {geocodeError && (
+                  <Alert severity="error" sx={{ mt: 1 }}>
+                    {geocodeError}
+                  </Alert>
+                )}
+              </Box>
 
               {property?.latitude && property?.longitude && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
