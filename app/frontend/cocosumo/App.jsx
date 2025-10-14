@@ -14,6 +14,8 @@ import BuildingForm from "./pages/BuildingForm";
 import PropertyDetail from "./pages/PropertyDetail";
 import RoomDetail from "./pages/RoomDetail";
 import RoomForm from "./pages/RoomForm";
+import VrTourEditor from "./pages/VrTourEditor";
+import VrTourViewer from "./pages/VrTourViewer";
 
 function Layout() {
   const location = useLocation();
@@ -21,10 +23,11 @@ function Layout() {
   const isMapSystem = location.pathname === '/map';
   const isPropertyDetail = location.pathname.startsWith('/property/');
   const isRoomDetail = location.pathname.startsWith('/room/');
+  const isVrTour = location.pathname.includes('/vr-tour/');
 
-  // 物件詳細と部屋詳細ページでは常に全画面レイアウト（独自ヘッダーを使用）
+  // 物件詳細、部屋詳細、VRツアーページでは常に全画面レイアウト（独自ヘッダーを使用）
   // 地図システムページではデスクトップのみ全画面レイアウト
-  if (isPropertyDetail || isRoomDetail || (!isMobile && isMapSystem)) {
+  if (isPropertyDetail || isRoomDetail || isVrTour || (!isMobile && isMapSystem)) {
     return (
       <div style={{ fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif" }}>
         <Outlet />
@@ -78,6 +81,9 @@ export default function App() {
             <Route path="/room/:id" element={<RoomDetail />} />
             <Route path="/rooms/new" element={<RoomForm />} />
             <Route path="/rooms/:id/edit" element={<RoomForm />} />
+            <Route path="/room/:roomId/vr-tour/new" element={<VrTourEditor />} />
+            <Route path="/room/:roomId/vr-tour/:id/edit" element={<VrTourEditor />} />
+            <Route path="/room/:roomId/vr-tour/:id/viewer" element={<VrTourViewer />} />
           </Route>
         </Routes>
       </AuthProvider>

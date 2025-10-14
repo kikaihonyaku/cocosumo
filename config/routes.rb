@@ -36,9 +36,32 @@ Rails.application.routes.draw do
       get 'buildings_archived', to: 'buildings#archived'
 
       # 部屋詳細・更新・削除はスタンドアロン
-      resources :rooms, only: [:show, :update, :destroy]
+      resources :rooms, only: [:show, :update, :destroy] do
+        # 部屋写真管理
+        resources :room_photos
+
+        # VRツアー管理
+        resources :vr_tours do
+          member do
+            post :publish
+            post :unpublish
+          end
+        end
+      end
+
+      # VRツアーのシーン管理
+      resources :vr_tours, only: [] do
+        resources :vr_scenes do
+          member do
+            post :reorder
+          end
+        end
+      end
     end
   end
+
+  # 公開VRツアー表示用（認証不要）
+  get '/vr/:id', to: 'api/v1/vr_tours#show_public', as: :public_vr_tour
 
   # React Router用のキャッチオールルート
   get '*path', to: 'pages#index', constraints: ->(request) do

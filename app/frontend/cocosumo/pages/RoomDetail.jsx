@@ -21,6 +21,8 @@ import {
   Image as ImageIcon,
   Vrpano as VrpanoIcon
 } from "@mui/icons-material";
+import VRTourList from "../components/VRTour/VRTourList";
+import RoomPhotoGallery from "../components/Room/RoomPhotoGallery";
 
 export default function RoomDetail() {
   const { id } = useParams();
@@ -196,6 +198,15 @@ export default function RoomDetail() {
         )}
       </Paper>
 
+      {/* 部屋写真セクション */}
+      <Box sx={{ mb: 4 }}>
+        <Card>
+          <CardContent>
+            <RoomPhotoGallery roomId={room.id} />
+          </CardContent>
+        </Card>
+      </Box>
+
       {/* AI画像生成セクション */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h5" component="h2" gutterBottom>
@@ -218,20 +229,21 @@ export default function RoomDetail() {
 
       {/* VRツアーセクション */}
       <Box>
-        <Typography variant="h5" component="h2" gutterBottom>
-          VRルームツアー
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h5" component="h2">
+            VRルームツアー
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<VrpanoIcon />}
+            onClick={() => navigate(`/room/${room.id}/vr-tour/new`)}
+          >
+            新規VRツアー作成
+          </Button>
+        </Box>
         <Card>
           <CardContent>
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <VrpanoIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
-              <Typography variant="body1" color="text.secondary" gutterBottom>
-                VRツアー機能は近日実装予定です
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                360度パノラマビューでVRルームツアーを作成・編集できるようになります。
-              </Typography>
-            </Box>
+            <VRTourList roomId={room.id} />
           </CardContent>
         </Card>
       </Box>

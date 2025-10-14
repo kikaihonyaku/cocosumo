@@ -19,4 +19,15 @@ class RoomPhoto < ApplicationRecord
 
   # Default scope
   default_scope -> { order(display_order: :asc) }
+
+  # Methods
+  def photo_url
+    return nil unless photo.attached?
+
+    if Rails.env.production?
+      photo.url
+    else
+      Rails.application.routes.url_helpers.rails_blob_path(photo, only_path: true)
+    end
+  end
 end
