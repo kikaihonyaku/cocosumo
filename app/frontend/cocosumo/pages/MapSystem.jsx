@@ -21,6 +21,7 @@ import Header from "../components/shared/Header";
 import MapContainer from "../components/MapSystem/MapContainer";
 import LeftPanel from "../components/MapSystem/LeftPanel/LeftPanel";
 import PropertyTable from "../components/MapSystem/BottomPanel/PropertyTable";
+import BuildingFormModal from "../components/MapSystem/BuildingFormModal";
 
 export default function MapSystem() {
   const [leftPanelPinned, setLeftPanelPinned] = useState(true);
@@ -32,6 +33,7 @@ export default function MapSystem() {
   const [headerVisible, setHeaderVisible] = useState(false);
   const [propertyListMaximized, setPropertyListMaximized] = useState(false);
   const [leftPanelForceClose, setLeftPanelForceClose] = useState(false);
+  const [buildingFormModalOpen, setBuildingFormModalOpen] = useState(false);
 
   // データ管理用のステート
   const [properties, setProperties] = useState([]);
@@ -178,6 +180,14 @@ export default function MapSystem() {
       other: 'その他'
     };
     return typeMap[type] || type;
+  };
+
+  // 新規物件登録成功時のハンドラー
+  const handleBuildingRegistered = (newBuilding) => {
+    // 物件詳細画面を別タブで開く
+    window.open(`/property/${newBuilding.id}`, '_blank');
+    // 物件一覧を再取得
+    fetchBuildings(searchConditions);
   };
 
   return (
@@ -357,6 +367,7 @@ export default function MapSystem() {
                     selectedObject={selectedObject}
                     properties={properties}
                     isLoading={isLoading}
+                    onNewBuildingClick={() => setBuildingFormModalOpen(true)}
                   />
                 )}
               </Box>
@@ -664,6 +675,13 @@ export default function MapSystem() {
           )}
 
         </Box>
+
+        {/* 物件新規登録モーダル */}
+        <BuildingFormModal
+          isOpen={buildingFormModalOpen}
+          onClose={() => setBuildingFormModalOpen(false)}
+          onSuccess={handleBuildingRegistered}
+        />
       </Box>
     </ThemeProvider>
   );

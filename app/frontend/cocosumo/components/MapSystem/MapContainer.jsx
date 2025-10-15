@@ -28,7 +28,8 @@ export default function MapContainer({
   onToggleRightPanel,
   selectedObject,
   properties = [],
-  isLoading = false
+  isLoading = false,
+  onNewBuildingClick
 }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mapType, setMapType] = useState('roadmap');
@@ -420,7 +421,7 @@ export default function MapContainer({
           <Fab
             size="small"
             color="secondary"
-            onClick={() => window.open('/buildings/new', '_blank')}
+            onClick={onNewBuildingClick}
             sx={{
               boxShadow: 2,
               '&:hover': {
