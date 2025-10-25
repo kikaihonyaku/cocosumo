@@ -136,6 +136,7 @@ export default function VrTourPreview({ open, onClose, vrTour, scenes }) {
               scenes={scenes}
               currentScene={currentScene}
               viewAngle={currentViewAngle}
+              onSceneClick={handleSceneSelect}
             />
           </>
         ) : scenes.length > 0 ? (

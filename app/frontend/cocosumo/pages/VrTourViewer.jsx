@@ -206,6 +206,7 @@ export default function VrTourViewer() {
               scenes={scenes}
               currentScene={currentScene}
               viewAngle={currentViewAngle}
+              onSceneClick={handleSceneSelect}
             />
           </>
         ) : scenes.length > 0 ? (

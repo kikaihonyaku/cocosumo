@@ -1,13 +1,14 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Box, Paper, Typography } from "@mui/material";
 
-export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle = 0 }) {
+export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle = 0, onSceneClick }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const imageRef = useRef(null); // 画像をキャッシュ
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState({ x: 16, y: 16 });
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [mouseDownPos, setMouseDownPos] = useState(null);
 
   // MinimapEditorのキャンバスサイズ
   const EDITOR_WIDTH = 800;
@@ -144,6 +145,39 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle
     });
   };
 
+  // キャンバスクリックでシーン選択
+  const handleCanvasClick = (e) => {
+    if (isDragging || !onSceneClick) return;
+
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // スケール計算
+    const scaleX = DISPLAY_WIDTH / EDITOR_WIDTH;
+    const scaleY = DISPLAY_HEIGHT / EDITOR_HEIGHT;
+
+    // クリック位置に近いシーンを検索
+    const clickRadius = 15; // クリック判定の半径
+    for (const scene of scenes) {
+      const pos = scene.minimap_position;
+      if (!pos) continue;
+
+      const scaledX = pos.x * scaleX;
+      const scaledY = pos.y * scaleY;
+
+      const distance = Math.sqrt(
+        Math.pow(x - scaledX, 2) + Math.pow(y - scaledY, 2)
+      );
+
+      if (distance <= clickRadius) {
+        onSceneClick(scene);
+        return;
+      }
+    }
+  };
+
   // ドラッグハンドラー
   const handleMouseDown = (e) => {
     // ヘッダー部分をクリックした場合のみドラッグ開始
@@ -152,6 +186,13 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle
       const container = containerRef.current;
       const rect = container.getBoundingClientRect();
       setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    } else if (e.target === canvasRef.current) {
+      // キャンバス上のマウスダウン位置を記録
+      const rect = canvasRef.current.getBoundingClientRect();
+      setMouseDownPos({
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
       });
@@ -174,13 +215,16 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle
     setPosition({ x: newX, y: newY });
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
+  const handleMouseUp = (e) => {
+    if (isDragging) {
+      setIsDragging(false);
+    }
+    setMouseDownPos(null);
   };
 
   // グローバルなマウスイベントリスナー
   useEffect(() => {
-    if (isDragging) {
+    if (isDragging || mouseDownPos) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
       return () => {
@@ -188,7 +232,7 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle
         window.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, dragOffset]);
+  }, [isDragging, dragOffset, mouseDownPos]);
 
   // ミニマップ画像がなく、かつシーンに位置情報がない場合は非表示
   const hasPositions = scenes.some(s => s.minimap_position);
@@ -247,7 +291,8 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle
             ref={canvasRef}
             width={250}
             height={170}
-            style={{ display: 'block', maxWidth: '100%', maxHeight: '100%' }}
+            style={{ display: 'block', maxWidth: '100%', maxHeight: '100%', cursor: 'pointer' }}
+            onClick={handleCanvasClick}
           />
         </Box>
       </Box>
