@@ -283,24 +283,21 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
   };
 
   return (
-    <Box sx={{ height: '100%', position: 'relative' }}>
+    <Box sx={{ height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
       {/* 地図ヘッダー */}
       <Box sx={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1,
-        p: 1.5,
-        bgcolor: 'grey.50',
-        borderBottom: '1px solid #ddd',
-        height: 56,
+        px: 2,
+        py: 1.5,
+        bgcolor: 'background.paper',
+        borderBottom: '1px solid #e0e0e0',
         display: 'flex',
-        alignItems: 'center'
+        alignItems: 'center',
+        flexShrink: 0,
+        minHeight: 56
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <MapIcon color="primary" />
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontWeight: 600, fontSize: '1.05rem' }}>
+            <MapIcon color="primary" sx={{ fontSize: 26 }} />
             物件位置
           </Typography>
           {property?.address && (
@@ -315,10 +312,9 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
       <Box
         ref={mapRef}
         sx={{
+          flex: 1,
           width: '100%',
-          height: '100%',
           bgcolor: 'grey.100',
-          pt: '60px', // ヘッダーの高さ分
         }}
       />
 

@@ -21,6 +21,8 @@ import {
   Business as BusinessIcon,
   Map as MapIcon,
   Home as HomeIcon,
+  PhotoLibrary as PhotoLibraryIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material';
 import muiTheme from '../theme/muiTheme';
 
@@ -290,17 +292,17 @@ export default function PropertyDetail() {
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
 
         {/* ヘッダー */}
-        <AppBar position="static" elevation={1} sx={{
+        <AppBar position="static" elevation={0} sx={{
           bgcolor: 'primary.main',
-          borderBottom: '1px solid #ddd',
-          borderRadius: '12px 12px 0 0', // 上の角のみ丸める、下の角は直角
+          borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+          borderRadius: '12px 12px 0 0',
         }}>
-          <Toolbar variant="dense" sx={{ minHeight: '56px' }}>
+          <Toolbar variant="dense" sx={{ minHeight: '52px', py: 1 }}>
             <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="h6" component="h1" sx={{ fontWeight: 600 }}>
+              <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
                 {property.name}
               </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.875rem' }}>
+              <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
                 {property.address}
               </Typography>
             </Box>
@@ -412,136 +414,112 @@ export default function PropertyDetail() {
             </Box>
           </Box>
         ) : (
-          // デスクトップレイアウト: 既存の3パネル横並び
-          <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-
-          {/* 左パネル - 物件情報 */}
-          <Paper
-            elevation={2}
-            sx={{
-              width: isPropertyInfoMaximized
-                ? isLgUp ? 'calc(100% - 500px)' : isMdUp ? 'calc(100% - 420px)' : '100%' // 最大化時: 右パネル分を除いた全幅
-                : isLgUp ? 380 : isMdUp ? 320 : '100%', // 通常時: 固定幅
-              display: isMdUp ? 'block' : 'block',
-              borderRadius: 0,
-              overflow: 'auto',
-              borderRight: '1px solid #ddd',
-              transition: 'width 0.3s ease-in-out'
-            }}
-          >
-            <PropertyInfoPanel
-              property={property}
-              onSave={handleSave}
-              loading={saving}
-              isMaximized={isPropertyInfoMaximized}
-              onToggleMaximize={handleTogglePropertyInfoMaximize}
-              onFormChange={handleFormChange}
-            />
-          </Paper>
-
-          {/* 中央パネル - 地図と写真 */}
-          {!isPropertyInfoMaximized && (
+          // デスクトップレイアウト: 3カラムカードレイアウト
+          <Box sx={{
+            flex: 1,
+            overflow: 'auto',
+            p: 1.5,
+            bgcolor: 'grey.50'
+          }}>
             <Box sx={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden'
+              display: 'grid',
+              gridTemplateColumns: isLgUp ? '280px 1fr 340px' : '1fr',
+              gridTemplateRows: isLgUp ? 'auto auto' : 'auto',
+              gap: 1.5,
+              height: isLgUp ? 'fit-content' : 'auto',
             }}>
-            {/* 写真パネル最大化時は写真エリアのみを表示 */}
-            {isPhotosMaximized ? (
+              {/* 左カラム: 建物（土地）カード */}
               <Paper
-                elevation={1}
+                elevation={3}
                 sx={{
-                  flex: 1,
-                  borderRadius: 0,
-                  bgcolor: 'background.paper'
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gridRow: isLgUp ? 'span 2' : 'auto',
+                  minHeight: isLgUp ? 800 : 500,
+                  maxHeight: isLgUp ? 'none' : 700,
+                }}
+              >
+                <PropertyInfoPanel
+                  property={property}
+                  onSave={handleSave}
+                  loading={saving}
+                  isMaximized={false}
+                  onToggleMaximize={() => {}}
+                  onFormChange={handleFormChange}
+                />
+              </Paper>
+
+              {/* 中央上: 物件位置（地図）カード */}
+              <Paper
+                elevation={3}
+                sx={{
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 400,
+                  maxHeight: isLgUp ? 500 : 600,
+                }}
+              >
+                <PropertyMapPanel
+                  property={property}
+                  onLocationUpdate={(lat, lng) => {
+                    setProperty(prev => ({ ...prev, latitude: lat, longitude: lng }));
+                  }}
+                />
+              </Paper>
+
+              {/* 右上: 部屋一覧カード */}
+              <Paper
+                elevation={3}
+                sx={{
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 400,
+                  maxHeight: isLgUp ? 500 : 600,
+                }}
+              >
+                <RoomsPanel
+                  propertyId={id}
+                  rooms={rooms}
+                  onRoomsUpdate={handleRoomUpdate}
+                />
+              </Paper>
+
+              {/* 中央下: 外観写真カード */}
+              <Paper
+                elevation={3}
+                sx={{
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 280,
+                  maxHeight: isLgUp ? 350 : 500,
                 }}
               >
                 <PhotosPanel
                   propertyId={id}
                   onPhotosUpdate={() => {}}
-                  isMaximized={isPhotosMaximized}
-                  onToggleMaximize={handleTogglePhotosMaximize}
+                  isMaximized={false}
+                  onToggleMaximize={() => {}}
                 />
               </Paper>
-            ) : (
-              <>
-                {/* 地図エリア */}
-                <Paper
-                  elevation={1}
-                  sx={{
-                    flex: 1,
-                    borderRadius: 0,
-                    position: 'relative',
-                    bgcolor: 'background.paper'
-                  }}
-                >
-                  <PropertyMapPanel
-                    property={property}
-                    onLocationUpdate={(lat, lng) => {
-                      setProperty(prev => ({ ...prev, latitude: lat, longitude: lng }));
-                    }}
-                  />
-                </Paper>
 
-                {/* 写真エリア */}
-                {isLgUp && (
-                  <Paper
-                    elevation={1}
-                    sx={{
-                      height: 300,
-                      borderRadius: 0,
-                      borderTop: '1px solid #ddd',
-                      bgcolor: 'background.paper'
-                    }}
-                  >
-                    <PhotosPanel
-                      propertyId={id}
-                      onPhotosUpdate={() => {}}
-                      isMaximized={isPhotosMaximized}
-                      onToggleMaximize={handleTogglePhotosMaximize}
-                    />
-                  </Paper>
-                )}
-              </>
-            )}
-            </Box>
-          )}
-
-          {/* 右パネル - 部屋一覧と家主情報 */}
-          <Box sx={{
-            width: isLgUp ? 500 : isMdUp ? 420 : '100%',
-            display: isMdUp ? 'flex' : 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden'
-          }}>
-            {/* 部屋一覧 */}
-            <Paper
-              elevation={2}
-              sx={{
-                flex: 1,
-                borderRadius: 0,
-                overflow: 'auto',
-                borderLeft: '1px solid #ddd'
-              }}
-            >
-              <RoomsPanel
-                propertyId={id}
-                rooms={rooms}
-                onRoomsUpdate={handleRoomUpdate}
-              />
-            </Paper>
-
-            {/* 家主情報 */}
-            {isLgUp && (
+              {/* 右下: 家主情報カード */}
               <Paper
-                elevation={2}
+                elevation={3}
                 sx={{
-                  height: 300,
-                  borderRadius: 0,
-                  borderTop: '1px solid #ddd',
-                  borderLeft: '1px solid #ddd',
-                  bgcolor: 'background.paper'
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 280,
+                  maxHeight: isLgUp ? 350 : 500,
                 }}
               >
                 <OwnersPanel
@@ -550,8 +528,7 @@ export default function PropertyDetail() {
                   onOwnersUpdate={handleOwnerUpdate}
                 />
               </Paper>
-            )}
-          </Box>
+            </Box>
           </Box>
         )}
 

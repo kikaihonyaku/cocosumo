@@ -161,9 +161,17 @@ export default function PhotosPanel({ propertyId, onPhotosUpdate, isMaximized, o
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
-      <Box sx={{ p: 1.5, borderBottom: '1px solid #ddd', bgcolor: 'grey.50', height: 56, display: 'flex', alignItems: 'center' }}>
-        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
-          <PhotoLibraryIcon color="primary" />
+      <Box sx={{
+        px: 2,
+        py: 1.5,
+        borderBottom: '1px solid #e0e0e0',
+        bgcolor: 'background.paper',
+        display: 'flex',
+        alignItems: 'center',
+        minHeight: 56
+      }}>
+        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1, fontWeight: 600, fontSize: '1.05rem' }}>
+          <PhotoLibraryIcon color="primary" sx={{ fontSize: 26 }} />
           外観写真 ({photos.length})
         </Typography>
 
@@ -177,7 +185,7 @@ export default function PhotosPanel({ propertyId, onPhotosUpdate, isMaximized, o
           写真追加
         </Button>
 
-        {!isMobile && (
+        {!isMobile && isMaximized && (
           <Tooltip title={isMaximized ? "最小化" : "最大化"}>
             <IconButton
               size="small"

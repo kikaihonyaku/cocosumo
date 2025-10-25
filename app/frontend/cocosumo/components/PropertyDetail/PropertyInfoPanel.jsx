@@ -8,15 +8,7 @@ import {
   Select,
   MenuItem,
   Button,
-  Divider,
-  Paper,
-  Chip,
-  IconButton,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Stack,
-  Tooltip,
   Alert,
   CircularProgress,
   Dialog,
@@ -24,18 +16,15 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
-  ExpandMore as ExpandMoreIcon,
   Business as BusinessIcon,
-  Home as HomeIcon,
   CalendarToday as CalendarIcon,
   LocationOn as LocationIcon,
   OpenInFull as OpenInFullIcon,
   CloseFullscreen as CloseFullscreenIcon,
-  Domain as DomainIcon,
-  Build as BuildIcon,
-  Settings as SettingsIcon,
   Search as SearchIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
@@ -59,40 +48,6 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
-  const [expanded, setExpanded] = useState({
-    basic: true,
-    location: true,
-    details: true,
-    building: isMaximized || isMobile,
-    facilities: isMaximized || isMobile,
-  });
-
-  // 最大化状態が変更された時にアコーディオンの展開状態を更新
-  useEffect(() => {
-    if (isMaximized) {
-      setExpanded({
-        basic: true,
-        location: true,
-        details: true,
-        building: true,
-        facilities: true,
-      });
-    }
-  }, [isMaximized]);
-
-  // モバイル時は全てのセクションを展開
-  useEffect(() => {
-    if (isMobile) {
-      setExpanded({
-        basic: true,
-        location: true,
-        details: true,
-        building: true,
-        facilities: true,
-      });
-    }
-  }, [isMobile]);
 
   useEffect(() => {
     if (property) {
@@ -142,7 +97,6 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
     setGeocodeError('');
 
     try {
-      // Google Maps Geocoding APIを使用
       const geocoder = new window.google.maps.Geocoder();
 
       geocoder.geocode({ address: formData.address }, (results, status) => {
@@ -151,16 +105,13 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
           const lat = location.lat();
           const lng = location.lng();
 
-          // formDataを更新
           setFormData(prev => ({
             ...prev,
             latitude: lat,
             longitude: lng
           }));
 
-          // 親コンポーネントにも通知（地図を更新するため）
           if (property.id) {
-            // 即座にサーバーに保存
             onSave({
               ...formData,
               latitude: lat,
@@ -182,24 +133,14 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
     }
   };
 
-  const handleAccordionChange = (panel) => (event, isExpanded) => {
-    setExpanded(prev => ({
-      ...prev,
-      [panel]: isExpanded
-    }));
-  };
-
-  // 削除ダイアログを開く
   const handleDeleteClick = () => {
     setDeleteDialogOpen(true);
   };
 
-  // 削除ダイアログを閉じる
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
   };
 
-  // 物件を削除
   const handleDeleteConfirm = async () => {
     setDeleting(true);
 
@@ -215,7 +156,6 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // 削除成功 - 地図画面にリダイレクト
         window.location.href = '/map';
       } else {
         alert(data.error || '削除に失敗しました');
@@ -242,13 +182,21 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
-      <Box sx={{ p: 1.5, borderBottom: '1px solid #ddd', bgcolor: 'grey.50', height: 56, display: 'flex', alignItems: 'center' }}>
-        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
-          <BusinessIcon color="primary" />
+      <Box sx={{
+        px: 2,
+        py: 1.5,
+        borderBottom: '1px solid #e0e0e0',
+        bgcolor: 'background.paper',
+        display: 'flex',
+        alignItems: 'center',
+        minHeight: 56
+      }}>
+        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1, fontWeight: 600, fontSize: '1.05rem' }}>
+          <BusinessIcon color="primary" sx={{ fontSize: 26 }} />
           建物（土地）
         </Typography>
 
-        {!isMobile && (
+        {!isMobile && isMaximized && (
           <Tooltip title={isMaximized ? "最小化" : "最大化"}>
             <IconButton
               size="small"
@@ -262,304 +210,189 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
       </Box>
 
       {/* コンテンツ */}
-      <Box sx={{ flex: 1, overflow: 'auto', p: 0 }}>
-
-        {/* 最大化時は複数列レイアウト */}
-        <Box sx={{
-          display: isMaximized ? 'grid' : 'block',
-          gridTemplateColumns: isMaximized ? 'repeat(auto-fit, minmax(350px, 1fr))' : 'none',
-          gap: isMaximized ? 0 : 0,
-        }}>
+      <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+        <Stack spacing={3}>
 
         {/* 基本情報 */}
-        <Accordion
-          expanded={expanded.basic}
-          onChange={handleAccordionChange('basic')}
-          elevation={0}
-          sx={{
-            '&:before': { display: 'none' },
-            borderBottom: isMaximized ? 'none' : '1px solid #ddd',
-            borderRight: isMaximized ? '1px solid #ddd' : 'none',
-            borderRadius: 0
-          }}
-        >
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            sx={{
-              backgroundColor: 'grey.50',
-              borderBottom: '1px solid #ddd',
-              minHeight: 48,
-              '&.Mui-expanded': {
-                minHeight: 48
-              },
-              '& .MuiAccordionSummary-content': {
-                margin: '12px 0'
-              }
-            }}
-          >
-            <Typography variant="subtitle1" fontWeight="600" color="primary.main">
-              基本情報
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails sx={{ pt: 2, p: 2 }}>
-            <Stack spacing={2}>
-              <TextField
-                fullWidth
-                label="建物名"
-                value={formData.name || ''}
-                onChange={handleChange('name')}
-                variant="outlined"
-                size="small"
-              />
+        <Box>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
+            基本情報
+          </Typography>
+          <Stack spacing={2}>
+            <TextField
+              fullWidth
+              label="建物名"
+              value={formData.name || ''}
+              onChange={handleChange('name')}
+              variant="outlined"
+              size="small"
+            />
 
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>建物種別</InputLabel>
-                  <Select
-                    value={formData.building_type || ''}
-                    label="建物種別"
-                    onChange={handleChange('building_type')}
-                    variant="outlined"
-                  >
-                    {buildingTypes.map((type) => (
-                      <MenuItem key={type.id} value={type.id}>
-                        {type.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                <TextField
-                  fullWidth
-                  label="築年"
-                  type="number"
-                  value={formData.built_year || ''}
-                  onChange={handleChange('built_year')}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>建物種別</InputLabel>
+                <Select
+                  value={formData.building_type || ''}
+                  label="建物種別"
+                  onChange={handleChange('building_type')}
                   variant="outlined"
-                  size="small"
-                  InputProps={{
-                    endAdornment: <Typography variant="body2" color="text.secondary">年</Typography>
-                  }}
-                />
-              </Box>
+                >
+                  {buildingTypes.map((type) => (
+                    <MenuItem key={type.id} value={type.id}>
+                      {type.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
               <TextField
                 fullWidth
-                label="説明・備考"
-                multiline
-                rows={3}
-                value={formData.description || ''}
-                onChange={handleChange('description')}
+                label="築年"
+                type="number"
+                value={formData.built_year || ''}
+                onChange={handleChange('built_year')}
                 variant="outlined"
                 size="small"
+                InputProps={{
+                  endAdornment: <Typography variant="body2" color="text.secondary">年</Typography>
+                }}
               />
-            </Stack>
-          </AccordionDetails>
-        </Accordion>
+            </Box>
+
+            <TextField
+              fullWidth
+              label="説明・備考"
+              multiline
+              rows={2}
+              value={formData.description || ''}
+              onChange={handleChange('description')}
+              variant="outlined"
+              size="small"
+            />
+          </Stack>
+        </Box>
 
         {/* 所在地情報 */}
-        <Accordion
-          expanded={expanded.location}
-          onChange={handleAccordionChange('location')}
-          elevation={0}
-          sx={{
-            '&:before': { display: 'none' },
-            borderBottom: isMaximized ? 'none' : '1px solid #ddd',
-            borderRight: isMaximized ? '1px solid #ddd' : 'none',
-            borderRadius: 0
-          }}
-        >
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            sx={{
-              backgroundColor: 'grey.50',
-              borderBottom: '1px solid #ddd',
-              minHeight: 48,
-              '&.Mui-expanded': {
-                minHeight: 48
-              },
-              '& .MuiAccordionSummary-content': {
-                margin: '12px 0'
-              }
-            }}
-          >
-            <Typography variant="subtitle1" fontWeight="600" color="primary.main">
-              所在地
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails sx={{ pt: 2, p: 2 }}>
-            <Stack spacing={2}>
+        <Box>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
+            所在地
+          </Typography>
+          <Stack spacing={2}>
+            <TextField
+              label="郵便番号"
+              value={formData.postcode || ''}
+              onChange={handleChange('postcode')}
+              variant="outlined"
+              size="small"
+              placeholder="000-0000"
+              sx={{ maxWidth: 200 }}
+            />
+
+            <Box>
               <TextField
-                label="郵便番号"
-                value={formData.postcode || ''}
-                onChange={handleChange('postcode')}
+                fullWidth
+                label="住所"
+                value={formData.address || ''}
+                onChange={handleChange('address')}
                 variant="outlined"
                 size="small"
-                placeholder="000-0000"
-                sx={{ maxWidth: 200 }}
               />
-
-              <Box>
-                <TextField
-                  fullWidth
-                  label="住所"
-                  value={formData.address || ''}
-                  onChange={handleChange('address')}
-                  variant="outlined"
-                  size="small"
-                />
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={geocoding ? <CircularProgress size={16} /> : <SearchIcon />}
-                  onClick={handleGeocodeAddress}
-                  disabled={geocoding || !formData.address}
-                  sx={{ mt: 1 }}
-                >
-                  {geocoding ? '検索中...' : '住所から位置情報を取得'}
-                </Button>
-                {geocodeError && (
-                  <Alert severity="error" sx={{ mt: 1 }}>
-                    {geocodeError}
-                  </Alert>
-                )}
-              </Box>
-
-              {property?.latitude && property?.longitude && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
-                  <LocationIcon color="action" fontSize="small" />
-                  <Typography variant="body2" color="text.secondary">
-                    緯度: {parseFloat(property.latitude).toFixed(6)}, 経度: {parseFloat(property.longitude).toFixed(6)}
-                  </Typography>
-                </Box>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={geocoding ? <CircularProgress size={16} /> : <SearchIcon />}
+                onClick={handleGeocodeAddress}
+                disabled={geocoding || !formData.address}
+                sx={{ mt: 1 }}
+              >
+                {geocoding ? '検索中...' : '住所から位置情報を取得'}
+              </Button>
+              {geocodeError && (
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  {geocodeError}
+                </Alert>
               )}
-            </Stack>
-          </AccordionDetails>
-        </Accordion>
+            </Box>
 
-        {/* 詳細情報 */}
-        <Accordion
-          expanded={expanded.details}
-          onChange={handleAccordionChange('details')}
-          elevation={0}
-          sx={{
-            '&:before': { display: 'none' },
-            borderBottom: isMaximized ? 'none' : '1px solid #ddd',
-            borderRight: isMaximized ? '1px solid #ddd' : 'none',
-            borderRadius: 0
-          }}
-        >
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            sx={{
-              backgroundColor: 'grey.50',
-              borderBottom: '1px solid #ddd',
-              minHeight: 48,
-              '&.Mui-expanded': {
-                minHeight: 48
-              },
-              '& .MuiAccordionSummary-content': {
-                margin: '12px 0'
-              }
-            }}
-          >
-            <Typography variant="subtitle1" fontWeight="600" color="primary.main">
-              詳細情報
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails sx={{ pt: 2, p: 2 }}>
-            <Stack spacing={2}>
-              {property?.id && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="body2" color="text.secondary">物件ID:</Typography>
-                  <Typography variant="body2" fontFamily="monospace">{property.id}</Typography>
-                </Box>
-              )}
-
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CalendarIcon color="action" fontSize="small" />
+            {property?.latitude && property?.longitude && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+                <LocationIcon color="action" fontSize="small" />
                 <Typography variant="body2" color="text.secondary">
-                  最終更新: {property?.updated_at ? new Date(property.updated_at).toLocaleDateString('ja-JP') : '不明'}
+                  緯度: {parseFloat(property.latitude).toFixed(6)}, 経度: {parseFloat(property.longitude).toFixed(6)}
                 </Typography>
               </Box>
-            </Stack>
-          </AccordionDetails>
-        </Accordion>
-
-        {/* 建築情報 - 最大化時のみ表示 */}
-        {isMaximized && (
-          <Accordion
-            expanded={expanded.building}
-            onChange={handleAccordionChange('building')}
-            elevation={0}
-            sx={{
-              '&:before': { display: 'none' },
-              borderRight: '1px solid #ddd',
-              borderRadius: 0
-            }}
-          >
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              sx={{
-                backgroundColor: 'grey.50',
-                borderBottom: '1px solid #ddd',
-                minHeight: 48,
-                '&.Mui-expanded': {
-                  minHeight: 48
-                },
-                '& .MuiAccordionSummary-content': {
-                  margin: '12px 0'
-                }
-              }}
-            >
-              <Typography variant="subtitle1" fontWeight="600" color="primary.main">
-                建築情報
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ pt: 2, p: 2 }}>
-              <Stack spacing={2}>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <TextField
-                    label="構造"
-                    value={formData.structure || ''}
-                    onChange={handleChange('structure')}
-                    variant="outlined"
-                    size="small"
-                    sx={{ flex: 1 }}
-                    placeholder="例: RC造"
-                  />
-
-                  <TextField
-                    label="階数"
-                    type="number"
-                    value={formData.floors || ''}
-                    onChange={handleChange('floors')}
-                    variant="outlined"
-                    size="small"
-                    sx={{ flex: 1 }}
-                    InputProps={{
-                      endAdornment: <Typography variant="body2" color="text.secondary">階</Typography>
-                    }}
-                  />
-                </Box>
-
-                <TextField
-                  label="総戸数"
-                  type="number"
-                  value={formData.total_units || ''}
-                  onChange={handleChange('total_units')}
-                  variant="outlined"
-                  size="small"
-                  InputProps={{
-                    endAdornment: <Typography variant="body2" color="text.secondary">戸</Typography>
-                  }}
-                />
-              </Stack>
-            </AccordionDetails>
-          </Accordion>
-        )}
-
+            )}
+          </Stack>
         </Box>
+
+        {/* 建築情報 */}
+        <Box>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
+            建築情報
+          </Typography>
+          <Stack spacing={2}>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="構造"
+                value={formData.structure || ''}
+                onChange={handleChange('structure')}
+                variant="outlined"
+                size="small"
+                sx={{ flex: 1 }}
+                placeholder="例: RC造"
+              />
+
+              <TextField
+                label="階数"
+                type="number"
+                value={formData.floors || ''}
+                onChange={handleChange('floors')}
+                variant="outlined"
+                size="small"
+                sx={{ flex: 1 }}
+                InputProps={{
+                  endAdornment: <Typography variant="body2" color="text.secondary">階</Typography>
+                }}
+              />
+            </Box>
+
+            <TextField
+              label="総戸数"
+              type="number"
+              value={formData.total_units || ''}
+              onChange={handleChange('total_units')}
+              variant="outlined"
+              size="small"
+              InputProps={{
+                endAdornment: <Typography variant="body2" color="text.secondary">戸</Typography>
+              }}
+            />
+          </Stack>
+        </Box>
+
+        {/* 詳細情報 */}
+        <Box>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
+            詳細情報
+          </Typography>
+          <Stack spacing={1.5}>
+            {property?.id && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">物件ID:</Typography>
+                <Typography variant="body2" fontFamily="monospace">{property.id}</Typography>
+              </Box>
+            )}
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CalendarIcon color="action" fontSize="small" />
+              <Typography variant="body2" color="text.secondary">
+                最終更新: {property?.updated_at ? new Date(property.updated_at).toLocaleDateString('ja-JP') : '不明'}
+              </Typography>
+            </Box>
+          </Stack>
+        </Box>
+
+        </Stack>
       </Box>
 
       {/* 保存ボタンと削除ボタン */}

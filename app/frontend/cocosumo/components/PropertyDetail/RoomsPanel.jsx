@@ -207,9 +207,17 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
-      <Box sx={{ p: 1.5, borderBottom: '1px solid #ddd', bgcolor: 'grey.50', height: 56, display: 'flex', alignItems: 'center' }}>
-        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
-          <HomeIcon color="primary" />
+      <Box sx={{
+        px: 2,
+        py: 1.5,
+        borderBottom: '1px solid #e0e0e0',
+        bgcolor: 'background.paper',
+        display: 'flex',
+        alignItems: 'center',
+        minHeight: 56
+      }}>
+        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1, fontWeight: 600, fontSize: '1.05rem' }}>
+          <HomeIcon color="primary" sx={{ fontSize: 26 }} />
           部屋一覧 ({rooms.length}室)
         </Typography>
 

@@ -134,9 +134,18 @@ export default function OwnersPanel({ propertyId, owners = [], onOwnersUpdate })
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
-      <Box sx={{ p: 1.5, borderBottom: '1px solid #ddd', bgcolor: 'grey.50', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <PersonIcon color="primary" />
+      <Box sx={{
+        px: 2,
+        py: 1.5,
+        borderBottom: '1px solid #e0e0e0',
+        bgcolor: 'background.paper',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        minHeight: 56
+      }}>
+        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontWeight: 600, fontSize: '1.05rem' }}>
+          <PersonIcon color="primary" sx={{ fontSize: 26 }} />
           家主情報 ({owners.length}名)
         </Typography>
         <Button
