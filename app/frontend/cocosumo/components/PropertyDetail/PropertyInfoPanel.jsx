@@ -196,7 +196,7 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
           建物（土地）
         </Typography>
 
-        {!isMobile && isMaximized && (
+        {!isMobile && (
           <Tooltip title={isMaximized ? "最小化" : "最大化"}>
             <IconButton
               size="small"
@@ -370,27 +370,127 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
           </Stack>
         </Box>
 
-        {/* 詳細情報 */}
-        <Box>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
-            詳細情報
+        {/* 最終更新日 */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pt: 1 }}>
+          <CalendarIcon color="action" fontSize="small" />
+          <Typography variant="body2" color="text.secondary">
+            最終更新: {property?.updated_at ? new Date(property.updated_at).toLocaleDateString('ja-JP') : '不明'}
           </Typography>
-          <Stack spacing={1.5}>
-            {property?.id && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body2" color="text.secondary">物件ID:</Typography>
-                <Typography variant="body2" fontFamily="monospace">{property.id}</Typography>
-              </Box>
-            )}
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CalendarIcon color="action" fontSize="small" />
-              <Typography variant="body2" color="text.secondary">
-                最終更新: {property?.updated_at ? new Date(property.updated_at).toLocaleDateString('ja-JP') : '不明'}
-              </Typography>
-            </Box>
-          </Stack>
         </Box>
+
+        {/* 最大化時のみ表示される追加項目 */}
+        {isMaximized && (
+          <>
+            {/* 管理会社情報 */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
+                管理会社情報
+              </Typography>
+              <Stack spacing={2}>
+                <TextField
+                  fullWidth
+                  label="管理会社名"
+                  value={formData.management_company || ''}
+                  onChange={handleChange('management_company')}
+                  variant="outlined"
+                  size="small"
+                />
+                <TextField
+                  fullWidth
+                  label="管理会社電話番号"
+                  value={formData.management_phone || ''}
+                  onChange={handleChange('management_phone')}
+                  variant="outlined"
+                  size="small"
+                  placeholder="03-1234-5678"
+                />
+                <TextField
+                  fullWidth
+                  label="管理会社担当者"
+                  value={formData.management_contact || ''}
+                  onChange={handleChange('management_contact')}
+                  variant="outlined"
+                  size="small"
+                />
+              </Stack>
+            </Box>
+
+            {/* 駐車場情報 */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
+                駐車場情報
+              </Typography>
+              <Stack spacing={2}>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <TextField
+                    label="駐車場台数"
+                    type="number"
+                    value={formData.parking_spaces || ''}
+                    onChange={handleChange('parking_spaces')}
+                    variant="outlined"
+                    size="small"
+                    sx={{ flex: 1 }}
+                    InputProps={{
+                      endAdornment: <Typography variant="body2" color="text.secondary">台</Typography>
+                    }}
+                  />
+                  <TextField
+                    label="駐車場料金"
+                    type="number"
+                    value={formData.parking_fee || ''}
+                    onChange={handleChange('parking_fee')}
+                    variant="outlined"
+                    size="small"
+                    sx={{ flex: 1 }}
+                    InputProps={{
+                      endAdornment: <Typography variant="body2" color="text.secondary">円/月</Typography>
+                    }}
+                  />
+                </Box>
+              </Stack>
+            </Box>
+
+            {/* 設備情報 */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
+                設備情報
+              </Typography>
+              <Stack spacing={2}>
+                <TextField
+                  fullWidth
+                  label="設備・特記事項"
+                  multiline
+                  rows={3}
+                  value={formData.facilities || ''}
+                  onChange={handleChange('facilities')}
+                  variant="outlined"
+                  size="small"
+                  placeholder="例: エレベーター、オートロック、防犯カメラ、宅配BOXなど"
+                />
+              </Stack>
+            </Box>
+
+            {/* その他メモ */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
+                その他メモ
+              </Typography>
+              <Stack spacing={2}>
+                <TextField
+                  fullWidth
+                  label="メモ"
+                  multiline
+                  rows={4}
+                  value={formData.notes || ''}
+                  onChange={handleChange('notes')}
+                  variant="outlined"
+                  size="small"
+                  placeholder="管理上の注意事項、修繕履歴など"
+                />
+              </Stack>
+            </Box>
+          </>
+        )}
 
         </Stack>
       </Box>

@@ -420,7 +420,7 @@ export default function PropertyDetail() {
           <Box sx={{
             flex: 1,
             overflow: 'auto',
-            px: 0.5,
+            px: 1,
             py: 1,
             bgcolor: 'grey.50'
           }}>
@@ -442,14 +442,24 @@ export default function PropertyDetail() {
                   gridRow: isLgUp ? 'span 2' : 'auto',
                   minHeight: isLgUp ? 800 : 500,
                   maxHeight: isLgUp ? 'none' : 700,
+                  ...(isPropertyInfoMaximized && {
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 1300,
+                    maxHeight: '100vh',
+                    borderRadius: 0,
+                  }),
                 }}
               >
                 <PropertyInfoPanel
                   property={property}
                   onSave={handleSave}
                   loading={saving}
-                  isMaximized={false}
-                  onToggleMaximize={() => {}}
+                  isMaximized={isPropertyInfoMaximized}
+                  onToggleMaximize={handleTogglePropertyInfoMaximize}
                   onFormChange={handleFormChange}
                 />
               </Paper>
