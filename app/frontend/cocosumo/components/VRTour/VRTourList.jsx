@@ -132,11 +132,11 @@ export default function VRTourList({ roomId }) {
             secondary={
               <>
                 {tour.description && (
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" component="span">
                     {tour.description}
                   </Typography>
                 )}
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" color="text.secondary" component="span" sx={{ display: 'block' }}>
                   シーン数: {tour.vr_scenes?.length || 0}
                 </Typography>
               </>

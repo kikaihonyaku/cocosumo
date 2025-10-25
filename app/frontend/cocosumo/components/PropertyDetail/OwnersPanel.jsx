@@ -193,7 +193,7 @@ export default function OwnersPanel({ propertyId, owners = [], onOwnersUpdate })
                         {owner.address && (
                           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
                             <HomeIcon fontSize="small" color="action" sx={{ mt: 0.5 }} />
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" component="span">
                               {owner.address}
                             </Typography>
                           </Box>
@@ -201,7 +201,7 @@ export default function OwnersPanel({ propertyId, owners = [], onOwnersUpdate })
                         {owner.phone && (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <PhoneIcon fontSize="small" color="action" />
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" component="span">
                               {owner.phone}
                             </Typography>
                           </Box>
@@ -209,7 +209,7 @@ export default function OwnersPanel({ propertyId, owners = [], onOwnersUpdate })
                         {owner.email && (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <EmailIcon fontSize="small" color="action" />
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" component="span">
                               {owner.email}
                             </Typography>
                           </Box>
