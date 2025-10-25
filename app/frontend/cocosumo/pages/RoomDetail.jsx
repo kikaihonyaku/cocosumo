@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
+  ThemeProvider,
+  CssBaseline,
   Box,
+  AppBar,
+  Toolbar,
   Typography,
   Paper,
   Button,
   CircularProgress,
   Alert,
   useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
+import muiTheme from '../theme/muiTheme';
 import RoomInfoPanel from "../components/RoomDetail/RoomInfoPanel";
 import RoomPhotosPanel from "../components/RoomDetail/RoomPhotosPanel";
 import RoomVRTourPanel from "../components/RoomDetail/RoomVRTourPanel";
@@ -20,8 +24,7 @@ import RoomVRTourPanel from "../components/RoomDetail/RoomVRTourPanel";
 export default function RoomDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isLgUp = useMediaQuery(theme.breakpoints.up('lg'));
+  const isLgUp = useMediaQuery(muiTheme.breakpoints.up('lg'));
 
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -123,52 +126,68 @@ export default function RoomDetail() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress />
-      </Box>
+      <ThemeProvider theme={muiTheme}>
+        <CssBaseline />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
+          <CircularProgress size={60} />
+        </Box>
+      </ThemeProvider>
     );
   }
 
   if (error || !room) {
     return (
-      <Box sx={{ p: 4 }}>
-        <Alert severity="error">{error || '部屋が見つかりません'}</Alert>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/buildings')}
-          sx={{ mt: 2 }}
-        >
-          物件一覧に戻る
-        </Button>
-      </Box>
+      <ThemeProvider theme={muiTheme}>
+        <CssBaseline />
+        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: 'background.default', gap: 2 }}>
+          <Typography variant="h6" color="error">
+            {error || '部屋が見つかりません'}
+          </Typography>
+          <Button variant="contained" startIcon={<ArrowBackIcon />} onClick={() => navigate('/buildings')}>
+            物件一覧に戻る
+          </Button>
+        </Box>
+      </ThemeProvider>
     );
   }
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
-      {/* ヘッダー */}
-      <Box sx={{
-        px: 3,
-        py: 2,
-        bgcolor: 'background.paper',
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 2
-      }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(`/property/${room.building_id}`)}
-          variant="outlined"
-          size="small"
-        >
-          物件詳細に戻る
-        </Button>
-        <Typography variant="h5" component="h1" sx={{ fontWeight: 600, flex: 1 }}>
-          {room.room_number}号室 - {room.building?.name}
-        </Typography>
-      </Box>
+    <ThemeProvider theme={muiTheme}>
+      <CssBaseline />
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
+        {/* ヘッダー */}
+        <AppBar position="static" elevation={0} sx={{
+          bgcolor: 'primary.main',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+          borderRadius: '12px 12px 0 0',
+        }}>
+          <Toolbar variant="dense" sx={{ minHeight: '52px', py: 1 }}>
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
+                {room.room_number}号室
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
+                {room.building?.name}
+              </Typography>
+            </Box>
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate(`/property/${room.building_id}`)}
+              variant="outlined"
+              size="small"
+              sx={{
+                color: 'white',
+                borderColor: 'rgba(255, 255, 255, 0.5)',
+                '&:hover': {
+                  borderColor: 'white',
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
+            >
+              物件詳細に戻る
+            </Button>
+          </Toolbar>
+        </AppBar>
 
       {/* メインコンテンツ - 3カラムグリッド */}
       <Box
@@ -294,6 +313,7 @@ export default function RoomDetail() {
           </Paper>
         </Box>
       </Box>
-    </Box>
+      </Box>
+    </ThemeProvider>
   );
 }
