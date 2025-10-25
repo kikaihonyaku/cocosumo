@@ -24,6 +24,7 @@ import MinimapDisplay from "./MinimapDisplay";
 export default function VrTourPreview({ open, onClose, vrTour, scenes }) {
   const [currentScene, setCurrentScene] = useState(scenes.length > 0 ? scenes[0] : null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [currentViewAngle, setCurrentViewAngle] = useState(0);
 
   const handleMarkerClick = (marker) => {
     console.log('Preview marker clicked:', marker);
@@ -47,8 +48,14 @@ export default function VrTourPreview({ open, onClose, vrTour, scenes }) {
   React.useEffect(() => {
     if (open && scenes.length > 0) {
       setCurrentScene(scenes[0]);
+      setCurrentViewAngle(scenes[0]?.initial_view?.yaw || 0);
     }
   }, [open, scenes]);
+
+  // ビューの変更を追跡
+  const handleViewChange = (view) => {
+    setCurrentViewAngle(view.yaw);
+  };
 
   return (
     <Dialog
@@ -101,6 +108,7 @@ export default function VrTourPreview({ open, onClose, vrTour, scenes }) {
             markers={currentScene.hotspots || []}
             editable={false}
             onMarkerClick={handleMarkerClick}
+            onViewChange={handleViewChange}
           />
         ) : scenes.length > 0 ? (
           <Box sx={{
@@ -154,6 +162,7 @@ export default function VrTourPreview({ open, onClose, vrTour, scenes }) {
           vrTour={vrTour}
           scenes={scenes}
           currentScene={currentScene}
+          viewAngle={currentViewAngle}
         />
       </Box>
 

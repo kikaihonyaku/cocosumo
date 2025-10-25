@@ -1,9 +1,10 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Box, Paper, Typography } from "@mui/material";
 
-export default function MinimapDisplay({ vrTour, scenes, currentScene }) {
+export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle = 0 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
+  const imageRef = useRef(null); // 画像をキャッシュ
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState({ x: 16, y: 16 });
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -16,30 +17,62 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene }) {
   const DISPLAY_WIDTH = 250;
   const DISPLAY_HEIGHT = 170;
 
+  // 画像をロードしてキャッシュ
+  useEffect(() => {
+    if (vrTour?.minimap_image_url) {
+      const img = new Image();
+      img.onload = () => {
+        imageRef.current = img;
+      };
+      img.onerror = () => {
+        imageRef.current = null;
+      };
+      img.src = vrTour.minimap_image_url;
+    } else {
+      imageRef.current = null;
+    }
+  }, [vrTour?.minimap_image_url]);
+
+  // キャンバス描画
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
 
-    // キャンバスをクリア
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const draw = () => {
+      // キャンバスをクリア
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 背景画像を描画
-    if (vrTour?.minimap_image_url) {
-      const img = new Image();
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        drawScenes(ctx);
-      };
-      img.src = vrTour.minimap_image_url;
-    } else {
-      // 背景画像がない場合はグレーの背景
-      ctx.fillStyle = '#f5f5f5';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // 背景画像を描画（キャッシュから）
+      if (imageRef.current) {
+        ctx.drawImage(imageRef.current, 0, 0, canvas.width, canvas.height);
+      } else {
+        // 背景画像がない場合はグレーの背景
+        ctx.fillStyle = '#f5f5f5';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // シーンマーカーを描画
       drawScenes(ctx);
-    }
-  }, [vrTour, scenes, currentScene]);
+    };
+
+    // 初回描画
+    draw();
+
+    // スクロールやリサイズ時にも再描画
+    const handleRedraw = () => {
+      requestAnimationFrame(draw);
+    };
+
+    window.addEventListener('scroll', handleRedraw, true);
+    window.addEventListener('resize', handleRedraw);
+
+    return () => {
+      window.removeEventListener('scroll', handleRedraw, true);
+      window.removeEventListener('resize', handleRedraw);
+    };
+  }, [scenes, currentScene, viewAngle]);
 
   // シーンマーカーを描画
   const drawScenes = (ctx) => {
@@ -56,6 +89,42 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene }) {
       const scaledY = pos.y * scaleY;
 
       const isCurrentScene = currentScene?.id === scene.id;
+
+      // 現在のシーンの場合、視線方向を示す扇形を描画
+      if (isCurrentScene) {
+        const radius = 20;
+        const fov = Math.PI / 3; // 60度の視野角
+
+        // viewAngleをラジアンに変換（0度が北、時計回り）
+        // Photo Sphere ViewerのyawはX軸正方向が0で反時計回り
+        // ミニマップでは上が0度（北）で時計回り
+        const angle = -viewAngle + Math.PI / 2; // 90度回転して反転
+
+        ctx.save();
+        ctx.translate(scaledX, scaledY);
+
+        // 視線方向の扇形（半透明）
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius, angle - fov / 2, angle + fov / 2);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(255, 87, 34, 0.3)';
+        ctx.fill();
+
+        // 視線方向の中心線（矢印）
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        const lineLength = radius;
+        ctx.lineTo(
+          Math.cos(angle) * lineLength,
+          Math.sin(angle) * lineLength
+        );
+        ctx.strokeStyle = 'rgba(255, 87, 34, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.restore();
+      }
 
       // マーカーの円を描画
       ctx.beginPath();
