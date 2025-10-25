@@ -17,11 +17,13 @@ import {
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
-  Save as SaveIcon
+  Save as SaveIcon,
+  Visibility as VisibilityIcon
 } from "@mui/icons-material";
 import SceneList from "../components/VRTour/SceneList";
 import PanoramaViewer from "../components/VRTour/PanoramaViewer";
 import HotspotEditor from "../components/VRTour/HotspotEditor";
+import VrTourPreview from "../components/VRTour/VrTourPreview";
 
 export default function VrTourEditor() {
   const { roomId, id } = useParams();
@@ -49,6 +51,7 @@ export default function VrTourEditor() {
   const [editHotspotCallback, setEditHotspotCallback] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // 未保存変更の検出
   const hasUnsavedChanges =
@@ -196,6 +199,11 @@ export default function VrTourEditor() {
     }
   };
 
+  const handleScenesChange = (updatedScenes) => {
+    // SceneListから通知されたシーン一覧で更新
+    setScenes(updatedScenes);
+  };
+
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
@@ -219,6 +227,16 @@ export default function VrTourEditor() {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             {isNew ? '新規VRツアー作成' : 'VRツアー編集'}
           </Typography>
+          {!isNew && scenes.length > 0 && (
+            <Button
+              variant="outlined"
+              startIcon={<VisibilityIcon />}
+              onClick={() => setPreviewOpen(true)}
+              sx={{ mr: 2 }}
+            >
+              プレビュー
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
 
@@ -230,8 +248,8 @@ export default function VrTourEditor() {
           </Alert>
         )}
 
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
             <Typography variant="h6">
               基本情報
             </Typography>
@@ -247,30 +265,32 @@ export default function VrTourEditor() {
           </Box>
 
           {hasUnsavedChanges && (
-            <Alert severity="info" sx={{ mb: 2 }}>
+            <Alert severity="info" sx={{ mb: 1.5, py: 0.5 }}>
               未保存の変更があります
             </Alert>
           )}
 
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 label="ツアータイトル"
                 value={vrTour.title}
                 onChange={(e) => setVrTour({ ...vrTour, title: e.target.value })}
                 required
+                size="small"
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 multiline
-                rows={3}
+                rows={1}
                 label="説明"
                 value={vrTour.description || ''}
                 onChange={(e) => setVrTour({ ...vrTour, description: e.target.value })}
+                size="small"
               />
             </Grid>
           </Grid>
@@ -285,6 +305,7 @@ export default function VrTourEditor() {
                 roomId={roomId}
                 onSceneSelect={handleSceneSelect}
                 onSceneDelete={handleSceneDelete}
+                onScenesChange={handleScenesChange}
               />
             </Paper>
 
@@ -403,6 +424,16 @@ export default function VrTourEditor() {
         message={snackbarMessage}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
+
+      {/* VRツアープレビュー */}
+      {!isNew && (
+        <VrTourPreview
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          vrTour={vrTour}
+          scenes={scenes}
+        />
+      )}
     </Box>
   );
 }

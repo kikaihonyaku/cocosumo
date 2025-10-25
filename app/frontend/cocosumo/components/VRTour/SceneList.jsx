@@ -27,7 +27,7 @@ import {
   Edit as EditIcon
 } from "@mui/icons-material";
 
-export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDelete }) {
+export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDelete, onScenesChange }) {
   const [scenes, setScenes] = useState([]);
   const [roomPhotos, setRoomPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +56,8 @@ export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDele
       if (response.ok) {
         const data = await response.json();
         setScenes(data);
+        // 親コンポーネントに更新を通知
+        onScenesChange && onScenesChange(data);
         if (data.length > 0 && !selectedSceneId) {
           setSelectedSceneId(data[0].id);
           onSceneSelect && onSceneSelect(data[0]);
