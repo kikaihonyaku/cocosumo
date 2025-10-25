@@ -24,7 +24,7 @@ import {
   Map as MapIcon,
 } from '@mui/icons-material';
 
-export default function PropertyMapPanel({ property, onLocationUpdate, visible = true }) {
+export default function PropertyMapPanel({ property, onLocationUpdate, visible = true, onFormChange, onSave }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
@@ -34,6 +34,8 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
   const [addressSearchOpen, setAddressSearchOpen] = useState(false);
   const [searchAddress, setSearchAddress] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const originalPositionRef = useRef(null);
 
   // Google Maps初期化
   useEffect(() => {
@@ -44,16 +46,27 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
     }
   }, []);
 
-  // 物件情報が更新された時にマーカーを更新
+  // 物件情報が更新された時にマーカーを更新し、元の位置を保存
   useEffect(() => {
     if (mapInstanceRef.current && property?.latitude && property?.longitude) {
       const lat = parseFloat(property.latitude);
       const lng = parseFloat(property.longitude);
       if (!isNaN(lat) && !isNaN(lng)) {
         updateMarkerPosition(lat, lng);
+        // 元の位置を保存（編集開始時の比較用）
+        if (!originalPositionRef.current) {
+          originalPositionRef.current = { lat, lng };
+        }
       }
     }
   }, [property]);
+
+  // 未保存の変更を親コンポーネントに通知
+  useEffect(() => {
+    if (onFormChange) {
+      onFormChange(hasUnsavedChanges);
+    }
+  }, [hasUnsavedChanges, onFormChange]);
 
   // 表示状態が変更された時にマップをリサイズ
   useEffect(() => {
@@ -195,8 +208,9 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
     }
   };
 
-  const handleLocationEdit = () => {
+  const handleLocationEdit = async () => {
     if (!editingLocation) {
+      // 編集開始
       setEditingLocation(true);
       if (markerRef.current) {
         markerRef.current.setDraggable(true);
@@ -204,13 +218,46 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
         markerRef.current.addListener('dragend', (event) => {
           const lat = event.latLng.lat();
           const lng = event.latLng.lng();
+
+          // 元の位置と比較して変更があれば未保存フラグを立てる
+          if (originalPositionRef.current) {
+            const latChanged = Math.abs(originalPositionRef.current.lat - lat) > 0.000001;
+            const lngChanged = Math.abs(originalPositionRef.current.lng - lng) > 0.000001;
+            if (latChanged || lngChanged) {
+              setHasUnsavedChanges(true);
+            }
+          }
+
           onLocationUpdate(lat, lng);
         });
       }
     } else {
+      // 編集完了 - 変更があれば自動保存
       setEditingLocation(false);
       if (markerRef.current) {
         markerRef.current.setDraggable(false);
+      }
+
+      // 未保存の変更がある場合は自動保存
+      if (hasUnsavedChanges && onSave && property) {
+        try {
+          await onSave({
+            ...property,
+            latitude: property.latitude,
+            longitude: property.longitude
+          });
+          // 保存成功後、未保存フラグをクリア
+          setHasUnsavedChanges(false);
+          // 元の位置を更新
+          if (property.latitude && property.longitude) {
+            originalPositionRef.current = {
+              lat: parseFloat(property.latitude),
+              lng: parseFloat(property.longitude)
+            };
+          }
+        } catch (err) {
+          console.error('位置情報の保存に失敗:', err);
+        }
       }
     }
   };
@@ -252,7 +299,7 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
       setSearchLoading(true);
       const geocoder = new window.google.maps.Geocoder();
 
-      geocoder.geocode({ address: searchAddress }, (results, status) => {
+      geocoder.geocode({ address: searchAddress }, async (results, status) => {
         setSearchLoading(false);
 
         if (status === 'OK' && results[0]) {
@@ -260,10 +307,34 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
           const lat = location.lat();
           const lng = location.lng();
 
+          // 元の位置と比較して変更があるか確認
+          let hasChanges = false;
+          if (originalPositionRef.current) {
+            const latChanged = Math.abs(originalPositionRef.current.lat - lat) > 0.000001;
+            const lngChanged = Math.abs(originalPositionRef.current.lng - lng) > 0.000001;
+            hasChanges = latChanged || lngChanged;
+          }
+
           updateMarkerPosition(lat, lng);
           onLocationUpdate(lat, lng);
           setAddressSearchOpen(false);
           setSearchAddress('');
+
+          // 変更がある場合は自動保存
+          if (hasChanges && onSave && property) {
+            try {
+              await onSave({
+                ...property,
+                latitude: lat,
+                longitude: lng
+              });
+              // 保存成功後、元の位置を更新
+              originalPositionRef.current = { lat, lng };
+            } catch (err) {
+              console.error('位置情報の保存に失敗:', err);
+              setHasUnsavedChanges(true);
+            }
+          }
         } else {
           alert('住所が見つかりませんでした');
         }

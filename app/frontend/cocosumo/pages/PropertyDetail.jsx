@@ -373,6 +373,8 @@ export default function PropertyDetail() {
                         setProperty(prev => ({ ...prev, latitude: lat, longitude: lng }));
                       }}
                       visible={mobileActiveTab === 1}
+                      onFormChange={handleFormChange}
+                      onSave={handleSave}
                     />
                   </Box>
 
@@ -468,6 +470,8 @@ export default function PropertyDetail() {
                   onLocationUpdate={(lat, lng) => {
                     setProperty(prev => ({ ...prev, latitude: lat, longitude: lng }));
                   }}
+                  onFormChange={handleFormChange}
+                  onSave={handleSave}
                 />
               </Paper>
 
