@@ -325,29 +325,14 @@ export default function VrTourEditor() {
         )}
 
         <Paper sx={{ p: 2, mb: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-            <Typography variant="h6">
-              基本情報
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<SaveIcon />}
-              onClick={handleSave}
-              disabled={saving || !vrTour.title}
-              color={hasUnsavedChanges ? 'primary' : 'inherit'}
-            >
-              {saving ? '保存中...' : '基本情報を保存'}
-            </Button>
-          </Box>
-
           {hasUnsavedChanges && (
             <Alert severity="info" sx={{ mb: 1.5, py: 0.5 }}>
               未保存の変更があります
             </Alert>
           )}
 
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} md={3}>
               <TextField
                 fullWidth
                 label="ツアータイトル"
@@ -361,13 +346,23 @@ export default function VrTourEditor() {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                multiline
-                rows={1}
                 label="説明"
                 value={vrTour.description || ''}
                 onChange={(e) => setVrTour({ ...vrTour, description: e.target.value })}
                 size="small"
               />
+            </Grid>
+
+            <Grid item xs={12} md={3} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                variant="contained"
+                startIcon={<SaveIcon />}
+                onClick={handleSave}
+                disabled={saving || !vrTour.title}
+                color={hasUnsavedChanges ? 'primary' : 'inherit'}
+              >
+                {saving ? '保存中...' : '基本情報を保存'}
+              </Button>
             </Grid>
           </Grid>
         </Paper>
