@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Container,
   Box,
@@ -14,11 +14,15 @@ import { useAuth } from "../contexts/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // リダイレクト元のパスを取得（デフォルトは/home）
+  const from = location.state?.from?.pathname || "/home";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,7 +32,8 @@ export default function Login() {
     const result = await login(email, password);
 
     if (result.success) {
-      navigate("/home");
+      // ログイン成功時、元のページまたはホームにリダイレクト
+      navigate(from, { replace: true });
     } else {
       setError(result.error || "ログインに失敗しました");
     }

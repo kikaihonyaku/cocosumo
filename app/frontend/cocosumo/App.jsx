@@ -1,9 +1,9 @@
 import React from "react";
-import { Routes, Route, Outlet, useLocation } from "react-router-dom";
+import { Routes, Route, Outlet, useLocation, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
-import { CssBaseline, useMediaQuery } from "@mui/material";
+import { CssBaseline, useMediaQuery, Box, CircularProgress } from "@mui/material";
 import muiTheme from "./theme/muiTheme";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Header from "./components/shared/Header";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
@@ -16,6 +16,27 @@ import RoomDetail from "./pages/RoomDetail";
 import RoomForm from "./pages/RoomForm";
 import VrTourEditor from "./pages/VrTourEditor";
 import VrTourViewer from "./pages/VrTourViewer";
+
+// 認証が必要なルートを保護するコンポーネント
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!isAuthenticated) {
+    // 未認証の場合、ログインページにリダイレクト（元のURLを保存）
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+}
 
 function Layout() {
   const location = useLocation();
@@ -68,9 +89,12 @@ export default function App() {
       <CssBaseline />
       <AuthProvider>
         <Routes>
+          {/* 公開ページ */}
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
-          <Route element={<Layout />}>
+
+          {/* 認証が必要なページ */}
+          <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route path="/home" element={<Home />} />
             <Route path="/map" element={<MapSystem />} />
             <Route path="/buildings" element={<Buildings />} />
