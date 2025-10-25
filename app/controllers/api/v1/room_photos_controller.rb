@@ -25,6 +25,9 @@ class Api::V1::RoomPhotosController < ApplicationController
   def create
     @room_photo = @room.room_photos.build(room_photo_params.except(:photo))
 
+    # デフォルトのphoto_typeを設定
+    @room_photo.photo_type ||= 'interior'
+
     # 自動的に最後の順序を設定
     if @room_photo.display_order.nil?
       max_order = @room.room_photos.maximum(:display_order) || 0

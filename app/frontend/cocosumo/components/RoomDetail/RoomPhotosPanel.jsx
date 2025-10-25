@@ -41,7 +41,7 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
   const fetchPhotos = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/v1/rooms/${roomId}/photos`, {
+      const response = await fetch(`/api/v1/rooms/${roomId}/room_photos`, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -71,9 +71,9 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
         }
 
         const formData = new FormData();
-        formData.append('photo', file);
+        formData.append('room_photo[photo]', file);
 
-        const response = await fetch(`/api/v1/rooms/${roomId}/photos`, {
+        const response = await fetch(`/api/v1/rooms/${roomId}/room_photos`, {
           method: 'POST',
           credentials: 'include',
           body: formData,
@@ -100,7 +100,7 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
     if (!confirm('この写真を削除してもよろしいですか？')) return;
 
     try {
-      const response = await fetch(`/api/v1/rooms/${roomId}/photos/${photoId}`, {
+      const response = await fetch(`/api/v1/rooms/${roomId}/room_photos/${photoId}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -267,7 +267,7 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
                   }
                 }}>
                   <img
-                    src={photo.thumbnail_url || photo.url || photo.image_url}
+                    src={photo.photo_url}
                     alt={`部屋写真 ${index + 1}`}
                     style={{
                       width: '100%',
@@ -426,7 +426,7 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
           {selectedPhoto && (
             <Box sx={{ textAlign: 'center', bgcolor: 'black' }}>
               <img
-                src={selectedPhoto.url || selectedPhoto.image_url}
+                src={selectedPhoto.photo_url}
                 alt="写真プレビュー"
                 style={{
                   maxWidth: '100%',

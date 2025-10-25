@@ -1,8 +1,12 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { Box, Paper, Typography } from "@mui/material";
 
 export default function MinimapDisplay({ vrTour, scenes, currentScene }) {
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [position, setPosition] = useState({ x: 16, y: 16 });
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   // MinimapEditorのキャンバスサイズ
   const EDITOR_WIDTH = 800;
@@ -71,6 +75,52 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene }) {
     });
   };
 
+  // ドラッグハンドラー
+  const handleMouseDown = (e) => {
+    // ヘッダー部分をクリックした場合のみドラッグ開始
+    if (e.target.closest('.minimap-header')) {
+      setIsDragging(true);
+      const container = containerRef.current;
+      const rect = container.getBoundingClientRect();
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+
+    const parentRect = containerRef.current.parentElement.getBoundingClientRect();
+    const containerRect = containerRef.current.getBoundingClientRect();
+
+    let newX = e.clientX - parentRect.left - dragOffset.x;
+    let newY = e.clientY - parentRect.top - dragOffset.y;
+
+    // 画面内に収まるように制限
+    newX = Math.max(0, Math.min(newX, parentRect.width - containerRect.width));
+    newY = Math.max(0, Math.min(newY, parentRect.height - containerRect.height));
+
+    setPosition({ x: newX, y: newY });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // グローバルなマウスイベントリスナー
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragOffset]);
+
   // ミニマップ画像がなく、かつシーンに位置情報がない場合は非表示
   const hasPositions = scenes.some(s => s.minimap_position);
   if (!vrTour?.minimap_image_url && !hasPositions) {
@@ -79,19 +129,34 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene }) {
 
   return (
     <Paper
+      ref={containerRef}
       sx={{
         position: 'absolute',
-        bottom: 16,
-        right: 16,
+        left: `${position.x}px`,
+        top: `${position.y}px`,
         width: 250,
         height: 200,
         overflow: 'hidden',
         borderRadius: 2,
-        boxShadow: 3
+        boxShadow: 3,
+        cursor: isDragging ? 'grabbing' : 'auto',
+        userSelect: 'none'
       }}
     >
       <Box sx={{ bgcolor: '#f5f5f5', height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ px: 1.5, py: 0.5, bgcolor: 'rgba(0, 0, 0, 0.7)' }}>
+        <Box
+          className="minimap-header"
+          onMouseDown={handleMouseDown}
+          sx={{
+            px: 1.5,
+            py: 0.5,
+            bgcolor: 'rgba(0, 0, 0, 0.7)',
+            cursor: 'grab',
+            '&:active': {
+              cursor: 'grabbing'
+            }
+          }}
+        >
           <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>
             ミニマップ
           </Typography>
