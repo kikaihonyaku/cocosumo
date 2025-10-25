@@ -20,6 +20,7 @@ import muiTheme from '../theme/muiTheme';
 import RoomInfoPanel from "../components/RoomDetail/RoomInfoPanel";
 import RoomPhotosPanel from "../components/RoomDetail/RoomPhotosPanel";
 import RoomVRTourPanel from "../components/RoomDetail/RoomVRTourPanel";
+import BuildingPhotosPanel from "../components/RoomDetail/BuildingPhotosPanel";
 
 export default function RoomDetail() {
   const { id } = useParams();
@@ -36,6 +37,7 @@ export default function RoomDetail() {
   const [isRoomInfoMaximized, setIsRoomInfoMaximized] = useState(false);
   const [isPhotosMaximized, setIsPhotosMaximized] = useState(false);
   const [isVRTourMaximized, setIsVRTourMaximized] = useState(false);
+  const [isBuildingPhotosMaximized, setIsBuildingPhotosMaximized] = useState(false);
 
   useEffect(() => {
     fetchRoom();
@@ -105,6 +107,10 @@ export default function RoomDetail() {
 
   const handleToggleVRTourMaximize = () => {
     setIsVRTourMaximized(!isVRTourMaximized);
+  };
+
+  const handleToggleBuildingPhotosMaximize = () => {
+    setIsBuildingPhotosMaximized(!isBuildingPhotosMaximized);
   };
 
   const handlePhotosUpdate = () => {
@@ -292,7 +298,7 @@ export default function RoomDetail() {
             />
           </Paper>
 
-          {/* 右カラム: 予約用 (今後の機能) */}
+          {/* 右カラム: 建物外観 */}
           <Paper elevation={3} sx={{
             borderRadius: 2,
             overflow: 'hidden',
@@ -301,15 +307,22 @@ export default function RoomDetail() {
             gridRow: isLgUp ? 'span 2' : 'auto',
             minHeight: isLgUp ? 800 : 500,
             maxHeight: isLgUp ? 'none' : 700,
+            ...(isBuildingPhotosMaximized && {
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 1300,
+              maxHeight: '100vh',
+              borderRadius: 0,
+            }),
           }}>
-            <Box sx={{ p: 3, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                予約機能
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                近日実装予定
-              </Typography>
-            </Box>
+            <BuildingPhotosPanel
+              buildingId={room.building_id}
+              isMaximized={isBuildingPhotosMaximized}
+              onToggleMaximize={handleToggleBuildingPhotosMaximize}
+            />
           </Paper>
         </Box>
       </Box>
