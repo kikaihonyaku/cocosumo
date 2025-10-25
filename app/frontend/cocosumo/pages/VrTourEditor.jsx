@@ -13,7 +13,9 @@ import {
   AppBar,
   Toolbar,
   IconButton,
-  Snackbar
+  Snackbar,
+  Tabs,
+  Tab
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -24,6 +26,7 @@ import SceneList from "../components/VRTour/SceneList";
 import PanoramaViewer from "../components/VRTour/PanoramaViewer";
 import HotspotEditor from "../components/VRTour/HotspotEditor";
 import VrTourPreview from "../components/VRTour/VrTourPreview";
+import MinimapEditor from "../components/VRTour/MinimapEditor";
 
 export default function VrTourEditor() {
   const { roomId, id } = useParams();
@@ -52,6 +55,7 @@ export default function VrTourEditor() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [currentTab, setCurrentTab] = useState(0);
 
   // 未保存変更の検出
   const hasUnsavedChanges =
@@ -204,6 +208,78 @@ export default function VrTourEditor() {
     setScenes(updatedScenes);
   };
 
+  const handleUploadMinimap = async (file) => {
+    if (!file) {
+      // 画像を削除
+      try {
+        const formData = new FormData();
+        formData.append('vr_tour[minimap_image]', '');
+
+        const response = await fetch(`/api/v1/rooms/${roomId}/vr_tours/${id}`, {
+          method: 'PATCH',
+          credentials: 'include',
+          body: formData,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setVrTour(data);
+          setOriginalVrTour(data);
+        }
+      } catch (err) {
+        console.error('ミニマップ画像削除エラー:', err);
+      }
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('vr_tour[minimap_image]', file);
+
+      const response = await fetch(`/api/v1/rooms/${roomId}/vr_tours/${id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setVrTour(data);
+        setOriginalVrTour(data);
+        setSnackbarMessage('ミニマップ画像をアップロードしました');
+        setSnackbarOpen(true);
+      } else {
+        alert('アップロードに失敗しました');
+      }
+    } catch (err) {
+      console.error('アップロードエラー:', err);
+      alert('ネットワークエラーが発生しました');
+    }
+  };
+
+  const handleUpdateScenePosition = async (sceneId, updates) => {
+    try {
+      const response = await fetch(`/api/v1/vr_tours/${id}/vr_scenes/${sceneId}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          vr_scene: updates
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // シーンリストを更新
+        setScenes(scenes.map(s => s.id === data.id ? data : s));
+      }
+    } catch (err) {
+      console.error('シーン更新エラー:', err);
+    }
+  };
+
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
@@ -297,20 +373,27 @@ export default function VrTourEditor() {
         </Paper>
 
         {!isNew && (
-          <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 250px)' }}>
-            {/* 左：シーン一覧 */}
-            <Paper sx={{ width: 280, flexShrink: 0 }}>
-              <SceneList
-                vrTourId={id}
-                roomId={roomId}
-                onSceneSelect={handleSceneSelect}
-                onSceneDelete={handleSceneDelete}
-                onScenesChange={handleScenesChange}
-              />
-            </Paper>
+          <>
+            <Tabs value={currentTab} onChange={(e, v) => setCurrentTab(v)} sx={{ mb: 2 }}>
+              <Tab label="シーン編集" />
+              <Tab label="ミニマップ" />
+            </Tabs>
 
-            {/* 中央：シーンプレビュー */}
-            <Paper sx={{ flex: 1, p: 3, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+            {currentTab === 0 && (
+              <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 300px)' }}>
+                {/* 左：シーン一覧 */}
+                <Paper sx={{ width: 280, flexShrink: 0 }}>
+                  <SceneList
+                    vrTourId={id}
+                    roomId={roomId}
+                    onSceneSelect={handleSceneSelect}
+                    onSceneDelete={handleSceneDelete}
+                    onScenesChange={handleScenesChange}
+                  />
+                </Paper>
+
+                {/* 中央：シーンプレビュー */}
+                <Paper sx={{ flex: 1, p: 3, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
               {selectedScene ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                   <Box sx={{ mb: 2 }}>
@@ -405,8 +488,21 @@ export default function VrTourEditor() {
                   </Typography>
                 </Box>
               )}
-            </Paper>
-          </Box>
+                </Paper>
+              </Box>
+            )}
+
+            {currentTab === 1 && (
+              <Paper sx={{ height: 'calc(100vh - 300px)', overflow: 'hidden' }}>
+                <MinimapEditor
+                  vrTour={vrTour}
+                  scenes={scenes}
+                  onUpdateScene={handleUpdateScenePosition}
+                  onUploadMinimap={handleUploadMinimap}
+                />
+              </Paper>
+            )}
+          </>
         )}
 
         {isNew && (

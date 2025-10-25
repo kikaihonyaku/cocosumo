@@ -19,6 +19,7 @@ import {
   Menu as MenuIcon
 } from "@mui/icons-material";
 import PanoramaViewer from "./PanoramaViewer";
+import MinimapDisplay from "./MinimapDisplay";
 
 export default function VrTourPreview({ open, onClose, vrTour, scenes }) {
   const [currentScene, setCurrentScene] = useState(scenes.length > 0 ? scenes[0] : null);
@@ -147,6 +148,13 @@ export default function VrTourPreview({ open, onClose, vrTour, scenes }) {
             <Typography variant="body2">{currentScene.title}</Typography>
           </Box>
         )}
+
+        {/* ミニマップ */}
+        <MinimapDisplay
+          vrTour={vrTour}
+          scenes={scenes}
+          currentScene={currentScene}
+        />
       </Box>
 
       {/* シーン選択ドロワー */}

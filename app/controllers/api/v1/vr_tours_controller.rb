@@ -65,7 +65,7 @@ class Api::V1::VrToursController < ApplicationController
   # PATCH/PUT /api/v1/rooms/:room_id/vr_tours/:id
   def update
     if @vr_tour.update(vr_tour_params)
-      render json: @vr_tour
+      render json: @vr_tour.as_json(methods: [:minimap_image_url])
     else
       render json: { errors: @vr_tour.errors.full_messages }, status: :unprocessable_entity
     end
