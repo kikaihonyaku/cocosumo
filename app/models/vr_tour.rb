@@ -2,6 +2,7 @@ class VrTour < ApplicationRecord
   # Associations
   belongs_to :room
   has_many :vr_scenes, dependent: :destroy
+  has_one_attached :minimap_image
 
   # Validations
   validates :title, presence: true
@@ -28,6 +29,17 @@ class VrTour < ApplicationRecord
       vr_scenes.find_by(id: config['initial_scene_id'])
     else
       vr_scenes.first
+    end
+  end
+
+  # Get minimap image URL
+  def minimap_image_url
+    return nil unless minimap_image.attached?
+
+    if Rails.env.production?
+      minimap_image.url
+    else
+      Rails.application.routes.url_helpers.rails_blob_path(minimap_image, only_path: true)
     end
   end
 end

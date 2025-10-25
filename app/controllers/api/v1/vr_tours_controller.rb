@@ -25,7 +25,7 @@ class Api::V1::VrToursController < ApplicationController
           }
         }
       }
-    }, methods: [:initial_scene])
+    }, methods: [:initial_scene, :minimap_image_url])
   end
 
   # GET /vr/:id (公開用、認証不要)
@@ -104,7 +104,7 @@ class Api::V1::VrToursController < ApplicationController
   end
 
   def vr_tour_params
-    params.require(:vr_tour).permit(:title, :description, :status, config: {})
+    params.require(:vr_tour).permit(:title, :description, :status, :minimap_image, config: {})
   end
 
   def require_login
