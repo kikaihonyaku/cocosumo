@@ -420,14 +420,15 @@ export default function PropertyDetail() {
           <Box sx={{
             flex: 1,
             overflow: 'auto',
-            p: 1.5,
+            px: 0.5,
+            py: 1,
             bgcolor: 'grey.50'
           }}>
             <Box sx={{
               display: 'grid',
               gridTemplateColumns: isLgUp ? '280px 1fr 340px' : '1fr',
               gridTemplateRows: isLgUp ? 'auto auto' : 'auto',
-              gap: 1.5,
+              gap: 1,
               height: isLgUp ? 'fit-content' : 'auto',
             }}>
               {/* 左カラム: 建物（土地）カード */}
