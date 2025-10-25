@@ -10,7 +10,7 @@ export default function Landing() {
       {/* ヘッダー */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <img src="/cocosmo-logo.png" alt="CoCoスモ" className="h-8" />
+          <img src="/cocosumo-logo.png" alt="CoCoスモ" className="h-8" />
           <button
             onClick={handleOpenHome}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
@@ -22,11 +22,9 @@ export default function Landing() {
 
       {/* ヒーローセクション */}
       <section className="container mx-auto px-4 py-20 text-center">
-        <h1 className="text-5xl font-bold text-gray-900 mb-6">
-          不動産業務を革新する
-          <br />
-          <span className="text-blue-600">CoCoスモ</span>
-        </h1>
+        <div className="flex justify-center mb-8">
+          <img src="/cocosumo_logo_top.png" alt="CoCoスモ" className="h-10" />
+        </div>
         <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
           AI画像生成、VRツアー作成、物件管理を一つのプラットフォームで。
           <br />

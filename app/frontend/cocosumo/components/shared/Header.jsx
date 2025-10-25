@@ -80,9 +80,9 @@ export default function Header() {
               >
                 <MenuIcon />
               </IconButton>
-              <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
-                <Link to="/" style={{ textDecoration: "none", fontWeight: 700, color: 'white' }}>
-                  <img src="/cocosmo-logo.png" alt="CoCoスモ" style={{ height: '28px', width: 'auto', marginTop: '7px' }} />
+              <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <Link to="/" style={{ textDecoration: "none", fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center' }}>
+                  <img src="/cocosumo-logo_blue.png" alt="CoCoスモ" style={{ height: '28px', width: 'auto' }} />
                 </Link>
               </Box>
               <Box sx={{ width: 48 }} /> {/* 右側のバランス調整用 */}
@@ -90,8 +90,8 @@ export default function Header() {
           ) : (
             // デスクトップ表示
             <>
-              <Link to="/" style={{ textDecoration: "none", fontWeight: 700, marginRight: "1.5rem", color: 'white' }}>
-                <img src="/cocosmo-logo.png" alt="CoCoスモ" style={{ height: '28px', width: 'auto', marginTop: '7px' }} />
+              <Link to="/" style={{ textDecoration: "none", fontWeight: 700, marginRight: "1.5rem", color: 'white', display: 'flex', alignItems: 'center' }}>
+                <img src="/cocosumo-logo_blue.png" alt="CoCoスモ" style={{ height: '28px', width: 'auto' }} />
               </Link>
             </>
           )}

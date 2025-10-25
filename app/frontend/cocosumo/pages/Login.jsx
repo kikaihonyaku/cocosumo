@@ -47,11 +47,8 @@ export default function Login() {
         }}
       >
         <Paper elevation={3} sx={{ p: 4, width: "100%" }}>
-          <Box sx={{ textAlign: "center", mb: 3 }}>
-            <img src="/cocosmo-logo.png" alt="CoCoスモ" style={{ height: "40px", marginBottom: "16px" }} />
-            <Typography component="h1" variant="h5">
-              ログイン
-            </Typography>
+          <Box sx={{ textAlign: "center", mb: 2, display: "flex", justifyContent: "center" }}>
+            <img src="/cocosumo-logo.png" alt="CoCoスモ" style={{ height: "60px" }} />
           </Box>
 
           {error && (
