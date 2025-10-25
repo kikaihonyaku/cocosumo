@@ -45,7 +45,7 @@ class Api::V1::VrToursController < ApplicationController
             }
           }
         }
-      })
+      }, methods: [:initial_scene, :minimap_image_url])
     else
       render json: { error: 'このVRツアーは公開されていません' }, status: :not_found
     end

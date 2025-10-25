@@ -56,14 +56,17 @@ Rails.application.routes.draw do
             post :reorder
           end
         end
+
+        # 公開VRツアー表示用（認証不要）
+        member do
+          get :public, to: 'vr_tours#show_public'
+        end
       end
     end
   end
 
-  # 公開VRツアー表示用（認証不要）
-  get '/vr/:id', to: 'api/v1/vr_tours#show_public', as: :public_vr_tour
-
   # React Router用のキャッチオールルート
+  # /vr/:id は React Router で処理されるため、ここでは定義しない
   get '*path', to: 'pages#index', constraints: ->(request) do
     !request.xhr? && request.format.html?
   end

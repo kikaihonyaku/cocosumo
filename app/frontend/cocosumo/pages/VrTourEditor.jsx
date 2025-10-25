@@ -15,12 +15,21 @@ import {
   IconButton,
   Snackbar,
   Tabs,
-  Tab
+  Tab,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Chip
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
   Save as SaveIcon,
-  Visibility as VisibilityIcon
+  Visibility as VisibilityIcon,
+  Public as PublicIcon,
+  VisibilityOff as UnpublishIcon,
+  ContentCopy as CopyIcon
 } from "@mui/icons-material";
 import SceneList from "../components/VRTour/SceneList";
 import PanoramaViewer from "../components/VRTour/PanoramaViewer";
@@ -56,6 +65,8 @@ export default function VrTourEditor() {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState(0);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
   // 未保存変更の検出
   const hasUnsavedChanges =
@@ -280,6 +291,88 @@ export default function VrTourEditor() {
     }
   };
 
+  const handlePublish = async () => {
+    // バリデーション
+    if (!vrTour.title) {
+      setError('タイトルを設定してください');
+      return;
+    }
+    if (scenes.length === 0) {
+      setError('少なくとも1つのシーンを追加してください');
+      return;
+    }
+
+    setPublishDialogOpen(true);
+  };
+
+  const confirmPublish = async () => {
+    setPublishing(true);
+    try {
+      const response = await fetch(`/api/v1/rooms/${roomId}/vr_tours/${id}/publish`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setVrTour(data.vr_tour);
+        setOriginalVrTour(data.vr_tour);
+        setPublishDialogOpen(false);
+        setSnackbarMessage('VRツアーを公開しました');
+        setSnackbarOpen(true);
+      } else {
+        const data = await response.json();
+        setError(data.error || '公開に失敗しました');
+      }
+    } catch (err) {
+      console.error('公開エラー:', err);
+      setError('ネットワークエラーが発生しました');
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleUnpublish = async () => {
+    if (!confirm('VRツアーを非公開にしますか？')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/v1/rooms/${roomId}/vr_tours/${id}/unpublish`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setVrTour(data.vr_tour);
+        setOriginalVrTour(data.vr_tour);
+        setSnackbarMessage('VRツアーを非公開にしました');
+        setSnackbarOpen(true);
+      } else {
+        const data = await response.json();
+        setError(data.error || '非公開化に失敗しました');
+      }
+    } catch (err) {
+      console.error('非公開化エラー:', err);
+      setError('ネットワークエラーが発生しました');
+    }
+  };
+
+  const copyPublicUrl = () => {
+    const url = `${window.location.origin}/vr/${id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setSnackbarMessage('公開URLをコピーしました');
+      setSnackbarOpen(true);
+    });
+  };
+
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
@@ -303,6 +396,18 @@ export default function VrTourEditor() {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             {isNew ? '新規VRツアー作成' : 'VRツアー編集'}
           </Typography>
+
+          {/* ステータス表示 */}
+          {!isNew && (
+            <Chip
+              label={vrTour.status === 'published' ? '公開中' : '下書き'}
+              color={vrTour.status === 'published' ? 'success' : 'default'}
+              icon={vrTour.status === 'published' ? <PublicIcon /> : <UnpublishIcon />}
+              sx={{ mr: 2 }}
+            />
+          )}
+
+          {/* プレビューボタン */}
           {!isNew && scenes.length > 0 && (
             <Button
               variant="outlined"
@@ -312,6 +417,41 @@ export default function VrTourEditor() {
             >
               プレビュー
             </Button>
+          )}
+
+          {/* 公開/非公開ボタン */}
+          {!isNew && vrTour.status === 'draft' && (
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<PublicIcon />}
+              onClick={handlePublish}
+              sx={{ mr: 2 }}
+            >
+              公開する
+            </Button>
+          )}
+
+          {!isNew && vrTour.status === 'published' && (
+            <>
+              <Button
+                variant="outlined"
+                startIcon={<CopyIcon />}
+                onClick={copyPublicUrl}
+                sx={{ mr: 1 }}
+              >
+                URLコピー
+              </Button>
+              <Button
+                variant="outlined"
+                color="warning"
+                startIcon={<UnpublishIcon />}
+                onClick={handleUnpublish}
+                sx={{ mr: 2 }}
+              >
+                非公開にする
+              </Button>
+            </>
           )}
         </Toolbar>
       </AppBar>
@@ -525,6 +665,44 @@ export default function VrTourEditor() {
           scenes={scenes}
         />
       )}
+
+      {/* 公開確認ダイアログ */}
+      <Dialog
+        open={publishDialogOpen}
+        onClose={() => !publishing && setPublishDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>VRツアーを公開しますか？</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            このVRツアーを公開すると、以下のURLで誰でもアクセスできるようになります。
+          </DialogContentText>
+          <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
+            <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
+              {`${window.location.origin}/vr/${id}`}
+            </Typography>
+          </Box>
+          <DialogContentText sx={{ mt: 2 }}>
+            ツアータイトル: <strong>{vrTour.title}</strong><br />
+            シーン数: <strong>{scenes.length}</strong>
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPublishDialogOpen(false)} disabled={publishing}>
+            キャンセル
+          </Button>
+          <Button
+            onClick={confirmPublish}
+            variant="contained"
+            color="success"
+            disabled={publishing}
+            startIcon={publishing ? <CircularProgress size={20} /> : <PublicIcon />}
+          >
+            {publishing ? '公開中...' : '公開する'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

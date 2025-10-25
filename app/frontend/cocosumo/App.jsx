@@ -16,6 +16,7 @@ import RoomDetail from "./pages/RoomDetail";
 import RoomForm from "./pages/RoomForm";
 import VrTourEditor from "./pages/VrTourEditor";
 import VrTourViewer from "./pages/VrTourViewer";
+import PublicVrTour from "./pages/PublicVrTour";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -92,6 +93,7 @@ export default function App() {
           {/* 公開ページ */}
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/vr/:id" element={<PublicVrTour />} />
 
           {/* 認証が必要なページ */}
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
