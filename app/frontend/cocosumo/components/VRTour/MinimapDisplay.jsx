@@ -9,6 +9,7 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle
   const [position, setPosition] = useState({ x: 16, y: 16 });
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [mouseDownPos, setMouseDownPos] = useState(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   // MinimapEditorのキャンバスサイズ
   const EDITOR_WIDTH = 800;
@@ -21,16 +22,20 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle
   // 画像をロードしてキャッシュ
   useEffect(() => {
     if (vrTour?.minimap_image_url) {
+      setImageLoaded(false);
       const img = new Image();
       img.onload = () => {
         imageRef.current = img;
+        setImageLoaded(true); // 画像読み込み完了時にキャンバスの再描画をトリガー
       };
       img.onerror = () => {
         imageRef.current = null;
+        setImageLoaded(false);
       };
       img.src = vrTour.minimap_image_url;
     } else {
       imageRef.current = null;
+      setImageLoaded(false);
     }
   }, [vrTour?.minimap_image_url]);
 
@@ -73,7 +78,7 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle
       window.removeEventListener('scroll', handleRedraw, true);
       window.removeEventListener('resize', handleRedraw);
     };
-  }, [scenes, currentScene, viewAngle]);
+  }, [scenes, currentScene, viewAngle, imageLoaded]);
 
   // シーンマーカーを描画
   const drawScenes = (ctx) => {

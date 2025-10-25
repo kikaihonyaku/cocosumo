@@ -31,7 +31,10 @@ export default function PanoramaViewer({
     // 画像が読み込めるかテスト
     const img = new Image();
     img.onload = () => {
-      initializeViewer();
+      // 画像読み込み後、コンテナが存在するか再確認
+      if (containerRef.current) {
+        initializeViewer();
+      }
     };
     img.onerror = () => {
       setError('360度画像の読み込みに失敗しました。画像URLが正しいか確認してください。');
@@ -41,6 +44,13 @@ export default function PanoramaViewer({
 
     const initializeViewer = () => {
       try {
+        // コンテナの存在を再確認
+        if (!containerRef.current) {
+          console.warn('Container element not found during viewer initialization');
+          setLoading(false);
+          return;
+        }
+
         // Viewerインスタンスを作成
         const viewer = new Viewer({
           container: containerRef.current,
