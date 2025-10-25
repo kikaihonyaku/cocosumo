@@ -12,7 +12,8 @@ export default function PanoramaViewer({
   onMarkerClick,
   onViewChange,
   editable = false,
-  onViewerReady
+  onViewerReady,
+  fullscreenContainerId = null
 }) {
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
@@ -49,7 +50,41 @@ export default function PanoramaViewer({
           navbar: [
             'zoom',
             'move',
-            'fullscreen',
+            {
+              id: 'custom-fullscreen',
+              title: 'Fullscreen',
+              className: 'psv-button psv-button--hover-scale psv-fullscreen-button',
+              content: '⛶',
+              onClick: (viewer) => {
+                const fullscreenElement = fullscreenContainerId
+                  ? document.getElementById(fullscreenContainerId)
+                  : containerRef.current;
+
+                if (!document.fullscreenElement) {
+                  // フルスクリーンに入る
+                  if (fullscreenElement.requestFullscreen) {
+                    fullscreenElement.requestFullscreen();
+                  } else if (fullscreenElement.webkitRequestFullscreen) {
+                    fullscreenElement.webkitRequestFullscreen();
+                  } else if (fullscreenElement.mozRequestFullScreen) {
+                    fullscreenElement.mozRequestFullScreen();
+                  } else if (fullscreenElement.msRequestFullscreen) {
+                    fullscreenElement.msRequestFullscreen();
+                  }
+                } else {
+                  // フルスクリーンから出る
+                  if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                  } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                  } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                  } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                  }
+                }
+              }
+            }
           ],
           plugins: [
             [MarkersPlugin, {

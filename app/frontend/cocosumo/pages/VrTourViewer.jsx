@@ -20,6 +20,7 @@ import {
   Menu as MenuIcon
 } from "@mui/icons-material";
 import PanoramaViewer from "../components/VRTour/PanoramaViewer";
+import MinimapDisplay from "../components/VRTour/MinimapDisplay";
 
 export default function VrTourViewer() {
   const { roomId, id } = useParams();
@@ -31,6 +32,7 @@ export default function VrTourViewer() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [currentViewAngle, setCurrentViewAngle] = useState(0);
 
   useEffect(() => {
     fetchVrTour();
@@ -101,6 +103,10 @@ export default function VrTourViewer() {
     setDrawerOpen(false);
   };
 
+  const handleViewChange = (view) => {
+    setCurrentViewAngle(view.yaw);
+  };
+
   if (loading) {
     return (
       <Box sx={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -163,16 +169,45 @@ export default function VrTourViewer() {
       </AppBar>
 
       {/* VRビューア */}
-      <Box sx={{ flex: 1, position: 'relative' }}>
+      <Box sx={{ flex: 1, position: 'relative' }} id="vr-viewer-container">
         {currentScene && currentScene.photo_url ? (
-          <PanoramaViewer
-            key={currentScene.id}
-            imageUrl={currentScene.photo_url}
-            initialView={currentScene.initial_view || { yaw: 0, pitch: 0 }}
-            markers={currentScene.hotspots || []}
-            editable={false}
-            onMarkerClick={handleMarkerClick}
-          />
+          <>
+            <PanoramaViewer
+              key={currentScene.id}
+              imageUrl={currentScene.photo_url}
+              initialView={currentScene.initial_view || { yaw: 0, pitch: 0 }}
+              markers={currentScene.hotspots || []}
+              editable={false}
+              onMarkerClick={handleMarkerClick}
+              onViewChange={handleViewChange}
+              fullscreenContainerId="vr-viewer-container"
+            />
+
+            {/* 現在のシーン情報 */}
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 16,
+                left: 16,
+                bgcolor: 'rgba(0, 0, 0, 0.7)',
+                color: 'white',
+                px: 2,
+                py: 1,
+                borderRadius: 1,
+                zIndex: 10
+              }}
+            >
+              <Typography variant="body2">{currentScene.title}</Typography>
+            </Box>
+
+            {/* ミニマップ */}
+            <MinimapDisplay
+              vrTour={vrTour}
+              scenes={scenes}
+              currentScene={currentScene}
+              viewAngle={currentViewAngle}
+            />
+          </>
         ) : scenes.length > 0 ? (
           <Box sx={{
             position: 'absolute',
@@ -199,24 +234,6 @@ export default function VrTourViewer() {
               このVRツアーにはまだシーンが登録されていません。<br />
               編集画面からシーンを追加してください。
             </Alert>
-          </Box>
-        )}
-
-        {/* 現在のシーン情報 */}
-        {currentScene && (
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: 16,
-              left: 16,
-              bgcolor: 'rgba(0, 0, 0, 0.7)',
-              color: 'white',
-              px: 2,
-              py: 1,
-              borderRadius: 1
-            }}
-          >
-            <Typography variant="body2">{currentScene.title}</Typography>
           </Box>
         )}
       </Box>

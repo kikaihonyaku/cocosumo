@@ -209,10 +209,22 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle
         borderRadius: 2,
         boxShadow: 3,
         cursor: isDragging ? 'grabbing' : 'auto',
-        userSelect: 'none'
+        userSelect: 'none',
+        zIndex: 20,
+        willChange: isDragging ? 'transform' : 'auto',
+        transition: isDragging ? 'none' : 'box-shadow 0.3s ease',
+        transform: 'translateZ(0)',
+        backfaceVisibility: 'hidden',
+        WebkitBackfaceVisibility: 'hidden'
       }}
     >
-      <Box sx={{ bgcolor: '#f5f5f5', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{
+        bgcolor: '#fff',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        isolation: 'isolate'
+      }}>
         <Box
           className="minimap-header"
           onMouseDown={handleMouseDown}
