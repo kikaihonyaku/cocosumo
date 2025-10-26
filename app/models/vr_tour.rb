@@ -47,4 +47,15 @@ class VrTour < ApplicationRecord
   def scenes_count
     vr_scenes.count
   end
+
+  # Get first scene photo URL (prioritize scene photo over minimap)
+  def thumbnail_url
+    # シーンの写真を優先
+    first_scene = vr_scenes.first
+    if first_scene&.photo_url
+      first_scene.photo_url
+    else
+      minimap_image_url
+    end
+  end
 end

@@ -1,41 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box,
+  Container,
   Typography,
   Button,
+  Card,
+  CardContent,
+  CardActions,
+  CardMedia,
+  Grid,
+  Box,
   Chip,
-  IconButton,
-  Snackbar,
+  CircularProgress,
   Alert,
-  Container,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Checkbox,
-  CircularProgress
+  IconButton,
+  Menu,
+  MenuItem,
+  TextField,
+  InputAdornment
 } from '@mui/material';
 import {
-  Edit as EditIcon,
   Visibility as VisibilityIcon,
-  ContentCopy as CopyIcon,
+  Edit as EditIcon,
+  MoreVert as MoreVertIcon,
+  ViewInAr as ViewInArIcon,
   Public as PublicIcon,
-  VisibilityOff as UnpublishIcon
+  ContentCopy as CopyIcon,
+  Search as SearchIcon,
+  ImageNotSupported as ImageNotSupportedIcon
 } from '@mui/icons-material';
 
 export default function VrTours() {
   const navigate = useNavigate();
   const [vrTours, setVrTours] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [error, setError] = useState('');
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedTour, setSelectedTour] = useState(null);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchVrTours();
@@ -53,274 +56,297 @@ export default function VrTours() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('VRツアーデータ:', data);
         setVrTours(data);
+        setError('');
       } else {
-        console.error('APIエラー:', response.status, response.statusText);
-        const errorData = await response.json().catch(() => ({}));
-        console.error('エラー詳細:', errorData);
-        showSnackbar(`VRツアーの取得に失敗しました (${response.status})`, 'error');
+        setError('VRツアーの取得に失敗しました');
       }
     } catch (err) {
       console.error('取得エラー:', err);
-      showSnackbar('ネットワークエラーが発生しました', 'error');
+      setError('ネットワークエラーが発生しました');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBulkAction = async (action) => {
-    if (selectedIds.length === 0) {
-      showSnackbar('VRツアーを選択してください', 'warning');
-      return;
-    }
+  const handleMenuOpen = (event, tour) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedTour(tour);
+  };
 
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedTour(null);
+  };
+
+  const handlePublish = async (tourId) => {
     try {
-      const response = await fetch('/api/v1/vr_tours/bulk_action', {
+      const response = await fetch(`/api/v1/vr_tours/bulk_action`, {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          vr_tour_ids: selectedIds,
-          action: action,
+          vr_tour_ids: [tourId],
+          action: 'publish',
         }),
       });
 
       if (response.ok) {
-        const data = await response.json();
-        showSnackbar(data.message, 'success');
+        setSnackbarMessage('VRツアーを公開しました');
         fetchVrTours();
-        setSelectedIds([]);
       } else {
-        const data = await response.json();
-        showSnackbar(data.error || '操作に失敗しました', 'error');
+        setError('公開に失敗しました');
       }
     } catch (err) {
-      console.error('操作エラー:', err);
-      showSnackbar('ネットワークエラーが発生しました', 'error');
+      console.error('公開エラー:', err);
+      setError('ネットワークエラーが発生しました');
     }
+    handleMenuClose();
   };
 
-  const copyPublicUrl = (id) => {
-    const url = `${window.location.origin}/vr/${id}`;
+  const handleUnpublish = async (tourId) => {
+    try {
+      const response = await fetch(`/api/v1/vr_tours/bulk_action`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          vr_tour_ids: [tourId],
+          action: 'unpublish',
+        }),
+      });
+
+      if (response.ok) {
+        setSnackbarMessage('VRツアーを非公開にしました');
+        fetchVrTours();
+      } else {
+        setError('非公開化に失敗しました');
+      }
+    } catch (err) {
+      console.error('非公開化エラー:', err);
+      setError('ネットワークエラーが発生しました');
+    }
+    handleMenuClose();
+  };
+
+  const copyPublicUrl = (tourId) => {
+    const url = `${window.location.origin}/vr/${tourId}`;
     navigator.clipboard.writeText(url).then(() => {
-      showSnackbar('公開URLをコピーしました', 'success');
+      setSnackbarMessage('公開URLをコピーしました');
     });
+    handleMenuClose();
   };
 
-  const showSnackbar = (message, severity = 'success') => {
-    setSnackbar({ open: true, message, severity });
-  };
+  // フィルタリング処理
+  const filteredVrTours = vrTours.filter((tour) => {
+    if (!searchQuery) return true;
 
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
+    const query = searchQuery.toLowerCase();
+    const buildingName = tour.room?.building?.name?.toLowerCase() || '';
+    const roomNumber = tour.room?.room_number?.toLowerCase() || '';
+    const tourTitle = tour.title?.toLowerCase() || '';
 
-  const handleSelectAll = (event) => {
-    if (event.target.checked) {
-      setSelectedIds(vrTours.map((tour) => tour.id));
-    } else {
-      setSelectedIds([]);
-    }
-  };
+    return buildingName.includes(query) ||
+           roomNumber.includes(query) ||
+           tourTitle.includes(query);
+  });
 
-  const handleSelectOne = (id) => {
-    const selectedIndex = selectedIds.indexOf(id);
-    let newSelected = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selectedIds, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selectedIds.slice(1));
-    } else if (selectedIndex === selectedIds.length - 1) {
-      newSelected = newSelected.concat(selectedIds.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selectedIds.slice(0, selectedIndex),
-        selectedIds.slice(selectedIndex + 1)
-      );
-    }
-
-    setSelectedIds(newSelected);
-  };
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const isSelected = (id) => selectedIds.indexOf(id) !== -1;
-
-  const paginatedTours = vrTours.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ py: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h4" component="h1">
-            VRツアー管理
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="contained"
-              color="success"
-              startIcon={<PublicIcon />}
-              onClick={() => handleBulkAction('publish')}
-              disabled={selectedIds.length === 0}
-            >
-              一括公開
-            </Button>
-            <Button
-              variant="outlined"
-              color="warning"
-              startIcon={<UnpublishIcon />}
-              onClick={() => handleBulkAction('unpublish')}
-              disabled={selectedIds.length === 0}
-            >
-              一括非公開
-            </Button>
-          </Box>
-        </Box>
-
-        <Paper>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      indeterminate={selectedIds.length > 0 && selectedIds.length < vrTours.length}
-                      checked={vrTours.length > 0 && selectedIds.length === vrTours.length}
-                      onChange={handleSelectAll}
-                    />
-                  </TableCell>
-                  <TableCell>タイトル</TableCell>
-                  <TableCell>建物名</TableCell>
-                  <TableCell>部屋番号</TableCell>
-                  <TableCell>ステータス</TableCell>
-                  <TableCell align="right">シーン数</TableCell>
-                  <TableCell>最終更新</TableCell>
-                  <TableCell>アクション</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                      <CircularProgress />
-                    </TableCell>
-                  </TableRow>
-                ) : paginatedTours.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                      <Typography color="text.secondary">
-                        VRツアーがありません
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginatedTours.map((tour) => {
-                    const isItemSelected = isSelected(tour.id);
-                    return (
-                      <TableRow
-                        key={tour.id}
-                        hover
-                        selected={isItemSelected}
-                        sx={{ cursor: 'pointer' }}
-                      >
-                        <TableCell padding="checkbox">
-                          <Checkbox
-                            checked={isItemSelected}
-                            onChange={() => handleSelectOne(tour.id)}
-                          />
-                        </TableCell>
-                        <TableCell>{tour.title}</TableCell>
-                        <TableCell>{tour.room?.building?.name || '-'}</TableCell>
-                        <TableCell>{tour.room?.room_number || '-'}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={tour.status === 'published' ? '公開中' : '下書き'}
-                            color={tour.status === 'published' ? 'success' : 'default'}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell align="right">{tour.scenes_count}</TableCell>
-                        <TableCell>
-                          {tour.updated_at
-                            ? new Date(tour.updated_at).toLocaleString('ja-JP')
-                            : '-'}
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', gap: 0.5 }}>
-                            <IconButton
-                              size="small"
-                              onClick={() => navigate(`/room/${tour.room?.id}/vr-tour/${tour.id}/edit`)}
-                              title="編集"
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => navigate(`/room/${tour.room?.id}/vr-tour/${tour.id}/viewer`)}
-                              title="プレビュー"
-                            >
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
-                            {tour.status === 'published' && (
-                              <IconButton
-                                size="small"
-                                onClick={() => copyPublicUrl(tour.id)}
-                                title="公開URLコピー"
-                              >
-                                <CopyIcon fontSize="small" />
-                              </IconButton>
-                            )}
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            component="div"
-            count={vrTours.length}
-            page={page}
-            onPageChange={handleChangePage}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            rowsPerPageOptions={[10, 25, 50, 100]}
-            labelRowsPerPage="1ページあたりの行数:"
-            labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}`}
-          />
-        </Paper>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h3" component="h1">
+          VRツアー管理
+        </Typography>
       </Box>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
+      {/* 検索フィールド */}
+      <Box sx={{ mb: 3 }}>
+        <TextField
+          fullWidth
+          placeholder="物件名、部屋番号、ツアー名で検索..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
         </Alert>
-      </Snackbar>
+      )}
+
+      {snackbarMessage && (
+        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSnackbarMessage('')}>
+          {snackbarMessage}
+        </Alert>
+      )}
+
+      {vrTours.length === 0 ? (
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <ViewInArIcon sx={{ fontSize: 80, color: 'text.disabled', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            VRツアーが登録されていません
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            部屋詳細ページからVRツアーを登録してください
+          </Typography>
+        </Box>
+      ) : filteredVrTours.length === 0 ? (
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <SearchIcon sx={{ fontSize: 80, color: 'text.disabled', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            検索条件に一致するVRツアーが見つかりません
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            検索条件を変更してください
+          </Typography>
+        </Box>
+      ) : (
+        <Grid container spacing={3}>
+          {filteredVrTours.map((tour) => (
+            <Grid item xs={12} md={6} lg={4} key={tour.id}>
+              <Card sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'row',
+                minHeight: 180
+              }}>
+                {/* サムネイル画像 - 左側に小さく表示 */}
+                <Box sx={{
+                  width: 120,
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: 'grey.100'
+                }}>
+                  {tour.thumbnail_url ? (
+                    <CardMedia
+                      component="img"
+                      image={tour.thumbnail_url}
+                      alt={tour.title}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  ) : (
+                    <Box sx={{
+                      textAlign: 'center',
+                      color: 'text.disabled',
+                      p: 2
+                    }}>
+                      <ImageNotSupportedIcon sx={{ fontSize: 40, mb: 1 }} />
+                      <Typography variant="caption" display="block">
+                        No Image
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+
+                {/* コンテンツエリア */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minWidth: 0 }}>
+                  <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                      <Typography variant="h6" component="h2" sx={{ flexGrow: 1, fontSize: '1rem', fontWeight: 600 }} noWrap>
+                        {tour.title}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleMenuOpen(e, tour)}
+                        sx={{ ml: 1 }}
+                      >
+                        <MoreVertIcon />
+                      </IconButton>
+                    </Box>
+
+                    <Typography variant="body2" color="text.secondary" gutterBottom noWrap>
+                      {tour.room?.building?.name} - {tour.room?.room_number}
+                    </Typography>
+
+                    <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                      <Chip
+                        label={tour.status === 'published' ? '公開中' : '下書き'}
+                        size="small"
+                        color={tour.status === 'published' ? 'success' : 'default'}
+                      />
+                      <Chip
+                        label={`${tour.scenes_count || 0}シーン`}
+                        size="small"
+                        variant="outlined"
+                      />
+                    </Box>
+
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                      {tour.updated_at ? new Date(tour.updated_at).toLocaleDateString('ja-JP') : '-'}
+                    </Typography>
+                  </CardContent>
+                  <CardActions sx={{ pt: 0, pb: 1, px: 2 }}>
+                    <Button
+                      size="small"
+                      startIcon={<VisibilityIcon />}
+                      onClick={() => navigate(`/room/${tour.room?.id}/vr-tour/${tour.id}/viewer`)}
+                    >
+                      表示
+                    </Button>
+                    <Button
+                      size="small"
+                      startIcon={<EditIcon />}
+                      onClick={() => window.open(`/room/${tour.room?.id}/vr-tour/${tour.id}/edit`, '_blank')}
+                    >
+                      編集
+                    </Button>
+                  </CardActions>
+                </Box>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        {selectedTour?.status === 'draft' ? (
+          <MenuItem onClick={() => handlePublish(selectedTour.id)}>
+            <PublicIcon sx={{ mr: 1, fontSize: 20 }} />
+            公開する
+          </MenuItem>
+        ) : (
+          <MenuItem onClick={() => handleUnpublish(selectedTour.id)}>
+            <PublicIcon sx={{ mr: 1, fontSize: 20 }} />
+            非公開にする
+          </MenuItem>
+        )}
+        {selectedTour?.status === 'published' && (
+          <MenuItem onClick={() => copyPublicUrl(selectedTour.id)}>
+            <CopyIcon sx={{ mr: 1, fontSize: 20 }} />
+            公開URLをコピー
+          </MenuItem>
+        )}
+      </Menu>
     </Container>
   );
 }

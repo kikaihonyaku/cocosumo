@@ -30,7 +30,7 @@ class Api::V1::VrToursController < ApplicationController
             }
           }
         }
-      }, methods: [:scenes_count])
+      }, methods: [:scenes_count, :thumbnail_url])
     end
   end
 
