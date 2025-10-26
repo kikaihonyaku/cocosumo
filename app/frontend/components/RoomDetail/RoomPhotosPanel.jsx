@@ -321,12 +321,13 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
           <Box sx={{
             display: 'grid',
             gridTemplateColumns: isMaximized
-              ? 'repeat(auto-fill, minmax(280px, 1fr))'
-              : 'repeat(auto-fill, minmax(220px, 1fr))',
+              ? 'repeat(4, 1fr)'
+              : 'repeat(3, 1fr)',
             gap: 2,
             overflowY: 'auto',
             height: '100%',
             pb: 1,
+            alignContent: 'start',
             '&::-webkit-scrollbar': {
               width: 8,
             },
@@ -430,17 +431,16 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
                     </Tooltip>
                   </Box>
 
-                  {/* メイン写真マーク */}
-                  {index === 0 && (
+                  {/* カテゴリラベル */}
+                  {photo.photo_type && (
                     <Box sx={{
                       position: 'absolute',
                       bottom: 8,
                       left: 8,
                     }}>
                       <Chip
-                        label="メイン"
+                        label={PHOTO_CATEGORIES[photo.photo_type]?.label || photo.photo_type}
                         size="small"
-                        color="primary"
                         sx={{
                           height: 24,
                           fontSize: '0.75rem',
