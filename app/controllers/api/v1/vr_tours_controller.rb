@@ -1,7 +1,7 @@
 class Api::V1::VrToursController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login, except: [:show_public]
-  before_action :set_room, only: [:create], if: -> { params[:room_id].present? }
+  before_action :set_room, only: [:index, :create], if: -> { params[:room_id].present? }
   before_action :set_vr_tour, only: [:show, :update, :destroy, :publish, :unpublish]
 
   # GET /api/v1/vr_tours (全VRツアー一覧)
