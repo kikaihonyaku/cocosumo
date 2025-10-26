@@ -99,9 +99,9 @@ export default function PhotoEditor() {
       // オリジナル画像を保存
       originalImageRef.current = img;
 
-      // Canvasのサイズを画像に合わせる
-      const maxWidth = 800;
-      const maxHeight = 600;
+      // Canvasのサイズを画像に合わせる（画面サイズに応じて動的に設定）
+      const maxWidth = window.innerWidth * 0.7; // 画面幅の70%
+      const maxHeight = window.innerHeight * 0.85; // 画面高さの85%
       let width = img.width;
       let height = img.height;
 
@@ -438,24 +438,41 @@ export default function PhotoEditor() {
         </AppBar>
 
         {/* メインコンテンツ */}
-        <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: 2, height: '100%' }}>
+        <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 0, width: '100%', height: '100%' }}>
             {/* 左側: キャンバス */}
-            <Paper elevation={3} sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: '#f5f5f5',
+              p: 1,
+              overflow: 'hidden'
+            }}>
               <canvas
                 ref={canvasRef}
                 style={{
                   maxWidth: '100%',
                   maxHeight: '100%',
-                  border: '1px solid #ddd',
+                  objectFit: 'contain',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                 }}
               />
-            </Paper>
+            </Box>
 
             {/* 右側: コントロールパネル */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1.5,
+              overflowY: 'auto',
+              bgcolor: 'background.paper',
+              p: 1.5,
+              borderLeft: '1px solid',
+              borderColor: 'divider'
+            }}>
               {/* AI画像処理 */}
-              <Paper elevation={3} sx={{ p: 2 }}>
+              <Paper elevation={2} sx={{ p: 1.5 }}>
                 <Typography variant="h6" gutterBottom>
                   AI画像編集 (Nano Banana)
                 </Typography>
@@ -505,7 +522,7 @@ export default function PhotoEditor() {
               </Paper>
 
               {/* 基本調整 */}
-              <Paper elevation={3} sx={{ p: 2 }}>
+              <Paper elevation={2} sx={{ p: 1.5 }}>
                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   基本調整
                   <IconButton size="small" onClick={handleReset} title="リセット">
