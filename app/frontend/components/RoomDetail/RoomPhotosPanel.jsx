@@ -29,7 +29,9 @@ import {
   OpenInFull as OpenInFullIcon,
   CloseFullscreen as CloseFullscreenIcon,
   Edit as EditIcon,
+  Image as ImageIcon,
 } from '@mui/icons-material';
+import { Link as RouterLink } from 'react-router-dom';
 
 // カテゴリ定義
 const PHOTO_CATEGORIES = {
@@ -595,6 +597,24 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
                 ))}
             </Select>
           </FormControl>
+
+          {/* 画像編集リンク */}
+          {photoToEdit && (
+            <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid #e0e0e0' }}>
+              <Button
+                component={RouterLink}
+                to={`/rooms/${roomId}/photos/${photoToEdit.id}/edit`}
+                target="_blank"
+                rel="noopener noreferrer"
+                startIcon={<ImageIcon />}
+                variant="outlined"
+                fullWidth
+                sx={{ textTransform: 'none' }}
+              >
+                画像を編集
+              </Button>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditCategoryDialogOpen(false)}>

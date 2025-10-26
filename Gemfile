@@ -28,6 +28,9 @@ gem "geocoder"
 # Soft deletion for models [https://github.com/jhawthorn/discard]
 gem "discard", "~> 1.3"
 
+# Google Gemini API client
+gem "gemini-ai"
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
@@ -57,6 +60,9 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Load environment variables from .env file
+  gem "dotenv-rails"
 end
 
 group :development do
@@ -65,3 +71,4 @@ group :development do
 end
 
 gem "vite_rails", "~> 3.0"
+gem "google-cloud-ai_platform-v1"

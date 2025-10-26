@@ -2,7 +2,7 @@ class Api::V1::RoomPhotosController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
   before_action :set_room
-  before_action :set_room_photo, only: [:show, :update, :destroy]
+  before_action :set_room_photo, only: [:show, :update, :destroy, :replace, :duplicate]
 
   # GET /api/v1/rooms/:room_id/room_photos
   def index
@@ -71,6 +71,57 @@ class Api::V1::RoomPhotosController < ApplicationController
       render json: { success: true, message: '写真を削除しました' }
     else
       render json: { success: false, error: '削除に失敗しました' }, status: :unprocessable_entity
+    end
+  end
+
+  # POST /api/v1/rooms/:room_id/room_photos/:id/replace
+  # 既存の写真を編集済み画像で置き換える
+  def replace
+    if params[:photo].present?
+      @room_photo.photo.attach(params[:photo])
+
+      if @room_photo.save
+        render json: {
+          success: true,
+          message: '写真を更新しました',
+          photo: @room_photo.as_json(methods: [:photo_url])
+        }
+      else
+        render json: { error: '写真の更新に失敗しました' }, status: :unprocessable_entity
+      end
+    else
+      render json: { error: '写真ファイルが指定されていません' }, status: :bad_request
+    end
+  end
+
+  # POST /api/v1/rooms/:room_id/room_photos/:id/duplicate
+  # 編集済み画像を新しい写真として保存
+  def duplicate
+    if params[:photo].present?
+      # 元の写真の情報をコピーして新しい写真を作成
+      new_photo = @room.room_photos.build(
+        photo_type: @room_photo.photo_type,
+        caption: @room_photo.caption ? "#{@room_photo.caption} (編集済み)" : "編集済み"
+      )
+
+      # 自動的に最後の順序を設定
+      max_order = @room.room_photos.maximum(:display_order) || 0
+      new_photo.display_order = max_order + 1
+
+      # 新しい写真ファイルを添付
+      new_photo.photo.attach(params[:photo])
+
+      if new_photo.save
+        render json: {
+          success: true,
+          message: '新しい写真として保存しました',
+          photo: new_photo.as_json(methods: [:photo_url])
+        }, status: :created
+      else
+        render json: { error: '写真の保存に失敗しました' }, status: :unprocessable_entity
+      end
+    else
+      render json: { error: '写真ファイルが指定されていません' }, status: :bad_request
     end
   end
 

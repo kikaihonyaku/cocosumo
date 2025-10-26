@@ -20,6 +20,12 @@ Rails.application.routes.draw do
       post 'auth/login', to: 'auth#login'
       post 'auth/logout', to: 'auth#logout'
 
+      # Gemini AI
+      post 'gemini/process_image', to: 'gemini#process_image'
+
+      # Imagen AI (image editing)
+      post 'imagen/edit_image', to: 'imagen#edit_image'
+
       # 物件管理
       resources :buildings do
         resources :photos, only: [:index, :create, :destroy]
@@ -38,7 +44,12 @@ Rails.application.routes.draw do
       # 部屋詳細・更新・削除はスタンドアロン
       resources :rooms, only: [:show, :update, :destroy] do
         # 部屋写真管理
-        resources :room_photos
+        resources :room_photos do
+          member do
+            post :replace
+            post :duplicate
+          end
+        end
 
         # VRツアー管理
         resources :vr_tours do
