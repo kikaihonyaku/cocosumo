@@ -30,6 +30,9 @@ import {
   CloseFullscreen as CloseFullscreenIcon,
   Edit as EditIcon,
   Image as ImageIcon,
+  Download as DownloadIcon,
+  ArrowBackIos as ArrowBackIosIcon,
+  ArrowForwardIos as ArrowForwardIosIcon,
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -45,7 +48,7 @@ const PHOTO_CATEGORIES = {
   other: { label: 'その他', value: 'other' },
 };
 
-export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, onToggleMaximize, isMobile = false }) {
+export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPhotosUpdate, isMaximized, onToggleMaximize, isMobile = false }) {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -58,6 +61,11 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
   const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
   const [photoToEdit, setPhotoToEdit] = useState(null);
   const [newCategory, setNewCategory] = useState('');
+
+  // フィルタリングされた写真リスト
+  const filteredPhotos = selectedCategory === 'all'
+    ? photos
+    : photos.filter(photo => photo.photo_type === selectedCategory);
 
   // 写真データ取得
   useEffect(() => {
@@ -217,10 +225,83 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
     }
   };
 
-  // フィルタリングされた写真リスト
-  const filteredPhotos = selectedCategory === 'all'
-    ? photos
-    : photos.filter(photo => photo.photo_type === selectedCategory);
+  const handleDownloadPhoto = async () => {
+    if (!selectedPhoto) return;
+
+    try {
+      const response = await fetch(selectedPhoto.photo_url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      // ファイル名を生成: 建物名_部屋番号_カテゴリ名_YYYYMMDD_HHMMSS.拡張子
+      const now = new Date();
+      const timestamp = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, '0'),
+        String(now.getDate()).padStart(2, '0'),
+        '_',
+        String(now.getHours()).padStart(2, '0'),
+        String(now.getMinutes()).padStart(2, '0'),
+        String(now.getSeconds()).padStart(2, '0'),
+      ].join('');
+
+      // カテゴリ名を取得
+      const categoryLabel = selectedPhoto.photo_type
+        ? PHOTO_CATEGORIES[selectedPhoto.photo_type]?.label || selectedPhoto.photo_type
+        : 'その他';
+
+      // 拡張子を取得
+      const urlParts = selectedPhoto.photo_url.split('/');
+      const lastPart = urlParts[urlParts.length - 1];
+      const extension = lastPart.includes('.') ? lastPart.split('.').pop() : 'jpg';
+
+      // ファイル名の生成（日本語ファイル名として）
+      const fileName = `${buildingName || '建物'}_${roomNumber || '部屋'}号室_${categoryLabel}_${timestamp}.${extension}`;
+      link.download = fileName;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('写真ダウンロードエラー:', error);
+      alert('写真のダウンロードに失敗しました');
+    }
+  };
+
+  const handlePreviousPhoto = () => {
+    if (!selectedPhoto) return;
+    const currentIndex = filteredPhotos.findIndex(photo => photo.id === selectedPhoto.id);
+    if (currentIndex > 0) {
+      setSelectedPhoto(filteredPhotos[currentIndex - 1]);
+    }
+  };
+
+  const handleNextPhoto = () => {
+    if (!selectedPhoto) return;
+    const currentIndex = filteredPhotos.findIndex(photo => photo.id === selectedPhoto.id);
+    if (currentIndex < filteredPhotos.length - 1) {
+      setSelectedPhoto(filteredPhotos[currentIndex + 1]);
+    }
+  };
+
+  // キーボードイベントハンドラ
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (!previewDialogOpen) return;
+
+      if (e.key === 'ArrowLeft') {
+        handlePreviousPhoto();
+      } else if (e.key === 'ArrowRight') {
+        handleNextPhoto();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [previewDialogOpen, selectedPhoto, photos, selectedCategory]);
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -390,24 +471,13 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
                     gap: 0.5,
                     p: 0.5,
                   }}>
-                    <Tooltip title="拡大表示">
-                      <IconButton
-                        size="small"
-                        onClick={() => openPreview(photo)}
-                        sx={{
-                          bgcolor: 'rgba(0,0,0,0.6)',
-                          color: 'white',
-                          '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' }
-                        }}
-                      >
-                        <ZoomInIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-
                     <Tooltip title="カテゴリ編集">
                       <IconButton
                         size="small"
-                        onClick={() => handleEditCategory(photo)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditCategory(photo);
+                        }}
                         sx={{
                           bgcolor: 'rgba(25,118,210,0.6)',
                           color: 'white',
@@ -421,7 +491,10 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
                     <Tooltip title="削除">
                       <IconButton
                         size="small"
-                        onClick={() => handleDeletePhoto(photo.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePhoto(photo.id);
+                        }}
                         sx={{
                           bgcolor: 'rgba(255,0,0,0.6)',
                           color: 'white',
@@ -546,28 +619,112 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
       <Dialog
         open={previewDialogOpen}
         onClose={() => setPreviewDialogOpen(false)}
-        maxWidth="lg"
-        fullWidth
+        maxWidth={false}
+        PaperProps={{
+          sx: {
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            m: 2,
+          }
+        }}
       >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <DialogTitle sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          bgcolor: 'primary.main',
+          color: 'white',
+          py: 1,
+          px: 2,
+        }}>
           <Typography variant="h6">写真プレビュー</Typography>
-          <IconButton onClick={() => setPreviewDialogOpen(false)}>
-            <CloseIcon />
-          </IconButton>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Tooltip title="ダウンロード">
+              <IconButton
+                onClick={handleDownloadPhoto}
+                sx={{ color: 'white' }}
+              >
+                <DownloadIcon />
+              </IconButton>
+            </Tooltip>
+            <IconButton
+              onClick={() => setPreviewDialogOpen(false)}
+              sx={{ color: 'white' }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
         </DialogTitle>
-        <DialogContent sx={{ p: 0 }}>
+        <DialogContent sx={{
+          p: 0,
+          bgcolor: 'black',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          position: 'relative',
+        }}>
           {selectedPhoto && (
-            <Box sx={{ textAlign: 'center', bgcolor: 'black' }}>
+            <>
+              {/* 前の写真ボタン */}
+              {filteredPhotos.findIndex(photo => photo.id === selectedPhoto.id) > 0 && (
+                <IconButton
+                  onClick={handlePreviousPhoto}
+                  sx={{
+                    position: 'absolute',
+                    left: 16,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    bgcolor: 'rgba(0,0,0,0.5)',
+                    color: 'white',
+                    width: 48,
+                    height: 48,
+                    '&:hover': {
+                      bgcolor: 'rgba(0,0,0,0.7)',
+                    },
+                    zIndex: 1,
+                  }}
+                >
+                  <ArrowBackIosIcon sx={{ ml: 0.5, fontSize: 24 }} />
+                </IconButton>
+              )}
+
               <img
                 src={selectedPhoto.photo_url}
                 alt="写真プレビュー"
                 style={{
                   maxWidth: '100%',
-                  maxHeight: '70vh',
+                  maxHeight: '80vh',
+                  width: 'auto',
+                  height: 'auto',
                   objectFit: 'contain',
+                  display: 'block',
                 }}
               />
-            </Box>
+
+              {/* 次の写真ボタン */}
+              {filteredPhotos.findIndex(photo => photo.id === selectedPhoto.id) < filteredPhotos.length - 1 && (
+                <IconButton
+                  onClick={handleNextPhoto}
+                  sx={{
+                    position: 'absolute',
+                    right: 16,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    bgcolor: 'rgba(0,0,0,0.5)',
+                    color: 'white',
+                    width: 48,
+                    height: 48,
+                    '&:hover': {
+                      bgcolor: 'rgba(0,0,0,0.7)',
+                    },
+                    zIndex: 1,
+                  }}
+                >
+                  <ArrowForwardIosIcon sx={{ fontSize: 24 }} />
+                </IconButton>
+              )}
+            </>
           )}
         </DialogContent>
       </Dialog>
@@ -597,32 +754,33 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
                 ))}
             </Select>
           </FormControl>
+        </DialogContent>
+        <DialogActions sx={{ flexDirection: 'column', alignItems: 'stretch', gap: 1, px: 3, pb: 2 }}>
+          {/* カテゴリ更新ボタン */}
+          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+            <Button onClick={() => setEditCategoryDialogOpen(false)}>
+              キャンセル
+            </Button>
+            <Button onClick={handleUpdateCategory} variant="contained">
+              更新
+            </Button>
+          </Box>
 
           {/* 画像編集リンク */}
           {photoToEdit && (
-            <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid #e0e0e0' }}>
-              <Button
-                component={RouterLink}
-                to={`/rooms/${roomId}/photos/${photoToEdit.id}/edit`}
-                target="_blank"
-                rel="noopener noreferrer"
-                startIcon={<ImageIcon />}
-                variant="outlined"
-                fullWidth
-                sx={{ textTransform: 'none' }}
-              >
-                画像を編集
-              </Button>
-            </Box>
+            <Button
+              component={RouterLink}
+              to={`/rooms/${roomId}/photos/${photoToEdit.id}/edit`}
+              target="_blank"
+              rel="noopener noreferrer"
+              startIcon={<ImageIcon />}
+              variant="outlined"
+              fullWidth
+              sx={{ textTransform: 'none' }}
+            >
+              画像を編集
+            </Button>
           )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditCategoryDialogOpen(false)}>
-            キャンセル
-          </Button>
-          <Button onClick={handleUpdateCategory} variant="contained">
-            更新
-          </Button>
         </DialogActions>
       </Dialog>
 

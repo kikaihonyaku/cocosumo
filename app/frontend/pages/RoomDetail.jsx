@@ -256,6 +256,8 @@ export default function RoomDetail() {
           }}>
             <RoomPhotosPanel
               roomId={room.id}
+              buildingName={room.building?.name}
+              roomNumber={room.room_number}
               onPhotosUpdate={handlePhotosUpdate}
               isMaximized={isPhotosMaximized}
               onToggleMaximize={handleTogglePhotosMaximize}
