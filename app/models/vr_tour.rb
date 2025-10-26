@@ -42,4 +42,9 @@ class VrTour < ApplicationRecord
       Rails.application.routes.url_helpers.rails_blob_path(minimap_image, only_path: true)
     end
   end
+
+  # Get scenes count
+  def scenes_count
+    vr_scenes.count
+  end
 end

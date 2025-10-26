@@ -1,17 +1,37 @@
 class Api::V1::VrToursController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login, except: [:show_public]
-  before_action :set_room, only: [:index, :create]
+  before_action :set_room, only: [:create], if: -> { params[:room_id].present? }
   before_action :set_vr_tour, only: [:show, :update, :destroy, :publish, :unpublish]
 
-  # GET /api/v1/rooms/:room_id/vr_tours
+  # GET /api/v1/vr_tours (全VRツアー一覧)
+  # GET /api/v1/rooms/:room_id/vr_tours (部屋単位のVRツアー一覧)
   def index
-    @vr_tours = @room.vr_tours.includes(:vr_scenes)
-    render json: @vr_tours.as_json(include: {
-      vr_scenes: {
-        methods: [:photo_url]
-      }
-    })
+    if params[:room_id]
+      # 部屋単位の一覧
+      @vr_tours = @room.vr_tours.includes(:vr_scenes)
+      render json: @vr_tours.as_json(include: {
+        vr_scenes: {
+          methods: [:photo_url]
+        }
+      })
+    else
+      # 全VRツアー一覧
+      @vr_tours = VrTour.includes(:vr_scenes, room: :building).order(updated_at: :desc)
+      render json: @vr_tours.as_json(include: {
+        vr_scenes: {
+          only: [:id]
+        },
+        room: {
+          only: [:id, :room_number],
+          include: {
+            building: {
+              only: [:id, :name, :address]
+            }
+          }
+        }
+      }, methods: [:scenes_count])
+    end
   end
 
   # GET /api/v1/rooms/:room_id/vr_tours/:id
@@ -91,6 +111,35 @@ class Api::V1::VrToursController < ApplicationController
   def unpublish
     @vr_tour.draft!
     render json: { success: true, message: 'VRツアーを非公開にしました', vr_tour: @vr_tour }
+  end
+
+  # POST /api/v1/vr_tours/bulk_action (一括操作)
+  def bulk_action
+    vr_tour_ids = params[:vr_tour_ids]
+    action = params[:action]
+
+    if vr_tour_ids.blank? || action.blank?
+      render json: { error: 'パラメータが不正です' }, status: :bad_request
+      return
+    end
+
+    tours = VrTour.where(id: vr_tour_ids)
+
+    case action
+    when 'publish'
+      tours.each do |tour|
+        tour.published!
+        tour.update(published_at: Time.current)
+      end
+      render json: { success: true, message: "#{tours.count}件のVRツアーを公開しました" }
+    when 'unpublish'
+      tours.each { |tour| tour.draft! }
+      render json: { success: true, message: "#{tours.count}件のVRツアーを非公開にしました" }
+    else
+      render json: { error: '不明なアクションです' }, status: :bad_request
+    end
+  rescue => e
+    render json: { error: e.message }, status: :internal_server_error
   end
 
   private

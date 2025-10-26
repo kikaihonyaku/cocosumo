@@ -49,6 +49,13 @@ Rails.application.routes.draw do
         end
       end
 
+      # VRツアー一覧・一括操作
+      resources :vr_tours, only: [:index] do
+        collection do
+          post :bulk_action
+        end
+      end
+
       # VRツアーのシーン管理
       resources :vr_tours, only: [] do
         resources :vr_scenes do
