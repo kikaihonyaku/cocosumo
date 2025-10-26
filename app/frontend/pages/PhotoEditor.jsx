@@ -252,7 +252,13 @@ export default function PhotoEditor() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'AI処理に失敗しました');
+        // エラーオブジェクト全体を文字列化して保持
+        const errorObj = {
+          error: error.error || 'AI処理に失敗しました',
+          details: error.details,
+          suggestion: error.suggestion
+        };
+        throw new Error(JSON.stringify(errorObj));
       }
 
       const data = await response.json();
@@ -275,7 +281,29 @@ export default function PhotoEditor() {
 
     } catch (err) {
       console.error('AI処理エラー:', err);
-      alert(err.message || 'AI処理に失敗しました');
+
+      // より詳細なエラーメッセージを表示
+      let errorMessage = 'AI処理に失敗しました';
+      let suggestion = '';
+
+      if (err.message) {
+        errorMessage = err.message;
+      }
+
+      // バックエンドからのsuggestionを取得
+      try {
+        const errorResponse = JSON.parse(err.message);
+        if (errorResponse.error) {
+          errorMessage = errorResponse.error;
+        }
+        if (errorResponse.suggestion) {
+          suggestion = '\n\n💡 ' + errorResponse.suggestion;
+        }
+      } catch {
+        // JSON解析失敗の場合は元のメッセージを使用
+      }
+
+      alert(errorMessage + suggestion);
     } finally {
       setAiProcessing(false);
     }
@@ -375,7 +403,7 @@ export default function PhotoEditor() {
           {aiProcessing ? 'AI編集中...' : '保存中...'}
         </Typography>
         <Typography variant="body2">
-          {aiProcessing ? 'しばらくお待ちください' : ''}
+          {aiProcessing ? '自動的に最大3回まで試行します。画像の複雑さによっては時間がかかる場合があります。' : ''}
         </Typography>
       </Backdrop>
 
@@ -436,12 +464,13 @@ export default function PhotoEditor() {
                 <TextField
                   fullWidth
                   multiline
-                  rows={3}
-                  placeholder="例: テーブルを削除、椅子を消去、家具を取り除く"
+                  rows={4}
+                  placeholder="編集したい内容を具体的に入力してください&#10;例:&#10;・ソファを完全に削除&#10;・壁の色を白に変更&#10;・床のキズを修正"
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
                   sx={{ mb: 2 }}
                   disabled={aiProcessing}
+                  helperText="短い指示でOK！AIが自動的に詳細な編集指示に変換します"
                 />
 
                 <Button
@@ -456,11 +485,22 @@ export default function PhotoEditor() {
                 </Button>
 
                 <Alert severity="info" sx={{ mt: 2, fontSize: '0.75rem' }}>
-                  Gemini 2.5 Flash (Nano Banana)が画像を編集します。
+                  <strong>効果的なプロンプトのコツ：</strong>
                   <br />
-                  例: 「ソファを削除」「テーブルを取り除く」「家具を消す」
+                  ✓ 「〇〇を削除」「〇〇を変更」など動作を明確に
                   <br />
-                  ※ 編集には数秒かかる場合があります。
+                  ✓ 一度に1つの編集を指示すると成功率が高い
+                  <br />
+                  ✓ 失敗した場合は自動的に再試行されます
+                  <br />
+                  <br />
+                  <strong>よく使われる例：</strong>
+                  <br />
+                  • 家具系：「ソファを削除」「テーブルを取り除く」
+                  <br />
+                  • 修正系：「壁の汚れを消す」「床のキズを修正」
+                  <br />
+                  • 変更系：「壁を白に塗る」「カーテンを追加」
                 </Alert>
               </Paper>
 
