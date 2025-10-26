@@ -24,10 +24,11 @@ import {
   Map as MapIcon,
 } from '@mui/icons-material';
 
-export default function PropertyMapPanel({ property, onLocationUpdate, visible = true, onFormChange, onSave }) {
+export default function PropertyMapPanel({ property, onLocationUpdate, visible = true, onFormChange, onSave, selectedPlace }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
+  const selectedPlaceMarkerRef = useRef(null); // AI応答から選択された場所のマーカー
   const [mapLoaded, setMapLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editingLocation, setEditingLocation] = useState(false);
@@ -87,6 +88,66 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
       }, 100);
     }
   }, [visible, property]);
+
+  // AI応答から選択された場所を地図上に表示
+  useEffect(() => {
+    if (selectedPlace && selectedPlace.address && mapInstanceRef.current && window.google?.maps) {
+      console.log('Selected place:', selectedPlace);
+
+      // 既存の選択場所マーカーを削除
+      if (selectedPlaceMarkerRef.current) {
+        selectedPlaceMarkerRef.current.setMap(null);
+        selectedPlaceMarkerRef.current = null;
+      }
+
+      // Geocoding APIで住所を緯度経度に変換
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ address: selectedPlace.address }, (results, status) => {
+        if (status === 'OK' && results[0]) {
+          const location = results[0].geometry.location;
+          const lat = location.lat();
+          const lng = location.lng();
+
+          console.log('Geocoded location:', { lat, lng });
+
+          // 地図を選択された場所にズームして中心を移動
+          mapInstanceRef.current.setCenter({ lat, lng });
+          mapInstanceRef.current.setZoom(17); // より詳細なズームレベル
+
+          // 選択された場所に別のマーカーを追加（異なる色で表示）
+          const marker = new window.google.maps.Marker({
+            position: { lat, lng },
+            map: mapInstanceRef.current,
+            title: selectedPlace.address,
+            icon: {
+              url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png', // 青いマーカー
+            },
+          });
+
+          // 情報ウィンドウを表示
+          const infoWindow = new window.google.maps.InfoWindow({
+            content: `
+              <div style="padding: 8px;">
+                <h4 style="margin: 0 0 4px 0; color: #1976d2;">選択された場所</h4>
+                <p style="margin: 0; font-size: 14px; color: #666;">${selectedPlace.address}</p>
+              </div>
+            `,
+          });
+
+          infoWindow.open(mapInstanceRef.current, marker);
+
+          marker.addListener('click', () => {
+            infoWindow.open(mapInstanceRef.current, marker);
+          });
+
+          selectedPlaceMarkerRef.current = marker;
+
+        } else {
+          console.error('Geocoding failed:', status);
+        }
+      });
+    }
+  }, [selectedPlace]);
 
   const loadGoogleMaps = () => {
     const apiKey = import.meta.env?.VITE_GOOGLE_MAPS_API_KEY || '';

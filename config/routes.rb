@@ -34,7 +34,8 @@ Rails.application.routes.draw do
 
         # 物件個別アクション
         member do
-          post :restore  # 論理削除からの復元
+          post :restore    # 論理削除からの復元
+          post :grounding  # Grounding with Google Maps
         end
       end
 

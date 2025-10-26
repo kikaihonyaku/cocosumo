@@ -31,7 +31,7 @@ import PropertyInfoPanel from '../components/PropertyDetail/PropertyInfoPanel';
 import PropertyMapPanel from '../components/PropertyDetail/PropertyMapPanel';
 import RoomsPanel from '../components/PropertyDetail/RoomsPanel';
 import PhotosPanel from '../components/PropertyDetail/PhotosPanel';
-import OwnersPanel from '../components/PropertyDetail/OwnersPanel';
+import GoogleMapsGroundingPanel from '../components/PropertyDetail/GoogleMapsGroundingPanel';
 
 export default function PropertyDetail() {
   const { id } = useParams();
@@ -49,6 +49,7 @@ export default function PropertyDetail() {
   const [isPhotosMaximized, setIsPhotosMaximized] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState(0); // モバイル用タブ管理
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // 未保存の変更
+  const [selectedPlace, setSelectedPlace] = useState(null); // AI応答から選択された場所
 
   // レスポンシブ設定
   const isMdUp = useMediaQuery(muiTheme.breakpoints.up('md'));
@@ -184,24 +185,6 @@ export default function PropertyDetail() {
     }
   };
 
-  const handleOwnerUpdate = async () => {
-    // 家主データを再取得
-    try {
-      const propertyResponse = await fetch(`/api/v1/buildings/${id}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (propertyResponse.ok) {
-        const propertyData = await propertyResponse.json();
-        setProperty(propertyData);
-      }
-    } catch (err) {
-      console.error('家主データの更新に失敗:', err);
-    }
-  };
-
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
@@ -224,6 +207,12 @@ export default function PropertyDetail() {
 
   const handleFormChange = (hasChanges) => {
     setHasUnsavedChanges(hasChanges);
+  };
+
+  const handlePlaceClick = (address) => {
+    console.log('Place clicked:', address);
+    setSelectedPlace({ address, timestamp: Date.now() });
+    showSnackbar(`地図上で「${address}」を検索しています...`, 'info');
   };
 
   // TabPanelコンポーネント
@@ -339,7 +328,7 @@ export default function PropertyDetail() {
                 />
                 <Tab
                   icon={<HomeIcon />}
-                  label="部屋・家主"
+                  label="部屋"
                   id="mobile-tab-2"
                   aria-controls="mobile-tabpanel-2"
                   sx={{ minHeight: 64 }}
@@ -391,24 +380,15 @@ export default function PropertyDetail() {
                 </Box>
               </TabPanel>
 
-              {/* 部屋・家主タブ */}
+              {/* 部屋タブ */}
               <TabPanel value={mobileActiveTab} index={2}>
                 <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   {/* 部屋一覧 */}
-                  <Box sx={{ flex: 1, borderBottom: '1px solid #ddd' }}>
+                  <Box sx={{ flex: 1 }}>
                     <RoomsPanel
                       propertyId={id}
                       rooms={rooms}
                       onRoomsUpdate={handleRoomUpdate}
-                    />
-                  </Box>
-
-                  {/* 家主情報 */}
-                  <Box sx={{ height: '200px', overflow: 'auto' }}>
-                    <OwnersPanel
-                      propertyId={id}
-                      owners={property?.owners || []}
-                      onOwnersUpdate={handleOwnerUpdate}
                     />
                   </Box>
                 </Box>
@@ -483,6 +463,7 @@ export default function PropertyDetail() {
                   }}
                   onFormChange={handleFormChange}
                   onSave={handleSave}
+                  selectedPlace={selectedPlace}
                 />
               </Paper>
 
@@ -505,7 +486,25 @@ export default function PropertyDetail() {
                 />
               </Paper>
 
-              {/* 中央下: 外観写真カード */}
+              {/* 中央下: Grounding with Google Maps カード */}
+              <Paper
+                elevation={3}
+                sx={{
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 280,
+                  maxHeight: isLgUp ? 350 : 500,
+                }}
+              >
+                <GoogleMapsGroundingPanel
+                  property={property}
+                  onPlaceClick={handlePlaceClick}
+                />
+              </Paper>
+
+              {/* 右下: 外観写真カード */}
               <Paper
                 elevation={3}
                 sx={{
@@ -522,25 +521,6 @@ export default function PropertyDetail() {
                   onPhotosUpdate={() => {}}
                   isMaximized={false}
                   onToggleMaximize={() => {}}
-                />
-              </Paper>
-
-              {/* 右下: 家主情報カード */}
-              <Paper
-                elevation={3}
-                sx={{
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 280,
-                  maxHeight: isLgUp ? 350 : 500,
-                }}
-              >
-                <OwnersPanel
-                  propertyId={id}
-                  owners={property?.owners || []}
-                  onOwnersUpdate={handleOwnerUpdate}
                 />
               </Paper>
             </Box>

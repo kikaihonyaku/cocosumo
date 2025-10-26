@@ -1,7 +1,7 @@
 class Api::V1::BuildingsController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
-  before_action :set_building, only: [:show, :update, :destroy]
+  before_action :set_building, only: [:show, :update, :destroy, :grounding]
 
   # GET /api/v1/buildings
   def index
@@ -96,6 +96,98 @@ class Api::V1::BuildingsController < ApplicationController
         error: '復元に失敗しました'
       }, status: :unprocessable_entity
     end
+  end
+
+  # POST /api/v1/buildings/:id/grounding
+  # Grounding with Google Mapsを使用して周辺情報を取得
+  def grounding
+    unless params[:query].present?
+      return render json: { error: 'クエリが必要です' }, status: :bad_request
+    end
+
+    begin
+      # 緯度・経度を取得（パラメータまたは建物データから）
+      latitude = params[:latitude].presence || @building.latitude
+      longitude = params[:longitude].presence || @building.longitude
+
+      unless latitude && longitude
+        return render json: { error: '位置情報が設定されていません' }, status: :bad_request
+      end
+
+      # 会話履歴を取得
+      conversation_history = params[:conversation_history] || []
+
+      Rails.logger.info("Grounding query: #{params[:query]}")
+      Rails.logger.info("Location: #{latitude}, #{longitude}")
+      Rails.logger.info("Address: #{@building.address}")
+      Rails.logger.info("Conversation history size: #{conversation_history.size}")
+
+      # Vertex AI Grounding APIを試行し、エラー時はモックレスポンスにフォールバック
+      response = call_vertex_ai_grounding(params[:query], latitude, longitude, conversation_history, @building.address)
+
+      render json: {
+        success: true,
+        answer: response[:answer],
+        sources: response[:sources],
+        query: params[:query],
+        location: {
+          latitude: latitude,
+          longitude: longitude
+        },
+        is_mock: response[:is_mock] || false
+      }
+
+    rescue StandardError => e
+      Rails.logger.error("Grounding API error: #{e.message}")
+      Rails.logger.error(e.backtrace.join("\n"))
+      render json: {
+        error: '周辺情報の取得に失敗しました',
+        details: e.message
+      }, status: :internal_server_error
+    end
+  end
+
+  # Vertex AI Grounding APIを呼び出し、エラー時はモックレスポンスにフォールバック
+  def call_vertex_ai_grounding(query, latitude, longitude, conversation_history = [], address = nil)
+    service = VertexAiGroundingService.new
+    result = service.query_with_grounding(
+      query: query,
+      latitude: latitude,
+      longitude: longitude,
+      conversation_history: conversation_history,
+      address: address
+    )
+
+    Rails.logger.info("Vertex AI Grounding API success")
+    result.merge(is_mock: false)
+
+  rescue VertexAiGroundingService::GroundingError => e
+    Rails.logger.warn("Vertex AI Grounding failed, falling back to mock: #{e.message}")
+
+    # フォールバック: モックレスポンス
+    mock_response = generate_mock_response(query, latitude, longitude, address || @building.address)
+    mock_response.merge(is_mock: true)
+  end
+
+  def generate_mock_response(query, latitude, longitude, address)
+    # モックレスポンスを生成
+    {
+      answer: "#{address}周辺についてお答えします。\n\n" \
+              "この地域は、生活に便利な施設が充実したエリアです。\n\n" \
+              "【周辺施設】\n" \
+              "・コンビニエンスストア: 徒歩3分圏内に複数店舗\n" \
+              "・スーパーマーケット: 徒歩5分\n" \
+              "・飲食店: 多様なジャンルの飲食店が充実\n" \
+              "・駅: 最寄り駅まで徒歩10分\n\n" \
+              "【生活環境】\n" \
+              "・閑静な住宅街で、治安も良好です\n" \
+              "・公園や緑地も近く、生活しやすい環境です\n\n" \
+              "※現在はデモ版のため、実際のGoogle Mapsデータに基づく情報ではありません。\n" \
+              "実際の機能を利用するには、Vertex AI APIの設定が必要です。",
+      sources: [
+        { name: "Google Maps (デモ)", url: "https://maps.google.com/" }
+      ]
+    }
   end
 
   private
