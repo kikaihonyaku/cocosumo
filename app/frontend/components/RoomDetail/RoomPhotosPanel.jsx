@@ -639,6 +639,19 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
         }}>
           <Typography variant="h6">写真プレビュー</Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
+            {selectedPhoto && (
+              <Tooltip title="画像を編集">
+                <IconButton
+                  component={RouterLink}
+                  to={`/rooms/${roomId}/photos/${selectedPhoto.id}/edit`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ color: 'white' }}
+                >
+                  <EditIcon />
+                </IconButton>
+              </Tooltip>
+            )}
             <Tooltip title="ダウンロード">
               <IconButton
                 onClick={handleDownloadPhoto}
