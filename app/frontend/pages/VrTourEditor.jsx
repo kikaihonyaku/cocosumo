@@ -21,7 +21,10 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  Chip
+  Chip,
+  ThemeProvider,
+  createTheme,
+  useMediaQuery
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -37,20 +40,35 @@ import HotspotEditor from "../components/VRTour/HotspotEditor";
 import VrTourPreview from "../components/VRTour/VrTourPreview";
 import MinimapEditor from "../components/VRTour/MinimapEditor";
 
+// カスタムテーマ
+const vrTourTheme = createTheme({
+  palette: {
+    primary: {
+      main: '#0E983C',
+    },
+    secondary: {
+      main: '#9DC813',
+    },
+  },
+});
+
 export default function VrTourEditor() {
   const { roomId, id } = useParams();
   const navigate = useNavigate();
   const isNew = !id; // idが存在しない場合は新規作成
+  const isMdUp = useMediaQuery(vrTourTheme.breakpoints.up('md'));
 
   const [vrTour, setVrTour] = useState({
     title: '',
     description: '',
-    status: 'draft'
+    status: 'draft',
+    room: null
   });
   const [originalVrTour, setOriginalVrTour] = useState({
     title: '',
     description: '',
-    status: 'draft'
+    status: 'draft',
+    room: null
   });
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
@@ -64,7 +82,7 @@ export default function VrTourEditor() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [currentTab, setCurrentTab] = useState(0);
+  const [currentTab, setCurrentTab] = useState(1);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
 
@@ -382,142 +400,206 @@ export default function VrTourEditor() {
   }
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* ヘッダー */}
-      <AppBar position="static" color="default" elevation={1}>
-        <Toolbar>
-          <IconButton
-            edge="start"
-            onClick={() => navigate(`/room/${roomId}`)}
-            sx={{ mr: 2 }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            {isNew ? '新規VRツアー作成' : 'VRツアー編集'}
-          </Typography>
-
-          {/* ステータス表示 */}
-          {!isNew && (
-            <Chip
-              label={vrTour.status === 'published' ? '公開中' : '下書き'}
-              color={vrTour.status === 'published' ? 'success' : 'default'}
-              icon={vrTour.status === 'published' ? <PublicIcon /> : <UnpublishIcon />}
-              sx={{ mr: 2 }}
-            />
-          )}
-
-          {/* プレビューボタン */}
-          {!isNew && scenes.length > 0 && (
-            <Button
-              variant="outlined"
-              startIcon={<VisibilityIcon />}
-              onClick={() => setPreviewOpen(true)}
-              sx={{ mr: 2 }}
+    <ThemeProvider theme={vrTourTheme}>
+      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        {/* ヘッダー */}
+        <AppBar position="static" elevation={0} sx={{
+          bgcolor: 'primary.main',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+          borderRadius: '12px 12px 0 0',
+        }}>
+          <Toolbar variant="dense" sx={{ minHeight: '52px', py: 1 }}>
+            <IconButton
+              edge="start"
+              onClick={() => navigate(`/room/${roomId}`)}
+              sx={{ mr: 2, color: 'white' }}
             >
-              プレビュー
-            </Button>
-          )}
+              <ArrowBackIcon />
+            </IconButton>
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
+                {isNew ? '新規VRツアー作成' : (vrTour.title || 'VRツアー編集')}
+              </Typography>
+              {!isNew && vrTour.room && (
+                <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
+                  {vrTour.room.building?.name} - {vrTour.room.room_number}号室
+                </Typography>
+              )}
+            </Box>
 
-          {/* 公開/非公開ボタン */}
-          {!isNew && vrTour.status === 'draft' && (
-            <Button
-              variant="contained"
-              color="success"
-              startIcon={<PublicIcon />}
-              onClick={handlePublish}
-              sx={{ mr: 2 }}
-            >
-              公開する
-            </Button>
-          )}
+            {/* ステータス表示 */}
+            {!isNew && (
+              <Chip
+                label={vrTour.status === 'published' ? '公開中' : '下書き'}
+                color={vrTour.status === 'published' ? 'success' : 'default'}
+                icon={vrTour.status === 'published' ? <PublicIcon /> : <UnpublishIcon />}
+                sx={{ mr: { xs: 0.5, md: 2 }, display: { xs: 'none', sm: 'flex' } }}
+              />
+            )}
 
-          {!isNew && vrTour.status === 'published' && (
-            <>
+            {/* プレビューボタン */}
+            {!isNew && scenes.length > 0 && (
               <Button
                 variant="outlined"
-                startIcon={<CopyIcon />}
-                onClick={copyPublicUrl}
-                sx={{ mr: 1 }}
+                startIcon={isMdUp ? <VisibilityIcon /> : null}
+                onClick={() => setPreviewOpen(true)}
+                sx={{
+                  mr: { xs: 0.5, md: 2 },
+                  minWidth: { xs: 'auto', md: 'auto' },
+                  px: { xs: 1, md: 2 },
+                  color: 'white',
+                  borderColor: 'rgba(255, 255, 255, 0.5)',
+                  '&:hover': {
+                    borderColor: 'white',
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                  }
+                }}
               >
-                URLコピー
+                {isMdUp ? 'プレビュー' : <VisibilityIcon />}
               </Button>
+            )}
+
+            {/* 公開/非公開ボタン */}
+            {!isNew && vrTour.status === 'draft' && (
               <Button
-                variant="outlined"
-                color="warning"
-                startIcon={<UnpublishIcon />}
-                onClick={handleUnpublish}
-                sx={{ mr: 2 }}
+                variant="contained"
+                color="secondary"
+                startIcon={isMdUp ? <PublicIcon /> : null}
+                onClick={handlePublish}
+                sx={{
+                  mr: { xs: 0, md: 2 },
+                  minWidth: { xs: 'auto', md: 'auto' },
+                  px: { xs: 1, md: 2 }
+                }}
               >
-                非公開にする
+                {isMdUp ? '公開する' : <PublicIcon />}
               </Button>
-            </>
-          )}
-        </Toolbar>
-      </AppBar>
+            )}
+
+            {!isNew && vrTour.status === 'published' && (
+              <>
+                <Button
+                  variant="outlined"
+                  startIcon={isMdUp ? <CopyIcon /> : null}
+                  onClick={copyPublicUrl}
+                  sx={{
+                    mr: { xs: 0.5, md: 1 },
+                    minWidth: { xs: 'auto', md: 'auto' },
+                    px: { xs: 1, md: 2 },
+                    color: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                    '&:hover': {
+                      borderColor: 'white',
+                      bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    }
+                  }}
+                >
+                  {isMdUp ? 'URLコピー' : <CopyIcon />}
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="warning"
+                  startIcon={isMdUp ? <UnpublishIcon /> : null}
+                  onClick={handleUnpublish}
+                  sx={{
+                    mr: { xs: 0, md: 2 },
+                    minWidth: { xs: 'auto', md: 'auto' },
+                    px: { xs: 1, md: 2 },
+                    color: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                    '&:hover': {
+                      borderColor: 'white',
+                      bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    }
+                  }}
+                >
+                  {isMdUp ? '非公開にする' : <UnpublishIcon />}
+                </Button>
+              </>
+            )}
+          </Toolbar>
+        </AppBar>
 
       {/* メインコンテンツ */}
-      <Container maxWidth="lg" sx={{ py: 4, flex: 1 }}>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" sx={{ mx: 2, mt: 1 }}>
             {error}
           </Alert>
         )}
 
-        <Paper sx={{ p: 2, mb: 2 }}>
-          {hasUnsavedChanges && (
-            <Alert severity="info" sx={{ mb: 1.5, py: 0.5 }}>
-              未保存の変更があります
-            </Alert>
-          )}
-
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={3}>
-              <TextField
-                fullWidth
-                label="ツアータイトル"
-                value={vrTour.title}
-                onChange={(e) => setVrTour({ ...vrTour, title: e.target.value })}
-                required
-                size="small"
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="説明"
-                value={vrTour.description || ''}
-                onChange={(e) => setVrTour({ ...vrTour, description: e.target.value })}
-                size="small"
-              />
-            </Grid>
-
-            <Grid item xs={12} md={3} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button
-                variant="contained"
-                startIcon={<SaveIcon />}
-                onClick={handleSave}
-                disabled={saving || !vrTour.title}
-                color={hasUnsavedChanges ? 'primary' : 'inherit'}
-              >
-                {saving ? '保存中...' : '基本情報を保存'}
-              </Button>
-            </Grid>
-          </Grid>
-        </Paper>
-
         {!isNew && (
           <>
-            <Tabs value={currentTab} onChange={(e, v) => setCurrentTab(v)} sx={{ mb: 2 }}>
+            <Tabs value={currentTab} onChange={(e, v) => setCurrentTab(v)} sx={{ px: 2, pt: 1 }}>
+              <Tab label="基本情報" />
               <Tab label="シーン編集" />
               <Tab label="ミニマップ" />
             </Tabs>
 
             {currentTab === 0 && (
-              <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 300px)' }}>
+              <Box sx={{ p: 2, overflow: 'auto' }}>
+                <Paper sx={{ p: 3, maxWidth: '1200px', mx: 'auto' }}>
+                  {hasUnsavedChanges && (
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      未保存の変更があります
+                    </Alert>
+                  )}
+
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="ツアータイトル"
+                        value={vrTour.title}
+                        onChange={(e) => setVrTour({ ...vrTour, title: e.target.value })}
+                        required
+                      />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="説明"
+                        value={vrTour.description || ''}
+                        onChange={(e) => setVrTour({ ...vrTour, description: e.target.value })}
+                        multiline
+                        rows={4}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <Button
+                        variant="contained"
+                        startIcon={<SaveIcon />}
+                        onClick={handleSave}
+                        disabled={saving || !vrTour.title}
+                        color={hasUnsavedChanges ? 'primary' : 'inherit'}
+                        size="large"
+                      >
+                        {saving ? '保存中...' : '基本情報を保存'}
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Box>
+            )}
+
+            {currentTab === 1 && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: 1,
+                flex: 1,
+                p: 1,
+                overflow: 'hidden'
+              }}>
                 {/* 左：シーン一覧 */}
-                <Paper sx={{ width: 280, flexShrink: 0 }}>
+                <Paper sx={{
+                  width: { xs: '100%', md: 280 },
+                  height: { xs: '200px', md: 'auto' },
+                  flexShrink: 0,
+                  overflow: 'auto'
+                }}>
                   <SceneList
                     vrTourId={id}
                     roomId={roomId}
@@ -528,7 +610,14 @@ export default function VrTourEditor() {
                 </Paper>
 
                 {/* 中央：シーンプレビュー */}
-                <Paper sx={{ flex: 1, p: 3, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+                <Paper sx={{
+                  flex: 1,
+                  p: { xs: 1, md: 2 },
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: { xs: '300px', md: 'auto' }
+                }}>
               {selectedScene ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                   <Box sx={{ mb: 2 }}>
@@ -602,7 +691,12 @@ export default function VrTourEditor() {
             </Paper>
 
             {/* 右：ホットスポットエディタ */}
-            <Paper sx={{ width: 320, flexShrink: 0 }}>
+            <Paper sx={{
+              width: { xs: '100%', md: 320 },
+              height: { xs: '300px', md: 'auto' },
+              flexShrink: 0,
+              overflow: 'auto'
+            }}>
               {selectedScene ? (
                 <HotspotEditor
                   hotspots={selectedScene.hotspots || []}
@@ -627,25 +721,29 @@ export default function VrTourEditor() {
               </Box>
             )}
 
-            {currentTab === 1 && (
-              <Paper sx={{ height: 'calc(100vh - 300px)', overflow: 'hidden' }}>
-                <MinimapEditor
-                  vrTour={vrTour}
-                  scenes={scenes}
-                  onUpdateScene={handleUpdateScenePosition}
-                  onUploadMinimap={handleUploadMinimap}
-                />
-              </Paper>
+            {currentTab === 2 && (
+              <Box sx={{ flex: 1, p: 1, overflow: 'hidden' }}>
+                <Paper sx={{ height: '100%', overflow: 'hidden' }}>
+                  <MinimapEditor
+                    vrTour={vrTour}
+                    scenes={scenes}
+                    onUpdateScene={handleUpdateScenePosition}
+                    onUploadMinimap={handleUploadMinimap}
+                  />
+                </Paper>
+              </Box>
             )}
           </>
         )}
 
         {isNew && (
-          <Alert severity="info">
-            まず基本情報を保存してください。保存後、シーンの追加が可能になります。
-          </Alert>
+          <Box sx={{ p: 2 }}>
+            <Alert severity="info">
+              まず基本情報を保存してください。保存後、シーンの追加が可能になります。
+            </Alert>
+          </Box>
         )}
-      </Container>
+      </Box>
 
       {/* Snackbar for feedback */}
       <Snackbar
@@ -704,5 +802,6 @@ export default function VrTourEditor() {
         </DialogActions>
       </Dialog>
     </Box>
+    </ThemeProvider>
   );
 }

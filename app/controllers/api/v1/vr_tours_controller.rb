@@ -44,6 +44,14 @@ class Api::V1::VrToursController < ApplicationController
             only: [:id, :photo_type, :caption]
           }
         }
+      },
+      room: {
+        only: [:id, :room_number],
+        include: {
+          building: {
+            only: [:id, :name, :address]
+          }
+        }
       }
     }, methods: [:initial_scene, :minimap_image_url])
   end
@@ -85,7 +93,19 @@ class Api::V1::VrToursController < ApplicationController
   # PATCH/PUT /api/v1/rooms/:room_id/vr_tours/:id
   def update
     if @vr_tour.update(vr_tour_params)
-      render json: @vr_tour.as_json(methods: [:minimap_image_url])
+      render json: @vr_tour.as_json(
+        include: {
+          room: {
+            only: [:id, :room_number],
+            include: {
+              building: {
+                only: [:id, :name, :address]
+              }
+            }
+          }
+        },
+        methods: [:minimap_image_url]
+      )
     else
       render json: { errors: @vr_tour.errors.full_messages }, status: :unprocessable_entity
     end
@@ -104,13 +124,43 @@ class Api::V1::VrToursController < ApplicationController
   def publish
     @vr_tour.published!
     @vr_tour.update(published_at: Time.current)
-    render json: { success: true, message: 'VRツアーを公開しました', vr_tour: @vr_tour }
+    render json: {
+      success: true,
+      message: 'VRツアーを公開しました',
+      vr_tour: @vr_tour.as_json(
+        include: {
+          room: {
+            only: [:id, :room_number],
+            include: {
+              building: {
+                only: [:id, :name, :address]
+              }
+            }
+          }
+        }
+      )
+    }
   end
 
   # POST /api/v1/rooms/:room_id/vr_tours/:id/unpublish
   def unpublish
     @vr_tour.draft!
-    render json: { success: true, message: 'VRツアーを非公開にしました', vr_tour: @vr_tour }
+    render json: {
+      success: true,
+      message: 'VRツアーを非公開にしました',
+      vr_tour: @vr_tour.as_json(
+        include: {
+          room: {
+            only: [:id, :room_number],
+            include: {
+              building: {
+                only: [:id, :name, :address]
+              }
+            }
+          }
+        }
+      )
+    }
   end
 
   # POST /api/v1/vr_tours/bulk_action (一括操作)

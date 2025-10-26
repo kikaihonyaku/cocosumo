@@ -16,6 +16,7 @@ import {
 import {
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
+import IconButton from "@mui/material/IconButton";
 import muiTheme from '../theme/muiTheme';
 import RoomInfoPanel from "../components/RoomDetail/RoomInfoPanel";
 import RoomPhotosPanel from "../components/RoomDetail/RoomPhotosPanel";
@@ -168,6 +169,16 @@ export default function RoomDetail() {
           borderRadius: '12px 12px 0 0',
         }}>
           <Toolbar variant="dense" sx={{ minHeight: '52px', py: 1 }}>
+            <IconButton
+              edge="start"
+              onClick={() => navigate(`/property/${room.building_id}`)}
+              sx={{
+                mr: 2,
+                color: 'white',
+              }}
+            >
+              <ArrowBackIcon />
+            </IconButton>
             <Box sx={{ flexGrow: 1 }}>
               <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
                 {room.room_number}号室
@@ -176,22 +187,6 @@ export default function RoomDetail() {
                 {room.building?.name}
               </Typography>
             </Box>
-            <Button
-              startIcon={<ArrowBackIcon />}
-              onClick={() => navigate(`/property/${room.building_id}`)}
-              variant="outlined"
-              size="small"
-              sx={{
-                color: 'white',
-                borderColor: 'rgba(255, 255, 255, 0.5)',
-                '&:hover': {
-                  borderColor: 'white',
-                  bgcolor: 'rgba(255, 255, 255, 0.1)',
-                }
-              }}
-            >
-              物件詳細に戻る
-            </Button>
           </Toolbar>
         </AppBar>
 
