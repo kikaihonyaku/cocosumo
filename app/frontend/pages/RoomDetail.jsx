@@ -21,7 +21,6 @@ import muiTheme from '../theme/muiTheme';
 import RoomInfoPanel from "../components/RoomDetail/RoomInfoPanel";
 import RoomPhotosPanel from "../components/RoomDetail/RoomPhotosPanel";
 import RoomVRTourPanel from "../components/RoomDetail/RoomVRTourPanel";
-import BuildingPhotosPanel from "../components/RoomDetail/BuildingPhotosPanel";
 
 export default function RoomDetail() {
   const { id } = useParams();
@@ -38,7 +37,6 @@ export default function RoomDetail() {
   const [isRoomInfoMaximized, setIsRoomInfoMaximized] = useState(false);
   const [isPhotosMaximized, setIsPhotosMaximized] = useState(false);
   const [isVRTourMaximized, setIsVRTourMaximized] = useState(false);
-  const [isBuildingPhotosMaximized, setIsBuildingPhotosMaximized] = useState(false);
 
   useEffect(() => {
     fetchRoom();
@@ -108,10 +106,6 @@ export default function RoomDetail() {
 
   const handleToggleVRTourMaximize = () => {
     setIsVRTourMaximized(!isVRTourMaximized);
-  };
-
-  const handleToggleBuildingPhotosMaximize = () => {
-    setIsBuildingPhotosMaximized(!isBuildingPhotosMaximized);
   };
 
   const handlePhotosUpdate = () => {
@@ -190,7 +184,7 @@ export default function RoomDetail() {
           </Toolbar>
         </AppBar>
 
-      {/* メインコンテンツ - 3カラムグリッド */}
+      {/* メインコンテンツ - 2カラムグリッド */}
       <Box
         sx={{
           flex: 1,
@@ -246,8 +240,9 @@ export default function RoomDetail() {
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            gridRow: isLgUp ? 'span 1' : 'auto',
-            minHeight: isLgUp ? 400 : 300,
+            gridRow: isLgUp ? 'span 2' : 'auto',
+            minHeight: isLgUp ? 800 : 500,
+            maxHeight: isLgUp ? 'none' : 700,
             ...(isPhotosMaximized && {
               position: 'fixed',
               top: 0,
@@ -267,14 +262,15 @@ export default function RoomDetail() {
             />
           </Paper>
 
-          {/* 中央カラム下: VRツアー */}
+          {/* 右カラム: VRツアー */}
           <Paper elevation={3} sx={{
             borderRadius: 2,
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            gridRow: isLgUp ? 'span 1' : 'auto',
-            minHeight: isLgUp ? 400 : 300,
+            gridRow: isLgUp ? 'span 2' : 'auto',
+            minHeight: isLgUp ? 800 : 500,
+            maxHeight: isLgUp ? 'none' : 700,
             ...(isVRTourMaximized && {
               position: 'fixed',
               top: 0,
@@ -290,33 +286,6 @@ export default function RoomDetail() {
               roomId={room.id}
               isMaximized={isVRTourMaximized}
               onToggleMaximize={handleToggleVRTourMaximize}
-            />
-          </Paper>
-
-          {/* 右カラム: 建物外観 */}
-          <Paper elevation={3} sx={{
-            borderRadius: 2,
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            gridRow: isLgUp ? 'span 2' : 'auto',
-            minHeight: isLgUp ? 800 : 500,
-            maxHeight: isLgUp ? 'none' : 700,
-            ...(isBuildingPhotosMaximized && {
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 1300,
-              maxHeight: '100vh',
-              borderRadius: 0,
-            }),
-          }}>
-            <BuildingPhotosPanel
-              buildingId={room.building_id}
-              isMaximized={isBuildingPhotosMaximized}
-              onToggleMaximize={handleToggleBuildingPhotosMaximize}
             />
           </Paper>
         </Box>

@@ -12,6 +12,12 @@ import {
   Tooltip,
   Chip,
   Fab,
+  Tabs,
+  Tab,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import {
   PhotoLibrary as PhotoLibraryIcon,
@@ -22,7 +28,20 @@ import {
   Close as CloseIcon,
   OpenInFull as OpenInFullIcon,
   CloseFullscreen as CloseFullscreenIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
+
+// カテゴリ定義
+const PHOTO_CATEGORIES = {
+  all: { label: '全て', value: 'all' },
+  interior: { label: '室内', value: 'interior' },
+  living: { label: 'リビング', value: 'living' },
+  kitchen: { label: 'キッチン', value: 'kitchen' },
+  bathroom: { label: 'バスルーム', value: 'bathroom' },
+  floor_plan: { label: '間取り図', value: 'floor_plan' },
+  exterior: { label: '外観', value: 'exterior' },
+  other: { label: 'その他', value: 'other' },
+};
 
 export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, onToggleMaximize, isMobile = false }) {
   const [photos, setPhotos] = useState([]);
@@ -32,6 +51,11 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [dragActive, setDragActive] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [uploadCategory, setUploadCategory] = useState('interior');
+  const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
+  const [photoToEdit, setPhotoToEdit] = useState(null);
+  const [newCategory, setNewCategory] = useState('');
 
   // 写真データ取得
   useEffect(() => {
@@ -72,6 +96,7 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
 
         const formData = new FormData();
         formData.append('room_photo[photo]', file);
+        formData.append('room_photo[photo_type]', uploadCategory);
 
         const response = await fetch(`/api/v1/rooms/${roomId}/room_photos`, {
           method: 'POST',
@@ -152,43 +177,115 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
     setPreviewDialogOpen(true);
   };
 
+  const handleEditCategory = (photo) => {
+    setPhotoToEdit(photo);
+    setNewCategory(photo.photo_type || 'interior');
+    setEditCategoryDialogOpen(true);
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!photoToEdit) return;
+
+    try {
+      const response = await fetch(`/api/v1/rooms/${roomId}/room_photos/${photoToEdit.id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          room_photo: {
+            photo_type: newCategory,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('カテゴリの更新に失敗しました');
+      }
+
+      await fetchPhotos();
+      setEditCategoryDialogOpen(false);
+      setPhotoToEdit(null);
+      if (onPhotosUpdate) onPhotosUpdate();
+
+    } catch (error) {
+      console.error('カテゴリ更新エラー:', error);
+      alert(error.message);
+    }
+  };
+
+  // フィルタリングされた写真リスト
+  const filteredPhotos = selectedCategory === 'all'
+    ? photos
+    : photos.filter(photo => photo.photo_type === selectedCategory);
+
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
       <Box sx={{
-        px: 2,
-        py: 1.5,
         borderBottom: '1px solid #e0e0e0',
         bgcolor: 'background.paper',
-        display: 'flex',
-        alignItems: 'center',
-        minHeight: 56
       }}>
-        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1, fontWeight: 600, fontSize: '1.05rem' }}>
-          <PhotoLibraryIcon color="primary" sx={{ fontSize: 26 }} />
-          部屋写真 ({photos.length})
-        </Typography>
+        <Box sx={{
+          px: 2,
+          py: 1.5,
+          display: 'flex',
+          alignItems: 'center',
+        }}>
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1, fontWeight: 600, fontSize: '1.05rem' }}>
+            <PhotoLibraryIcon color="primary" sx={{ fontSize: 26 }} />
+            部屋写真 ({filteredPhotos.length}/{photos.length})
+          </Typography>
 
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<AddIcon />}
-          onClick={() => setUploadDialogOpen(true)}
-          sx={{ mr: 1 }}
-        >
-          写真追加
-        </Button>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<AddIcon />}
+            onClick={() => setUploadDialogOpen(true)}
+            sx={{ mr: 1 }}
+          >
+            写真追加
+          </Button>
 
-        {!isMobile && isMaximized && (
-          <Tooltip title={isMaximized ? "最小化" : "最大化"}>
-            <IconButton
-              size="small"
-              onClick={onToggleMaximize}
-            >
-              {isMaximized ? <CloseFullscreenIcon /> : <OpenInFullIcon />}
-            </IconButton>
-          </Tooltip>
-        )}
+          {!isMobile && isMaximized && (
+            <Tooltip title={isMaximized ? "最小化" : "最大化"}>
+              <IconButton
+                size="small"
+                onClick={onToggleMaximize}
+              >
+                {isMaximized ? <CloseFullscreenIcon /> : <OpenInFullIcon />}
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+
+        {/* カテゴリタブ */}
+        <Box sx={{ px: 2, pb: 1 }}>
+          <Tabs
+            value={selectedCategory}
+            onChange={(e, newValue) => setSelectedCategory(newValue)}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              minHeight: 40,
+              '& .MuiTab-root': {
+                minHeight: 40,
+                py: 1,
+                px: 2,
+                fontSize: '0.875rem',
+              }
+            }}
+          >
+            {Object.entries(PHOTO_CATEGORIES).map(([key, category]) => (
+              <Tab
+                key={key}
+                label={category.label}
+                value={category.value}
+              />
+            ))}
+          </Tabs>
+        </Box>
       </Box>
 
       {/* 写真一覧 */}
@@ -197,7 +294,7 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
             <CircularProgress />
           </Box>
-        ) : photos.length === 0 ? (
+        ) : filteredPhotos.length === 0 ? (
           <Box sx={{
             display: 'flex',
             flexDirection: 'column',
@@ -222,14 +319,16 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
           </Box>
         ) : (
           <Box sx={{
-            display: 'flex',
+            display: 'grid',
+            gridTemplateColumns: isMaximized
+              ? 'repeat(auto-fill, minmax(280px, 1fr))'
+              : 'repeat(auto-fill, minmax(220px, 1fr))',
             gap: 2,
-            overflowX: 'auto',
-            overflowY: 'hidden',
+            overflowY: 'auto',
             height: '100%',
             pb: 1,
             '&::-webkit-scrollbar': {
-              height: 8,
+              width: 8,
             },
             '&::-webkit-scrollbar-track': {
               bgcolor: 'grey.100',
@@ -243,18 +342,19 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
               },
             },
           }}>
-            {photos.map((photo, index) => (
+            {filteredPhotos.map((photo, index) => (
               <Box
                 key={photo.id}
                 sx={{
                   position: 'relative',
-                  flexShrink: 0,
-                  width: isMaximized ? 300 : 200,
-                  height: isMaximized ? 250 : 180,
+                  width: '100%',
+                  paddingBottom: '75%', // 4:3 aspect ratio
                 }}
               >
                 <Box sx={{
-                  position: 'relative',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
                   width: '100%',
                   height: '100%',
                   borderRadius: 1,
@@ -298,6 +398,20 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
                         }}
                       >
                         <ZoomInIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+
+                    <Tooltip title="カテゴリ編集">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEditCategory(photo)}
+                        sx={{
+                          bgcolor: 'rgba(25,118,210,0.6)',
+                          color: 'white',
+                          '&:hover': { bgcolor: 'rgba(25,118,210,0.8)' }
+                        }}
+                      >
+                        <EditIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
@@ -353,6 +467,23 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
       >
         <DialogTitle>写真アップロード</DialogTitle>
         <DialogContent>
+          <FormControl fullWidth sx={{ mb: 3, mt: 1 }}>
+            <InputLabel>カテゴリ</InputLabel>
+            <Select
+              value={uploadCategory}
+              label="カテゴリ"
+              onChange={(e) => setUploadCategory(e.target.value)}
+            >
+              {Object.entries(PHOTO_CATEGORIES)
+                .filter(([key]) => key !== 'all')
+                .map(([key, category]) => (
+                  <MenuItem key={key} value={category.value}>
+                    {category.label}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
+
           <Box
             sx={{
               border: '2px dashed',
@@ -437,6 +568,42 @@ export default function RoomPhotosPanel({ roomId, onPhotosUpdate, isMaximized, o
             </Box>
           )}
         </DialogContent>
+      </Dialog>
+
+      {/* カテゴリ編集ダイアログ */}
+      <Dialog
+        open={editCategoryDialogOpen}
+        onClose={() => setEditCategoryDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>カテゴリ編集</DialogTitle>
+        <DialogContent>
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <InputLabel>カテゴリ</InputLabel>
+            <Select
+              value={newCategory}
+              label="カテゴリ"
+              onChange={(e) => setNewCategory(e.target.value)}
+            >
+              {Object.entries(PHOTO_CATEGORIES)
+                .filter(([key]) => key !== 'all')
+                .map(([key, category]) => (
+                  <MenuItem key={key} value={category.value}>
+                    {category.label}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditCategoryDialogOpen(false)}>
+            キャンセル
+          </Button>
+          <Button onClick={handleUpdateCategory} variant="contained">
+            更新
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* フローティングアクションボタン（小画面用） */}

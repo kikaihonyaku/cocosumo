@@ -11,9 +11,11 @@ class RoomPhoto < ApplicationRecord
   # Enum for photo types
   enum :photo_type, {
     interior: 'interior',
-    exterior: 'exterior',
-    bathroom: 'bathroom',
+    living: 'living',
     kitchen: 'kitchen',
+    bathroom: 'bathroom',
+    floor_plan: 'floor_plan',
+    exterior: 'exterior',
     other: 'other'
   }, prefix: true
 
