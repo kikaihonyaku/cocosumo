@@ -22,13 +22,17 @@ class Api::V1::ImagenController < ApplicationController
     end
 
     begin
+      # 参照画像を取得（オプション）
+      reference_images = params[:reference_images] || []
+      Rails.logger.info("Reference images count: #{reference_images.length}")
+
       # プロンプトを強化
-      enhanced_prompt = enhance_prompt(params[:prompt])
+      enhanced_prompt = enhance_prompt(params[:prompt], reference_images.any?)
       Rails.logger.info("Original prompt: #{params[:prompt]}")
       Rails.logger.info("Enhanced prompt: #{enhanced_prompt}")
 
       # リトライメカニズム付きでGemini APIを呼び出し
-      response_data = call_gemini_api_with_retry(params[:image], enhanced_prompt)
+      response_data = call_gemini_api_with_retry(params[:image], enhanced_prompt, reference_images)
 
       # レスポンスから画像データを抽出
       generated_image = extract_generated_image(response_data)
@@ -58,9 +62,16 @@ class Api::V1::ImagenController < ApplicationController
   end
 
   # プロンプトを強化（2025年のベストプラクティスに基づく）
-  def enhance_prompt(user_prompt)
+  def enhance_prompt(user_prompt, has_reference_images = false)
     # ユーザーのプロンプトが既に詳細な場合はそのまま使用
     return user_prompt if user_prompt.length > 100
+
+    # 参照画像がある場合の追加指示
+    reference_instruction = if has_reference_images
+      "\n- 追加で提供された参照画像の要素（オブジェクト、照明、スタイルなど）を編集に使用してください"
+    else
+      ""
+    end
 
     # プロンプトを構造化して強化
     <<~PROMPT.strip
@@ -74,14 +85,14 @@ class Api::V1::ImagenController < ApplicationController
       - 削除する場合は、削除後の空間を周囲の背景と調和するように自然に埋めてください
       - 元の画像の照明、色調、パースペクティブ（遠近感）を維持してください
       - 画像のアスペクト比を変更しないでください
-      - 編集箇所と周辺部分の境界が自然に見えるようにしてください
+      - 編集箇所と周辺部分の境界が自然に見えるようにしてください#{reference_instruction}
 
       編集後の画像は、プロフェッショナルな不動産写真として使用できる品質にしてください。
     PROMPT
   end
 
   # リトライメカニズム付きでGemini APIを呼び出し
-  def call_gemini_api_with_retry(image_file, prompt)
+  def call_gemini_api_with_retry(image_file, prompt, reference_images = [])
     attempt = 0
     last_error = nil
 
@@ -97,7 +108,7 @@ class Api::V1::ImagenController < ApplicationController
           prompt
         end
 
-        response_data = call_gemini_api(image_file, adjusted_prompt)
+        response_data = call_gemini_api(image_file, adjusted_prompt, reference_images)
 
         # レスポンスが有効かチェック
         if response_data && response_data['candidates']&.any?
@@ -139,13 +150,16 @@ class Api::V1::ImagenController < ApplicationController
   end
 
   # Gemini APIを呼び出して画像編集を実行
-  def call_gemini_api(image_file, prompt)
+  def call_gemini_api(image_file, prompt, reference_images = [])
     # 画像をBase64エンコード
     image_base64 = encode_image(image_file)
 
+    # 参照画像もBase64エンコード
+    reference_images_base64 = reference_images.map { |ref_image| encode_image(ref_image) }
+
     # APIリクエストを構築
     uri = build_api_uri
-    request_body = build_request_body(prompt, image_base64)
+    request_body = build_request_body(prompt, image_base64, reference_images_base64)
 
     Rails.logger.info("Gemini API Request: #{request_body.to_json}")
 
@@ -176,19 +190,32 @@ class Api::V1::ImagenController < ApplicationController
   end
 
   # APIリクエストボディを構築
-  def build_request_body(prompt, image_base64)
+  def build_request_body(prompt, image_base64, reference_images_base64 = [])
+    # partsを構築: テキストプロンプト → ベース画像 → 参照画像1, 2, 3...
+    parts = [
+      { text: prompt },
+      {
+        inline_data: {
+          mime_type: IMAGE_MIME_TYPE,
+          data: image_base64
+        }
+      }
+    ]
+
+    # 参照画像を追加
+    reference_images_base64.each do |ref_image_base64|
+      parts << {
+        inline_data: {
+          mime_type: IMAGE_MIME_TYPE,
+          data: ref_image_base64
+        }
+      }
+    end
+
     {
       contents: [{
         role: 'user',
-        parts: [
-          { text: prompt },
-          {
-            inline_data: {
-              mime_type: IMAGE_MIME_TYPE,
-              data: image_base64
-            }
-          }
-        ]
+        parts: parts
       }],
       generation_config: {
         response_modalities: ['image']

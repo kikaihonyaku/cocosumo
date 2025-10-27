@@ -31,6 +31,8 @@ import {
   Save as SaveIcon,
   Refresh as RefreshIcon,
   AutoFixHigh as AutoFixHighIcon,
+  AddPhotoAlternate as AddPhotoAlternateIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import muiTheme from '../theme/muiTheme';
 
@@ -54,6 +56,7 @@ export default function PhotoEditor() {
   // Gemini AI設定
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiProcessing, setAiProcessing] = useState(false);
+  const [referenceImages, setReferenceImages] = useState([]); // 参照画像（File オブジェクトの配列）
 
   // 保存オプション
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -226,6 +229,24 @@ export default function PhotoEditor() {
     setSaturation(100);
   };
 
+  // 参照画像を追加
+  const handleAddReferenceImage = (event) => {
+    const files = Array.from(event.target.files || []);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+
+    // 最大3枚まで
+    const newImages = [...referenceImages, ...imageFiles].slice(0, 3);
+    setReferenceImages(newImages);
+
+    // input要素をリセット（同じファイルを再度選択できるように）
+    event.target.value = '';
+  };
+
+  // 参照画像を削除
+  const handleRemoveReferenceImage = (index) => {
+    setReferenceImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleAiProcess = async () => {
     if (!aiPrompt.trim()) {
       alert('AI処理の指示を入力してください');
@@ -249,6 +270,11 @@ export default function PhotoEditor() {
       const formData = new FormData();
       formData.append('image', blob, 'current_image.jpg');
       formData.append('prompt', aiPrompt);
+
+      // 参照画像を追加
+      referenceImages.forEach((refImage, index) => {
+        formData.append('reference_images[]', refImage, `reference_${index}.jpg`);
+      });
 
       // Imagen APIにリクエスト送信
       const response = await fetch('/api/v1/imagen/edit_image', {
@@ -504,6 +530,84 @@ export default function PhotoEditor() {
                   helperText="短い指示でOK！AIが自動的に詳細な編集指示に変換します"
                 />
 
+                {/* 参照画像セクション */}
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" gutterBottom sx={{ fontWeight: 600 }}>
+                    参照画像（オプション）
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                    照明やオブジェクトなどの画像を追加できます（最大3枚）
+                  </Typography>
+
+                  {/* 参照画像プレビュー */}
+                  {referenceImages.length > 0 && (
+                    <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                      {referenceImages.map((file, index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            position: 'relative',
+                            width: 80,
+                            height: 80,
+                            borderRadius: 1,
+                            overflow: 'hidden',
+                            border: '2px solid',
+                            borderColor: 'divider',
+                          }}
+                        >
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={`参照画像${index + 1}`}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                            }}
+                          />
+                          <IconButton
+                            size="small"
+                            onClick={() => handleRemoveReferenceImage(index)}
+                            sx={{
+                              position: 'absolute',
+                              top: 2,
+                              right: 2,
+                              bgcolor: 'rgba(0, 0, 0, 0.6)',
+                              color: 'white',
+                              '&:hover': {
+                                bgcolor: 'rgba(0, 0, 0, 0.8)',
+                              },
+                              padding: '2px',
+                            }}
+                          >
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+
+                  {/* 参照画像追加ボタン */}
+                  {referenceImages.length < 3 && (
+                    <Button
+                      component="label"
+                      variant="outlined"
+                      startIcon={<AddPhotoAlternateIcon />}
+                      size="small"
+                      disabled={aiProcessing}
+                      fullWidth
+                    >
+                      参照画像を追加 ({referenceImages.length}/3)
+                      <input
+                        type="file"
+                        hidden
+                        accept="image/*"
+                        multiple
+                        onChange={handleAddReferenceImage}
+                      />
+                    </Button>
+                  )}
+                </Box>
+
                 <Button
                   fullWidth
                   variant="contained"
@@ -532,6 +636,15 @@ export default function PhotoEditor() {
                   • 修正系：「壁の汚れを完全に消す」「床のキズを完全に修正」
                   <br />
                   • 変更系：「壁を白に塗る」「カーテンを追加」
+                  <br />
+                  <br />
+                  <strong>参照画像の使い方：</strong>
+                  <br />
+                  • 照明器具の画像を追加して「この照明を追加」
+                  <br />
+                  • 家具の画像を追加して「この家具を配置」
+                  <br />
+                  • スタイル参考画像を追加して雰囲気を指定
                 </Alert>
               </Paper>
 
