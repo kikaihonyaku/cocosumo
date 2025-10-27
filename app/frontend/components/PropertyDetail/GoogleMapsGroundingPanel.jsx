@@ -65,6 +65,15 @@ export default function GoogleMapsGroundingPanel({ property, onPlaceClick }) {
       setLoading(true);
       setError(null);
 
+      // ユーザーメッセージを即座にチャット欄に追加
+      setConversationHistory(prev => [
+        ...prev,
+        { role: 'user', text: queryText }
+      ]);
+
+      // 入力フィールドをクリア
+      setQuery('');
+
       const response = await fetch(`/api/v1/buildings/${property.id}/grounding`, {
         method: 'POST',
         credentials: 'include',
@@ -101,14 +110,11 @@ export default function GoogleMapsGroundingPanel({ property, onPlaceClick }) {
         console.log('Grounding API response:', data);
         setResponse(data);
 
-        // 会話履歴に追加
+        // AIの応答のみを会話履歴に追加
         setConversationHistory(prev => [
           ...prev,
-          { role: 'user', text: queryText },
           { role: 'model', text: data.answer || data.text || '' }
         ]);
-
-        setQuery('');
       } else {
         throw new Error('予期しないレスポンス形式です');
       }
@@ -116,6 +122,8 @@ export default function GoogleMapsGroundingPanel({ property, onPlaceClick }) {
     } catch (err) {
       console.error('Grounding APIエラー:', err);
       setError(err.message || '周辺情報の取得に失敗しました');
+      // エラー時は最後に追加したユーザーメッセージを削除
+      setConversationHistory(prev => prev.slice(0, -1));
     } finally {
       setLoading(false);
     }
