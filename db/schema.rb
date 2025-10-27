@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_14_080658) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_27_215813) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -51,6 +51,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_14_080658) do
     t.datetime "updated_at", null: false
     t.index ["original_photo_id"], name: "index_ai_generated_images_on_original_photo_id"
     t.index ["room_id"], name: "index_ai_generated_images_on_room_id"
+  end
+
+  create_table "building_photos", force: :cascade do |t|
+    t.integer "building_id", null: false
+    t.string "photo_type"
+    t.text "caption"
+    t.integer "display_order"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["building_id"], name: "index_building_photos_on_building_id"
   end
 
   create_table "buildings", force: :cascade do |t|
@@ -165,6 +175,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_14_080658) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "ai_generated_images", "original_photos"
   add_foreign_key "ai_generated_images", "rooms"
+  add_foreign_key "building_photos", "buildings"
   add_foreign_key "buildings", "tenants"
   add_foreign_key "owners", "buildings"
   add_foreign_key "owners", "tenants"

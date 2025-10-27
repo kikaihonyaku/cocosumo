@@ -28,7 +28,12 @@ Rails.application.routes.draw do
 
       # 物件管理
       resources :buildings do
-        resources :photos, only: [:index, :create, :destroy]
+        resources :photos, only: [:index, :create, :destroy, :show, :update], controller: 'building_photos' do
+          member do
+            post :replace
+            post :duplicate
+          end
+        end
         resources :owners
         resources :rooms, only: [:index, :create]
 

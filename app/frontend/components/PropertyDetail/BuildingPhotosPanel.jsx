@@ -23,13 +23,12 @@ import {
   PhotoLibrary as PhotoLibraryIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
-  ZoomIn as ZoomInIcon,
   CloudUpload as CloudUploadIcon,
   Close as CloseIcon,
+  ZoomIn as ZoomInIcon,
   OpenInFull as OpenInFullIcon,
   CloseFullscreen as CloseFullscreenIcon,
   Edit as EditIcon,
-  Image as ImageIcon,
   Download as DownloadIcon,
   ArrowBackIos as ArrowBackIosIcon,
   ArrowForwardIos as ArrowForwardIosIcon,
@@ -39,16 +38,15 @@ import { Link as RouterLink } from 'react-router-dom';
 // カテゴリ定義
 const PHOTO_CATEGORIES = {
   all: { label: '全て', value: 'all' },
-  interior: { label: '室内', value: 'interior' },
-  living: { label: 'リビング', value: 'living' },
-  kitchen: { label: 'キッチン', value: 'kitchen' },
-  bathroom: { label: 'バスルーム', value: 'bathroom' },
-  floor_plan: { label: '間取り図', value: 'floor_plan' },
   exterior: { label: '外観', value: 'exterior' },
+  entrance: { label: 'エントランス', value: 'entrance' },
+  common_area: { label: '共用部', value: 'common_area' },
+  parking: { label: '駐車場', value: 'parking' },
+  surroundings: { label: '周辺環境', value: 'surroundings' },
   other: { label: 'その他', value: 'other' },
 };
 
-export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPhotosUpdate, isMaximized, onToggleMaximize, isMobile = false }) {
+export default function BuildingPhotosPanel({ propertyId, buildingName, onPhotosUpdate, isMaximized, onToggleMaximize, isMobile = false }) {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -57,7 +55,7 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [uploadCategory, setUploadCategory] = useState('interior');
+  const [uploadCategory, setUploadCategory] = useState('exterior');
   const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
   const [photoToEdit, setPhotoToEdit] = useState(null);
   const [newCategory, setNewCategory] = useState('');
@@ -70,12 +68,12 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
   // 写真データ取得
   useEffect(() => {
     fetchPhotos();
-  }, [roomId]);
+  }, [propertyId]);
 
   const fetchPhotos = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/v1/rooms/${roomId}/room_photos`, {
+      const response = await fetch(`/api/v1/buildings/${propertyId}/photos`, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -105,10 +103,10 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
         }
 
         const formData = new FormData();
-        formData.append('room_photo[photo]', file);
-        formData.append('room_photo[photo_type]', uploadCategory);
+        formData.append('photo', file);
+        formData.append('photo_type', uploadCategory);
 
-        const response = await fetch(`/api/v1/rooms/${roomId}/room_photos`, {
+        const response = await fetch(`/api/v1/buildings/${propertyId}/photos`, {
           method: 'POST',
           credentials: 'include',
           body: formData,
@@ -135,7 +133,7 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
     if (!confirm('この写真を削除してもよろしいですか？')) return;
 
     try {
-      const response = await fetch(`/api/v1/rooms/${roomId}/room_photos/${photoId}`, {
+      const response = await fetch(`/api/v1/buildings/${propertyId}/photos/${photoId}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -189,7 +187,7 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
 
   const handleEditCategory = (photo) => {
     setPhotoToEdit(photo);
-    setNewCategory(photo.photo_type || 'interior');
+    setNewCategory(photo.photo_type || 'exterior');
     setEditCategoryDialogOpen(true);
   };
 
@@ -197,16 +195,14 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
     if (!photoToEdit) return;
 
     try {
-      const response = await fetch(`/api/v1/rooms/${roomId}/room_photos/${photoToEdit.id}`, {
+      const response = await fetch(`/api/v1/buildings/${propertyId}/photos/${photoToEdit.id}`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          room_photo: {
-            photo_type: newCategory,
-          },
+          photo_type: newCategory,
         }),
       });
 
@@ -229,13 +225,14 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
     if (!selectedPhoto) return;
 
     try {
-      const response = await fetch(selectedPhoto.photo_url);
+      const photoUrl = selectedPhoto.url || selectedPhoto.image_url;
+      const response = await fetch(photoUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
 
-      // ファイル名を生成: 建物名_部屋番号_カテゴリ名_YYYYMMDD_HHMMSS.拡張子
+      // ファイル名を生成: 建物名_カテゴリ名_YYYYMMDD_HHMMSS.拡張子
       const now = new Date();
       const timestamp = [
         now.getFullYear(),
@@ -253,12 +250,12 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
         : 'その他';
 
       // 拡張子を取得
-      const urlParts = selectedPhoto.photo_url.split('/');
+      const urlParts = photoUrl.split('/');
       const lastPart = urlParts[urlParts.length - 1];
       const extension = lastPart.includes('.') ? lastPart.split('.').pop() : 'jpg';
 
-      // ファイル名の生成（日本語ファイル名として）
-      const fileName = `${buildingName || '建物'}_${roomNumber || '部屋'}号室_${categoryLabel}_${timestamp}.${extension}`;
+      // ファイル名の生成
+      const fileName = `${buildingName || '建物'}_${categoryLabel}_${timestamp}.${extension}`;
       link.download = fileName;
 
       document.body.appendChild(link);
@@ -318,7 +315,7 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
         }}>
           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1, fontWeight: 600, fontSize: '1.05rem' }}>
             <PhotoLibraryIcon color="primary" sx={{ fontSize: 26 }} />
-            部屋写真 ({filteredPhotos.length}/{photos.length})
+            外観写真 ({filteredPhotos.length}/{photos.length})
           </Typography>
 
           <Button
@@ -402,17 +399,14 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
           </Box>
         ) : (
           <Box sx={{
-            display: 'grid',
-            gridTemplateColumns: isMaximized
-              ? 'repeat(4, 1fr)'
-              : 'repeat(3, 1fr)',
+            display: 'flex',
             gap: 2,
-            overflowY: 'auto',
+            overflowX: 'auto',
+            overflowY: 'hidden',
             height: '100%',
             pb: 1,
-            alignContent: 'start',
             '&::-webkit-scrollbar': {
-              width: 8,
+              height: 8,
             },
             '&::-webkit-scrollbar-track': {
               bgcolor: 'grey.100',
@@ -431,14 +425,13 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
                 key={photo.id}
                 sx={{
                   position: 'relative',
-                  width: '100%',
-                  paddingBottom: '75%', // 4:3 aspect ratio
+                  flexShrink: 0,
+                  width: isMaximized ? 300 : 200,
+                  height: isMaximized ? 250 : 180,
                 }}
               >
                 <Box sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
+                  position: 'relative',
                   width: '100%',
                   height: '100%',
                   borderRadius: 1,
@@ -451,8 +444,8 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
                   }
                 }}>
                   <img
-                    src={photo.photo_url}
-                    alt={`部屋写真 ${index + 1}`}
+                    src={photo.thumbnail_url || photo.url || photo.image_url}
+                    alt={`外観写真 ${index + 1}`}
                     style={{
                       width: '100%',
                       height: '100%',
@@ -578,7 +571,7 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
-            onClick={() => document.getElementById('room-photo-upload-input').click()}
+            onClick={() => document.getElementById('photo-upload-input').click()}
           >
             <CloudUploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" gutterBottom>
@@ -592,7 +585,7 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
             </Typography>
 
             <input
-              id="room-photo-upload-input"
+              id="photo-upload-input"
               type="file"
               accept="image/*"
               multiple
@@ -643,7 +636,7 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
               <Tooltip title="画像を編集">
                 <IconButton
                   component={RouterLink}
-                  to={`/rooms/${roomId}/photos/${selectedPhoto.id}/edit`}
+                  to={`/buildings/${propertyId}/photos/${selectedPhoto.id}/edit`}
                   sx={{ color: 'white' }}
                 >
                   <EditIcon />
@@ -701,7 +694,7 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
               )}
 
               <img
-                src={selectedPhoto.photo_url}
+                src={selectedPhoto.url || selectedPhoto.image_url}
                 alt="写真プレビュー"
                 style={{
                   maxWidth: '100%',
@@ -781,8 +774,8 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
           {photoToEdit && (
             <Button
               component={RouterLink}
-              to={`/rooms/${roomId}/photos/${photoToEdit.id}/edit`}
-              startIcon={<ImageIcon />}
+              to={`/buildings/${propertyId}/photos/${photoToEdit.id}/edit`}
+              startIcon={<EditIcon />}
               variant="outlined"
               fullWidth
               sx={{ textTransform: 'none' }}

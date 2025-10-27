@@ -35,8 +35,9 @@ import {
 import muiTheme from '../theme/muiTheme';
 
 export default function PhotoEditor() {
-  const { roomId, photoId } = useParams();
+  const { roomId, buildingId, photoId } = useParams();
   const navigate = useNavigate();
+  const isBuilding = !!buildingId; // buildingIdがある場合は建物写真
   const canvasRef = useRef(null);
   const originalImageRef = useRef(null);
 
@@ -60,12 +61,16 @@ export default function PhotoEditor() {
 
   useEffect(() => {
     fetchPhoto();
-  }, [roomId, photoId]);
+  }, [roomId, buildingId, photoId]);
 
   const fetchPhoto = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/v1/rooms/${roomId}/room_photos/${photoId}`, {
+      const url = isBuilding
+        ? `/api/v1/buildings/${buildingId}/photos/${photoId}`
+        : `/api/v1/rooms/${roomId}/room_photos/${photoId}`;
+
+      const response = await fetch(url, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -74,8 +79,10 @@ export default function PhotoEditor() {
 
       if (response.ok) {
         const data = await response.json();
-        setPhoto(data);
-        loadImageToCanvas(data.photo_url);
+        // 建物写真の場合はphotoオブジェクトの中にデータがある
+        const photoData = isBuilding ? data.photo : data;
+        setPhoto(photoData);
+        loadImageToCanvas(photoData.photo_url || photoData.url);
       } else {
         setError('写真情報の取得に失敗しました');
       }
@@ -329,9 +336,16 @@ export default function PhotoEditor() {
       formData.append('photo', blob, 'edited_photo.jpg');
       formData.append('save_option', saveOption);
 
-      const endpoint = saveOption === 'overwrite'
-        ? `/api/v1/rooms/${roomId}/room_photos/${photoId}/replace`
-        : `/api/v1/rooms/${roomId}/room_photos/${photoId}/duplicate`;
+      let endpoint;
+      if (isBuilding) {
+        endpoint = saveOption === 'overwrite'
+          ? `/api/v1/buildings/${buildingId}/photos/${photoId}/replace`
+          : `/api/v1/buildings/${buildingId}/photos/${photoId}/duplicate`;
+      } else {
+        endpoint = saveOption === 'overwrite'
+          ? `/api/v1/rooms/${roomId}/room_photos/${photoId}/replace`
+          : `/api/v1/rooms/${roomId}/room_photos/${photoId}/duplicate`;
+      }
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -340,7 +354,7 @@ export default function PhotoEditor() {
       });
 
       if (response.ok) {
-        window.close(); // 新しいタブを閉じる
+        navigate(-1); // 前のページに戻る
       } else {
         const error = await response.json();
         throw new Error(error.error || '保存に失敗しました');
@@ -376,8 +390,8 @@ export default function PhotoEditor() {
           <Typography variant="h6" color="error">
             {error || '写真が見つかりません'}
           </Typography>
-          <Button variant="contained" startIcon={<ArrowBackIcon />} onClick={() => window.close()}>
-            閉じる
+          <Button variant="contained" startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)}>
+            戻る
           </Button>
         </Box>
       </ThemeProvider>
@@ -417,13 +431,13 @@ export default function PhotoEditor() {
             <IconButton
               edge="start"
               color="inherit"
-              onClick={() => window.close()}
+              onClick={() => navigate(-1)}
               sx={{ mr: 2 }}
             >
               <ArrowBackIcon />
             </IconButton>
             <Typography variant="h6" component="h1" sx={{ flexGrow: 1, fontWeight: 600 }}>
-              画像編集
+              {isBuilding ? '建物写真編集' : '部屋写真編集'}
             </Typography>
             <Button
               variant="contained"
@@ -513,9 +527,9 @@ export default function PhotoEditor() {
                   <br />
                   <strong>よく使われる例：</strong>
                   <br />
-                  • 家具系：「ソファを削除」「テーブルを取り除く」
+                  • 家具系：「ソファを完全に削除」「テーブルを完全に取り除く」
                   <br />
-                  • 修正系：「壁の汚れを消す」「床のキズを修正」
+                  • 修正系：「壁の汚れを完全に消す」「床のキズを完全に修正」
                   <br />
                   • 変更系：「壁を白に塗る」「カーテンを追加」
                 </Alert>

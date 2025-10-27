@@ -30,7 +30,7 @@ import muiTheme from '../theme/muiTheme';
 import PropertyInfoPanel from '../components/PropertyDetail/PropertyInfoPanel';
 import PropertyMapPanel from '../components/PropertyDetail/PropertyMapPanel';
 import RoomsPanel from '../components/PropertyDetail/RoomsPanel';
-import PhotosPanel from '../components/PropertyDetail/PhotosPanel';
+import BuildingPhotosPanel from '../components/PropertyDetail/BuildingPhotosPanel';
 import GoogleMapsGroundingPanel from '../components/PropertyDetail/GoogleMapsGroundingPanel';
 
 export default function PropertyDetail() {
@@ -369,8 +369,9 @@ export default function PropertyDetail() {
 
                   {/* 写真エリア */}
                   <Box sx={{ minHeight: '400px', borderTop: '1px solid #ddd' }}>
-                    <PhotosPanel
+                    <BuildingPhotosPanel
                       propertyId={id}
+                      buildingName={property.name}
                       onPhotosUpdate={() => {}}
                       isMaximized={false} // モバイルでは最大化無効
                       onToggleMaximize={() => {}} // 無効化
@@ -516,8 +517,9 @@ export default function PropertyDetail() {
                   maxHeight: isLgUp ? 350 : 500,
                 }}
               >
-                <PhotosPanel
+                <BuildingPhotosPanel
                   propertyId={id}
+                  buildingName={property.name}
                   onPhotosUpdate={() => {}}
                   isMaximized={false}
                   onToggleMaximize={() => {}}

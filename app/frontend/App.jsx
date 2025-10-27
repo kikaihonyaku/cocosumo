@@ -112,6 +112,7 @@ export default function App() {
             <Route path="/rooms/new" element={<RoomForm />} />
             <Route path="/rooms/:id/edit" element={<RoomForm />} />
             <Route path="/rooms/:roomId/photos/:photoId/edit" element={<PhotoEditor />} />
+            <Route path="/buildings/:buildingId/photos/:photoId/edit" element={<PhotoEditor />} />
             <Route path="/room/:roomId/vr-tour/new" element={<VrTourEditor />} />
             <Route path="/room/:roomId/vr-tour/:id/edit" element={<VrTourEditor />} />
             <Route path="/room/:roomId/vr-tour/:id/viewer" element={<VrTourViewer />} />

@@ -5,6 +5,7 @@ class Building < ApplicationRecord
   belongs_to :tenant
   has_many :rooms, dependent: :destroy
   has_many :owners, dependent: :destroy
+  has_many :building_photos, dependent: :destroy
   has_one_attached :exterior_image
   has_many_attached :photos
 
