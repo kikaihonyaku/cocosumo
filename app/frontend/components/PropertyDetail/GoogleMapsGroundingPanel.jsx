@@ -33,6 +33,7 @@ export default function GoogleMapsGroundingPanel({ property, onPlaceClick }) {
     '近くにスーパーやコンビニはありますか？',
     '周辺の治安や住みやすさについて教えてください',
   ]);
+  const chatEndRef = React.useRef(null);
 
   // デバッグ用: 物件データをコンソールに出力
   useEffect(() => {
@@ -40,6 +41,13 @@ export default function GoogleMapsGroundingPanel({ property, onPlaceClick }) {
     console.log('Latitude:', property?.latitude);
     console.log('Longitude:', property?.longitude);
   }, [property]);
+
+  // チャットの最下部に自動スクロール
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [conversationHistory, loading]);
 
   // デフォルトクエリを自動実行
   // MEMO: 開発中は自動実行を無効化
@@ -268,15 +276,8 @@ export default function GoogleMapsGroundingPanel({ property, onPlaceClick }) {
           </Alert>
         )}
 
-        {/* 応答表示エリア */}
-        {loading ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-            <CircularProgress size={40} sx={{ mb: 2 }} />
-            <Typography color="text.secondary">
-              AIが周辺情報を取得しています...
-            </Typography>
-          </Box>
-        ) : response ? (
+        {/* チャット履歴表示エリア */}
+        {conversationHistory.length > 0 ? (
           <Box>
             {/* 位置情報表示 */}
             {property?.address && (
@@ -288,54 +289,98 @@ export default function GoogleMapsGroundingPanel({ property, onPlaceClick }) {
               </Box>
             )}
 
-            {/* AI応答 */}
-            <Paper elevation={0} sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 2, mb: 2 }}>
-              <Box sx={{
-                '& h1': { fontSize: '1.5rem', fontWeight: 600, mt: 2, mb: 1 },
-                '& h2': { fontSize: '1.3rem', fontWeight: 600, mt: 2, mb: 1 },
-                '& h3': { fontSize: '1.1rem', fontWeight: 600, mt: 1.5, mb: 0.5 },
-                '& p': { mb: 1, lineHeight: 1.7 },
-                '& ul, & ol': { pl: 3, mb: 1 },
-                '& li': { mb: 0.5 },
-                '& strong': { fontWeight: 600 },
-                '& em': { fontStyle: 'italic' },
-                '& code': {
-                  bgcolor: 'grey.200',
-                  px: 0.5,
-                  py: 0.25,
-                  borderRadius: 0.5,
-                  fontFamily: 'monospace',
-                  fontSize: '0.9em'
-                },
-                '& pre': {
-                  bgcolor: 'grey.200',
-                  p: 1,
-                  borderRadius: 1,
-                  overflow: 'auto',
-                  mb: 1
-                },
-                '& blockquote': {
-                  borderLeft: '4px solid',
-                  borderColor: 'primary.main',
-                  pl: 2,
-                  ml: 0,
-                  fontStyle: 'italic',
-                  color: 'text.secondary'
-                }
-              }}>
-                <ReactMarkdown components={markdownComponents}>
-                  {response.answer || response.text || 'データがありません'}
-                </ReactMarkdown>
+            {/* チャットメッセージ */}
+            {conversationHistory.map((message, index) => (
+              <Box
+                key={index}
+                sx={{
+                  display: 'flex',
+                  justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start',
+                  mb: 2,
+                }}
+              >
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    maxWidth: '80%',
+                    bgcolor: message.role === 'user' ? 'primary.main' : 'grey.50',
+                    color: message.role === 'user' ? 'white' : 'text.primary',
+                    borderRadius: 2,
+                    ...(message.role === 'user' && {
+                      borderTopRightRadius: 4,
+                    }),
+                    ...(message.role === 'model' && {
+                      borderTopLeftRadius: 4,
+                    }),
+                  }}
+                >
+                  {message.role === 'user' ? (
+                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                      {message.text}
+                    </Typography>
+                  ) : (
+                    <Box sx={{
+                      '& h1': { fontSize: '1.5rem', fontWeight: 600, mt: 2, mb: 1 },
+                      '& h2': { fontSize: '1.3rem', fontWeight: 600, mt: 2, mb: 1 },
+                      '& h3': { fontSize: '1.1rem', fontWeight: 600, mt: 1.5, mb: 0.5 },
+                      '& p': { mb: 1, lineHeight: 1.7 },
+                      '& ul, & ol': { pl: 3, mb: 1 },
+                      '& li': { mb: 0.5 },
+                      '& strong': { fontWeight: 600 },
+                      '& em': { fontStyle: 'italic' },
+                      '& code': {
+                        bgcolor: 'grey.200',
+                        px: 0.5,
+                        py: 0.25,
+                        borderRadius: 0.5,
+                        fontFamily: 'monospace',
+                        fontSize: '0.9em'
+                      },
+                      '& pre': {
+                        bgcolor: 'grey.200',
+                        p: 1,
+                        borderRadius: 1,
+                        overflow: 'auto',
+                        mb: 1
+                      },
+                      '& blockquote': {
+                        borderLeft: '4px solid',
+                        borderColor: 'primary.main',
+                        pl: 2,
+                        ml: 0,
+                        fontStyle: 'italic',
+                        color: 'text.secondary'
+                      }
+                    }}>
+                      <ReactMarkdown components={markdownComponents}>
+                        {message.text || 'データがありません'}
+                      </ReactMarkdown>
+                    </Box>
+                  )}
+                </Paper>
               </Box>
-              {response.is_mock && (
-                <Alert severity="info" sx={{ mt: 2 }}>
-                  デモモードで動作中です。実際のVertex AI APIへの接続に失敗したため、モックレスポンスを表示しています。
-                </Alert>
-              )}
-            </Paper>
+            ))}
 
-            {/* 参照元（Google Maps情報） */}
-            {response.sources && response.sources.length > 0 && (
+            {/* ローディング中のインジケーター */}
+            {loading && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
+                <Paper elevation={0} sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 2, borderTopLeftRadius: 4 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CircularProgress size={20} />
+                    <Typography variant="body2" color="text.secondary">
+                      AIが回答を生成しています...
+                    </Typography>
+                  </Box>
+                </Paper>
+              </Box>
+            )}
+
+            {/* スクロール用の参照点 */}
+            <div ref={chatEndRef} />
+
+            {/* 参照元（Google Maps情報） - 最後のレスポンスのみ表示 */}
+            {response && response.sources && response.sources.length > 0 && (
               <Box sx={{ mt: 2 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
                   情報提供元: Google Maps
@@ -352,6 +397,12 @@ export default function GoogleMapsGroundingPanel({ property, onPlaceClick }) {
                   ))}
                 </Box>
               </Box>
+            )}
+
+            {response && response.is_mock && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                デモモードで動作中です。実際のVertex AI APIへの接続に失敗したため、モックレスポンスを表示しています。
+              </Alert>
             )}
           </Box>
         ) : !property?.latitude || !property?.longitude ? (
@@ -379,8 +430,8 @@ export default function GoogleMapsGroundingPanel({ property, onPlaceClick }) {
           </Box>
         )}
 
-        {/* 提案クエリ */}
-        {!loading && suggestions.length > 0 && property?.latitude && property?.longitude && (
+        {/* 提案クエリ - チャット履歴がない場合のみ表示 */}
+        {!loading && conversationHistory.length === 0 && suggestions.length > 0 && property?.latitude && property?.longitude && (
           <Box sx={{ mt: 2 }}>
             <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
               質問の候補:
