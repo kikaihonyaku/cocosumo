@@ -117,7 +117,7 @@ class Api::V1::BuildingsController < ApplicationController
       # 会話履歴を取得
       conversation_history = params[:conversation_history] || []
 
-      # Vertex AI Grounding APIを試行し、エラー時はモックレスポンスにフォールバック
+      # Vertex AI Grounding APIを呼び出し
       response = call_vertex_ai_grounding(params[:query], latitude, longitude, conversation_history, @building.address)
 
       render json: {
@@ -138,13 +138,13 @@ class Api::V1::BuildingsController < ApplicationController
       Rails.logger.error("Grounding API error: #{e.message}")
       Rails.logger.error(e.backtrace.join("\n"))
       render json: {
-        error: '周辺情報の取得に失敗しました',
+        error: 'AI応答の取得に失敗しました。しばらく時間をおいて再度お試しください。',
         details: e.message
       }, status: :internal_server_error
     end
   end
 
-  # Vertex AI Grounding APIを呼び出し、エラー時はモックレスポンスにフォールバック
+  # Vertex AI Grounding APIを呼び出し
   def call_vertex_ai_grounding(query, latitude, longitude, conversation_history = [], address = nil)
     service = VertexAiGroundingService.new
     result = service.query_with_grounding(
@@ -156,34 +156,6 @@ class Api::V1::BuildingsController < ApplicationController
     )
 
     result.merge(is_mock: false)
-
-  rescue VertexAiGroundingService::GroundingError => e
-    Rails.logger.warn("Vertex AI Grounding failed, falling back to mock: #{e.message}")
-
-    # フォールバック: モックレスポンス
-    mock_response = generate_mock_response(query, latitude, longitude, address || @building.address)
-    mock_response.merge(is_mock: true)
-  end
-
-  def generate_mock_response(query, latitude, longitude, address)
-    # モックレスポンスを生成
-    {
-      answer: "#{address}周辺についてお答えします。\n\n" \
-              "この地域は、生活に便利な施設が充実したエリアです。\n\n" \
-              "【周辺施設】\n" \
-              "・コンビニエンスストア: 徒歩3分圏内に複数店舗\n" \
-              "・スーパーマーケット: 徒歩5分\n" \
-              "・飲食店: 多様なジャンルの飲食店が充実\n" \
-              "・駅: 最寄り駅まで徒歩10分\n\n" \
-              "【生活環境】\n" \
-              "・閑静な住宅街で、治安も良好です\n" \
-              "・公園や緑地も近く、生活しやすい環境です\n\n" \
-              "※現在はデモ版のため、実際のGoogle Mapsデータに基づく情報ではありません。\n" \
-              "実際の機能を利用するには、Vertex AI APIの設定が必要です。",
-      sources: [
-        { name: "Google Maps (デモ)", url: "https://maps.google.com/" }
-      ]
-    }
   end
 
   private
