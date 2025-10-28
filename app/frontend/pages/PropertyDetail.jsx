@@ -406,17 +406,17 @@ export default function PropertyDetail() {
           // デスクトップレイアウト: 3カラムカードレイアウト
           <Box sx={{
             flex: 1,
-            overflow: 'auto',
+            overflow: 'hidden',
             px: 1,
             py: 1,
             bgcolor: 'grey.50'
           }}>
             <Box sx={{
               display: 'grid',
-              gridTemplateColumns: isLgUp ? '280px 1fr 340px' : '1fr',
-              gridTemplateRows: isLgUp ? 'auto auto' : 'auto',
+              gridTemplateColumns: isLgUp ? '280px 1fr 480px' : '1fr',
+              gridTemplateRows: isLgUp ? '1fr' : 'auto',
               gap: 1,
-              height: isLgUp ? 'fit-content' : 'auto',
+              height: '100%',
             }}>
               {/* 左カラム: 建物（土地）カード */}
               <Paper
@@ -426,9 +426,7 @@ export default function PropertyDetail() {
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
-                  gridRow: isLgUp ? 'span 2' : 'auto',
-                  minHeight: isLgUp ? 800 : 500,
-                  maxHeight: isLgUp ? 'none' : 700,
+                  height: '100%',
                   ...(isPropertyInfoMaximized && {
                     position: 'fixed',
                     top: 0,
@@ -459,9 +457,7 @@ export default function PropertyDetail() {
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
-                  gridRow: isLgUp ? 'span 2' : 'auto',
-                  minHeight: isLgUp ? 600 : 500,
-                  maxHeight: isLgUp ? 'calc(100vh - 80px)' : 600,
+                  height: '100%',
                 }}
               >
                 <PropertyMapPanel
@@ -480,45 +476,53 @@ export default function PropertyDetail() {
                 />
               </Paper>
 
-              {/* 右上: 部屋一覧カード */}
-              <Paper
-                elevation={3}
-                sx={{
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 400,
-                  maxHeight: isLgUp ? 500 : 600,
-                }}
-              >
-                <RoomsPanel
-                  propertyId={id}
-                  rooms={rooms}
-                  onRoomsUpdate={handleRoomUpdate}
-                />
-              </Paper>
+              {/* 右カラム: 部屋一覧と外観写真 */}
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+                height: '100%',
+              }}>
+                {/* 右上: 部屋一覧カード */}
+                <Paper
+                  elevation={3}
+                  sx={{
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flex: 1,
+                    minHeight: 0,
+                  }}
+                >
+                  <RoomsPanel
+                    propertyId={id}
+                    rooms={rooms}
+                    onRoomsUpdate={handleRoomUpdate}
+                  />
+                </Paper>
 
-              {/* 右下: 外観写真カード */}
-              <Paper
-                elevation={3}
-                sx={{
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 280,
-                  maxHeight: isLgUp ? 350 : 500,
-                }}
-              >
-                <BuildingPhotosPanel
-                  propertyId={id}
-                  buildingName={property.name}
-                  onPhotosUpdate={() => {}}
-                  isMaximized={false}
-                  onToggleMaximize={() => {}}
-                />
-              </Paper>
+                {/* 右下: 外観写真カード */}
+                <Paper
+                  elevation={3}
+                  sx={{
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flex: 1,
+                    minHeight: 0,
+                  }}
+                >
+                  <BuildingPhotosPanel
+                    propertyId={id}
+                    buildingName={property.name}
+                    onPhotosUpdate={() => {}}
+                    isMaximized={false}
+                    onToggleMaximize={() => {}}
+                  />
+                </Paper>
+              </Box>
             </Box>
           </Box>
         )}

@@ -262,8 +262,8 @@ export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenCha
         bottom: 16,
         left: '50%',
         transform: 'translateX(-50%)',
-        width: { xs: 'calc(100% - 32px)', sm: 1100 },
-        maxWidth: 1100,
+        width: 'calc(100% - 160px)',
+        maxWidth: 1200,
         zIndex: 10,
       }}
     >

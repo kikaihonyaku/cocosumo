@@ -279,12 +279,10 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
             >
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ width: '18%' }}>号室</TableCell>
-                  <TableCell sx={{ width: '15%' }}>間取り</TableCell>
-                  <TableCell sx={{ width: '15%' }}>面積</TableCell>
-                  <TableCell sx={{ width: '20%' }} align="right">賃料</TableCell>
-                  <TableCell sx={{ width: '22%' }}>状態</TableCell>
-                  <TableCell sx={{ width: '10%' }} align="center">操作</TableCell>
+                  <TableCell sx={{ width: '23%' }}>号室</TableCell>
+                  <TableCell sx={{ width: '33%' }}>間取り</TableCell>
+                  <TableCell sx={{ width: '28%' }}>状態</TableCell>
+                  <TableCell sx={{ width: '16%' }} align="center">操作</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -292,8 +290,6 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
                   const statusInfo = getStatusInfo(room.status);
                   const roomNumber = room.room_number || '-';
                   const roomType = room.room_type || '-';
-                  const area = room.area ? `${room.area}㎡` : '-';
-                  const rentText = formatCurrency(room.rent);
 
                   return (
                     <TableRow
@@ -312,18 +308,6 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
                       <TableCell>
                         <Tooltip title={roomType} placement="top">
                           <span>{roomType}</span>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell>
-                        <Tooltip title={area} placement="top">
-                          <span>{area}</span>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Tooltip title={rentText} placement="top">
-                          <Typography variant="body2" noWrap>
-                            {rentText}
-                          </Typography>
                         </Tooltip>
                       </TableCell>
                       <TableCell>
