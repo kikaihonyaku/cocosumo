@@ -22,6 +22,7 @@ import {
   Check as CheckIcon,
   Close as CloseIcon,
   Map as MapIcon,
+  Streetview as StreetviewIcon,
 } from '@mui/icons-material';
 import MapChatWidget from './MapChatWidget';
 
@@ -31,6 +32,8 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
   const markerRef = useRef(null);
   const selectedPlaceMarkerRef = useRef(null); // AI応答から選択された場所のマーカー
   const widgetElementRef = useRef(null); // Google Maps Grounding Widget要素
+  const streetViewRef = useRef(null); // ストリートビューコンテナ
+  const panoramaRef = useRef(null); // ストリートビューパノラマインスタンス
   const [mapLoaded, setMapLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editingLocation, setEditingLocation] = useState(false);
@@ -38,6 +41,7 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
   const [searchAddress, setSearchAddress] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [streetViewVisible, setStreetViewVisible] = useState(false); // ストリートビュー表示状態
   const originalPositionRef = useRef(null);
 
   // Google Maps初期化
@@ -162,6 +166,23 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
     }
   }, [selectedPlace]);
 
+  // ストリートビュー表示切り替え時に地図をリサイズ
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      setTimeout(() => {
+        window.google?.maps?.event?.trigger(mapInstanceRef.current, 'resize');
+        // 中心位置を再設定
+        if (property?.latitude && property?.longitude) {
+          const lat = parseFloat(property.latitude);
+          const lng = parseFloat(property.longitude);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            mapInstanceRef.current.setCenter({ lat, lng });
+          }
+        }
+      }, 100);
+    }
+  }, [streetViewVisible, property]);
+
   const loadGoogleMaps = () => {
     const apiKey = import.meta.env?.VITE_GOOGLE_MAPS_API_KEY || '';
     const isValidApiKey = apiKey && apiKey !== 'your_google_maps_api_key_here';
@@ -228,11 +249,37 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
       const defaultLat = parseFloat(property?.latitude) || 35.6762;
       const defaultLng = parseFloat(property?.longitude) || 139.6503;
 
+      // ストリートビューパノラマの初期化（マップより先に作成）
+      let panorama = null;
+      if (streetViewRef.current) {
+        panorama = new window.google.maps.StreetViewPanorama(
+          streetViewRef.current,
+          {
+            position: { lat: defaultLat, lng: defaultLng },
+            pov: {
+              heading: 34,
+              pitch: 10,
+            },
+            zoom: 1,
+            visible: false, // 初期状態では非表示
+          }
+        );
+        panoramaRef.current = panorama;
+
+        // ストリートビューの表示/非表示を監視
+        panorama.addListener('visible_changed', () => {
+          const isVisible = panorama.getVisible();
+          setStreetViewVisible(isVisible);
+        });
+      }
+
+      // マップの初期化（カスタムストリートビューを指定）
       const map = new window.google.maps.Map(mapRef.current, {
         center: { lat: defaultLat, lng: defaultLng },
         zoom: 16,
         mapTypeId: 'roadmap', // 文字列で指定（MapTypeId.ROADMAPの代わり）
-        streetViewControl: true,
+        streetView: panorama, // カスタムストリートビューパノラマを指定
+        streetViewControl: true, // デフォルトのストリートビューコントロール（ペグマン）を表示
         fullscreenControl: false,
         zoomControl: false,
         mapTypeControl: true,
@@ -427,6 +474,19 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
     }
   };
 
+  const toggleStreetView = () => {
+    if (panoramaRef.current) {
+      if (!streetViewVisible && property?.latitude && property?.longitude) {
+        // ストリートビューを表示する際に、現在の物件位置を設定
+        const lat = parseFloat(property.latitude);
+        const lng = parseFloat(property.longitude);
+        panoramaRef.current.setPosition({ lat, lng });
+      }
+      // パノラマの表示状態を切り替え
+      panoramaRef.current.setVisible(!streetViewVisible);
+    }
+  };
+
   return (
     <Box sx={{ height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
       {/* 地図ヘッダー */}
@@ -452,7 +512,7 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
           </Typography>
         )}
 
-        {/* 位置編集・住所検索ボタン */}
+        {/* 位置編集・住所検索・ストリートビューボタン */}
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             variant="contained"
@@ -473,18 +533,46 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
           >
             住所検索
           </Button>
+
+          <Button
+            variant={streetViewVisible ? "contained" : "outlined"}
+            size="small"
+            startIcon={<StreetviewIcon />}
+            onClick={toggleStreetView}
+            disabled={!mapLoaded}
+            color={streetViewVisible ? "primary" : "inherit"}
+          >
+            ストリートビュー
+          </Button>
         </Box>
       </Box>
 
-      {/* 地図コンテナ */}
-      <Box
-        ref={mapRef}
-        sx={{
-          flex: 1,
-          width: '100%',
-          bgcolor: 'grey.100',
-        }}
-      />
+      {/* 地図・ストリートビューコンテナ */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* ストリートビューコンテナ（上半分） - 常にレンダリング */}
+        <Box
+          ref={streetViewRef}
+          sx={{
+            height: streetViewVisible ? '50%' : '0',
+            width: '100%',
+            bgcolor: 'grey.100',
+            borderBottom: streetViewVisible ? '2px solid #e0e0e0' : 'none',
+            overflow: 'hidden',
+            transition: 'height 0.3s ease',
+          }}
+        />
+
+        {/* 地図コンテナ（ストリートビュー表示時は下半分、非表示時は全体） */}
+        <Box
+          ref={mapRef}
+          sx={{
+            height: streetViewVisible ? '50%' : '100%',
+            width: '100%',
+            bgcolor: 'grey.100',
+            transition: 'height 0.3s ease',
+          }}
+        />
+      </Box>
 
       {/* ローディング・エラー表示 */}
       {loading && (
