@@ -314,23 +314,30 @@ export default function PropertyDetail() {
               >
                 <Tab
                   icon={<BusinessIcon />}
-                  label="建物(土地)"
+                  label="建物"
                   id="mobile-tab-0"
                   aria-controls="mobile-tabpanel-0"
                   sx={{ minHeight: 64 }}
                 />
                 <Tab
                   icon={<MapIcon />}
-                  label="地図・写真"
+                  label="地図"
                   id="mobile-tab-1"
                   aria-controls="mobile-tabpanel-1"
                   sx={{ minHeight: 64 }}
                 />
                 <Tab
-                  icon={<HomeIcon />}
-                  label="部屋"
+                  icon={<PhotoLibraryIcon />}
+                  label="外観"
                   id="mobile-tab-2"
                   aria-controls="mobile-tabpanel-2"
+                  sx={{ minHeight: 64 }}
+                />
+                <Tab
+                  icon={<HomeIcon />}
+                  label="部屋"
+                  id="mobile-tab-3"
+                  aria-controls="mobile-tabpanel-3"
                   sx={{ minHeight: 64 }}
                 />
               </Tabs>
@@ -351,44 +358,44 @@ export default function PropertyDetail() {
                 />
               </TabPanel>
 
-              {/* 地図・写真タブ */}
+              {/* 地図タブ */}
               <TabPanel value={mobileActiveTab} index={1}>
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  {/* 地図エリア */}
-                  <Box sx={{ height: '400px', minHeight: '400px' }}>
-                    <PropertyMapPanel
-                      property={property}
-                      onLocationUpdate={(lat, lng) => {
-                        setProperty(prev => ({ ...prev, latitude: lat, longitude: lng }));
-                      }}
-                      visible={mobileActiveTab === 1}
-                      onFormChange={handleFormChange}
-                      onSave={handleSave}
-                      selectedPlace={selectedPlace}
-                      onPlaceClick={handlePlaceClick}
-                      widgetContextToken={widgetContextToken}
-                      onWidgetTokenChange={(token) => {
-                        setWidgetContextToken(token);
-                      }}
-                    />
-                  </Box>
+                <Box sx={{ height: '100vh', width: '100%', position: 'relative' }}>
+                  <PropertyMapPanel
+                    property={property}
+                    onLocationUpdate={(lat, lng) => {
+                      setProperty(prev => ({ ...prev, latitude: lat, longitude: lng }));
+                    }}
+                    visible={mobileActiveTab === 1}
+                    onFormChange={handleFormChange}
+                    onSave={handleSave}
+                    selectedPlace={selectedPlace}
+                    onPlaceClick={handlePlaceClick}
+                    widgetContextToken={widgetContextToken}
+                    onWidgetTokenChange={(token) => {
+                      setWidgetContextToken(token);
+                    }}
+                    isMobile={true}
+                  />
+                </Box>
+              </TabPanel>
 
-                  {/* 写真エリア */}
-                  <Box sx={{ minHeight: '400px', borderTop: '1px solid #ddd' }}>
-                    <BuildingPhotosPanel
-                      propertyId={id}
-                      buildingName={property.name}
-                      onPhotosUpdate={() => {}}
-                      isMaximized={false} // モバイルでは最大化無効
-                      onToggleMaximize={() => {}} // 無効化
-                      isMobile={true}
-                    />
-                  </Box>
+              {/* 外観タブ */}
+              <TabPanel value={mobileActiveTab} index={2}>
+                <Box sx={{ height: '100vh', width: '100%' }}>
+                  <BuildingPhotosPanel
+                    propertyId={id}
+                    buildingName={property.name}
+                    onPhotosUpdate={() => {}}
+                    isMaximized={false} // モバイルでは最大化無効
+                    onToggleMaximize={() => {}} // 無効化
+                    isMobile={true}
+                  />
                 </Box>
               </TabPanel>
 
               {/* 部屋タブ */}
-              <TabPanel value={mobileActiveTab} index={2}>
+              <TabPanel value={mobileActiveTab} index={3}>
                 <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   {/* 部屋一覧 */}
                   <Box sx={{ flex: 1 }}>

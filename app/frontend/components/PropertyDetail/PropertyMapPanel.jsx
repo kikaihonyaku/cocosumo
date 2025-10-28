@@ -26,7 +26,7 @@ import {
 } from '@mui/icons-material';
 import MapChatWidget from './MapChatWidget';
 
-export default function PropertyMapPanel({ property, onLocationUpdate, visible = true, onFormChange, onSave, selectedPlace, onPlaceClick, widgetContextToken, onWidgetTokenChange }) {
+export default function PropertyMapPanel({ property, onLocationUpdate, visible = true, onFormChange, onSave, selectedPlace, onPlaceClick, widgetContextToken, onWidgetTokenChange, isMobile = false }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
@@ -506,45 +506,47 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
           物件位置
         </Typography>
 
-        {property?.address && (
+        {!isMobile && property?.address && (
           <Typography variant="body2" color="text.secondary" sx={{ mx: 2, flex: 1 }}>
             {property.address}
           </Typography>
         )}
 
-        {/* 位置編集・住所検索・ストリートビューボタン */}
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={editingLocation ? <CheckIcon /> : <EditIcon />}
-            onClick={handleLocationEdit}
-            color={editingLocation ? "success" : "primary"}
-            disabled={!mapLoaded}
-          >
-            {editingLocation ? '完了' : '位置編集'}
-          </Button>
+        {/* 位置編集・住所検索・ストリートビューボタン（モバイル時は非表示） */}
+        {!isMobile && (
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={editingLocation ? <CheckIcon /> : <EditIcon />}
+              onClick={handleLocationEdit}
+              color={editingLocation ? "success" : "primary"}
+              disabled={!mapLoaded}
+            >
+              {editingLocation ? '完了' : '位置編集'}
+            </Button>
 
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => setAddressSearchOpen(true)}
-            disabled={!mapLoaded}
-          >
-            住所検索
-          </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setAddressSearchOpen(true)}
+              disabled={!mapLoaded}
+            >
+              住所検索
+            </Button>
 
-          <Button
-            variant={streetViewVisible ? "contained" : "outlined"}
-            size="small"
-            startIcon={<StreetviewIcon />}
-            onClick={toggleStreetView}
-            disabled={!mapLoaded}
-            color={streetViewVisible ? "primary" : "inherit"}
-          >
-            ストリートビュー
-          </Button>
-        </Box>
+            <Button
+              variant={streetViewVisible ? "contained" : "outlined"}
+              size="small"
+              startIcon={<StreetviewIcon />}
+              onClick={toggleStreetView}
+              disabled={!mapLoaded}
+              color={streetViewVisible ? "primary" : "inherit"}
+            >
+              ストリートビュー
+            </Button>
+          </Box>
+        )}
       </Box>
 
       {/* 地図・ストリートビューコンテナ */}
