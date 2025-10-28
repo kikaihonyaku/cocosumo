@@ -20,7 +20,7 @@ import {
   Maximize as MaximizeIcon,
 } from '@mui/icons-material';
 
-export default function MapChatWidget({ property, onPlaceClick }) {
+export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenChange }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
@@ -94,8 +94,12 @@ export default function MapChatWidget({ property, onPlaceClick }) {
 
       if (contentType && contentType.includes('application/json')) {
         const data = await response.json();
-        console.log('Grounding API response:', data);
         setResponse(data);
+
+        // Pass widget context token to parent
+        if (data.widget_context_token && onWidgetTokenChange) {
+          onWidgetTokenChange(data.widget_context_token);
+        }
 
         // AIの応答のみを会話履歴に追加
         setConversationHistory(prev => [
@@ -258,8 +262,8 @@ export default function MapChatWidget({ property, onPlaceClick }) {
         bottom: 16,
         left: '50%',
         transform: 'translateX(-50%)',
-        width: { xs: 'calc(100% - 32px)', sm: 900 },
-        maxWidth: 900,
+        width: { xs: 'calc(100% - 32px)', sm: 1100 },
+        maxWidth: 1100,
         zIndex: 10,
       }}
     >

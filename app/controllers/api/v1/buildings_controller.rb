@@ -117,11 +117,6 @@ class Api::V1::BuildingsController < ApplicationController
       # 会話履歴を取得
       conversation_history = params[:conversation_history] || []
 
-      Rails.logger.info("Grounding query: #{params[:query]}")
-      Rails.logger.info("Location: #{latitude}, #{longitude}")
-      Rails.logger.info("Address: #{@building.address}")
-      Rails.logger.info("Conversation history size: #{conversation_history.size}")
-
       # Vertex AI Grounding APIを試行し、エラー時はモックレスポンスにフォールバック
       response = call_vertex_ai_grounding(params[:query], latitude, longitude, conversation_history, @building.address)
 
@@ -129,6 +124,8 @@ class Api::V1::BuildingsController < ApplicationController
         success: true,
         answer: response[:answer],
         sources: response[:sources],
+        widget_context_token: response[:widget_context_token],
+        place_ids: response[:place_ids],
         query: params[:query],
         location: {
           latitude: latitude,
@@ -158,7 +155,6 @@ class Api::V1::BuildingsController < ApplicationController
       address: address
     )
 
-    Rails.logger.info("Vertex AI Grounding API success")
     result.merge(is_mock: false)
 
   rescue VertexAiGroundingService::GroundingError => e

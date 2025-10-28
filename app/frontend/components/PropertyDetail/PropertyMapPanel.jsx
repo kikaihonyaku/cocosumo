@@ -25,11 +25,12 @@ import {
 } from '@mui/icons-material';
 import MapChatWidget from './MapChatWidget';
 
-export default function PropertyMapPanel({ property, onLocationUpdate, visible = true, onFormChange, onSave, selectedPlace, onPlaceClick }) {
+export default function PropertyMapPanel({ property, onLocationUpdate, visible = true, onFormChange, onSave, selectedPlace, onPlaceClick, widgetContextToken, onWidgetTokenChange }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
   const selectedPlaceMarkerRef = useRef(null); // AI応答から選択された場所のマーカー
+  const widgetElementRef = useRef(null); // Google Maps Grounding Widget要素
   const [mapLoaded, setMapLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editingLocation, setEditingLocation] = useState(false);
@@ -89,6 +90,17 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
       }, 100);
     }
   }, [visible, property]);
+
+  // Google Maps Grounding Widgetの更新
+  useEffect(() => {
+    if (widgetContextToken && widgetElementRef.current && mapLoaded) {
+      try {
+        widgetElementRef.current.contextToken = widgetContextToken;
+      } catch (error) {
+        console.error('Failed to update widget context token:', error);
+      }
+    }
+  }, [widgetContextToken, mapLoaded]);
 
   // AI応答から選択された場所を地図上に表示
   useEffect(() => {
@@ -183,7 +195,7 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=alpha&loading=async`;
     script.async = true;
     script.defer = true;
     script.onload = initializeMap;
@@ -619,11 +631,36 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
         </DialogActions>
       </Dialog>
 
+      {/* Google Maps Grounding Widget */}
+      {mapLoaded && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 80,
+            right: 16,
+            width: 320,
+            maxHeight: 'calc(100% - 180px)',
+            zIndex: 5,
+          }}
+        >
+          <gmp-place-contextual
+            ref={widgetElementRef}
+            style={{
+              display: 'block',
+              width: '100%',
+            }}
+          >
+            <gmp-place-contextual-list-config layout="compact" />
+          </gmp-place-contextual>
+        </Box>
+      )}
+
       {/* AIチャットウィジェット */}
       {mapLoaded && (
         <MapChatWidget
           property={property}
           onPlaceClick={onPlaceClick}
+          onWidgetTokenChange={onWidgetTokenChange}
         />
       )}
     </Box>

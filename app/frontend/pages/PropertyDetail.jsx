@@ -49,6 +49,7 @@ export default function PropertyDetail() {
   const [mobileActiveTab, setMobileActiveTab] = useState(0); // モバイル用タブ管理
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // 未保存の変更
   const [selectedPlace, setSelectedPlace] = useState(null); // AI応答から選択された場所
+  const [widgetContextToken, setWidgetContextToken] = useState(null); // Google Maps Grounding Widget Context Token
 
   // レスポンシブ設定
   const isMdUp = useMediaQuery(muiTheme.breakpoints.up('md'));
@@ -363,6 +364,12 @@ export default function PropertyDetail() {
                       visible={mobileActiveTab === 1}
                       onFormChange={handleFormChange}
                       onSave={handleSave}
+                      selectedPlace={selectedPlace}
+                      onPlaceClick={handlePlaceClick}
+                      widgetContextToken={widgetContextToken}
+                      onWidgetTokenChange={(token) => {
+                        setWidgetContextToken(token);
+                      }}
                     />
                   </Box>
 
@@ -466,6 +473,10 @@ export default function PropertyDetail() {
                   onSave={handleSave}
                   selectedPlace={selectedPlace}
                   onPlaceClick={handlePlaceClick}
+                  widgetContextToken={widgetContextToken}
+                  onWidgetTokenChange={(token) => {
+                    setWidgetContextToken(token);
+                  }}
                 />
               </Paper>
 

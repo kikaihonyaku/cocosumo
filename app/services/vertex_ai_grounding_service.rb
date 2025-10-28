@@ -25,9 +25,6 @@ class VertexAiGroundingService
   # @param address [String] 物件の住所（オプション）
   # @return [Hash] AIの応答と参照元情報
   def query_with_grounding(query:, latitude:, longitude:, conversation_history: [], address: nil)
-    Rails.logger.info("VertexAiGroundingService: query=#{query}, lat=#{latitude}, lng=#{longitude}")
-    Rails.logger.info("Conversation history: #{conversation_history.size} messages")
-
     begin
       response = call_vertex_ai_api(query, latitude, longitude, conversation_history, address)
       parse_response(response)
@@ -57,8 +54,6 @@ class VertexAiGroundingService
   def call_vertex_ai_api(query, latitude, longitude, conversation_history = [], address = nil)
     # エンドポイントURLの構築
     url = "https://#{@location}-aiplatform.googleapis.com/v1beta1/projects/#{@project_id}/locations/#{@location}/publishers/google/models/#{@model}:generateContent"
-
-    Rails.logger.info("Vertex AI API URL: #{url}")
 
     # 会話履歴を含むcontentsを構築
     contents = []
@@ -93,7 +88,6 @@ class VertexAiGroundingService
     if conversation_history.empty? && address.present?
       # 会話の最初の質問には場所を明示的に含める
       enhanced_query = "#{address}周辺について: #{query}"
-      Rails.logger.info("Enhanced query: #{enhanced_query}")
     end
 
     contents << {
@@ -129,8 +123,6 @@ class VertexAiGroundingService
       }
     }
 
-    Rails.logger.info("Request body: #{request_body.to_json}")
-
     # 認証トークンの取得
     access_token = get_access_token
 
@@ -147,11 +139,9 @@ class VertexAiGroundingService
 
     response = http.request(request)
 
-    Rails.logger.info("Response code: #{response.code}")
-    Rails.logger.info("Response body: #{response.body[0..500]}") # 最初の500文字をログに出力
-
     unless response.code == '200'
       error_details = JSON.parse(response.body) rescue { 'error' => response.body }
+      Rails.logger.error("Response body (error): #{response.body}")
       raise GroundingError, "API error: #{response.code} - #{error_details}"
     end
 
@@ -173,8 +163,6 @@ class VertexAiGroundingService
   end
 
   def parse_response(response)
-    Rails.logger.info("Parsing Vertex AI Response...")
-
     # 応答テキストの取得
     answer_text = extract_answer_text(response)
 
@@ -184,9 +172,17 @@ class VertexAiGroundingService
     # 参照元（ソース）の取得
     sources = extract_sources(grounding_metadata)
 
+    # Google Maps Widget Context Tokenの取得
+    widget_context_token = extract_widget_context_token(grounding_metadata)
+
+    # Place IDsの取得（代替アプローチ）
+    place_ids = extract_place_ids(grounding_metadata)
+
     {
       answer: answer_text,
       sources: sources,
+      widget_context_token: widget_context_token,
+      place_ids: place_ids,
       metadata: {
         grounding_support: grounding_metadata&.dig('groundingSupport'),
         retrieval_queries: grounding_metadata&.dig('retrievalQueries')
@@ -240,5 +236,32 @@ class VertexAiGroundingService
     end
 
     sources.uniq { |s| s[:url] }
+  end
+
+  def extract_widget_context_token(grounding_metadata)
+    return nil unless grounding_metadata
+
+    # googleMapsWidgetContextToken を取得
+    grounding_metadata['googleMapsWidgetContextToken']
+  end
+
+  def extract_place_ids(grounding_metadata)
+    return [] unless grounding_metadata && grounding_metadata['groundingChunks']
+
+    place_ids = []
+    grounding_metadata['groundingChunks'].each do |chunk|
+      if chunk['maps'] && chunk['maps']['placeId']
+        place_id = chunk['maps']['placeId']
+        title = chunk['maps']['title']
+
+        place_ids << {
+          place_id: place_id,
+          title: title,
+          uri: chunk['maps']['uri']
+        }
+      end
+    end
+
+    place_ids
   end
 end
