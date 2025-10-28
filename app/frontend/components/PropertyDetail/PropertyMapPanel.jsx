@@ -437,19 +437,42 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
         borderBottom: '1px solid #e0e0e0',
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'space-between',
         flexShrink: 0,
         minHeight: 56
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontWeight: 600, fontSize: '1.05rem' }}>
-            <MapIcon color="primary" sx={{ fontSize: 26 }} />
-            物件位置
+        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontWeight: 600, fontSize: '1.05rem' }}>
+          <MapIcon color="primary" sx={{ fontSize: 26 }} />
+          物件位置
+        </Typography>
+
+        {property?.address && (
+          <Typography variant="body2" color="text.secondary" sx={{ mx: 2, flex: 1 }}>
+            {property.address}
           </Typography>
-          {property?.address && (
-            <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-              {property.address}
-            </Typography>
-          )}
+        )}
+
+        {/* 位置編集・住所検索ボタン */}
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={editingLocation ? <CheckIcon /> : <EditIcon />}
+            onClick={handleLocationEdit}
+            color={editingLocation ? "success" : "primary"}
+            disabled={!mapLoaded}
+          >
+            {editingLocation ? '完了' : '位置編集'}
+          </Button>
+
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => setAddressSearchOpen(true)}
+            disabled={!mapLoaded}
+          >
+            住所検索
+          </Button>
         </Box>
       </Box>
 
@@ -560,37 +583,6 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
               <FullscreenIcon />
             </IconButton>
           </Tooltip>
-        </Box>
-      )}
-
-      {/* 位置編集コントロール - 左上に配置 */}
-      {mapLoaded && (
-        <Box sx={{
-          position: 'absolute',
-          top: 80,
-          left: 16,
-          display: 'flex',
-          gap: 1,
-          zIndex: 1,
-        }}>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={editingLocation ? <CheckIcon /> : <EditIcon />}
-            onClick={handleLocationEdit}
-            color={editingLocation ? "success" : "primary"}
-          >
-            {editingLocation ? '完了' : '位置編集'}
-          </Button>
-
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => setAddressSearchOpen(true)}
-            sx={{ bgcolor: 'white' }}
-          >
-            住所検索
-          </Button>
         </Box>
       )}
 
