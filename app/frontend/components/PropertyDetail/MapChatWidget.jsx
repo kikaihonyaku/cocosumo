@@ -26,7 +26,7 @@ export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenCha
   const [query, setQuery] = useState('');
   const [response, setResponse] = useState(null);
   const [conversationHistory, setConversationHistory] = useState([]);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true); // 初期表示は最小化（閉じた状態）
   const [suggestions] = useState([
     'この物件周辺のおすすめの飲食店を教えてください',
     '最寄り駅からのアクセス方法を教えてください',
@@ -47,11 +47,6 @@ export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenCha
     try {
       setLoading(true);
       setError(null);
-
-      // 最小化されている場合は自動的に展開
-      if (isMinimized) {
-        setIsMinimized(false);
-      }
 
       // ユーザーメッセージを即座にチャット欄に追加
       setConversationHistory(prev => [
@@ -471,6 +466,12 @@ export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenCha
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyPress={handleKeyPress}
+              onFocus={() => {
+                // 入力欄がフォーカスされたら展開
+                if (isMinimized) {
+                  setIsMinimized(false);
+                }
+              }}
               disabled={loading}
               multiline
               maxRows={2}
