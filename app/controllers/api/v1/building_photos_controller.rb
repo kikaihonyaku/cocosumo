@@ -21,7 +21,7 @@ class Api::V1::BuildingPhotosController < ApplicationController
       photo: @building_photo.as_json(
         methods: [:photo_url, :url, :image_url, :thumbnail_url],
         only: [:id, :photo_type, :caption, :display_order, :created_at, :updated_at]
-      )
+      ).merge(building_name: @building.name)
     }
   end
 

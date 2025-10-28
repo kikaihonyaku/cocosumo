@@ -18,6 +18,9 @@ class Api::V1::RoomPhotosController < ApplicationController
     render json: @room_photo.as_json(
       methods: [:photo_url],
       only: [:id, :photo_type, :caption, :display_order, :created_at, :updated_at]
+    ).merge(
+      building_name: @room.building.name,
+      room_name: @room.room_number
     )
   end
 

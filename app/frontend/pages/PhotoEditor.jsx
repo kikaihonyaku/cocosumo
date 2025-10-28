@@ -43,6 +43,31 @@ export default function PhotoEditor() {
   const canvasRef = useRef(null);
   const originalImageRef = useRef(null);
 
+  // photo_typeを日本語に変換
+  const getPhotoTypeLabel = (photoType) => {
+    const buildingPhotoTypes = {
+      exterior: '外観',
+      entrance: 'エントランス',
+      common_area: '共用部',
+      parking: '駐車場',
+      surroundings: '周辺環境',
+      other: 'その他'
+    };
+
+    const roomPhotoTypes = {
+      interior: '内観',
+      living: 'リビング',
+      kitchen: 'キッチン',
+      bathroom: 'バスルーム',
+      floor_plan: '間取り図',
+      exterior: '外観',
+      other: 'その他'
+    };
+
+    const types = isBuilding ? buildingPhotoTypes : roomPhotoTypes;
+    return types[photoType] || photoType;
+  };
+
   const [photo, setPhoto] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -463,7 +488,10 @@ export default function PhotoEditor() {
               <ArrowBackIcon />
             </IconButton>
             <Typography variant="h6" component="h1" sx={{ flexGrow: 1, fontWeight: 600 }}>
-              {isBuilding ? '建物写真編集' : '部屋写真編集'}
+              {isBuilding
+                ? `建物写真編集${photo.building_name ? ` ${photo.building_name}` : ''}${photo.photo_type ? ` ${getPhotoTypeLabel(photo.photo_type)}` : ''} ID: ${photo.id}`
+                : `部屋写真編集${photo.building_name ? ` ${photo.building_name}` : ''}${photo.room_name ? ` ${photo.room_name}` : ''}${photo.photo_type ? ` ${getPhotoTypeLabel(photo.photo_type)}` : ''} ID: ${photo.id}`
+              }
             </Typography>
             <Button
               variant="contained"
