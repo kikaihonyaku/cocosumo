@@ -31,7 +31,6 @@ import PropertyInfoPanel from '../components/PropertyDetail/PropertyInfoPanel';
 import PropertyMapPanel from '../components/PropertyDetail/PropertyMapPanel';
 import RoomsPanel from '../components/PropertyDetail/RoomsPanel';
 import BuildingPhotosPanel from '../components/PropertyDetail/BuildingPhotosPanel';
-import GoogleMapsGroundingPanel from '../components/PropertyDetail/GoogleMapsGroundingPanel';
 
 export default function PropertyDetail() {
   const { id } = useParams();
@@ -445,7 +444,7 @@ export default function PropertyDetail() {
                 />
               </Paper>
 
-              {/* 中央上: 物件位置（地図）カード */}
+              {/* 中央: 物件位置（地図）カード - AIチャットウィジェット統合 */}
               <Paper
                 elevation={3}
                 sx={{
@@ -453,8 +452,9 @@ export default function PropertyDetail() {
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
-                  minHeight: 400,
-                  maxHeight: isLgUp ? 500 : 600,
+                  gridRow: isLgUp ? 'span 2' : 'auto',
+                  minHeight: isLgUp ? 600 : 500,
+                  maxHeight: isLgUp ? 'calc(100vh - 80px)' : 600,
                 }}
               >
                 <PropertyMapPanel
@@ -465,6 +465,7 @@ export default function PropertyDetail() {
                   onFormChange={handleFormChange}
                   onSave={handleSave}
                   selectedPlace={selectedPlace}
+                  onPlaceClick={handlePlaceClick}
                 />
               </Paper>
 
@@ -484,24 +485,6 @@ export default function PropertyDetail() {
                   propertyId={id}
                   rooms={rooms}
                   onRoomsUpdate={handleRoomUpdate}
-                />
-              </Paper>
-
-              {/* 中央下: Grounding with Google Maps カード */}
-              <Paper
-                elevation={3}
-                sx={{
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 280,
-                  maxHeight: isLgUp ? 350 : 500,
-                }}
-              >
-                <GoogleMapsGroundingPanel
-                  property={property}
-                  onPlaceClick={handlePlaceClick}
                 />
               </Paper>
 

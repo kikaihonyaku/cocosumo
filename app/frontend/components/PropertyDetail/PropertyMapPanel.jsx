@@ -23,8 +23,9 @@ import {
   Close as CloseIcon,
   Map as MapIcon,
 } from '@mui/icons-material';
+import MapChatWidget from './MapChatWidget';
 
-export default function PropertyMapPanel({ property, onLocationUpdate, visible = true, onFormChange, onSave, selectedPlace }) {
+export default function PropertyMapPanel({ property, onLocationUpdate, visible = true, onFormChange, onSave, selectedPlace, onPlaceClick }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
@@ -550,11 +551,11 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
         </Box>
       )}
 
-      {/* 位置編集コントロール */}
+      {/* 位置編集コントロール - 左上に配置 */}
       {mapLoaded && (
         <Box sx={{
           position: 'absolute',
-          bottom: 16,
+          top: 80,
           left: 16,
           display: 'flex',
           gap: 1,
@@ -617,6 +618,14 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* AIチャットウィジェット */}
+      {mapLoaded && (
+        <MapChatWidget
+          property={property}
+          onPlaceClick={onPlaceClick}
+        />
+      )}
     </Box>
   );
 }
