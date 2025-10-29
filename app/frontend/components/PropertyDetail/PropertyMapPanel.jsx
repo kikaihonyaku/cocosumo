@@ -98,14 +98,20 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
 
   // Google Maps Grounding Widgetの更新
   useEffect(() => {
-    if (widgetContextToken && widgetElementRef.current && mapLoaded) {
-      try {
-        widgetElementRef.current.contextToken = widgetContextToken;
-        // contextTokenが更新されたらウィジェットを表示
-        setWidgetVisible(true);
-      } catch (error) {
-        console.error('Failed to update widget context token:', error);
-      }
+    if (widgetContextToken && mapLoaded) {
+      // contextTokenが更新されたらまずウィジェットを表示
+      setWidgetVisible(true);
+
+      // 次のレンダリング後にcontextTokenを設定
+      setTimeout(() => {
+        if (widgetElementRef.current) {
+          try {
+            widgetElementRef.current.contextToken = widgetContextToken;
+          } catch (error) {
+            console.error('Failed to update widget context token:', error);
+          }
+        }
+      }, 100);
     }
   }, [widgetContextToken, mapLoaded]);
 
