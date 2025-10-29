@@ -10,8 +10,6 @@ import {
   Button,
   Stack,
   Chip,
-  IconButton,
-  Tooltip,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -22,12 +20,10 @@ import {
 import {
   Home as HomeIcon,
   CalendarToday as CalendarIcon,
-  OpenInFull as OpenInFullIcon,
-  CloseFullscreen as CloseFullscreenIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 
-export default function RoomInfoPanel({ room, onSave, loading, isMaximized, onToggleMaximize, isMobile = false, onFormChange }) {
+export default function RoomInfoPanel({ room, onSave, loading, isMobile = false, onFormChange }) {
   const [formData, setFormData] = useState({
     room_number: '',
     floor: '',
@@ -156,18 +152,6 @@ export default function RoomInfoPanel({ room, onSave, loading, isMaximized, onTo
           <HomeIcon color="primary" sx={{ fontSize: 26 }} />
           部屋情報
         </Typography>
-
-        {!isMobile && (
-          <Tooltip title={isMaximized ? "最小化" : "最大化"}>
-            <IconButton
-              size="small"
-              onClick={onToggleMaximize}
-              sx={{ ml: 1 }}
-            >
-              {isMaximized ? <CloseFullscreenIcon /> : <OpenInFullIcon />}
-            </IconButton>
-          </Tooltip>
-        )}
       </Box>
 
       {/* コンテンツ */}
@@ -336,100 +320,95 @@ export default function RoomInfoPanel({ room, onSave, loading, isMaximized, onTo
           </Typography>
         </Box>
 
-        {/* 最大化時のみ表示される追加項目 */}
-        {isMaximized && (
-          <>
-            {/* 設備情報 */}
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
-                設備情報
-              </Typography>
-              <Stack spacing={2}>
-                <TextField
-                  fullWidth
-                  label="設備・特記事項"
-                  multiline
-                  rows={3}
-                  value={formData.facilities || ''}
-                  onChange={handleChange('facilities')}
-                  variant="outlined"
-                  size="small"
-                  placeholder="例: エアコン、バストイレ別、フローリングなど"
-                />
-              </Stack>
-            </Box>
+        {/* 設備情報 */}
+        <Box>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
+            設備情報
+          </Typography>
+          <Stack spacing={2}>
+            <TextField
+              fullWidth
+              label="設備・特記事項"
+              multiline
+              rows={3}
+              value={formData.facilities || ''}
+              onChange={handleChange('facilities')}
+              variant="outlined"
+              size="small"
+              placeholder="例: エアコン、バストイレ別、フローリングなど"
+            />
+          </Stack>
+        </Box>
 
-            {/* 入居者情報 */}
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
-                入居者情報
-              </Typography>
-              <Stack spacing={2}>
-                <TextField
-                  fullWidth
-                  label="入居者名"
-                  value={formData.tenant_name || ''}
-                  onChange={handleChange('tenant_name')}
-                  variant="outlined"
-                  size="small"
-                />
-                <TextField
-                  fullWidth
-                  label="入居者電話番号"
-                  value={formData.tenant_phone || ''}
-                  onChange={handleChange('tenant_phone')}
-                  variant="outlined"
-                  size="small"
-                  placeholder="03-1234-5678"
-                />
-                <TextField
-                  fullWidth
-                  label="契約開始日"
-                  type="date"
-                  value={formData.contract_start_date || ''}
-                  onChange={handleChange('contract_start_date')}
-                  variant="outlined"
-                  size="small"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  label="契約終了日"
-                  type="date"
-                  value={formData.contract_end_date || ''}
-                  onChange={handleChange('contract_end_date')}
-                  variant="outlined"
-                  size="small"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                />
-              </Stack>
-            </Box>
+        {/* 入居者情報 */}
+        <Box>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
+            入居者情報
+          </Typography>
+          <Stack spacing={2}>
+            <TextField
+              fullWidth
+              label="入居者名"
+              value={formData.tenant_name || ''}
+              onChange={handleChange('tenant_name')}
+              variant="outlined"
+              size="small"
+            />
+            <TextField
+              fullWidth
+              label="入居者電話番号"
+              value={formData.tenant_phone || ''}
+              onChange={handleChange('tenant_phone')}
+              variant="outlined"
+              size="small"
+              placeholder="03-1234-5678"
+            />
+            <TextField
+              fullWidth
+              label="契約開始日"
+              type="date"
+              value={formData.contract_start_date || ''}
+              onChange={handleChange('contract_start_date')}
+              variant="outlined"
+              size="small"
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+            <TextField
+              fullWidth
+              label="契約終了日"
+              type="date"
+              value={formData.contract_end_date || ''}
+              onChange={handleChange('contract_end_date')}
+              variant="outlined"
+              size="small"
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+          </Stack>
+        </Box>
 
-            {/* その他メモ */}
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
-                その他メモ
-              </Typography>
-              <Stack spacing={2}>
-                <TextField
-                  fullWidth
-                  label="メモ"
-                  multiline
-                  rows={4}
-                  value={formData.notes || ''}
-                  onChange={handleChange('notes')}
-                  variant="outlined"
-                  size="small"
-                  placeholder="管理上の注意事項、修繕履歴など"
-                />
-              </Stack>
-            </Box>
-          </>
-        )}
+        {/* その他メモ */}
+        <Box>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
+            その他メモ
+          </Typography>
+          <Stack spacing={2}>
+            <TextField
+              fullWidth
+              label="メモ"
+              multiline
+              rows={4}
+              value={formData.notes || ''}
+              onChange={handleChange('notes')}
+              variant="outlined"
+              size="small"
+              placeholder="管理上の注意事項、修繕履歴など"
+            />
+          </Stack>
+        </Box>
 
         </Stack>
       </Box>
