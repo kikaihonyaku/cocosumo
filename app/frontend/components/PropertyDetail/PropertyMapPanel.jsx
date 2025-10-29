@@ -722,10 +722,32 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
         </DialogActions>
       </Dialog>
 
+      {/* グラウンディングウィジェット閉じるボタン（ウィジェット外側） */}
+      {mapLoaded && widgetVisible && (
+        <Tooltip title="閉じる">
+          <IconButton
+            size="small"
+            onClick={() => setWidgetVisible(false)}
+            sx={{
+              position: 'absolute',
+              top: 72,
+              right: 8,
+              bgcolor: 'white',
+              boxShadow: 2,
+              zIndex: 6,
+              '&:hover': {
+                bgcolor: 'grey.100',
+              },
+            }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      )}
+
       {/* Google Maps Grounding Widget */}
       {mapLoaded && widgetVisible && (
-        <Paper
-          elevation={3}
+        <Box
           sx={{
             position: 'absolute',
             top: 80,
@@ -733,47 +755,18 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
             width: 320,
             maxHeight: 'calc(100% - 180px)',
             zIndex: 5,
-            borderRadius: 2,
-            overflow: 'hidden',
           }}
         >
-          {/* ヘッダー（閉じるボタン付き） */}
-          <Box sx={{
-            px: 1.5,
-            py: 1,
-            bgcolor: 'primary.main',
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-              周辺施設
-            </Typography>
-            <Tooltip title="閉じる">
-              <IconButton
-                size="small"
-                onClick={() => setWidgetVisible(false)}
-                sx={{ color: 'white', p: 0.5 }}
-              >
-                <CloseIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-
-          {/* ウィジェット本体 */}
-          <Box sx={{ bgcolor: 'white' }}>
-            <gmp-place-contextual
-              ref={widgetElementRef}
-              style={{
-                display: 'block',
-                width: '100%',
-              }}
-            >
-              <gmp-place-contextual-list-config layout="compact" />
-            </gmp-place-contextual>
-          </Box>
-        </Paper>
+          <gmp-place-contextual
+            ref={widgetElementRef}
+            style={{
+              display: 'block',
+              width: '100%',
+            }}
+          >
+            <gmp-place-contextual-list-config layout="compact" />
+          </gmp-place-contextual>
+        </Box>
       )}
 
       {/* AIチャットウィジェット */}
