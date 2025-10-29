@@ -44,12 +44,17 @@ export default function PropertyDetail() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [isPropertyInfoMaximized, setIsPropertyInfoMaximized] = useState(false);
   const [isPhotosMaximized, setIsPhotosMaximized] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState(0); // モバイル用タブ管理
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // 未保存の変更
   const [selectedPlace, setSelectedPlace] = useState(null); // AI応答から選択された場所
   const [widgetContextToken, setWidgetContextToken] = useState(null); // Google Maps Grounding Widget Context Token
+  const [leftPaneWidth, setLeftPaneWidth] = useState(280); // 左ペインの横幅
+  const [rightPaneWidth, setRightPaneWidth] = useState(480); // 右ペインの横幅
+  const [rightPaneTopHeight, setRightPaneTopHeight] = useState(50); // 右ペイン上部の高さ（パーセンテージ）
+  const [isResizingLeft, setIsResizingLeft] = useState(false); // 左側リサイズ中かどうか
+  const [isResizingRight, setIsResizingRight] = useState(false); // 右側リサイズ中かどうか
+  const [isResizingVertical, setIsResizingVertical] = useState(false); // 垂直方向リサイズ中かどうか
 
   // レスポンシブ設定
   const isMdUp = useMediaQuery(muiTheme.breakpoints.up('md'));
@@ -193,10 +198,6 @@ export default function PropertyDetail() {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const handleTogglePropertyInfoMaximize = () => {
-    setIsPropertyInfoMaximized(!isPropertyInfoMaximized);
-  };
-
   const handleTogglePhotosMaximize = () => {
     setIsPhotosMaximized(!isPhotosMaximized);
   };
@@ -214,6 +215,81 @@ export default function PropertyDetail() {
     setSelectedPlace({ address, timestamp: Date.now() });
     showSnackbar(`地図上で「${address}」を検索しています...`, 'info');
   };
+
+  // スプリッタバーのリサイズ処理（左側）
+  const handleLeftMouseDown = (e) => {
+    setIsResizingLeft(true);
+    e.preventDefault();
+  };
+
+  // スプリッタバーのリサイズ処理（右側）
+  const handleRightMouseDown = (e) => {
+    setIsResizingRight(true);
+    e.preventDefault();
+  };
+
+  // スプリッタバーのリサイズ処理（垂直方向）
+  const handleVerticalMouseDown = (e) => {
+    setIsResizingVertical(true);
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      const containerRect = document.querySelector('.desktop-layout-container')?.getBoundingClientRect();
+      if (!containerRect) return;
+
+      if (isResizingLeft) {
+        // 左ペインのリサイズ：左端からマウス位置までの距離を計算
+        const newWidth = e.clientX - containerRect.left - 8; // 8pxはpadding/gap分
+        // 最小幅200px、最大幅500px
+        const clampedWidth = Math.max(200, Math.min(500, newWidth));
+        setLeftPaneWidth(clampedWidth);
+      }
+
+      if (isResizingRight) {
+        // 右ペインのリサイズ：右端からマウス位置までの距離を計算
+        const newWidth = containerRect.right - e.clientX - 8; // 8pxはpadding/gap分
+        // 最小幅300px、最大幅800px
+        const clampedWidth = Math.max(300, Math.min(800, newWidth));
+        setRightPaneWidth(clampedWidth);
+      }
+
+      if (isResizingVertical) {
+        // 垂直方向のリサイズ：右ペインコンテナの上端からマウス位置までの距離をパーセンテージで計算
+        const rightPaneRect = document.querySelector('.right-pane-container')?.getBoundingClientRect();
+        if (!rightPaneRect) return;
+
+        const relativeY = e.clientY - rightPaneRect.top;
+        const percentage = (relativeY / rightPaneRect.height) * 100;
+
+        // 最小30%、最大70%
+        const clampedPercentage = Math.max(30, Math.min(70, percentage));
+        setRightPaneTopHeight(clampedPercentage);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingLeft(false);
+      setIsResizingRight(false);
+      setIsResizingVertical(false);
+    };
+
+    if (isResizingLeft || isResizingRight || isResizingVertical) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      // リサイズ中はユーザー選択を無効化
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = isResizingVertical ? 'row-resize' : 'col-resize';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+  }, [isResizingLeft, isResizingRight, isResizingVertical]);
 
   // TabPanelコンポーネント
   function TabPanel({ children, value, index, ...other }) {
@@ -351,8 +427,6 @@ export default function PropertyDetail() {
                   property={property}
                   onSave={handleSave}
                   loading={saving}
-                  isMaximized={false} // モバイルでは最大化無効
-                  onToggleMaximize={() => {}} // 無効化
                   isMobile={true}
                   onFormChange={handleFormChange}
                 />
@@ -418,48 +492,69 @@ export default function PropertyDetail() {
             py: 1,
             bgcolor: 'grey.50'
           }}>
-            <Box sx={{
-              display: 'grid',
-              gridTemplateColumns: isLgUp ? '280px 1fr 480px' : '1fr',
-              gridTemplateRows: isLgUp ? '1fr' : 'auto',
-              gap: 1,
-              height: '100%',
-            }}>
+            <Box
+              className="desktop-layout-container"
+              sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                gap: 1,
+                height: '100%',
+              }}
+            >
               {/* 左カラム: 建物（土地）カード */}
               <Paper
                 elevation={3}
                 sx={{
+                  width: leftPaneWidth,
+                  flexShrink: 0,
                   borderRadius: 2,
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
                   height: '100%',
-                  ...(isPropertyInfoMaximized && {
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    zIndex: 1300,
-                    maxHeight: '100vh',
-                    borderRadius: 0,
-                  }),
                 }}
               >
                 <PropertyInfoPanel
                   property={property}
                   onSave={handleSave}
                   loading={saving}
-                  isMaximized={isPropertyInfoMaximized}
-                  onToggleMaximize={handleTogglePropertyInfoMaximize}
                   onFormChange={handleFormChange}
                 />
               </Paper>
+
+              {/* スプリッタバー（左側） */}
+              <Box
+                onMouseDown={handleLeftMouseDown}
+                sx={{
+                  width: 6,
+                  cursor: 'col-resize',
+                  bgcolor: isResizingLeft ? 'primary.main' : 'transparent',
+                  '&:hover': {
+                    bgcolor: 'primary.light',
+                  },
+                  transition: 'background-color 0.2s',
+                  flexShrink: 0,
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: 2,
+                    height: 40,
+                    bgcolor: isResizingLeft ? 'primary.main' : 'grey.400',
+                    borderRadius: 1,
+                  },
+                }}
+              />
 
               {/* 中央: 物件位置（地図）カード - AIチャットウィジェット統合 */}
               <Paper
                 elevation={3}
                 sx={{
+                  flex: 1,
+                  minWidth: 0,
                   borderRadius: 2,
                   overflow: 'hidden',
                   display: 'flex',
@@ -483,13 +578,44 @@ export default function PropertyDetail() {
                 />
               </Paper>
 
+              {/* スプリッタバー（右側） */}
+              <Box
+                onMouseDown={handleRightMouseDown}
+                sx={{
+                  width: 6,
+                  cursor: 'col-resize',
+                  bgcolor: isResizingRight ? 'primary.main' : 'transparent',
+                  '&:hover': {
+                    bgcolor: 'primary.light',
+                  },
+                  transition: 'background-color 0.2s',
+                  flexShrink: 0,
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: 2,
+                    height: 40,
+                    bgcolor: isResizingRight ? 'primary.main' : 'grey.400',
+                    borderRadius: 1,
+                  },
+                }}
+              />
+
               {/* 右カラム: 部屋一覧と外観写真 */}
-              <Box sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-                height: '100%',
-              }}>
+              <Box
+                className="right-pane-container"
+                sx={{
+                  width: rightPaneWidth,
+                  flexShrink: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%',
+                }}
+              >
                 {/* 右上: 部屋一覧カード */}
                 <Paper
                   elevation={3}
@@ -498,7 +624,7 @@ export default function PropertyDetail() {
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
-                    flex: 1,
+                    height: `${rightPaneTopHeight}%`,
                     minHeight: 0,
                   }}
                 >
@@ -509,6 +635,33 @@ export default function PropertyDetail() {
                   />
                 </Paper>
 
+                {/* スプリッタバー（垂直方向） */}
+                <Box
+                  onMouseDown={handleVerticalMouseDown}
+                  sx={{
+                    height: 6,
+                    cursor: 'row-resize',
+                    bgcolor: isResizingVertical ? 'primary.main' : 'transparent',
+                    '&:hover': {
+                      bgcolor: 'primary.light',
+                    },
+                    transition: 'background-color 0.2s',
+                    flexShrink: 0,
+                    position: 'relative',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      width: 40,
+                      height: 2,
+                      bgcolor: isResizingVertical ? 'primary.main' : 'grey.400',
+                      borderRadius: 1,
+                    },
+                  }}
+                />
+
                 {/* 右下: 外観写真カード */}
                 <Paper
                   elevation={3}
@@ -517,7 +670,7 @@ export default function PropertyDetail() {
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
-                    flex: 1,
+                    height: `${100 - rightPaneTopHeight}%`,
                     minHeight: 0,
                   }}
                 >

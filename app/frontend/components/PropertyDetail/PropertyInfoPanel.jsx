@@ -23,13 +23,11 @@ import {
   Business as BusinessIcon,
   CalendarToday as CalendarIcon,
   LocationOn as LocationIcon,
-  OpenInFull as OpenInFullIcon,
-  CloseFullscreen as CloseFullscreenIcon,
   Search as SearchIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 
-export default function PropertyInfoPanel({ property, onSave, loading, isMaximized, onToggleMaximize, isMobile = false, onFormChange }) {
+export default function PropertyInfoPanel({ property, onSave, loading, isMobile = false, onFormChange }) {
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -195,18 +193,6 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
           <BusinessIcon color="primary" sx={{ fontSize: 26 }} />
           建物（土地）
         </Typography>
-
-        {!isMobile && (
-          <Tooltip title={isMaximized ? "最小化" : "最大化"}>
-            <IconButton
-              size="small"
-              onClick={onToggleMaximize}
-              sx={{ ml: 1 }}
-            >
-              {isMaximized ? <CloseFullscreenIcon /> : <OpenInFullIcon />}
-            </IconButton>
-          </Tooltip>
-        )}
       </Box>
 
       {/* コンテンツ */}
@@ -378,9 +364,7 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
           </Typography>
         </Box>
 
-        {/* 最大化時のみ表示される追加項目 */}
-        {isMaximized && (
-          <>
+        {/* 追加情報 */}
             {/* 管理会社情報 */}
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
@@ -489,8 +473,6 @@ export default function PropertyInfoPanel({ property, onSave, loading, isMaximiz
                 />
               </Stack>
             </Box>
-          </>
-        )}
 
         </Stack>
       </Box>
