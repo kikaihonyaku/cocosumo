@@ -22,8 +22,8 @@ export default function Landing() {
 
       {/* ヒーローセクション */}
       <section className="container mx-auto px-4 py-20 text-center">
-        <div className="flex justify-center mb-8">
-          <img src="/cocosumo_logo_top.png" alt="CoCoスモ" className="h-10" />
+        <div className="flex justify-center items-center mb-8 w-full">
+          <img src="/cocosumo_logo_top.png" alt="CoCoスモ" className="h-10 mx-auto" />
         </div>
         <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
           AI画像生成、VRツアー作成、物件管理を一つのプラットフォームで。
