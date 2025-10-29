@@ -74,6 +74,41 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
     '4LDK以上'
   ];
 
+  // 間取りコード値を表示用に変換
+  const getRoomTypeLabel = (roomType) => {
+    if (!roomType) return '-';
+
+    // スネークケース形式からの変換マッピング
+    const typeMap = {
+      'one_room': '1R',
+      '1R': '1R',
+      'one_k': '1K',
+      '1K': '1K',
+      'one_dk': '1DK',
+      '1DK': '1DK',
+      'one_ldk': '1LDK',
+      '1LDK': '1LDK',
+      'two_k': '2K',
+      '2K': '2K',
+      'two_dk': '2DK',
+      '2DK': '2DK',
+      'two_ldk': '2LDK',
+      '2LDK': '2LDK',
+      'three_k': '3K',
+      '3K': '3K',
+      'three_dk': '3DK',
+      '3DK': '3DK',
+      'three_ldk': '3LDK',
+      '3LDK': '3LDK',
+      'four_ldk_or_more': '4LDK以上',
+      '4LDK以上': '4LDK以上',
+      'other': 'その他',
+      'その他': 'その他',
+    };
+
+    return typeMap[roomType] || roomType;
+  };
+
   const handleAddRoom = () => {
     setEditingRoom(null);
     setFormData({
@@ -289,7 +324,7 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
                 {rooms.map((room) => {
                   const statusInfo = getStatusInfo(room.status);
                   const roomNumber = room.room_number || '-';
-                  const roomType = room.room_type || '-';
+                  const roomTypeLabel = getRoomTypeLabel(room.room_type);
 
                   return (
                     <TableRow
@@ -306,8 +341,8 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
                         </Tooltip>
                       </TableCell>
                       <TableCell>
-                        <Tooltip title={roomType} placement="top">
-                          <span>{roomType}</span>
+                        <Tooltip title={roomTypeLabel} placement="top">
+                          <span>{roomTypeLabel}</span>
                         </Tooltip>
                       </TableCell>
                       <TableCell>
