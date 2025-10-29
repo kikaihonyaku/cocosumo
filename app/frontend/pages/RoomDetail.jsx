@@ -33,10 +33,11 @@ export default function RoomDetail() {
   const [saving, setSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // 最大化状態の管理
-  const [isRoomInfoMaximized, setIsRoomInfoMaximized] = useState(false);
-  const [isPhotosMaximized, setIsPhotosMaximized] = useState(false);
-  const [isVRTourMaximized, setIsVRTourMaximized] = useState(false);
+  // ペイン幅の管理
+  const [leftPaneWidth, setLeftPaneWidth] = useState(400); // 左ペインの横幅
+  const [rightPaneWidth, setRightPaneWidth] = useState(400); // 右ペインの横幅
+  const [isResizingLeft, setIsResizingLeft] = useState(false); // 左側リサイズ中かどうか
+  const [isResizingRight, setIsResizingRight] = useState(false); // 右側リサイズ中かどうか
 
   useEffect(() => {
     fetchRoom();
@@ -96,17 +97,59 @@ export default function RoomDetail() {
     setHasUnsavedChanges(hasChanges);
   };
 
-  const handleToggleRoomInfoMaximize = () => {
-    setIsRoomInfoMaximized(!isRoomInfoMaximized);
+  // スプリッタバーのリサイズ処理（左側）
+  const handleLeftMouseDown = (e) => {
+    setIsResizingLeft(true);
+    e.preventDefault();
   };
 
-  const handleTogglePhotosMaximize = () => {
-    setIsPhotosMaximized(!isPhotosMaximized);
+  // スプリッタバーのリサイズ処理（右側）
+  const handleRightMouseDown = (e) => {
+    setIsResizingRight(true);
+    e.preventDefault();
   };
 
-  const handleToggleVRTourMaximize = () => {
-    setIsVRTourMaximized(!isVRTourMaximized);
-  };
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      const containerRect = document.querySelector('.room-layout-container')?.getBoundingClientRect();
+      if (!containerRect) return;
+
+      if (isResizingLeft) {
+        // 左ペインのリサイズ：左端からマウス位置までの距離を計算
+        const newWidth = e.clientX - containerRect.left - 8;
+        // 最小幅250px、最大幅600px
+        const clampedWidth = Math.max(250, Math.min(600, newWidth));
+        setLeftPaneWidth(clampedWidth);
+      }
+
+      if (isResizingRight) {
+        // 右ペインのリサイズ：右端からマウス位置までの距離を計算
+        const newWidth = containerRect.right - e.clientX - 8;
+        // 最小幅250px、最大幅600px
+        const clampedWidth = Math.max(250, Math.min(600, newWidth));
+        setRightPaneWidth(clampedWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingLeft(false);
+      setIsResizingRight(false);
+    };
+
+    if (isResizingLeft || isResizingRight) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+  }, [isResizingLeft, isResizingRight]);
 
   const handlePhotosUpdate = () => {
     fetchRoom();
@@ -184,7 +227,7 @@ export default function RoomDetail() {
           </Toolbar>
         </AppBar>
 
-      {/* メインコンテンツ - 2カラムグリッド */}
+      {/* メインコンテンツ - Flexboxレイアウト */}
       <Box
         sx={{
           flex: 1,
@@ -195,9 +238,11 @@ export default function RoomDetail() {
         }}
       >
         <Box
+          className="room-layout-container"
           sx={{
-            display: 'grid',
-            gridTemplateColumns: isLgUp ? '400px 1fr 400px' : '1fr',
+            display: isLgUp ? 'flex' : 'grid',
+            flexDirection: 'row',
+            gridTemplateColumns: '1fr',
             gap: 1,
             height: '100%',
             maxWidth: '100%',
@@ -206,88 +251,113 @@ export default function RoomDetail() {
         >
           {/* 左カラム: 部屋情報 */}
           <Paper elevation={3} sx={{
+            width: isLgUp ? leftPaneWidth : 'auto',
+            flexShrink: 0,
             borderRadius: 2,
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            gridRow: isLgUp ? 'span 2' : 'auto',
             minHeight: isLgUp ? 800 : 500,
             maxHeight: isLgUp ? 'none' : 700,
-            ...(isRoomInfoMaximized && {
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 1300,
-              maxHeight: '100vh',
-              borderRadius: 0,
-            }),
           }}>
             <RoomInfoPanel
               room={room}
               onSave={handleSave}
               loading={saving}
-              isMaximized={isRoomInfoMaximized}
-              onToggleMaximize={handleToggleRoomInfoMaximize}
               onFormChange={handleFormChange}
             />
           </Paper>
 
+          {/* 左スプリッタ */}
+          {isLgUp && (
+            <Box
+              onMouseDown={handleLeftMouseDown}
+              sx={{
+                width: 6,
+                cursor: 'col-resize',
+                bgcolor: isResizingLeft ? 'primary.main' : 'transparent',
+                '&:hover': {
+                  bgcolor: 'primary.light',
+                },
+                transition: 'background-color 0.2s',
+                flexShrink: 0,
+                position: 'relative',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: 2,
+                  height: 40,
+                  bgcolor: isResizingLeft ? 'primary.main' : 'grey.400',
+                  borderRadius: 1,
+                },
+              }}
+            />
+          )}
+
           {/* 中央カラム: 部屋写真 */}
           <Paper elevation={3} sx={{
+            flex: isLgUp ? 1 : 'auto',
+            minWidth: 0,
             borderRadius: 2,
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            gridRow: isLgUp ? 'span 2' : 'auto',
             minHeight: isLgUp ? 800 : 500,
             maxHeight: isLgUp ? 'none' : 700,
-            ...(isPhotosMaximized && {
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 1300,
-              maxHeight: '100vh',
-              borderRadius: 0,
-            }),
           }}>
             <RoomPhotosPanel
               roomId={room.id}
               buildingName={room.building?.name}
               roomNumber={room.room_number}
               onPhotosUpdate={handlePhotosUpdate}
-              isMaximized={isPhotosMaximized}
-              onToggleMaximize={handleTogglePhotosMaximize}
             />
           </Paper>
 
+          {/* 右スプリッタ */}
+          {isLgUp && (
+            <Box
+              onMouseDown={handleRightMouseDown}
+              sx={{
+                width: 6,
+                cursor: 'col-resize',
+                bgcolor: isResizingRight ? 'primary.main' : 'transparent',
+                '&:hover': {
+                  bgcolor: 'primary.light',
+                },
+                transition: 'background-color 0.2s',
+                flexShrink: 0,
+                position: 'relative',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: 2,
+                  height: 40,
+                  bgcolor: isResizingRight ? 'primary.main' : 'grey.400',
+                  borderRadius: 1,
+                },
+              }}
+            />
+          )}
+
           {/* 右カラム: VRツアー */}
           <Paper elevation={3} sx={{
+            width: isLgUp ? rightPaneWidth : 'auto',
+            flexShrink: 0,
             borderRadius: 2,
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            gridRow: isLgUp ? 'span 2' : 'auto',
             minHeight: isLgUp ? 800 : 500,
             maxHeight: isLgUp ? 'none' : 700,
-            ...(isVRTourMaximized && {
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 1300,
-              maxHeight: '100vh',
-              borderRadius: 0,
-            }),
           }}>
             <RoomVRTourPanel
               roomId={room.id}
-              isMaximized={isVRTourMaximized}
-              onToggleMaximize={handleToggleVRTourMaximize}
             />
           </Paper>
         </Box>
