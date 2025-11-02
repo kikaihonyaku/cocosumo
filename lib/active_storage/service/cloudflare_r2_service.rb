@@ -7,6 +7,20 @@ module ActiveStorage
     # Cloudflare R2用のカスタムサービス
     # R2はAWS S3互換だが、チェックサム機能に一部非互換がある
     class CloudflareR2Service < S3Service
+      def initialize(public_url: nil, **options)
+        @public_url = public_url
+        super(**options.except(:public_url))
+      end
+
+      # 公開URLを返す
+      def url(key, **options)
+        if @public_url.present?
+          "#{@public_url}/#{key}"
+        else
+          super
+        end
+      end
+
       private
 
       # アップロード時のオプションをカスタマイズ
