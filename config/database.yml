@@ -23,10 +23,20 @@ test:
 
 # Production uses PostgreSQL (Cloud SQL)
 production:
-  adapter: postgresql
-  encoding: unicode
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  database: <%= ENV.fetch("DB_NAME", "cocosumo_production") %>
-  username: <%= ENV.fetch("DB_USER", "cocosumo") %>
-  password: <%= ENV.fetch("DB_PASSWORD", "") %>
-  host: <%= ENV.fetch("DB_HOST", "/cloudsql/biruweb-cosmos:asia-northeast1:cocosumo-db") %>
+  primary: &primary_production
+    adapter: postgresql
+    encoding: unicode
+    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    database: <%= ENV.fetch("DB_NAME", "cocosumo_production") %>
+    username: <%= ENV.fetch("DB_USER", "cocosumo") %>
+    password: <%= ENV.fetch("DB_PASSWORD", "") %>
+    host: <%= ENV.fetch("DB_HOST", "/cloudsql/biruweb-cosmos:asia-northeast1:cocosumo-db") %>
+  cache:
+    <<: *primary_production
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *primary_production
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *primary_production
+    migrations_paths: db/cable_migrate
