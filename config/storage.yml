@@ -16,6 +16,8 @@ cloudflare_r2:
   bucket: <%= ENV['R2_BUCKET'] %>
   force_path_style: true
   public: true
+  upload:
+    checksum_mode: :none
 
 # Remember not to checkin your GCS keyfile to a repository
 # google:
