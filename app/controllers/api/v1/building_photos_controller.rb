@@ -2,7 +2,7 @@ class Api::V1::BuildingPhotosController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
   before_action :set_building
-  before_action :set_building_photo, only: [:show, :update, :destroy, :replace, :duplicate]
+  before_action :set_building_photo, only: [:show, :update, :destroy, :replace, :duplicate, :proxy]
 
   # GET /api/v1/buildings/:building_id/photos
   def index
@@ -149,6 +149,22 @@ class Api::V1::BuildingPhotosController < ApplicationController
       end
     else
       render json: { error: '写真ファイルが指定されていません' }, status: :bad_request
+    end
+  end
+
+  # GET /api/v1/buildings/:building_id/photos/:id/proxy
+  # CORS回避のため、画像をプロキシ経由で提供
+  def proxy
+    if @building_photo.photo.attached?
+      # Active Storageから画像データを取得
+      blob = @building_photo.photo.blob
+
+      # 画像データを送信
+      send_data blob.download,
+                type: blob.content_type,
+                disposition: 'inline'
+    else
+      head :not_found
     end
   end
 

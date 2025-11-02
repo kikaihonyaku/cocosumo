@@ -110,7 +110,12 @@ export default function PhotoEditor() {
         // 建物写真の場合はphotoオブジェクトの中にデータがある
         const photoData = isBuilding ? data.photo : data;
         setPhoto(photoData);
-        loadImageToCanvas(photoData.photo_url || photoData.url);
+
+        // CORS回避のため、プロキシURLを使用
+        const proxyUrl = isBuilding
+          ? `/api/v1/buildings/${buildingId}/photos/${photoId}/proxy`
+          : `/api/v1/rooms/${roomId}/room_photos/${photoId}/proxy`;
+        loadImageToCanvas(proxyUrl);
       } else {
         setError('写真情報の取得に失敗しました');
       }
@@ -128,7 +133,7 @@ export default function PhotoEditor() {
 
     const ctx = canvas.getContext('2d');
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    // プロキシ経由なので同一オリジン、crossOrigin不要
 
     img.onload = () => {
       // オリジナル画像を保存

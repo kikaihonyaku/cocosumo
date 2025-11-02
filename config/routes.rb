@@ -32,6 +32,7 @@ Rails.application.routes.draw do
           member do
             post :replace
             post :duplicate
+            get :proxy
           end
         end
         resources :owners
@@ -54,6 +55,7 @@ Rails.application.routes.draw do
           member do
             post :replace
             post :duplicate
+            get :proxy
           end
         end
 
