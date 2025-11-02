@@ -80,4 +80,4 @@ ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 # Start server via Puma (Cloud Run compatible)
 EXPOSE 8080
 ENV PORT=8080
-CMD ["./bin/rails", "server", "-b", "0.0.0.0", "-p", "8080"]
+CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
