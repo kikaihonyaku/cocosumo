@@ -26,7 +26,7 @@ production:
   adapter: postgresql
   encoding: unicode
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  database: <%= ENV.fetch("DB_NAME") { "cocosumo_production" } %>
-  username: <%= ENV.fetch("DB_USER") { "cocosumo" } %>
-  password: <%= ENV.fetch("DB_PASSWORD") %>
-  host: <%= ENV.fetch("DB_HOST") { "/cloudsql/biruweb-cosmos:asia-northeast1:cocosumo-db" } %>
+  database: <%= ENV.fetch("DB_NAME", "cocosumo_production") %>
+  username: <%= ENV.fetch("DB_USER", "cocosumo") %>
+  password: <%= ENV.fetch("DB_PASSWORD", "") %>
+  host: <%= ENV.fetch("DB_HOST", "/cloudsql/biruweb-cosmos:asia-northeast1:cocosumo-db") %>
