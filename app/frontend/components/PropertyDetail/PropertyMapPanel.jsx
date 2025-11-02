@@ -193,7 +193,9 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
   }, [streetViewVisible, property]);
 
   const loadGoogleMaps = () => {
-    const apiKey = import.meta.env?.VITE_GOOGLE_MAPS_API_KEY || '';
+    // meta tagから取得（本番環境）、または環境変数から取得（開発環境）
+    const metaTag = document.querySelector('meta[name="google-maps-api-key"]');
+    const apiKey = metaTag?.getAttribute('content') || import.meta.env?.VITE_GOOGLE_MAPS_API_KEY || '';
     const isValidApiKey = apiKey && apiKey !== 'your_google_maps_api_key_here';
 
     // 有効なAPIキーがない場合は地図読み込みをスキップ

@@ -1,8 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 
-// Google Maps APIキー（環境変数から取得）
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+// Google Maps APIキーを取得する関数
+const getGoogleMapsApiKey = () => {
+  // 本番環境：meta tagから取得
+  const metaTag = document.querySelector('meta[name="google-maps-api-key"]');
+  if (metaTag) {
+    return metaTag.getAttribute('content') || '';
+  }
+  // 開発環境：Viteの環境変数から取得
+  return import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+};
+
+const GOOGLE_MAPS_API_KEY = getGoogleMapsApiKey();
 
 export function useGoogleMaps(mapElementId, options = {}) {
   const [map, setMap] = useState(null);

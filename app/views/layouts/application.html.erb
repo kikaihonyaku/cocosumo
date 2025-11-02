@@ -8,6 +8,9 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
+    <%# Environment variables for frontend %>
+    <meta name="google-maps-api-key" content="<%= ENV['VITE_GOOGLE_MAPS_API_KEY'] %>">
+
     <%= yield :head %>
 
     <link rel="icon" href="/icon.png?v=<%= Time.now.to_i %>" type="image/png">
