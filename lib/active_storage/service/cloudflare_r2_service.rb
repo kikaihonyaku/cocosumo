@@ -23,7 +23,7 @@ module ActiveStorage
             # content_md5とchecksum_algorithmを明示的に除外
           }
 
-          client.put_object(**upload_options, bucket: bucket.name, key: key)
+          bucket.object(key).put(**upload_options)
         end
       end
 
@@ -32,34 +32,14 @@ module ActiveStorage
           content_disposition = content_disposition_with(type: disposition, filename: filename) if disposition && filename
 
           # マルチパートアップロードでもチェックサムを除外
-          upload_options = {
-            acl: "private",
+          object = bucket.object(key)
+
+          object.upload_stream(
             content_type: content_type,
             content_disposition: content_disposition,
             metadata: custom_metadata
-          }
-
-          client.create_multipart_upload(**upload_options, bucket: bucket.name, key: key) do |upload|
-            parts = []
-            part_number = 0
-
-            io.each_chunk do |chunk|
-              part_number += 1
-              parts << client.upload_part(
-                bucket: bucket.name,
-                key: key,
-                part_number: part_number,
-                upload_id: upload.upload_id,
-                body: chunk
-              ).etag
-            end
-
-            client.complete_multipart_upload(
-              bucket: bucket.name,
-              key: key,
-              upload_id: upload.upload_id,
-              multipart_upload: { parts: parts.map.with_index { |etag, i| { etag: etag, part_number: i + 1 } } }
-            )
+          ) do |write_stream|
+            IO.copy_stream(io, write_stream)
           end
         end
       end
