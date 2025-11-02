@@ -6,9 +6,7 @@ if [ -z "${LD_PRELOAD+x}" ]; then
     export LD_PRELOAD
 fi
 
-# If running the rails server then create or migrate existing database
-if [ "${1}" == "./bin/rails" ] && [ "${2}" == "server" ]; then
-  ./bin/rails db:prepare
-fi
+# Database preparation is now done via Cloud Run Jobs, not at startup
+# This prevents startup timeout issues
 
 exec "${@}"
