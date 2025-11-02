@@ -26,10 +26,17 @@ class RoomPhoto < ApplicationRecord
   def photo_url
     return nil unless photo.attached?
 
-    if Rails.env.production?
-      photo.url
-    else
+    # サービスの種類に応じて適切なURLを返す
+    if photo.service.is_a?(ActiveStorage::Service::DiskService)
+      # Diskサービスの場合は相対パスを返す
       Rails.application.routes.url_helpers.rails_blob_path(photo, only_path: true)
+    else
+      # R2などのクラウドストレージの場合はURLを返す
+      photo.url
     end
+  rescue ArgumentError => e
+    # URL生成エラーの場合はログに記録してnilを返す
+    Rails.logger.error("Failed to generate photo URL: #{e.message}")
+    nil
   end
 end
