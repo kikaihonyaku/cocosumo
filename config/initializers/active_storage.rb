@@ -3,12 +3,15 @@
 Rails.application.config.after_initialize do
   if Rails.application.config.active_storage.service == :cloudflare_r2
     # AWS SDK S3クライアントのデフォルト設定を変更
-    Aws.config.update(
-      {
-        s3: {
-          compute_checksums: false
+    # Awsが定義されているかチェック（ビルド時は未定義の場合がある）
+    if defined?(Aws)
+      Aws.config.update(
+        {
+          s3: {
+            compute_checksums: false
+          }
         }
-      }
-    )
+      )
+    end
   end
 end
