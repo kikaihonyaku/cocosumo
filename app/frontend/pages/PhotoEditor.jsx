@@ -94,6 +94,17 @@ export default function PhotoEditor() {
     fetchPhoto();
   }, [roomId, buildingId, photoId]);
 
+  // photoが設定されたら画像をcanvasに読み込む
+  useEffect(() => {
+    if (photo && !loading) {
+      const proxyUrl = isBuilding
+        ? `/api/v1/buildings/${buildingId}/photos/${photoId}/proxy`
+        : `/api/v1/rooms/${roomId}/room_photos/${photoId}/proxy`;
+      console.log('[PhotoEditor] Photo loaded, now loading image from proxy:', proxyUrl);
+      loadImageToCanvas(proxyUrl);
+    }
+  }, [photo, loading]);
+
   const fetchPhoto = async () => {
     try {
       setLoading(true);
@@ -116,14 +127,9 @@ export default function PhotoEditor() {
         const data = await response.json();
         // 建物写真の場合はphotoオブジェクトの中にデータがある
         const photoData = isBuilding ? data.photo : data;
+        console.log('[PhotoEditor] Photo data received:', photoData);
         setPhoto(photoData);
-
-        // CORS回避のため、プロキシURLを使用
-        const proxyUrl = isBuilding
-          ? `/api/v1/buildings/${buildingId}/photos/${photoId}/proxy`
-          : `/api/v1/rooms/${roomId}/room_photos/${photoId}/proxy`;
-        console.log('[PhotoEditor] Loading image from proxy:', proxyUrl);
-        loadImageToCanvas(proxyUrl);
+        // 画像の読み込みはuseEffectで行う（loading=falseになってcanvasがレンダリングされた後）
       } else {
         setError('写真情報の取得に失敗しました');
       }
