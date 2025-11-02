@@ -43,6 +43,9 @@ export default function PhotoEditor() {
   const canvasRef = useRef(null);
   const originalImageRef = useRef(null);
 
+  // デバッグ用ログ
+  console.log('[PhotoEditor] Component mounted', { roomId, buildingId, photoId, isBuilding });
+
   // photo_typeを日本語に変換
   const getPhotoTypeLabel = (photoType) => {
     const buildingPhotoTypes = {
@@ -98,12 +101,16 @@ export default function PhotoEditor() {
         ? `/api/v1/buildings/${buildingId}/photos/${photoId}`
         : `/api/v1/rooms/${roomId}/room_photos/${photoId}`;
 
+      console.log('[PhotoEditor] Fetching photo from:', url);
+
       const response = await fetch(url, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
       });
+
+      console.log('[PhotoEditor] Fetch response:', response.status, response.ok);
 
       if (response.ok) {
         const data = await response.json();
@@ -115,6 +122,7 @@ export default function PhotoEditor() {
         const proxyUrl = isBuilding
           ? `/api/v1/buildings/${buildingId}/photos/${photoId}/proxy`
           : `/api/v1/rooms/${roomId}/room_photos/${photoId}/proxy`;
+        console.log('[PhotoEditor] Loading image from proxy:', proxyUrl);
         loadImageToCanvas(proxyUrl);
       } else {
         setError('写真情報の取得に失敗しました');
@@ -128,14 +136,19 @@ export default function PhotoEditor() {
   };
 
   const loadImageToCanvas = (imageUrl) => {
+    console.log('[PhotoEditor] loadImageToCanvas called with:', imageUrl);
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.error('[PhotoEditor] Canvas ref is null');
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
     const img = new Image();
     // プロキシ経由なので同一オリジン、crossOrigin不要
 
     img.onload = () => {
+      console.log('[PhotoEditor] Image loaded successfully', img.width, img.height);
       // オリジナル画像を保存
       originalImageRef.current = img;
 
@@ -162,10 +175,12 @@ export default function PhotoEditor() {
       ctx.drawImage(img, 0, 0, width, height);
     };
 
-    img.onerror = () => {
+    img.onerror = (e) => {
+      console.error('[PhotoEditor] Image load error:', e, imageUrl);
       setError('画像の読み込みに失敗しました');
     };
 
+    console.log('[PhotoEditor] Setting image src:', imageUrl);
     img.src = imageUrl;
   };
 
