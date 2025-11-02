@@ -41,7 +41,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_27_215813) do
 
   create_table "ai_generated_images", force: :cascade do |t|
     t.integer "room_id", null: false
-    t.integer "original_photo_id", null: false
+    t.integer "room_photo_id", null: false
     t.string "source_image_path"
     t.string "generated_image_path"
     t.string "generation_type"
@@ -49,8 +49,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_27_215813) do
     t.integer "status"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["original_photo_id"], name: "index_ai_generated_images_on_original_photo_id"
     t.index ["room_id"], name: "index_ai_generated_images_on_room_id"
+    t.index ["room_photo_id"], name: "index_ai_generated_images_on_room_photo_id"
   end
 
   create_table "building_photos", force: :cascade do |t|
@@ -173,7 +173,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_27_215813) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "ai_generated_images", "original_photos"
+  add_foreign_key "ai_generated_images", "room_photos"
   add_foreign_key "ai_generated_images", "rooms"
   add_foreign_key "building_photos", "buildings"
   add_foreign_key "buildings", "tenants"
