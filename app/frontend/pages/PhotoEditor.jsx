@@ -43,9 +43,6 @@ export default function PhotoEditor() {
   const canvasRef = useRef(null);
   const originalImageRef = useRef(null);
 
-  // デバッグ用ログ
-  console.log('[PhotoEditor] Component mounted', { roomId, buildingId, photoId, isBuilding });
-
   // photo_typeを日本語に変換
   const getPhotoTypeLabel = (photoType) => {
     const buildingPhotoTypes = {
@@ -100,7 +97,6 @@ export default function PhotoEditor() {
       const proxyUrl = isBuilding
         ? `/api/v1/buildings/${buildingId}/photos/${photoId}/proxy`
         : `/api/v1/rooms/${roomId}/room_photos/${photoId}/proxy`;
-      console.log('[PhotoEditor] Photo loaded, now loading image from proxy:', proxyUrl);
       loadImageToCanvas(proxyUrl);
     }
   }, [photo, loading]);
@@ -112,8 +108,6 @@ export default function PhotoEditor() {
         ? `/api/v1/buildings/${buildingId}/photos/${photoId}`
         : `/api/v1/rooms/${roomId}/room_photos/${photoId}`;
 
-      console.log('[PhotoEditor] Fetching photo from:', url);
-
       const response = await fetch(url, {
         credentials: 'include',
         headers: {
@@ -121,13 +115,10 @@ export default function PhotoEditor() {
         },
       });
 
-      console.log('[PhotoEditor] Fetch response:', response.status, response.ok);
-
       if (response.ok) {
         const data = await response.json();
         // 建物写真の場合はphotoオブジェクトの中にデータがある
         const photoData = isBuilding ? data.photo : data;
-        console.log('[PhotoEditor] Photo data received:', photoData);
         setPhoto(photoData);
         // 画像の読み込みはuseEffectで行う（loading=falseになってcanvasがレンダリングされた後）
       } else {
@@ -142,19 +133,14 @@ export default function PhotoEditor() {
   };
 
   const loadImageToCanvas = (imageUrl) => {
-    console.log('[PhotoEditor] loadImageToCanvas called with:', imageUrl);
     const canvas = canvasRef.current;
-    if (!canvas) {
-      console.error('[PhotoEditor] Canvas ref is null');
-      return;
-    }
+    if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     const img = new Image();
     // プロキシ経由なので同一オリジン、crossOrigin不要
 
     img.onload = () => {
-      console.log('[PhotoEditor] Image loaded successfully', img.width, img.height);
       // オリジナル画像を保存
       originalImageRef.current = img;
 
@@ -181,12 +167,10 @@ export default function PhotoEditor() {
       ctx.drawImage(img, 0, 0, width, height);
     };
 
-    img.onerror = (e) => {
-      console.error('[PhotoEditor] Image load error:', e, imageUrl);
+    img.onerror = () => {
       setError('画像の読み込みに失敗しました');
     };
 
-    console.log('[PhotoEditor] Setting image src:', imageUrl);
     img.src = imageUrl;
   };
 
