@@ -73,4 +73,5 @@ Rails.application.configure do
   # Cloudflare Tunnel 経由でアクセスするホストを許可
   config.hosts << "cocosumo.space"
   config.hosts << "www.cocosumo.space"  # www も使うなら追加
+  config.hosts << "beta.cocosumo.space"
 end

@@ -1,6 +1,9 @@
 {
   "private": true,
   "type": "module",
+  "scripts": {
+    "build": "vite build"
+  },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.0.4",
     "vite": "^5.4.20",
