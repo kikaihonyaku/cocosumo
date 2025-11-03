@@ -16,10 +16,7 @@
     <link rel="icon" href="/icon.png?v=<%= Time.now.to_i %>" type="image/png">
     <link rel="apple-touch-icon" href="/icon.png?v=<%= Time.now.to_i %>">
 
-    <%# Tailwind CSS for Landing page %>
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
-
-    <%# Vite + React %>
+    <%# Vite + React (CSS is bundled with JS) %>
     <%= vite_client_tag %>
     <%= vite_javascript_tag 'application.jsx' %>
   </head>
