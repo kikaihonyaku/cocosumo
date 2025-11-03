@@ -325,7 +325,11 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
             variant="contained"
             size="small"
             startIcon={<AddIcon />}
-            onClick={() => setUploadDialogOpen(true)}
+            onClick={() => {
+              // 現在選択中のカテゴリをデフォルトに設定（'all'の場合は'interior'）
+              setUploadCategory(selectedCategory !== 'all' ? selectedCategory : 'interior');
+              setUploadDialogOpen(true);
+            }}
             sx={{ mr: 1 }}
           >
             写真追加
@@ -394,7 +398,11 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
             <Button
               variant="outlined"
               startIcon={<AddIcon />}
-              onClick={() => setUploadDialogOpen(true)}
+              onClick={() => {
+                // 現在選択中のカテゴリをデフォルトに設定（'all'の場合は'interior'）
+                setUploadCategory(selectedCategory !== 'all' ? selectedCategory : 'interior');
+                setUploadDialogOpen(true);
+              }}
               sx={{ mt: 1 }}
             >
               写真を追加
@@ -798,7 +806,11 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
         <Fab
           color="primary"
           size="small"
-          onClick={() => setUploadDialogOpen(true)}
+          onClick={() => {
+            // 現在選択中のカテゴリをデフォルトに設定（'all'の場合は'interior'）
+            setUploadCategory(selectedCategory !== 'all' ? selectedCategory : 'interior');
+            setUploadDialogOpen(true);
+          }}
           sx={{
             position: 'absolute',
             bottom: 16,
