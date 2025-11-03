@@ -45,25 +45,34 @@ export default function RoomInfoPanel({ room, onSave, loading, isMobile = false,
   useEffect(() => {
     if (room) {
       setFormData({
+        ...room,
         room_number: room.room_number || '',
         floor: room.floor || '',
         area: room.area || '',
         room_type: room.room_type || '',
         status: room.status || '',
-        rent: room.rent || '',
-        management_fee: room.management_fee || '',
-        deposit: room.deposit || '',
-        key_money: room.key_money || '',
         description: room.description || '',
-        ...room
+        // 金額フィールドは整数に変換
+        rent: room.rent ? Math.round(parseFloat(room.rent)) : '',
+        management_fee: room.management_fee ? Math.round(parseFloat(room.management_fee)) : '',
+        deposit: room.deposit ? Math.round(parseFloat(room.deposit)) : '',
+        key_money: room.key_money ? Math.round(parseFloat(room.key_money)) : '',
       });
     }
   }, [room]);
 
   const handleChange = (field) => (event) => {
+    let value = event.target.value;
+
+    // 金額フィールドは整数に変換
+    const monetaryFields = ['rent', 'management_fee', 'deposit', 'key_money'];
+    if (monetaryFields.includes(field) && value !== '') {
+      value = Math.round(parseFloat(value)) || 0;
+    }
+
     setFormData(prev => ({
       ...prev,
-      [field]: event.target.value
+      [field]: value
     }));
     setHasUnsavedChanges(true);
   };
@@ -264,6 +273,7 @@ export default function RoomInfoPanel({ room, onSave, loading, isMobile = false,
                 variant="outlined"
                 size="small"
                 sx={{ flex: 1 }}
+                inputProps={{ step: 1 }}
                 InputProps={{
                   endAdornment: <Typography variant="body2" color="text.secondary">円</Typography>
                 }}
@@ -277,6 +287,7 @@ export default function RoomInfoPanel({ room, onSave, loading, isMobile = false,
                 variant="outlined"
                 size="small"
                 sx={{ flex: 1 }}
+                inputProps={{ step: 1 }}
                 InputProps={{
                   endAdornment: <Typography variant="body2" color="text.secondary">円</Typography>
                 }}
@@ -292,6 +303,7 @@ export default function RoomInfoPanel({ room, onSave, loading, isMobile = false,
                 variant="outlined"
                 size="small"
                 sx={{ flex: 1 }}
+                inputProps={{ step: 1 }}
                 InputProps={{
                   endAdornment: <Typography variant="body2" color="text.secondary">円</Typography>
                 }}
@@ -305,6 +317,7 @@ export default function RoomInfoPanel({ room, onSave, loading, isMobile = false,
                 variant="outlined"
                 size="small"
                 sx={{ flex: 1 }}
+                inputProps={{ step: 1 }}
                 InputProps={{
                   endAdornment: <Typography variant="body2" color="text.secondary">円</Typography>
                 }}
