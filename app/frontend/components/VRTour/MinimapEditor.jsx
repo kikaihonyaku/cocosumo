@@ -37,6 +37,8 @@ const PHOTO_CATEGORIES = {
 export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadMinimap, onSelectExistingPhoto, onRefreshScenes }) {
   const canvasRef = useRef(null);
   const hasSavedRef = useRef(false);
+  const animationFrameRef = useRef(null);
+  const backgroundImageRef = useRef(null);
   const [minimapImage, setMinimapImage] = useState(null);
   const [draggedScene, setDraggedScene] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -57,7 +59,29 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
     if (vrTour?.room?.id) {
       fetchRoomPhotos(vrTour.room.id);
     }
+
+    // クリーンアップ: アニメーションフレームをキャンセル
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
   }, [vrTour]);
+
+  // 背景画像を事前に読み込んでキャッシュ（ちらつき防止）
+  useEffect(() => {
+    if (minimapImage) {
+      const img = new Image();
+      img.onload = () => {
+        backgroundImageRef.current = img;
+        drawCanvas();
+      };
+      img.src = minimapImage;
+    } else {
+      backgroundImageRef.current = null;
+      drawCanvas();
+    }
+  }, [minimapImage]);
 
   // シーンの位置情報を読み込み（既存の位置は維持）
   useEffect(() => {
@@ -139,8 +163,8 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
     }
   };
 
-  // Canvasを描画
-  useEffect(() => {
+  // Canvas描画関数（requestAnimationFrameで呼び出される）
+  const drawCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -149,14 +173,10 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
     // キャンバスをクリア
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 背景画像を描画
-    if (minimapImage) {
-      const img = new Image();
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        drawScenes(ctx);
-      };
-      img.src = minimapImage;
+    // キャッシュされた背景画像を描画
+    if (backgroundImageRef.current) {
+      ctx.drawImage(backgroundImageRef.current, 0, 0, canvas.width, canvas.height);
+      drawScenes(ctx);
     } else {
       // 背景画像がない場合はグレーの背景
       ctx.fillStyle = '#f5f5f5';
@@ -180,7 +200,15 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
 
       drawScenes(ctx);
     }
-  }, [minimapImage, scenePositions, scenes]);
+  };
+
+  // Canvasを描画（ドラッグ中以外）
+  useEffect(() => {
+    // ドラッグ中はrequestAnimationFrameで描画するため、ここでは描画しない
+    if (draggedScene) return;
+
+    drawCanvas();
+  }, [minimapImage, scenePositions, scenes, draggedScene]);
 
   // シーンマーカーを描画
   const drawScenes = (ctx) => {
@@ -270,17 +298,39 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
     const clampedX = Math.max(20, Math.min(canvas.width - 20, newX));
     const clampedY = Math.max(20, Math.min(canvas.height - 20, newY));
 
-    // シーン位置を更新
-    setScenePositions(prev => ({
-      ...prev,
-      [draggedScene]: { x: clampedX, y: clampedY }
-    }));
-    setHasChanges(true);
+    // 前回のアニメーションフレームをキャンセル
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    // requestAnimationFrameで描画を最適化
+    animationFrameRef.current = requestAnimationFrame(() => {
+      // シーン位置を更新
+      setScenePositions(prev => ({
+        ...prev,
+        [draggedScene]: { x: clampedX, y: clampedY }
+      }));
+      setHasChanges(true);
+
+      // 即座に再描画
+      drawCanvas();
+    });
   };
 
   const handleMouseUp = () => {
+    // アニメーションフレームをキャンセル
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
     setDraggedScene(null);
     setDragOffset({ x: 0, y: 0 });
+
+    // ドラッグ終了後に再描画
+    requestAnimationFrame(() => {
+      drawCanvas();
+    });
   };
 
   // 位置情報を保存
@@ -299,7 +349,6 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
       for (const scene of scenes) {
         const pos = positionsToSave[scene.id];
         if (pos && onUpdateScene) {
-          console.log(`Saving scene ${scene.id} (${scene.title}):`, pos);
           await onUpdateScene(scene.id, { minimap_position: pos }, true);
         }
       }
@@ -308,7 +357,6 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
       // すべての保存が完了したら、シーンを再取得
       if (onRefreshScenes) {
         await onRefreshScenes();
-        console.log('Scenes refreshed after save');
       }
     } finally {
       // 保存完了後、少し待ってからフラグを解除

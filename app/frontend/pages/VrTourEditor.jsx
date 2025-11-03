@@ -306,7 +306,6 @@ export default function VrTourEditor() {
 
   const handleUpdateScenePosition = async (sceneId, updates, skipSceneUpdate = false) => {
     try {
-      console.log('Sending update for scene:', sceneId, 'with data:', updates);
       const response = await fetch(`/api/v1/vr_tours/${id}/vr_scenes/${sceneId}`, {
         method: 'PATCH',
         credentials: 'include',
@@ -320,8 +319,6 @@ export default function VrTourEditor() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Received response for scene:', sceneId, 'data:', data);
-        console.log('minimap_position in response:', data.minimap_position);
 
         // 一括保存中はシーンリストを更新しない（古いデータの混入を防ぐ）
         if (!skipSceneUpdate) {
