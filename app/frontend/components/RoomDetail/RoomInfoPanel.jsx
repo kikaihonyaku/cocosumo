@@ -330,7 +330,7 @@ export default function RoomInfoPanel({ room, onSave, loading, isMobile = false,
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pt: 1 }}>
           <CalendarIcon color="action" fontSize="small" />
           <Typography variant="body2" color="text.secondary">
-            最終更新: {room?.updated_at ? new Date(room.updated_at).toLocaleDateString('ja-JP') : '不明'}
+            最終更新: {room?.updated_at ? new Date(room.updated_at).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '不明'}
           </Typography>
         </Box>
 
