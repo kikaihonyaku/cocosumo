@@ -2,7 +2,7 @@ class RoomPhoto < ApplicationRecord
   # Associations
   belongs_to :room
   has_one_attached :photo
-  has_many :ai_generated_images, foreign_key: :original_photo_id, dependent: :destroy
+  has_many :ai_generated_images, foreign_key: :room_photo_id, dependent: :destroy
 
   # Validations
   validates :photo_type, presence: true
