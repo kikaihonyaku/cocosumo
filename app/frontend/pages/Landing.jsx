@@ -100,6 +100,25 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* お問い合わせセクション */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="bg-white rounded-xl p-8 shadow-lg max-w-2xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            お問い合わせ
+          </h2>
+          <p className="text-gray-600 mb-6">
+            サービスについてのご質問やご相談は、お気軽にお問い合わせください。
+          </p>
+          <a
+            href="mailto:admin@cocosumo.space"
+            className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors"
+          >
+            <span className="mr-2">✉️</span>
+            admin@cocosumo.space
+          </a>
+        </div>
+      </section>
+
       {/* フッター */}
       <footer className="bg-gray-900 text-white py-8 mt-20">
         <div className="container mx-auto px-4 text-center">
