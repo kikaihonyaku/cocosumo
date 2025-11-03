@@ -12,6 +12,7 @@ import {
   CircularProgress,
   Alert,
   useMediaQuery,
+  Snackbar,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -32,6 +33,7 @@ export default function RoomDetail() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   // ペイン幅の管理
   const [leftPaneWidth, setLeftPaneWidth] = useState(400); // 左ペインの横幅
@@ -82,12 +84,13 @@ export default function RoomDetail() {
         const data = await response.json();
         setRoom(data);
         setHasUnsavedChanges(false);
+        showSnackbar('部屋情報を保存しました', 'success');
       } else {
-        alert('保存に失敗しました');
+        showSnackbar('保存に失敗しました', 'error');
       }
     } catch (err) {
       console.error('保存エラー:', err);
-      alert('ネットワークエラーが発生しました');
+      showSnackbar('ネットワークエラーが発生しました', 'error');
     } finally {
       setSaving(false);
     }
@@ -95,6 +98,14 @@ export default function RoomDetail() {
 
   const handleFormChange = (hasChanges) => {
     setHasUnsavedChanges(hasChanges);
+  };
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   // スプリッタバーのリサイズ処理（左側）
@@ -363,6 +374,23 @@ export default function RoomDetail() {
         </Box>
       </Box>
       </Box>
+
+      {/* Snackbar通知 */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </ThemeProvider>
   );
 }
