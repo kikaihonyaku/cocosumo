@@ -25,6 +25,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -39,6 +41,8 @@ import muiTheme from '../theme/muiTheme';
 export default function PhotoEditor() {
   const { roomId, buildingId, photoId } = useParams();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md')); // md以下（960px未満）をモバイル判定
   const isBuilding = !!buildingId; // buildingIdがある場合は建物写真
   const canvasRef = useRef(null);
   const originalImageRef = useRef(null);
@@ -99,7 +103,7 @@ export default function PhotoEditor() {
         : `/api/v1/rooms/${roomId}/room_photos/${photoId}/proxy`;
       loadImageToCanvas(proxyUrl);
     }
-  }, [photo, loading]);
+  }, [photo, loading, isMobile]);
 
   const fetchPhoto = async () => {
     try {
@@ -145,8 +149,13 @@ export default function PhotoEditor() {
       originalImageRef.current = img;
 
       // Canvasのサイズを画像に合わせる（画面サイズに応じて動的に設定）
-      const maxWidth = window.innerWidth * 0.7; // 画面幅の70%
-      const maxHeight = window.innerHeight * 0.85; // 画面高さの85%
+      // モバイルでは画面幅いっぱい、デスクトップでは右パネル分を引いた幅
+      const maxWidth = isMobile
+        ? window.innerWidth * 0.95 // モバイルでは画面幅の95%
+        : window.innerWidth * 0.7; // デスクトップでは画面幅の70%
+      const maxHeight = isMobile
+        ? window.innerHeight * 0.5 // モバイルでは画面高さの50%（下部にコントロールパネルがあるため）
+        : window.innerHeight * 0.85; // デスクトップでは画面高さの85%
       let width = img.width;
       let height = img.height;
 
@@ -257,6 +266,21 @@ export default function PhotoEditor() {
       applyFilters();
     }
   }, [brightness, contrast, saturation]);
+
+  // ウィンドウサイズ変更時に画像をリサイズ
+  useEffect(() => {
+    const handleResize = () => {
+      if (photo && !loading && originalImageRef.current) {
+        const proxyUrl = isBuilding
+          ? `/api/v1/buildings/${buildingId}/photos/${photoId}/proxy`
+          : `/api/v1/rooms/${roomId}/room_photos/${photoId}/proxy`;
+        loadImageToCanvas(proxyUrl);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [photo, loading, isMobile, isBuilding, buildingId, photoId, roomId]);
 
   const handleReset = () => {
     setBrightness(100);
@@ -497,35 +521,77 @@ export default function PhotoEditor() {
             >
               <ArrowBackIcon />
             </IconButton>
-            <Typography variant="h6" component="h1" sx={{ flexGrow: 1, fontWeight: 600 }}>
-              {isBuilding
-                ? `建物写真編集${photo.building_name ? ` ${photo.building_name}` : ''}${photo.photo_type ? ` ${getPhotoTypeLabel(photo.photo_type)}` : ''} ID: ${photo.id}`
-                : `部屋写真編集${photo.building_name ? ` ${photo.building_name}` : ''}${photo.room_name ? ` ${photo.room_name}` : ''}${photo.photo_type ? ` ${getPhotoTypeLabel(photo.photo_type)}` : ''} ID: ${photo.id}`
+            <Typography
+              variant={isMobile ? 'subtitle1' : 'h6'}
+              component="h1"
+              sx={{
+                flexGrow: 1,
+                fontWeight: 600,
+                fontSize: isMobile ? '0.9rem' : '1.25rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: isMobile ? 'nowrap' : 'normal'
+              }}
+            >
+              {isMobile
+                ? (isBuilding ? '建物写真編集' : '部屋写真編集')
+                : (isBuilding
+                  ? `建物写真編集${photo.building_name ? ` ${photo.building_name}` : ''}${photo.photo_type ? ` ${getPhotoTypeLabel(photo.photo_type)}` : ''} ID: ${photo.id}`
+                  : `部屋写真編集${photo.building_name ? ` ${photo.building_name}` : ''}${photo.room_name ? ` ${photo.room_name}` : ''}${photo.photo_type ? ` ${getPhotoTypeLabel(photo.photo_type)}` : ''} ID: ${photo.id}`
+                )
               }
             </Typography>
-            <Button
-              variant="contained"
-              color="success"
-              startIcon={<SaveIcon />}
-              onClick={handleSave}
-              disabled={saving}
-            >
-              {saving ? '保存中...' : '保存'}
-            </Button>
+            {isMobile ? (
+              <IconButton
+                color="inherit"
+                onClick={handleSave}
+                disabled={saving}
+                sx={{
+                  bgcolor: 'success.main',
+                  '&:hover': { bgcolor: 'success.dark' },
+                  '&.Mui-disabled': { bgcolor: 'action.disabledBackground' }
+                }}
+              >
+                <SaveIcon />
+              </IconButton>
+            ) : (
+              <Button
+                variant="contained"
+                color="success"
+                startIcon={<SaveIcon />}
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {saving ? '保存中...' : '保存'}
+              </Button>
+            )}
           </Toolbar>
         </AppBar>
 
         {/* メインコンテンツ */}
-        <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 0, width: '100%', height: '100%' }}>
-            {/* 左側: キャンバス */}
+        <Box sx={{
+          flex: 1,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row'
+        }}>
+          <Box sx={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            width: '100%',
+            height: '100%',
+            overflow: 'hidden'
+          }}>
+            {/* 左側（モバイルでは上部）: キャンバス */}
             <Box sx={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               bgcolor: '#f5f5f5',
               p: 1,
-              overflow: 'hidden'
+              overflow: 'auto',
+              flex: isMobile ? '0 0 auto' : 1,
+              minHeight: isMobile ? 'auto' : '100%'
             }}>
               <canvas
                 ref={canvasRef}
@@ -538,7 +604,7 @@ export default function PhotoEditor() {
               />
             </Box>
 
-            {/* 右側: コントロールパネル */}
+            {/* 右側（モバイルでは下部）: コントロールパネル */}
             <Box sx={{
               display: 'flex',
               flexDirection: 'column',
@@ -546,8 +612,11 @@ export default function PhotoEditor() {
               overflowY: 'auto',
               bgcolor: 'background.paper',
               p: 1.5,
-              borderLeft: '1px solid',
-              borderColor: 'divider'
+              borderLeft: isMobile ? 'none' : '1px solid',
+              borderTop: isMobile ? '1px solid' : 'none',
+              borderColor: 'divider',
+              width: isMobile ? '100%' : '360px',
+              flex: isMobile ? 1 : '0 0 360px'
             }}>
               {/* AI画像処理 */}
               <Paper elevation={2} sx={{ p: 1.5 }}>
