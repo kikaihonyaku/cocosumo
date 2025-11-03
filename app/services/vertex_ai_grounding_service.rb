@@ -41,14 +41,18 @@ class VertexAiGroundingService
     raise GroundingError, "GOOGLE_CLOUD_PROJECT_IDが設定されていません" if @project_id.blank?
     raise GroundingError, "GOOGLE_CLOUD_REGIONが設定されていません" if @location.blank?
 
-    credentials_path = ENV['GOOGLE_APPLICATION_CREDENTIALS']
-    if credentials_path.blank?
-      raise GroundingError, "GOOGLE_APPLICATION_CREDENTIALSが設定されていません"
-    end
+    # 開発環境では認証ファイルの存在を確認
+    if Rails.env.development?
+      credentials_path = ENV['GOOGLE_APPLICATION_CREDENTIALS']
+      if credentials_path.blank?
+        raise GroundingError, "GOOGLE_APPLICATION_CREDENTIALSが設定されていません"
+      end
 
-    unless File.exist?(credentials_path)
-      raise GroundingError, "認証ファイルが見つかりません: #{credentials_path}"
+      unless File.exist?(credentials_path)
+        raise GroundingError, "認証ファイルが見つかりません: #{credentials_path}"
+      end
     end
+    # 本番環境ではCloud Runのデフォルト認証を使用（チェック不要）
   end
 
   def call_vertex_ai_api(query, latitude, longitude, conversation_history = [], address = nil)
@@ -152,11 +156,17 @@ class VertexAiGroundingService
     # Google Cloud 認証スコープ
     scopes = ['https://www.googleapis.com/auth/cloud-platform']
 
-    # サービスアカウントキーからauthorizerを作成
-    authorizer = Google::Auth::ServiceAccountCredentials.make_creds(
-      json_key_io: File.open(ENV['GOOGLE_APPLICATION_CREDENTIALS']),
-      scope: scopes
-    )
+    # 環境に応じた認証方法
+    authorizer = if Rails.env.production? || ENV['GOOGLE_APPLICATION_CREDENTIALS'].blank?
+      # 本番環境またはGOOGLE_APPLICATION_CREDENTIALSが未設定の場合はデフォルト認証
+      Google::Auth.get_application_default(scopes)
+    else
+      # 開発環境ではサービスアカウントキーファイルから認証
+      Google::Auth::ServiceAccountCredentials.make_creds(
+        json_key_io: File.open(ENV['GOOGLE_APPLICATION_CREDENTIALS']),
+        scope: scopes
+      )
+    end
 
     # アクセストークンを取得
     authorizer.fetch_access_token!['access_token']
