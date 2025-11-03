@@ -203,7 +203,7 @@ class Api::V1::VrToursController < ApplicationController
   end
 
   def vr_tour_params
-    params.require(:vr_tour).permit(:title, :description, :status, :minimap_image, config: {})
+    params.require(:vr_tour).permit(:title, :description, :status, :minimap_image, :minimap_room_photo_id, config: {})
   end
 
   def require_login

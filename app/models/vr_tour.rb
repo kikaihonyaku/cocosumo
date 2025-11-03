@@ -3,6 +3,7 @@ class VrTour < ApplicationRecord
   belongs_to :room
   has_many :vr_scenes, dependent: :destroy
   has_one_attached :minimap_image
+  belongs_to :minimap_room_photo, class_name: 'RoomPhoto', optional: true
 
   # Validations
   validates :title, presence: true
@@ -34,6 +35,12 @@ class VrTour < ApplicationRecord
 
   # Get minimap image URL
   def minimap_image_url
+    # 既存の部屋写真を使用する場合は、その写真URLを優先
+    if minimap_room_photo.present?
+      return minimap_room_photo.photo_url
+    end
+
+    # アップロードされたミニマップ画像を使用
     return nil unless minimap_image.attached?
 
     if Rails.env.production?

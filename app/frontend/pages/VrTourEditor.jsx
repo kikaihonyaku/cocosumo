@@ -23,7 +23,6 @@ import {
   DialogActions,
   Chip,
   ThemeProvider,
-  createTheme,
   useMediaQuery
 } from "@mui/material";
 import {
@@ -39,24 +38,13 @@ import PanoramaViewer from "../components/VRTour/PanoramaViewer";
 import HotspotEditor from "../components/VRTour/HotspotEditor";
 import VrTourPreview from "../components/VRTour/VrTourPreview";
 import MinimapEditor from "../components/VRTour/MinimapEditor";
-
-// カスタムテーマ
-const vrTourTheme = createTheme({
-  palette: {
-    primary: {
-      main: '#0E983C',
-    },
-    secondary: {
-      main: '#9DC813',
-    },
-  },
-});
+import muiTheme from '../theme/muiTheme';
 
 export default function VrTourEditor() {
   const { roomId, id } = useParams();
   const navigate = useNavigate();
   const isNew = !id; // idが存在しない場合は新規作成
-  const isMdUp = useMediaQuery(vrTourTheme.breakpoints.up('md'));
+  const isMdUp = useMediaQuery(muiTheme.breakpoints.up('md'));
 
   const [vrTour, setVrTour] = useState({
     title: '',
@@ -286,8 +274,39 @@ export default function VrTourEditor() {
     }
   };
 
-  const handleUpdateScenePosition = async (sceneId, updates) => {
+  const handleSelectExistingPhoto = async (photoId) => {
     try {
+      const response = await fetch(`/api/v1/rooms/${roomId}/vr_tours/${id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          vr_tour: {
+            minimap_room_photo_id: photoId
+          }
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setVrTour(data);
+        setOriginalVrTour(data);
+        setSnackbarMessage('ミニマップ画像を設定しました');
+        setSnackbarOpen(true);
+      } else {
+        alert('設定に失敗しました');
+      }
+    } catch (err) {
+      console.error('設定エラー:', err);
+      alert('ネットワークエラーが発生しました');
+    }
+  };
+
+  const handleUpdateScenePosition = async (sceneId, updates, skipSceneUpdate = false) => {
+    try {
+      console.log('Sending update for scene:', sceneId, 'with data:', updates);
       const response = await fetch(`/api/v1/vr_tours/${id}/vr_scenes/${sceneId}`, {
         method: 'PATCH',
         credentials: 'include',
@@ -301,8 +320,13 @@ export default function VrTourEditor() {
 
       if (response.ok) {
         const data = await response.json();
-        // シーンリストを更新
-        setScenes(scenes.map(s => s.id === data.id ? data : s));
+        console.log('Received response for scene:', sceneId, 'data:', data);
+        console.log('minimap_position in response:', data.minimap_position);
+
+        // 一括保存中はシーンリストを更新しない（古いデータの混入を防ぐ）
+        if (!skipSceneUpdate) {
+          setScenes(prevScenes => prevScenes.map(s => s.id === data.id ? data : s));
+        }
       }
     } catch (err) {
       console.error('シーン更新エラー:', err);
@@ -400,7 +424,7 @@ export default function VrTourEditor() {
   }
 
   return (
-    <ThemeProvider theme={vrTourTheme}>
+    <ThemeProvider theme={muiTheme}>
       <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
         {/* ヘッダー */}
         <AppBar position="static" elevation={0} sx={{
@@ -736,6 +760,8 @@ export default function VrTourEditor() {
                     scenes={scenes}
                     onUpdateScene={handleUpdateScenePosition}
                     onUploadMinimap={handleUploadMinimap}
+                    onSelectExistingPhoto={handleSelectExistingPhoto}
+                    onRefreshScenes={fetchScenes}
                   />
                 </Paper>
               </Box>

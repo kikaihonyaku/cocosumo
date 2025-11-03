@@ -5,21 +5,47 @@ import {
   Button,
   Alert,
   IconButton,
-  Paper
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
+  Card,
+  CardMedia,
+  CardContent,
+  Chip
 } from "@mui/material";
 import {
   CloudUpload as UploadIcon,
   Delete as DeleteIcon,
-  Save as SaveIcon
+  Save as SaveIcon,
+  PhotoLibrary as PhotoLibraryIcon
 } from "@mui/icons-material";
 
-export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadMinimap }) {
+// カテゴリ定義
+const PHOTO_CATEGORIES = {
+  interior: '室内',
+  living: 'リビング',
+  kitchen: 'キッチン',
+  bathroom: 'バスルーム',
+  floor_plan: '間取り図',
+  exterior: '外観',
+  other: 'その他',
+};
+
+export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadMinimap, onSelectExistingPhoto, onRefreshScenes }) {
   const canvasRef = useRef(null);
+  const hasSavedRef = useRef(false);
   const [minimapImage, setMinimapImage] = useState(null);
   const [draggedScene, setDraggedScene] = useState(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [scenePositions, setScenePositions] = useState({});
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [hasChanges, setHasChanges] = useState(false);
+  const [roomPhotos, setRoomPhotos] = useState([]);
+  const [selectPhotoDialogOpen, setSelectPhotoDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // 初期化: VRツアーのminimap_image_urlとシーンのminimap_positionを読み込み
   useEffect(() => {
@@ -27,21 +53,91 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
       setMinimapImage(vrTour.minimap_image_url);
     }
 
-    // シーンの位置情報を読み込み
-    const positions = {};
-    scenes.forEach(scene => {
-      if (scene.minimap_position) {
-        positions[scene.id] = scene.minimap_position;
-      } else {
-        // デフォルト位置（中央付近にランダム配置）
-        positions[scene.id] = {
-          x: 400 + Math.random() * 100 - 50,
-          y: 300 + Math.random() * 100 - 50
-        };
-      }
+    // 部屋の写真を取得
+    if (vrTour?.room?.id) {
+      fetchRoomPhotos(vrTour.room.id);
+    }
+  }, [vrTour]);
+
+  // シーンの位置情報を読み込み（既存の位置は維持）
+  useEffect(() => {
+    // 保存中は位置更新をスキップ（保存中のscenes更新による意図しない位置変更を防ぐ）
+    if (isSaving) {
+      return;
+    }
+
+    setScenePositions(prevPositions => {
+      const positions = { ...prevPositions };
+
+      scenes.forEach(scene => {
+        // 既に位置が設定されている場合は、サーバーから取得した位置で更新
+        if (scene.minimap_position) {
+          positions[scene.id] = scene.minimap_position;
+        } else if (!positions[scene.id]) {
+          // まだ位置が設定されていない新しいシーンの場合のみランダム配置
+          positions[scene.id] = {
+            x: 400 + Math.random() * 100 - 50,
+            y: 300 + Math.random() * 100 - 50
+          };
+        }
+      });
+
+      return positions;
     });
-    setScenePositions(positions);
-  }, [vrTour, scenes]);
+  }, [scenes, isSaving]);
+
+  // 保存完了フラグが変わった時に位置を更新
+  useEffect(() => {
+    // 保存が完了した直後（isSavingがtrueからfalseに変わった時）のみ実行
+    if (!isSaving && hasSavedRef.current) {
+      hasSavedRef.current = false;
+
+      // 保存完了後は位置を更新しない（ユーザーがドラッグした位置を保持）
+      // サーバーから返ってくる位置が信頼できないため、コメントアウト
+      /*
+      const timer = setTimeout(() => {
+        console.log('保存完了後の位置更新を実行');
+        setScenePositions(prevPositions => {
+          const newPositions = {};
+
+          scenes.forEach(scene => {
+            if (scene.minimap_position) {
+              console.log(`Scene ${scene.id} (${scene.title}) - 保存された位置:`, scene.minimap_position);
+              // サーバーから取得した保存済み位置を使用
+              newPositions[scene.id] = { ...scene.minimap_position };
+            } else if (prevPositions[scene.id]) {
+              // 保存されていない場合は現在の位置を維持
+              newPositions[scene.id] = prevPositions[scene.id];
+            }
+          });
+
+          return newPositions;
+        });
+      }, 200);
+
+      return () => clearTimeout(timer);
+      */
+    }
+  }, [isSaving, scenes]);
+
+  // 部屋の写真を取得
+  const fetchRoomPhotos = async (roomId) => {
+    try {
+      const response = await fetch(`/api/v1/rooms/${roomId}/room_photos`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRoomPhotos(data.photos || data || []);
+      }
+    } catch (err) {
+      console.error('部屋写真の取得エラー:', err);
+    }
+  };
 
   // Canvasを描画
   useEffect(() => {
@@ -148,6 +244,11 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
       const distance = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
       if (distance <= 20) {
         setDraggedScene(scene.id);
+        // マーカーの中心とマウス位置のオフセットを保存
+        setDragOffset({
+          x: x - pos.x,
+          y: y - pos.y
+        });
         return;
       }
     }
@@ -158,30 +259,64 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
 
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // オフセットを考慮してマーカーの新しい位置を計算
+    const newX = mouseX - dragOffset.x;
+    const newY = mouseY - dragOffset.y;
+
+    // キャンバスの範囲内に制限
+    const clampedX = Math.max(20, Math.min(canvas.width - 20, newX));
+    const clampedY = Math.max(20, Math.min(canvas.height - 20, newY));
 
     // シーン位置を更新
     setScenePositions(prev => ({
       ...prev,
-      [draggedScene]: { x, y }
+      [draggedScene]: { x: clampedX, y: clampedY }
     }));
     setHasChanges(true);
   };
 
   const handleMouseUp = () => {
     setDraggedScene(null);
+    setDragOffset({ x: 0, y: 0 });
   };
 
   // 位置情報を保存
   const handleSave = async () => {
-    for (const scene of scenes) {
-      const pos = scenePositions[scene.id];
-      if (pos && onUpdateScene) {
-        await onUpdateScene(scene.id, { minimap_position: pos });
+    setIsSaving(true);
+    hasSavedRef.current = true;
+
+    // 保存前の位置を記録
+    const positionsToSave = {};
+    scenes.forEach(scene => {
+      positionsToSave[scene.id] = { ...scenePositions[scene.id] };
+    });
+
+    try {
+      // すべてのシーンを順番に保存（skipSceneUpdate=true で保存中のscenes更新を防ぐ）
+      for (const scene of scenes) {
+        const pos = positionsToSave[scene.id];
+        if (pos && onUpdateScene) {
+          console.log(`Saving scene ${scene.id} (${scene.title}):`, pos);
+          await onUpdateScene(scene.id, { minimap_position: pos }, true);
+        }
       }
+      setHasChanges(false);
+
+      // すべての保存が完了したら、シーンを再取得
+      if (onRefreshScenes) {
+        await onRefreshScenes();
+        console.log('Scenes refreshed after save');
+      }
+    } finally {
+      // 保存完了後、少し待ってからフラグを解除
+      // これにより、すべてのシーンの更新が完了するまで待つ
+      setTimeout(() => {
+        setIsSaving(false);
+      }, 100);
     }
-    setHasChanges(false);
   };
 
   // ミニマップ画像を削除
@@ -192,6 +327,28 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
     }
   };
 
+  // 写真の表示名を生成
+  const getPhotoDisplayName = (photo) => {
+    const categoryName = photo.photo_type ? PHOTO_CATEGORIES[photo.photo_type] || photo.photo_type : '';
+    const baseName = photo.caption || `写真${photo.id}`;
+
+    if (categoryName) {
+      return `[${categoryName}] ${baseName}`;
+    }
+    return baseName;
+  };
+
+  // 既存の写真を選択してミニマップとして設定
+  const handleSelectPhoto = async (photo) => {
+    setMinimapImage(photo.photo_url);
+    setSelectPhotoDialogOpen(false);
+
+    // サーバーに選択した写真IDを保存
+    if (onSelectExistingPhoto) {
+      await onSelectExistingPhoto(photo.id);
+    }
+  };
+
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
@@ -199,7 +356,7 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
           ミニマップ設定
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
           <Button
             variant="contained"
             component="label"
@@ -213,6 +370,15 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
               accept="image/*"
               onChange={handleFileChange}
             />
+          </Button>
+
+          <Button
+            variant="outlined"
+            startIcon={<PhotoLibraryIcon />}
+            size="small"
+            onClick={() => setSelectPhotoDialogOpen(true)}
+          >
+            部屋の画像から選択
           </Button>
 
           {minimapImage && (
@@ -232,8 +398,9 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
               onClick={handleSave}
               size="small"
               sx={{ ml: 'auto' }}
+              disabled={isSaving}
             >
-              位置を保存
+              {isSaving ? '保存中...' : '位置を保存'}
             </Button>
           )}
         </Box>
@@ -266,6 +433,66 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
           />
         </Paper>
       </Box>
+
+      {/* 画像選択ダイアログ */}
+      <Dialog
+        open={selectPhotoDialogOpen}
+        onClose={() => setSelectPhotoDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>部屋の画像から選択</DialogTitle>
+        <DialogContent>
+          {roomPhotos.length === 0 ? (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              部屋に登録されている写真がありません。先に部屋詳細ページで写真を登録してください。
+            </Alert>
+          ) : (
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              {roomPhotos.map((photo) => (
+                <Grid item xs={12} sm={6} md={4} key={photo.id}>
+                  <Card
+                    sx={{
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: 4,
+                      }
+                    }}
+                    onClick={() => handleSelectPhoto(photo)}
+                  >
+                    <CardMedia
+                      component="img"
+                      height="140"
+                      image={photo.photo_url}
+                      alt={getPhotoDisplayName(photo)}
+                      sx={{ objectFit: 'cover' }}
+                    />
+                    <CardContent sx={{ p: 1.5 }}>
+                      <Typography variant="body2" noWrap>
+                        {getPhotoDisplayName(photo)}
+                      </Typography>
+                      {photo.photo_type && (
+                        <Chip
+                          label={PHOTO_CATEGORIES[photo.photo_type] || photo.photo_type}
+                          size="small"
+                          sx={{ mt: 0.5 }}
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSelectPhotoDialogOpen(false)}>
+            キャンセル
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_03_092845) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_03_095325) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -177,6 +177,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_03_092845) do
     t.datetime "published_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "minimap_room_photo_id"
+    t.index ["minimap_room_photo_id"], name: "index_vr_tours_on_minimap_room_photo_id"
     t.index ["room_id"], name: "index_vr_tours_on_room_id"
   end
 
@@ -193,5 +195,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_03_092845) do
   add_foreign_key "users", "tenants"
   add_foreign_key "vr_scenes", "room_photos"
   add_foreign_key "vr_scenes", "vr_tours"
+  add_foreign_key "vr_tours", "room_photos", column: "minimap_room_photo_id"
   add_foreign_key "vr_tours", "rooms"
 end

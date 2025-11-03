@@ -27,6 +27,17 @@ import {
   Edit as EditIcon
 } from "@mui/icons-material";
 
+// カテゴリ定義
+const PHOTO_CATEGORIES = {
+  interior: '室内',
+  living: 'リビング',
+  kitchen: 'キッチン',
+  bathroom: 'バスルーム',
+  floor_plan: '間取り図',
+  exterior: '外観',
+  other: 'その他',
+};
+
 export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDelete, onScenesChange }) {
   const [scenes, setScenes] = useState([]);
   const [roomPhotos, setRoomPhotos] = useState([]);
@@ -38,6 +49,17 @@ export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDele
     room_photo_id: ''
   });
   const [selectedSceneId, setSelectedSceneId] = useState(null);
+
+  // 写真の表示名を生成
+  const getPhotoDisplayName = (photo) => {
+    const categoryName = photo.photo_type ? PHOTO_CATEGORIES[photo.photo_type] || photo.photo_type : '';
+    const baseName = photo.caption || `写真${photo.id}`;
+
+    if (categoryName) {
+      return `[${categoryName}] ${baseName}`;
+    }
+    return baseName;
+  };
 
   useEffect(() => {
     fetchScenes();
@@ -248,7 +270,7 @@ export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDele
                 ) : (
                   roomPhotos.map((photo) => (
                     <MenuItem key={photo.id} value={photo.id}>
-                      {photo.caption || `写真 ${photo.id}`}
+                      {getPhotoDisplayName(photo)}
                     </MenuItem>
                   ))
                 )}
