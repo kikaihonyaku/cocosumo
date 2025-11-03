@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_27_215813) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_03_092845) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -120,6 +120,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_27_215813) do
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "management_fee"
+    t.decimal "deposit"
+    t.decimal "key_money"
+    t.text "facilities"
+    t.string "tenant_name"
+    t.string "tenant_phone"
+    t.date "contract_start_date"
+    t.date "contract_end_date"
+    t.text "notes"
     t.index ["building_id"], name: "index_rooms_on_building_id"
   end
 

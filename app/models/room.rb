@@ -18,11 +18,15 @@ class Room < ApplicationRecord
   enum :room_type, {
     studio: 'studio',
     one_bedroom: '1K',
+    one_dk: '1DK',
     one_ldk: '1LDK',
     two_bedroom: '2K',
+    two_dk: '2DK',
     two_ldk: '2LDK',
     three_bedroom: '3K',
-    three_ldk: '3LDK'
+    three_dk: '3DK',
+    three_ldk: '3LDK',
+    other: 'other'
   }, prefix: true
 
   # ステータス表示用
@@ -41,11 +45,15 @@ class Room < ApplicationRecord
     case room_type
     when 'studio' then 'ワンルーム'
     when 'one_bedroom' then '1K'
+    when 'one_dk' then '1DK'
     when 'one_ldk' then '1LDK'
     when 'two_bedroom' then '2K'
+    when 'two_dk' then '2DK'
     when 'two_ldk' then '2LDK'
     when 'three_bedroom' then '3K'
+    when 'three_dk' then '3DK'
     when 'three_ldk' then '3LDK'
+    when 'other' then 'その他'
     else room_type
     end
   end

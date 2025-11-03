@@ -528,18 +528,25 @@ export default function VrTourEditor() {
           </Alert>
         )}
 
-        {!isNew && (
-          <>
+        <>
+          {!isNew && (
             <Tabs value={currentTab} onChange={(e, v) => setCurrentTab(v)} sx={{ px: 2, pt: 1 }}>
               <Tab label="基本情報" />
               <Tab label="シーン編集" />
               <Tab label="ミニマップ" />
             </Tabs>
+          )}
 
-            {currentTab === 0 && (
+          {(isNew || currentTab === 0) && (
               <Box sx={{ p: 2, overflow: 'auto' }}>
                 <Paper sx={{ p: 3, maxWidth: '1200px', mx: 'auto' }}>
-                  {hasUnsavedChanges && (
+                  {isNew && (
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      まず基本情報を保存してください。保存後、シーンの追加が可能になります。
+                    </Alert>
+                  )}
+
+                  {!isNew && hasUnsavedChanges && (
                     <Alert severity="info" sx={{ mb: 2 }}>
                       未保存の変更があります
                     </Alert>
@@ -584,7 +591,7 @@ export default function VrTourEditor() {
               </Box>
             )}
 
-            {currentTab === 1 && (
+            {!isNew && currentTab === 1 && (
               <Box sx={{
                 display: 'flex',
                 flexDirection: { xs: 'column', md: 'row' },
@@ -721,7 +728,7 @@ export default function VrTourEditor() {
               </Box>
             )}
 
-            {currentTab === 2 && (
+            {!isNew && currentTab === 2 && (
               <Box sx={{ flex: 1, p: 1, overflow: 'hidden' }}>
                 <Paper sx={{ height: '100%', overflow: 'hidden' }}>
                   <MinimapEditor
@@ -733,16 +740,7 @@ export default function VrTourEditor() {
                 </Paper>
               </Box>
             )}
-          </>
-        )}
-
-        {isNew && (
-          <Box sx={{ p: 2 }}>
-            <Alert severity="info">
-              まず基本情報を保存してください。保存後、シーンの追加が可能になります。
-            </Alert>
-          </Box>
-        )}
+        </>
       </Box>
 
       {/* Snackbar for feedback */}

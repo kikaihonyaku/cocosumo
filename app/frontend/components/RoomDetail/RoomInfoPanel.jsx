@@ -118,15 +118,16 @@ export default function RoomInfoPanel({ room, onSave, loading, isMobile = false,
   };
 
   const roomTypes = [
-    { id: '1K', name: '1K' },
-    { id: '1DK', name: '1DK' },
-    { id: '1LDK', name: '1LDK' },
-    { id: '2K', name: '2K' },
-    { id: '2DK', name: '2DK' },
-    { id: '2LDK', name: '2LDK' },
-    { id: '3K', name: '3K' },
-    { id: '3DK', name: '3DK' },
-    { id: '3LDK', name: '3LDK' },
+    { id: 'studio', name: 'ワンルーム' },
+    { id: 'one_bedroom', name: '1K' },
+    { id: 'one_dk', name: '1DK' },
+    { id: 'one_ldk', name: '1LDK' },
+    { id: 'two_bedroom', name: '2K' },
+    { id: 'two_dk', name: '2DK' },
+    { id: 'two_ldk', name: '2LDK' },
+    { id: 'three_bedroom', name: '3K' },
+    { id: 'three_dk', name: '3DK' },
+    { id: 'three_ldk', name: '3LDK' },
     { id: 'other', name: 'その他' },
   ];
 

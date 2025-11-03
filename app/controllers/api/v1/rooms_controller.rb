@@ -73,7 +73,13 @@ class Api::V1::RoomsController < ApplicationController
       :deposit,
       :key_money,
       :status,
-      :description
+      :description,
+      :facilities,
+      :tenant_name,
+      :tenant_phone,
+      :contract_start_date,
+      :contract_end_date,
+      :notes
     )
   end
 
