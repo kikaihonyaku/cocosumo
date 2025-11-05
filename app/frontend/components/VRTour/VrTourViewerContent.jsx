@@ -12,12 +12,17 @@ import {
   ListItemButton,
   ListItemText,
   Divider,
-  Alert
+  Alert,
+  Paper,
+  Slide,
+  CardMedia
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
   Close as CloseIcon,
-  Menu as MenuIcon
+  Menu as MenuIcon,
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon
 } from "@mui/icons-material";
 import PanoramaViewer from "./PanoramaViewer";
 import MinimapDisplay from "./MinimapDisplay";
@@ -33,6 +38,7 @@ export default function VrTourViewerContent({
   const [currentScene, setCurrentScene] = useState(scenes.length > 0 ? scenes[0] : null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentViewAngle, setCurrentViewAngle] = useState(0);
+  const [footerOpen, setFooterOpen] = useState(false);
 
   // シーンが変更されたら最初のシーンを設定
   useEffect(() => {
@@ -151,16 +157,18 @@ export default function VrTourViewerContent({
       <Box sx={{ height: '100vh', width: '100%', position: 'relative' }} id={containerId}>
         {currentScene && currentScene.photo_url ? (
           <>
-            <PanoramaViewer
-              key={currentScene.id}
-              imageUrl={currentScene.photo_url}
-              initialView={currentScene.initial_view || { yaw: 0, pitch: 0 }}
-              markers={currentScene.hotspots || []}
-              editable={false}
-              onMarkerClick={handleMarkerClick}
-              onViewChange={handleViewChange}
-              fullscreenContainerId={containerId}
-            />
+            <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
+              <PanoramaViewer
+                key={currentScene.id}
+                imageUrl={currentScene.photo_url}
+                initialView={currentScene.initial_view || { yaw: 0, pitch: 0 }}
+                markers={currentScene.hotspots || []}
+                editable={false}
+                onMarkerClick={handleMarkerClick}
+                onViewChange={handleViewChange}
+                fullscreenContainerId={containerId}
+              />
+            </Box>
 
             {/* 現在のシーン情報 */}
             <Box
@@ -214,6 +222,151 @@ export default function VrTourViewerContent({
               このVRツアーにはまだシーンが登録されていません。
             </Alert>
           </Box>
+        )}
+
+        {/* シーンサムネイルフッター */}
+        {scenes.length > 1 && (
+          <>
+            {/* サムネイル一覧 */}
+            <Slide direction="up" in={footerOpen} mountOnEnter unmountOnExit>
+              <Paper
+                sx={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 140,
+                  bgcolor: 'rgba(0, 0, 0, 0.9)',
+                  backdropFilter: 'blur(10px)',
+                  zIndex: 100,
+                  display: 'flex',
+                  alignItems: 'center',
+                  px: 2
+                }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 2,
+                    overflowX: 'auto',
+                    width: '100%',
+                    py: 2,
+                    '&::-webkit-scrollbar': {
+                      height: 8
+                    },
+                    '&::-webkit-scrollbar-track': {
+                      bgcolor: 'rgba(255, 255, 255, 0.1)',
+                      borderRadius: 1
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                      bgcolor: 'rgba(255, 255, 255, 0.3)',
+                      borderRadius: 1,
+                      '&:hover': {
+                        bgcolor: 'rgba(255, 255, 255, 0.5)'
+                      }
+                    }
+                  }}
+                >
+                  {scenes.map((scene, index) => (
+                    <Box
+                      key={scene.id}
+                      onClick={() => handleSceneSelect(scene)}
+                      sx={{
+                        minWidth: 160,
+                        cursor: 'pointer',
+                        borderRadius: 1,
+                        overflow: 'hidden',
+                        border: currentScene?.id === scene.id ? '3px solid #FF5722' : '3px solid transparent',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          transform: 'scale(1.05)',
+                          boxShadow: 3
+                        }
+                      }}
+                    >
+                      {scene.photo_url ? (
+                        <CardMedia
+                          component="img"
+                          image={scene.photo_url}
+                          alt={scene.title}
+                          sx={{
+                            width: 160,
+                            height: 90,
+                            objectFit: 'cover'
+                          }}
+                        />
+                      ) : (
+                        <Box
+                          sx={{
+                            width: 160,
+                            height: 90,
+                            bgcolor: 'grey.800',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'grey.500'
+                          }}
+                        >
+                          <Typography variant="caption">No Image</Typography>
+                        </Box>
+                      )}
+                      <Box
+                        sx={{
+                          bgcolor: currentScene?.id === scene.id ? 'rgba(255, 87, 34, 0.9)' : 'rgba(0, 0, 0, 0.8)',
+                          px: 1,
+                          py: 0.5
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: 'white',
+                            fontWeight: currentScene?.id === scene.id ? 600 : 400,
+                            display: 'block',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {index + 1}. {scene.title}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Paper>
+            </Slide>
+
+            {/* 開閉ボタン */}
+            <Paper
+              sx={{
+                position: 'absolute',
+                bottom: footerOpen ? 140 : 0,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 110,
+                borderRadius: '8px 8px 0 0',
+                bgcolor: 'rgba(0, 0, 0, 0.7)',
+                backdropFilter: 'blur(10px)',
+                transition: 'bottom 0.3s ease',
+                pointerEvents: 'auto'
+              }}
+            >
+              <IconButton
+                onClick={() => setFooterOpen(!footerOpen)}
+                sx={{
+                  color: 'white',
+                  py: 0.5,
+                  px: 2
+                }}
+              >
+                {footerOpen ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+                <Typography variant="caption" sx={{ ml: 1, color: 'white' }}>
+                  シーン ({scenes.length})
+                </Typography>
+              </IconButton>
+            </Paper>
+          </>
         )}
       </Box>
 
