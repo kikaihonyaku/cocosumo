@@ -223,68 +223,84 @@ export default function VrTours() {
       ) : (
         <Grid container spacing={3}>
           {filteredVrTours.map((tour) => (
-            <Grid item xs={12} md={6} lg={4} key={tour.id}>
+            <Grid item xs={12} sm={6} md={4} lg={3} key={tour.id}>
               <Card sx={{
-                height: '100%',
+                width: 320,
+                height: 380,
                 display: 'flex',
-                flexDirection: 'row',
-                minHeight: 180
+                flexDirection: 'column'
               }}>
-                {/* サムネイル画像 - 左側に小さく表示 */}
-                <Box sx={{
-                  width: 120,
-                  flexShrink: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  bgcolor: 'grey.100'
-                }}>
-                  {tour.thumbnail_url ? (
-                    <CardMedia
-                      component="img"
-                      image={tour.thumbnail_url}
-                      alt={tour.title}
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover'
-                      }}
-                    />
-                  ) : (
-                    <Box sx={{
-                      textAlign: 'center',
-                      color: 'text.disabled',
-                      p: 2
-                    }}>
-                      <ImageNotSupportedIcon sx={{ fontSize: 40, mb: 1 }} />
-                      <Typography variant="caption" display="block">
+                {/* サムネイル画像 - 上部に表示 */}
+                {tour.thumbnail_url ? (
+                  <CardMedia
+                    component="img"
+                    image={tour.thumbnail_url}
+                    alt={tour.title}
+                    sx={{
+                      height: 180,
+                      objectFit: 'cover'
+                    }}
+                  />
+                ) : (
+                  <Box sx={{
+                    height: 180,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'grey.100',
+                    textAlign: 'center',
+                    color: 'text.disabled'
+                  }}>
+                    <Box>
+                      <ImageNotSupportedIcon sx={{ fontSize: 60, mb: 1 }} />
+                      <Typography variant="body2" display="block">
                         No Image
                       </Typography>
                     </Box>
-                  )}
-                </Box>
+                  </Box>
+                )}
 
                 {/* コンテンツエリア */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minWidth: 0 }}>
-                  <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }}>
+                  <CardContent sx={{ flexGrow: 1, pb: 1, overflow: 'hidden' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                      <Typography variant="h6" component="h2" sx={{ flexGrow: 1, fontSize: '1rem', fontWeight: 600 }} noWrap>
+                      <Typography
+                        variant="h6"
+                        component="h2"
+                        sx={{
+                          flexGrow: 1,
+                          fontSize: '1rem',
+                          fontWeight: 600,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
                         {tour.title}
                       </Typography>
                       <IconButton
                         size="small"
                         onClick={(e) => handleMenuOpen(e, tour)}
-                        sx={{ ml: 1 }}
+                        sx={{ ml: 1, flexShrink: 0 }}
                       >
                         <MoreVertIcon />
                       </IconButton>
                     </Box>
 
-                    <Typography variant="body2" color="text.secondary" gutterBottom noWrap>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      gutterBottom
+                      sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
                       {tour.room?.building?.name} - {tour.room?.room_number}
                     </Typography>
 
-                    <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                    <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                       <Chip
                         label={tour.status === 'published' ? '公開中' : '下書き'}
                         size="small"
