@@ -52,12 +52,12 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [bulkUploadDialogOpen, setBulkUploadDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
-  const [dragActive, setDragActive] = useState(false);
+  const [bulkDragActive, setBulkDragActive] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [uploadCategory, setUploadCategory] = useState('interior');
+  const [bulkUploadCategory, setBulkUploadCategory] = useState('interior');
   const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
   const [photoToEdit, setPhotoToEdit] = useState(null);
   const [newCategory, setNewCategory] = useState('');
@@ -92,7 +92,7 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
     }
   };
 
-  const handleFileUpload = async (files) => {
+  const handleBulkFileUpload = async (files) => {
     if (!files || files.length === 0) return;
 
     try {
@@ -106,7 +106,7 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
 
         const formData = new FormData();
         formData.append('room_photo[photo]', file);
-        formData.append('room_photo[photo_type]', uploadCategory);
+        formData.append('room_photo[photo_type]', bulkUploadCategory);
 
         const response = await fetch(`/api/v1/rooms/${roomId}/room_photos`, {
           method: 'POST',
@@ -120,7 +120,7 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
       }
 
       await fetchPhotos();
-      setUploadDialogOpen(false);
+      setBulkUploadDialogOpen(false);
       if (onPhotosUpdate) onPhotosUpdate();
 
     } catch (error) {
@@ -156,29 +156,29 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
     }
   };
 
-  const handleDrag = (e) => {
+  const handleBulkDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
+      setBulkDragActive(true);
     } else if (e.type === 'dragleave') {
-      setDragActive(false);
+      setBulkDragActive(false);
     }
   };
 
-  const handleDrop = (e) => {
+  const handleBulkDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragActive(false);
+    setBulkDragActive(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileUpload(Array.from(e.dataTransfer.files));
+      handleBulkFileUpload(Array.from(e.dataTransfer.files));
     }
   };
 
-  const handleFileSelect = (e) => {
+  const handleBulkFileSelect = (e) => {
     if (e.target.files && e.target.files[0]) {
-      handleFileUpload(Array.from(e.target.files));
+      handleBulkFileUpload(Array.from(e.target.files));
     }
   };
 
@@ -327,8 +327,8 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
             startIcon={<AddIcon />}
             onClick={() => {
               // 現在選択中のカテゴリをデフォルトに設定（'all'の場合は'interior'）
-              setUploadCategory(selectedCategory !== 'all' ? selectedCategory : 'interior');
-              setUploadDialogOpen(true);
+              setBulkUploadCategory(selectedCategory !== 'all' ? selectedCategory : 'interior');
+              setBulkUploadDialogOpen(true);
             }}
             sx={{ mr: 1 }}
           >
@@ -400,8 +400,8 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
               startIcon={<AddIcon />}
               onClick={() => {
                 // 現在選択中のカテゴリをデフォルトに設定（'all'の場合は'interior'）
-                setUploadCategory(selectedCategory !== 'all' ? selectedCategory : 'interior');
-                setUploadDialogOpen(true);
+                setBulkUploadCategory(selectedCategory !== 'all' ? selectedCategory : 'interior');
+                setBulkUploadDialogOpen(true);
               }}
               sx={{ mt: 1 }}
             >
@@ -541,21 +541,24 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
         )}
       </Box>
 
-      {/* アップロードダイアログ */}
+      {/* 写真アップロードダイアログ */}
       <Dialog
-        open={uploadDialogOpen}
-        onClose={() => setUploadDialogOpen(false)}
-        maxWidth="sm"
+        open={bulkUploadDialogOpen}
+        onClose={() => setBulkUploadDialogOpen(false)}
+        maxWidth="md"
         fullWidth
       >
-        <DialogTitle>写真アップロード</DialogTitle>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <CloudUploadIcon color="primary" />
+          写真アップロード
+        </DialogTitle>
         <DialogContent>
           <FormControl fullWidth sx={{ mb: 3, mt: 1 }}>
             <InputLabel>カテゴリ</InputLabel>
             <Select
-              value={uploadCategory}
+              value={bulkUploadCategory}
               label="カテゴリ"
-              onChange={(e) => setUploadCategory(e.target.value)}
+              onChange={(e) => setBulkUploadCategory(e.target.value)}
             >
               {Object.entries(PHOTO_CATEGORIES)
                 .filter(([key]) => key !== 'all')
@@ -569,55 +572,65 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
 
           <Box
             sx={{
-              border: '2px dashed',
-              borderColor: dragActive ? 'primary.main' : 'grey.300',
+              border: '3px dashed',
+              borderColor: bulkDragActive ? 'primary.main' : 'grey.300',
               borderRadius: 2,
-              p: 4,
+              p: 6,
               textAlign: 'center',
-              bgcolor: dragActive ? 'primary.50' : 'transparent',
+              bgcolor: bulkDragActive ? 'primary.50' : 'transparent',
               transition: 'all 0.2s ease',
               cursor: 'pointer',
+              minHeight: 300,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
               '&:hover': {
                 borderColor: 'primary.main',
                 bgcolor: 'grey.50',
               }
             }}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-            onClick={() => document.getElementById('room-photo-upload-input').click()}
+            onDragEnter={handleBulkDrag}
+            onDragLeave={handleBulkDrag}
+            onDragOver={handleBulkDrag}
+            onDrop={handleBulkDrop}
+            onClick={() => document.getElementById('room-photo-bulk-upload-input').click()}
           >
-            <CloudUploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" gutterBottom>
+            <CloudUploadIcon sx={{ fontSize: 72, color: 'primary.main', mb: 3 }} />
+            <Typography variant="h5" gutterBottom fontWeight={600}>
               写真をドラッグ&ドロップ
             </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
+            <Typography variant="body1" color="text.secondary" gutterBottom sx={{ mt: 1 }}>
               またはクリックしてファイルを選択
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              JPG, PNG, GIF形式をサポート
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              JPG, PNG, GIF形式をサポート（複数選択可）
+            </Typography>
+            <Typography variant="caption" color="primary.main" sx={{ mt: 1, fontWeight: 600 }}>
+              選択したカテゴリで全ての写真がアップロードされます
             </Typography>
 
             <input
-              id="room-photo-upload-input"
+              id="room-photo-bulk-upload-input"
               type="file"
               accept="image/*"
               multiple
               style={{ display: 'none' }}
-              onChange={handleFileSelect}
+              onChange={handleBulkFileSelect}
             />
           </Box>
 
           {uploading && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <CircularProgress />
-              <Typography sx={{ ml: 2 }}>アップロード中...</Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 3 }}>
+              <CircularProgress size={32} />
+              <Typography sx={{ ml: 2 }} variant="h6" color="primary">
+                アップロード中...
+              </Typography>
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setUploadDialogOpen(false)} disabled={uploading}>
+          <Button onClick={() => setBulkUploadDialogOpen(false)} disabled={uploading}>
             キャンセル
           </Button>
         </DialogActions>
@@ -808,8 +821,8 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
           size="small"
           onClick={() => {
             // 現在選択中のカテゴリをデフォルトに設定（'all'の場合は'interior'）
-            setUploadCategory(selectedCategory !== 'all' ? selectedCategory : 'interior');
-            setUploadDialogOpen(true);
+            setBulkUploadCategory(selectedCategory !== 'all' ? selectedCategory : 'interior');
+            setBulkUploadDialogOpen(true);
           }}
           sx={{
             position: 'absolute',

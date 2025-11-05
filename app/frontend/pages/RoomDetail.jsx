@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
 import IconButton from "@mui/material/IconButton";
 import muiTheme from '../theme/muiTheme';
@@ -235,6 +236,20 @@ export default function RoomDetail() {
                 {room.building?.name}
               </Typography>
             </Box>
+            <Button
+              color="inherit"
+              onClick={() => window.close()}
+              sx={{
+                minWidth: 'auto',
+                p: 1,
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                },
+              }}
+              title="閉じる"
+            >
+              <CloseIcon />
+            </Button>
           </Toolbar>
         </AppBar>
 

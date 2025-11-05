@@ -23,6 +23,7 @@ import {
   Home as HomeIcon,
   PhotoLibrary as PhotoLibraryIcon,
   Person as PersonIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import muiTheme from '../theme/muiTheme';
 
@@ -352,6 +353,20 @@ export default function PropertyDetail() {
                 {property.address}
               </Typography>
             </Box>
+            <Button
+              color="inherit"
+              onClick={() => window.close()}
+              sx={{
+                minWidth: 'auto',
+                p: 1,
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                },
+              }}
+              title="閉じる"
+            >
+              <CloseIcon />
+            </Button>
           </Toolbar>
         </AppBar>
 
