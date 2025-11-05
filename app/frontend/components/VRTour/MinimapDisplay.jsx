@@ -6,7 +6,7 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle
   const containerRef = useRef(null);
   const imageRef = useRef(null); // 画像をキャッシュ
   const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: 16, y: 16 });
+  const [position, setPosition] = useState({ x: 16, y: 80 });
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [mouseDownPos, setMouseDownPos] = useState(null);
   const [imageLoaded, setImageLoaded] = useState(false);
