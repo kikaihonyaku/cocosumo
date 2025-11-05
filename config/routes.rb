@@ -66,6 +66,14 @@ Rails.application.routes.draw do
             post :unpublish
           end
         end
+
+        # バーチャルステージング管理
+        resources :virtual_stagings do
+          member do
+            post :publish
+            post :unpublish
+          end
+        end
       end
 
       # VRツアー一覧・一括操作
@@ -86,6 +94,16 @@ Rails.application.routes.draw do
         # 公開VRツアー表示用（認証不要）
         member do
           get :public, to: 'vr_tours#show_public'
+        end
+      end
+
+      # バーチャルステージング一覧
+      resources :virtual_stagings, only: [:index]
+
+      # 公開バーチャルステージング表示用（認証不要）
+      resources :virtual_stagings, only: [] do
+        member do
+          get :public, to: 'virtual_stagings#show_public'
         end
       end
     end

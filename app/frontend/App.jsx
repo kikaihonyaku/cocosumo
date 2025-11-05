@@ -19,6 +19,9 @@ import VrTourViewer from "./pages/VrTourViewer";
 import PublicVrTour from "./pages/PublicVrTour";
 import VrTours from "./pages/VrTours";
 import PhotoEditor from "./pages/PhotoEditor";
+import VirtualStagingEditor from "./pages/VirtualStagingEditor";
+import VirtualStagingViewer from "./pages/VirtualStagingViewer";
+import PublicVirtualStaging from "./pages/PublicVirtualStaging";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -48,11 +51,12 @@ function Layout() {
   const isPropertyDetail = location.pathname.startsWith('/property/');
   const isRoomDetail = location.pathname.startsWith('/room/');
   const isVrTour = location.pathname.includes('/vr-tour/');
+  const isVirtualStaging = location.pathname.includes('/virtual-staging/');
   const isPhotoEditor = location.pathname.includes('/photos/') && location.pathname.endsWith('/edit');
 
-  // 物件詳細、部屋詳細、VRツアー、画像編集ページでは常に全画面レイアウト（独自ヘッダーを使用）
+  // 物件詳細、部屋詳細、VRツアー、バーチャルステージング、画像編集ページでは常に全画面レイアウト（独自ヘッダーを使用）
   // 地図システムページではデスクトップのみ全画面レイアウト
-  if (isPropertyDetail || isRoomDetail || isVrTour || isPhotoEditor || (!isMobile && isMapSystem)) {
+  if (isPropertyDetail || isRoomDetail || isVrTour || isVirtualStaging || isPhotoEditor || (!isMobile && isMapSystem)) {
     return (
       <div style={{ fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif" }}>
         <Outlet />
@@ -97,6 +101,7 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/vr/:id" element={<PublicVrTour />} />
+          <Route path="/virtual-staging/:id" element={<PublicVirtualStaging />} />
 
           {/* 認証が必要なページ */}
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
@@ -116,6 +121,9 @@ export default function App() {
             <Route path="/room/:roomId/vr-tour/new" element={<VrTourEditor />} />
             <Route path="/room/:roomId/vr-tour/:id/edit" element={<VrTourEditor />} />
             <Route path="/room/:roomId/vr-tour/:id/viewer" element={<VrTourViewer />} />
+            <Route path="/room/:roomId/virtual-staging/new" element={<VirtualStagingEditor />} />
+            <Route path="/room/:roomId/virtual-staging/:id/edit" element={<VirtualStagingEditor />} />
+            <Route path="/room/:roomId/virtual-staging/:id/viewer" element={<VirtualStagingViewer />} />
           </Route>
         </Routes>
       </AuthProvider>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_03_095325) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_05_211012) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -153,6 +153,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_03_095325) do
     t.index ["tenant_id"], name: "index_users_on_tenant_id"
   end
 
+  create_table "virtual_stagings", force: :cascade do |t|
+    t.integer "room_id", null: false
+    t.string "title"
+    t.text "description"
+    t.integer "before_photo_id"
+    t.integer "after_photo_id"
+    t.integer "status", default: 0, null: false
+    t.datetime "published_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["after_photo_id"], name: "index_virtual_stagings_on_after_photo_id"
+    t.index ["before_photo_id"], name: "index_virtual_stagings_on_before_photo_id"
+    t.index ["room_id"], name: "index_virtual_stagings_on_room_id"
+    t.index ["status"], name: "index_virtual_stagings_on_status"
+  end
+
   create_table "vr_scenes", force: :cascade do |t|
     t.integer "vr_tour_id", null: false
     t.integer "room_photo_id", null: false
@@ -193,6 +209,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_03_095325) do
   add_foreign_key "room_photos", "rooms"
   add_foreign_key "rooms", "buildings"
   add_foreign_key "users", "tenants"
+  add_foreign_key "virtual_stagings", "room_photos", column: "after_photo_id"
+  add_foreign_key "virtual_stagings", "room_photos", column: "before_photo_id"
+  add_foreign_key "virtual_stagings", "rooms"
   add_foreign_key "vr_scenes", "room_photos"
   add_foreign_key "vr_scenes", "vr_tours"
   add_foreign_key "vr_tours", "room_photos", column: "minimap_room_photo_id"

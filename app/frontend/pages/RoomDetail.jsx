@@ -23,6 +23,7 @@ import muiTheme from '../theme/muiTheme';
 import RoomInfoPanel from "../components/RoomDetail/RoomInfoPanel";
 import RoomPhotosPanel from "../components/RoomDetail/RoomPhotosPanel";
 import RoomVRTourPanel from "../components/RoomDetail/RoomVRTourPanel";
+import RoomVirtualStagingPanel from "../components/RoomDetail/RoomVirtualStagingPanel";
 
 export default function RoomDetail() {
   const { id } = useParams();
@@ -371,21 +372,43 @@ export default function RoomDetail() {
             />
           )}
 
-          {/* 右カラム: VRツアー */}
-          <Paper elevation={3} sx={{
+          {/* 右カラム: コンテナ */}
+          <Box sx={{
             width: isLgUp ? rightPaneWidth : 'auto',
             flexShrink: 0,
-            borderRadius: 2,
-            overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            minHeight: isLgUp ? 800 : 500,
-            maxHeight: isLgUp ? 'none' : 700,
+            gap: 2,
+            minHeight: isLgUp ? 800 : 'auto',
           }}>
-            <RoomVRTourPanel
-              roomId={room.id}
-            />
-          </Paper>
+            {/* VRツアー */}
+            <Paper elevation={3} sx={{
+              borderRadius: 2,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              flex: 1,
+              minHeight: 350,
+            }}>
+              <RoomVRTourPanel
+                roomId={room.id}
+              />
+            </Paper>
+
+            {/* バーチャルステージング */}
+            <Paper elevation={3} sx={{
+              borderRadius: 2,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              flex: 1,
+              minHeight: 350,
+            }}>
+              <RoomVirtualStagingPanel
+                roomId={room.id}
+              />
+            </Paper>
+          </Box>
         </Box>
       </Box>
       </Box>
