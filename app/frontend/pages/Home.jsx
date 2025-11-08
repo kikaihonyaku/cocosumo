@@ -13,7 +13,9 @@ import {
 } from "@mui/material";
 import {
   Map as MapIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Vrpano as VrpanoIcon,
+  CompareArrows as CompareArrowsIcon
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -72,6 +74,62 @@ export default function Home() {
                 fullWidth
               >
                 物件管理を開く
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+
+        {/* VRツアー管理カード */}
+        <Grid item xs={12} md={6} lg={4}>
+          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardContent sx={{ flexGrow: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <VrpanoIcon sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
+                <Typography variant="h5" component="h2">
+                  VRツアー管理
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                360度パノラマ写真でバーチャルツアーを作成・管理できます。
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button
+                component={Link}
+                to="/vr-tours"
+                size="large"
+                variant="contained"
+                fullWidth
+              >
+                VRツアー管理を開く
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+
+        {/* バーチャルステージング管理カード */}
+        <Grid item xs={12} md={6} lg={4}>
+          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardContent sx={{ flexGrow: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <CompareArrowsIcon sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
+                <Typography variant="h5" component="h2">
+                  バーチャルステージング
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Before/After画像比較で、リノベーション前後を視覚的に表現できます。
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button
+                component={Link}
+                to="/virtual-stagings"
+                size="large"
+                variant="contained"
+                fullWidth
+              >
+                ステージング管理を開く
               </Button>
             </CardActions>
           </Card>

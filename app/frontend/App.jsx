@@ -22,6 +22,7 @@ import PhotoEditor from "./pages/PhotoEditor";
 import VirtualStagingEditor from "./pages/VirtualStagingEditor";
 import VirtualStagingViewer from "./pages/VirtualStagingViewer";
 import PublicVirtualStaging from "./pages/PublicVirtualStaging";
+import VirtualStagings from "./pages/VirtualStagings";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -108,6 +109,7 @@ export default function App() {
             <Route path="/home" element={<Home />} />
             <Route path="/map" element={<MapSystem />} />
             <Route path="/vr-tours" element={<VrTours />} />
+            <Route path="/virtual-stagings" element={<VirtualStagings />} />
             <Route path="/buildings" element={<Buildings />} />
             <Route path="/buildings/new" element={<BuildingForm />} />
             <Route path="/buildings/:id/edit" element={<BuildingForm />} />
