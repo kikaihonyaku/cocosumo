@@ -95,7 +95,7 @@ export default function PhotoEditor() {
     fetchPhoto();
   }, [roomId, buildingId, photoId]);
 
-  // photoが設定されたら画像をcanvasに読み込む
+  // photoが設定されたら画像をcanvasに読み込む（初回ロード時のみ）
   useEffect(() => {
     if (photo && !loading) {
       const proxyUrl = isBuilding
@@ -103,7 +103,7 @@ export default function PhotoEditor() {
         : `/api/v1/rooms/${roomId}/room_photos/${photoId}/proxy`;
       loadImageToCanvas(proxyUrl);
     }
-  }, [photo, loading, isMobile]);
+  }, [photo, loading]);
 
   const fetchPhoto = async () => {
     try {
@@ -181,6 +181,47 @@ export default function PhotoEditor() {
     };
 
     img.src = imageUrl;
+  };
+
+  // 既存の画像を使用してcanvasをリサイズ（AI編集後の画像を保持）
+  const resizeCanvasToFit = () => {
+    const canvas = canvasRef.current;
+    const img = originalImageRef.current;
+    if (!canvas || !img) return;
+
+    const ctx = canvas.getContext('2d');
+
+    // 画面サイズに応じてcanvasサイズを計算
+    const maxWidth = isMobile
+      ? window.innerWidth * 0.95
+      : window.innerWidth * 0.7;
+    const maxHeight = isMobile
+      ? window.innerHeight * 0.5
+      : window.innerHeight * 0.85;
+
+    let width = img.width;
+    let height = img.height;
+
+    // アスペクト比を保持してリサイズ
+    if (width > maxWidth) {
+      height = (height * maxWidth) / width;
+      width = maxWidth;
+    }
+    if (height > maxHeight) {
+      width = (width * maxHeight) / height;
+      height = maxHeight;
+    }
+
+    canvas.width = width;
+    canvas.height = height;
+
+    // 既存の画像を再描画
+    ctx.drawImage(img, 0, 0, width, height);
+
+    // フィルターを再適用（適用されている場合）
+    if (brightness !== 100 || contrast !== 100 || saturation !== 100) {
+      applyFilters();
+    }
   };
 
   const applyFilters = () => {
@@ -267,20 +308,17 @@ export default function PhotoEditor() {
     }
   }, [brightness, contrast, saturation]);
 
-  // ウィンドウサイズ変更時に画像をリサイズ
+  // ウィンドウサイズ変更時に画像をリサイズ（AI編集後の画像を保持）
   useEffect(() => {
     const handleResize = () => {
       if (photo && !loading && originalImageRef.current) {
-        const proxyUrl = isBuilding
-          ? `/api/v1/buildings/${buildingId}/photos/${photoId}/proxy`
-          : `/api/v1/rooms/${roomId}/room_photos/${photoId}/proxy`;
-        loadImageToCanvas(proxyUrl);
+        resizeCanvasToFit();
       }
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [photo, loading, isMobile, isBuilding, buildingId, photoId, roomId]);
+  }, [photo, loading, isMobile]);
 
   const handleReset = () => {
     setBrightness(100);
