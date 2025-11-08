@@ -533,6 +533,11 @@ export default function PhotoEditor() {
 
           // 編集後の画像を新しいオリジナルとして保存
           originalImageRef.current = img;
+
+          // 編集後の画像を履歴に保存（次のフレームで実行）
+          requestAnimationFrame(() => {
+            saveToHistory();
+          });
         };
         img.src = `data:image/png;base64,${data.image}`;
       } else {
