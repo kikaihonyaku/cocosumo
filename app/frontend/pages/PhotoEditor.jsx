@@ -40,6 +40,8 @@ import {
   LocationOn as LocationOnIcon,
   CropFree as CropFreeIcon,
   Image as ImageIcon,
+  Undo as UndoIcon,
+  Redo as RedoIcon,
 } from '@mui/icons-material';
 import muiTheme from '../theme/muiTheme';
 
@@ -94,6 +96,11 @@ export default function PhotoEditor() {
   const [referenceImages, setReferenceImages] = useState([]); // 参照画像（File オブジェクトの配列）
   const [editMode, setEditMode] = useState('full'); // 'full' or 'point'
   const [clickPoints, setClickPoints] = useState([]); // クリック座標の配列 [{x: 0-1, y: 0-1}]
+
+  // 編集履歴管理
+  const [editHistory, setEditHistory] = useState([]); // 編集履歴の配列（ImageDataを保持）
+  const [currentHistoryIndex, setCurrentHistoryIndex] = useState(-1); // 現在の履歴インデックス
+  const MAX_HISTORY = 10; // 最大履歴数
 
   // 保存オプション
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -386,6 +393,71 @@ export default function PhotoEditor() {
     setClickPoints([]);
   };
 
+  // 現在のCanvas画像を履歴に保存
+  const saveToHistory = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // 現在のCanvasの画像データをBase64で取得
+    const imageDataUrl = canvas.toDataURL('image/png');
+
+    // 現在の履歴インデックスより後ろの履歴を削除（新しい分岐を作成）
+    const newHistory = editHistory.slice(0, currentHistoryIndex + 1);
+
+    // 新しい画像を履歴に追加
+    newHistory.push(imageDataUrl);
+
+    // 履歴の上限を超えた場合は古い履歴を削除
+    if (newHistory.length > MAX_HISTORY) {
+      newHistory.shift();
+      setEditHistory(newHistory);
+      setCurrentHistoryIndex(newHistory.length - 1);
+    } else {
+      setEditHistory(newHistory);
+      setCurrentHistoryIndex(newHistory.length - 1);
+    }
+  };
+
+  // Undo: 1つ前の画像に戻る
+  const handleUndo = () => {
+    if (currentHistoryIndex <= 0) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      originalImageRef.current = img;
+      setCurrentHistoryIndex(currentHistoryIndex - 1);
+    };
+
+    img.src = editHistory[currentHistoryIndex - 1];
+  };
+
+  // Redo: 1つ後の画像に進む
+  const handleRedo = () => {
+    if (currentHistoryIndex >= editHistory.length - 1) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      originalImageRef.current = img;
+      setCurrentHistoryIndex(currentHistoryIndex + 1);
+    };
+
+    img.src = editHistory[currentHistoryIndex + 1];
+  };
+
   const handleAiProcess = async () => {
     if (!aiPrompt.trim()) {
       alert('AI処理の指示を入力してください');
@@ -405,6 +477,10 @@ export default function PhotoEditor() {
     }
 
     setAiProcessing(true);
+
+    // AI編集実行前に現在の画像を履歴に保存
+    saveToHistory();
+
     try {
       // Canvasから画像Blobを取得
       const blob = await new Promise((resolve) => {
@@ -779,6 +855,42 @@ export default function PhotoEditor() {
               width: isMobile ? '100%' : '360px',
               flex: isMobile ? 1 : '0 0 360px'
             }}>
+              {/* 編集履歴（Undo/Redo） */}
+              {editHistory.length > 0 && (
+                <Paper elevation={2} sx={{ p: 1.5, mb: 1.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      編集履歴
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<UndoIcon />}
+                        onClick={handleUndo}
+                        disabled={currentHistoryIndex <= 0 || aiProcessing}
+                        sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem', px: isMobile ? 1 : 2 }}
+                      >
+                        {isMobile ? '戻る' : '元に戻す'}
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<RedoIcon />}
+                        onClick={handleRedo}
+                        disabled={currentHistoryIndex >= editHistory.length - 1 || aiProcessing}
+                        sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem', px: isMobile ? 1 : 2 }}
+                      >
+                        {isMobile ? '進む' : 'やり直す'}
+                      </Button>
+                    </Box>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', fontSize: isMobile ? '0.65rem' : '0.7rem' }}>
+                    {currentHistoryIndex + 1} / {editHistory.length} (最大{MAX_HISTORY}件)
+                  </Typography>
+                </Paper>
+              )}
+
               {/* AI画像処理 */}
               <Paper elevation={2} sx={{ p: 1.5 }}>
                 <Typography variant="h6" gutterBottom>
