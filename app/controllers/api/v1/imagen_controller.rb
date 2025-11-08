@@ -22,12 +22,22 @@ class Api::V1::ImagenController < ApplicationController
     end
 
     begin
-      # 参照画像を取得（オプション）
+      # パラメータを取得
+      edit_mode = params[:edit_mode] || 'full'
+      coordinates = params[:coordinates] ? JSON.parse(params[:coordinates]) : nil
       reference_images = params[:reference_images] || []
+
+      Rails.logger.info("Edit mode: #{edit_mode}")
+      Rails.logger.info("Coordinates: #{coordinates.inspect}")
       Rails.logger.info("Reference images count: #{reference_images.length}")
 
-      # プロンプトを強化
-      enhanced_prompt = enhance_prompt(params[:prompt], reference_images.any?)
+      # 編集モードに応じてプロンプトを強化
+      enhanced_prompt = if edit_mode == 'point' && coordinates.present?
+        enhance_prompt_with_coordinates(params[:prompt], coordinates, reference_images.any?)
+      else
+        enhance_prompt(params[:prompt], reference_images.any?)
+      end
+
       Rails.logger.info("Original prompt: #{params[:prompt]}")
       Rails.logger.info("Enhanced prompt: #{enhanced_prompt}")
 
@@ -81,6 +91,62 @@ class Api::V1::ImagenController < ApplicationController
       #{user_prompt}
 
       【重要な指示】
+      - 編集対象の要素を完全かつ自然に処理してください
+      - 削除する場合は、削除後の空間を周囲の背景と調和するように自然に埋めてください
+      - 元の画像の照明、色調、パースペクティブ（遠近感）を維持してください
+      - 画像のアスペクト比を変更しないでください
+      - 編集箇所と周辺部分の境界が自然に見えるようにしてください#{reference_instruction}
+
+      編集後の画像は、プロフェッショナルな不動産写真として使用できる品質にしてください。
+    PROMPT
+  end
+
+  # 座標指定モード用のプロンプト強化
+  def enhance_prompt_with_coordinates(user_prompt, coordinates, has_reference_images = false)
+    # 座標を日本語で説明
+    coord_descriptions = coordinates.map.with_index do |coord, index|
+      x_percent = (coord['x'] * 100).round
+      y_percent = (coord['y'] * 100).round
+
+      # 画像内の位置を大まかに表現
+      horizontal_position = case x_percent
+      when 0..25 then '左側'
+      when 26..40 then '左寄り'
+      when 41..60 then '中央'
+      when 61..75 then '右寄り'
+      else '右側'
+      end
+
+      vertical_position = case y_percent
+      when 0..25 then '上部'
+      when 26..40 then '上寄り'
+      when 41..60 then '中央'
+      when 61..75 then '下寄り'
+      else '下部'
+      end
+
+      "座標#{index + 1}: 画像の#{vertical_position}#{horizontal_position}（X: #{x_percent}%, Y: #{y_percent}%）"
+    end
+
+    # 参照画像がある場合の追加指示
+    reference_instruction = if has_reference_images
+      "\n- 追加で提供された参照画像の要素（オブジェクト、照明、スタイルなど）を編集に使用してください"
+    else
+      ""
+    end
+
+    # プロンプトを構造化して強化
+    <<~PROMPT.strip
+      提供された室内画像に対して、指定された座標位置を中心に以下の編集を実行してください：
+
+      【編集対象の座標位置】
+      #{coord_descriptions.join("\n")}
+
+      【編集内容】
+      #{user_prompt}
+
+      【重要な指示】
+      - 指定された座標位置とその周辺領域を編集対象として処理してください
       - 編集対象の要素を完全かつ自然に処理してください
       - 削除する場合は、削除後の空間を周囲の背景と調和するように自然に埋めてください
       - 元の画像の照明、色調、パースペクティブ（遠近感）を維持してください

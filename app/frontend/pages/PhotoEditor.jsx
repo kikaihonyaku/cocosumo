@@ -27,6 +27,8 @@ import {
   DialogActions,
   useMediaQuery,
   useTheme,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -35,6 +37,9 @@ import {
   AutoFixHigh as AutoFixHighIcon,
   AddPhotoAlternate as AddPhotoAlternateIcon,
   Close as CloseIcon,
+  LocationOn as LocationOnIcon,
+  CropFree as CropFreeIcon,
+  Image as ImageIcon,
 } from '@mui/icons-material';
 import muiTheme from '../theme/muiTheme';
 
@@ -86,6 +91,8 @@ export default function PhotoEditor() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiProcessing, setAiProcessing] = useState(false);
   const [referenceImages, setReferenceImages] = useState([]); // 参照画像（File オブジェクトの配列）
+  const [editMode, setEditMode] = useState('full'); // 'full' or 'point'
+  const [clickPoints, setClickPoints] = useState([]); // クリック座標の配列 [{x: 0-1, y: 0-1}]
 
   // 保存オプション
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -344,9 +351,40 @@ export default function PhotoEditor() {
     setReferenceImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Canvasクリックイベントハンドラー（座標指定編集用）
+  const handleCanvasClick = (e) => {
+    if (editMode !== 'point') return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / canvas.width;
+    const y = (e.clientY - rect.top) / canvas.height;
+
+    // 正規化した座標（0-1の範囲）を保存
+    const newPoint = { x, y };
+
+    // 最大3点まで保存
+    if (clickPoints.length < 3) {
+      setClickPoints([...clickPoints, newPoint]);
+    }
+  };
+
+  // クリック座標をクリア
+  const handleClearClickPoints = () => {
+    setClickPoints([]);
+  };
+
   const handleAiProcess = async () => {
     if (!aiPrompt.trim()) {
       alert('AI処理の指示を入力してください');
+      return;
+    }
+
+    // 座標指定モード時のバリデーション
+    if (editMode === 'point' && clickPoints.length === 0) {
+      alert('座標指定モードでは、画像上をクリックして編集位置を指定してください');
       return;
     }
 
@@ -367,6 +405,12 @@ export default function PhotoEditor() {
       const formData = new FormData();
       formData.append('image', blob, 'current_image.jpg');
       formData.append('prompt', aiPrompt);
+      formData.append('edit_mode', editMode);
+
+      // 座標指定モード時は座標データを追加
+      if (editMode === 'point' && clickPoints.length > 0) {
+        formData.append('coordinates', JSON.stringify(clickPoints));
+      }
 
       // 参照画像を追加
       referenceImages.forEach((refImage, index) => {
@@ -629,17 +673,75 @@ export default function PhotoEditor() {
               p: 1,
               overflow: 'auto',
               flex: isMobile ? '0 0 auto' : 1,
-              minHeight: isMobile ? 'auto' : '100%'
+              minHeight: isMobile ? 'auto' : '100%',
+              position: 'relative'
             }}>
               <canvas
                 ref={canvasRef}
+                onClick={handleCanvasClick}
                 style={{
                   maxWidth: '100%',
                   maxHeight: '100%',
                   objectFit: 'contain',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  cursor: editMode === 'point' ? 'crosshair' : 'default',
                 }}
               />
+
+              {/* クリックポイントのマーカー */}
+              {editMode === 'point' && clickPoints.map((point, index) => {
+                const canvas = canvasRef.current;
+                if (!canvas) return null;
+
+                const rect = canvas.getBoundingClientRect();
+                const parentRect = canvas.parentElement.getBoundingClientRect();
+
+                // Canvas上の絶対位置を計算
+                const left = rect.left - parentRect.left + (point.x * canvas.width);
+                const top = rect.top - parentRect.top + (point.y * canvas.height);
+
+                return (
+                  <Box
+                    key={index}
+                    sx={{
+                      position: 'absolute',
+                      left: `${left}px`,
+                      top: `${top}px`,
+                      transform: 'translate(-50%, -100%)',
+                      pointerEvents: 'none',
+                      zIndex: 1000
+                    }}
+                  >
+                    <LocationOnIcon
+                      sx={{
+                        fontSize: 40,
+                        color: 'error.main',
+                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: '-24px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        bgcolor: 'error.main',
+                        color: 'white',
+                        borderRadius: '50%',
+                        width: 20,
+                        height: 20,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.75rem',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      {index + 1}
+                    </Box>
+                  </Box>
+                );
+              })}
             </Box>
 
             {/* 右側（モバイルでは下部）: コントロールパネル */}
@@ -662,6 +764,63 @@ export default function PhotoEditor() {
                   AI画像編集 (Nano Banana)
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
+
+                {/* 編集モード切り替え */}
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" gutterBottom sx={{ fontWeight: 600 }}>
+                    編集モード
+                  </Typography>
+                  <ToggleButtonGroup
+                    value={editMode}
+                    exclusive
+                    onChange={(e, newMode) => {
+                      if (newMode !== null) {
+                        setEditMode(newMode);
+                        // モード切り替え時に座標をクリア
+                        if (newMode === 'full') {
+                          setClickPoints([]);
+                        }
+                      }
+                    }}
+                    fullWidth
+                    size="small"
+                    disabled={aiProcessing}
+                  >
+                    <ToggleButton value="full" sx={{ py: 1 }}>
+                      <ImageIcon sx={{ mr: 1 }} />
+                      全体編集
+                    </ToggleButton>
+                    <ToggleButton value="point" sx={{ py: 1 }}>
+                      <CropFreeIcon sx={{ mr: 1 }} />
+                      座標指定編集
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+
+                  {/* 座標指定モード時のヘルプテキストとクリアボタン */}
+                  {editMode === 'point' && (
+                    <Box sx={{ mt: 1 }}>
+                      <Alert severity="info" sx={{ mb: 1, fontSize: '0.75rem' }}>
+                        画像上をクリックして編集したい位置を指定してください（最大3点）
+                      </Alert>
+                      {clickPoints.length > 0 && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {clickPoints.length}点指定済み
+                          </Typography>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            onClick={handleClearClickPoints}
+                            disabled={aiProcessing}
+                          >
+                            座標をクリア
+                          </Button>
+                        </Box>
+                      )}
+                    </Box>
+                  )}
+                </Box>
 
                 <TextField
                   fullWidth
