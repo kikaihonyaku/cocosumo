@@ -51,6 +51,7 @@ export default function PhotoEditor() {
   const isBuilding = !!buildingId; // buildingIdがある場合は建物写真
   const canvasRef = useRef(null);
   const originalImageRef = useRef(null);
+  const canvasContainerRef = useRef(null);
 
   // photo_typeを日本語に変換
   const getPhotoTypeLabel = (photoType) => {
@@ -351,16 +352,25 @@ export default function PhotoEditor() {
     setReferenceImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Canvasクリックイベントハンドラー（座標指定編集用）
+  // Canvasクリック/タッチイベントハンドラー（座標指定編集用）
   const handleCanvasClick = (e) => {
     if (editMode !== 'point') return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // タッチイベントとマウスイベントの両方に対応
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / canvas.width;
-    const y = (e.clientY - rect.top) / canvas.height;
+
+    // Canvas内の相対座標を計算（0-1の範囲に正規化）
+    const x = (clientX - rect.left) / rect.width;
+    const y = (clientY - rect.top) / rect.height;
+
+    // 範囲外のクリックは無視
+    if (x < 0 || x > 1 || y < 0 || y > 1) return;
 
     // 正規化した座標（0-1の範囲）を保存
     const newPoint = { x, y };
@@ -665,40 +675,51 @@ export default function PhotoEditor() {
             overflow: 'hidden'
           }}>
             {/* 左側（モバイルでは上部）: キャンバス */}
-            <Box sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: '#f5f5f5',
-              p: 1,
-              overflow: 'auto',
-              flex: isMobile ? '0 0 auto' : 1,
-              minHeight: isMobile ? 'auto' : '100%',
-              position: 'relative'
-            }}>
+            <Box
+              ref={canvasContainerRef}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: '#f5f5f5',
+                p: 1,
+                overflow: 'auto',
+                flex: isMobile ? '0 0 auto' : 1,
+                minHeight: isMobile ? 'auto' : '100%',
+                position: 'relative'
+              }}
+            >
               <canvas
                 ref={canvasRef}
                 onClick={handleCanvasClick}
+                onTouchStart={handleCanvasClick}
                 style={{
                   maxWidth: '100%',
                   maxHeight: '100%',
                   objectFit: 'contain',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                   cursor: editMode === 'point' ? 'crosshair' : 'default',
+                  touchAction: editMode === 'point' ? 'none' : 'auto',
                 }}
               />
 
               {/* クリックポイントのマーカー */}
               {editMode === 'point' && clickPoints.map((point, index) => {
                 const canvas = canvasRef.current;
-                if (!canvas) return null;
+                const container = canvasContainerRef.current;
+                if (!canvas || !container) return null;
 
-                const rect = canvas.getBoundingClientRect();
-                const parentRect = canvas.parentElement.getBoundingClientRect();
+                const canvasRect = canvas.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
 
-                // Canvas上の絶対位置を計算
-                const left = rect.left - parentRect.left + (point.x * canvas.width);
-                const top = rect.top - parentRect.top + (point.y * canvas.height);
+                // Canvas上の絶対位置を計算（containerを基準に）
+                const left = canvasRect.left - containerRect.left + (point.x * canvasRect.width);
+                const top = canvasRect.top - containerRect.top + (point.y * canvasRect.height);
+
+                // マーカーのサイズをモバイルとデスクトップで調整
+                const markerSize = isMobile ? 32 : 40;
+                const numberSize = isMobile ? 16 : 20;
+                const numberTopOffset = isMobile ? -20 : -24;
 
                 return (
                   <Box
@@ -714,7 +735,7 @@ export default function PhotoEditor() {
                   >
                     <LocationOnIcon
                       sx={{
-                        fontSize: 40,
+                        fontSize: markerSize,
                         color: 'error.main',
                         filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
                       }}
@@ -722,18 +743,18 @@ export default function PhotoEditor() {
                     <Box
                       sx={{
                         position: 'absolute',
-                        top: '-24px',
+                        top: `${numberTopOffset}px`,
                         left: '50%',
                         transform: 'translateX(-50%)',
                         bgcolor: 'error.main',
                         color: 'white',
                         borderRadius: '50%',
-                        width: 20,
-                        height: 20,
+                        width: numberSize,
+                        height: numberSize,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '0.75rem',
+                        fontSize: isMobile ? '0.625rem' : '0.75rem',
                         fontWeight: 'bold',
                       }}
                     >
@@ -786,25 +807,33 @@ export default function PhotoEditor() {
                     size="small"
                     disabled={aiProcessing}
                   >
-                    <ToggleButton value="full" sx={{ py: 1 }}>
-                      <ImageIcon sx={{ mr: 1 }} />
-                      全体編集
+                    <ToggleButton value="full" sx={{ py: 1, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 0.5 : 1 }}>
+                      <ImageIcon sx={{ mr: isMobile ? 0 : 1 }} />
+                      {isMobile ? (
+                        <Typography variant="caption" sx={{ fontSize: '0.65rem' }}>全体</Typography>
+                      ) : (
+                        '全体編集'
+                      )}
                     </ToggleButton>
-                    <ToggleButton value="point" sx={{ py: 1 }}>
-                      <CropFreeIcon sx={{ mr: 1 }} />
-                      座標指定編集
+                    <ToggleButton value="point" sx={{ py: 1, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 0.5 : 1 }}>
+                      <CropFreeIcon sx={{ mr: isMobile ? 0 : 1 }} />
+                      {isMobile ? (
+                        <Typography variant="caption" sx={{ fontSize: '0.65rem' }}>座標指定</Typography>
+                      ) : (
+                        '座標指定編集'
+                      )}
                     </ToggleButton>
                   </ToggleButtonGroup>
 
                   {/* 座標指定モード時のヘルプテキストとクリアボタン */}
                   {editMode === 'point' && (
                     <Box sx={{ mt: 1 }}>
-                      <Alert severity="info" sx={{ mb: 1, fontSize: '0.75rem' }}>
-                        画像上をクリックして編集したい位置を指定してください（最大3点）
+                      <Alert severity="info" sx={{ mb: 1, fontSize: isMobile ? '0.7rem' : '0.75rem', py: isMobile ? 0.5 : 1 }}>
+                        {isMobile ? '画像をタップして編集位置を指定（最大3点）' : '画像上をクリックして編集したい位置を指定してください（最大3点）'}
                       </Alert>
                       {clickPoints.length > 0 && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography variant="caption" color="text.secondary">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'space-between' }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem' }}>
                             {clickPoints.length}点指定済み
                           </Typography>
                           <Button
@@ -813,8 +842,9 @@ export default function PhotoEditor() {
                             color="error"
                             onClick={handleClearClickPoints}
                             disabled={aiProcessing}
+                            sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem', px: isMobile ? 1 : 2 }}
                           >
-                            座標をクリア
+                            {isMobile ? 'クリア' : '座標をクリア'}
                           </Button>
                         </Box>
                       )}
