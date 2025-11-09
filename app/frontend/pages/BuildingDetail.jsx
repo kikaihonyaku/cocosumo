@@ -28,12 +28,12 @@ import {
 import muiTheme from '../theme/muiTheme';
 
 // 子コンポーネントのインポート
-import PropertyInfoPanel from '../components/PropertyDetail/PropertyInfoPanel';
-import PropertyMapPanel from '../components/PropertyDetail/PropertyMapPanel';
-import RoomsPanel from '../components/PropertyDetail/RoomsPanel';
-import BuildingPhotosPanel from '../components/PropertyDetail/BuildingPhotosPanel';
+import BuildingInfoPanel from '../components/BuildingDetail/BuildingInfoPanel';
+import PropertyMapPanel from '../components/BuildingDetail/PropertyMapPanel';
+import RoomsPanel from '../components/BuildingDetail/RoomsPanel';
+import BuildingPhotosPanel from '../components/BuildingDetail/BuildingPhotosPanel';
 
-export default function PropertyDetail() {
+export default function BuildingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -419,7 +419,7 @@ export default function PropertyDetail() {
             <Box sx={{ flex: 1, overflow: 'auto' }}>
               {/* 物件情報タブ */}
               <Box sx={{ display: mobileActiveTab === 0 ? 'block' : 'none' }}>
-                <PropertyInfoPanel
+                <BuildingInfoPanel
                   property={property}
                   onSave={handleSave}
                   loading={saving}
@@ -518,7 +518,7 @@ export default function PropertyDetail() {
                   height: '100%',
                 }}
               >
-                <PropertyInfoPanel
+                <BuildingInfoPanel
                   property={property}
                   onSave={handleSave}
                   loading={saving}

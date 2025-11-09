@@ -11,7 +11,7 @@ import Home from "./pages/Home";
 import MapSystem from "./pages/MapSystem";
 import Buildings from "./pages/Buildings";
 import BuildingForm from "./pages/BuildingForm";
-import PropertyDetail from "./pages/PropertyDetail";
+import BuildingDetail from "./pages/BuildingDetail";
 import RoomDetail from "./pages/RoomDetail";
 import RoomForm from "./pages/RoomForm";
 import VrTourEditor from "./pages/VrTourEditor";
@@ -51,7 +51,7 @@ function Layout() {
   const location = useLocation();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const isMapSystem = location.pathname === '/map';
-  const isPropertyDetail = location.pathname.startsWith('/building/');
+  const isBuildingDetail = location.pathname.startsWith('/building/');
   const isRoomDetail = location.pathname.startsWith('/room/') && !location.pathname.includes('/vr-tour/') && !location.pathname.includes('/virtual-staging/') && !location.pathname.includes('/property-publication/');
   const isVrTour = location.pathname.includes('/vr-tour/');
   const isVirtualStaging = location.pathname.includes('/virtual-staging/');
@@ -60,7 +60,7 @@ function Layout() {
 
   // 物件詳細、部屋詳細、VRツアー、バーチャルステージング、物件公開ページ、画像編集ページでは常に全画面レイアウト（独自ヘッダーを使用）
   // 地図システムページではデスクトップのみ全画面レイアウト
-  if (isPropertyDetail || isRoomDetail || isVrTour || isVirtualStaging || isPropertyPublication || isPhotoEditor || (!isMobile && isMapSystem)) {
+  if (isBuildingDetail || isRoomDetail || isVrTour || isVirtualStaging || isPropertyPublication || isPhotoEditor || (!isMobile && isMapSystem)) {
     return (
       <div style={{ fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif" }}>
         <Outlet />
@@ -119,7 +119,7 @@ export default function App() {
             <Route path="/buildings/new" element={<BuildingForm />} />
             <Route path="/buildings/:id/edit" element={<BuildingForm />} />
             <Route path="/buildings/:buildingId/rooms/new" element={<RoomForm />} />
-            <Route path="/building/:id" element={<PropertyDetail />} />
+            <Route path="/building/:id" element={<BuildingDetail />} />
             <Route path="/room/:id" element={<RoomDetail />} />
             <Route path="/rooms/new" element={<RoomForm />} />
             <Route path="/rooms/:id/edit" element={<RoomForm />} />

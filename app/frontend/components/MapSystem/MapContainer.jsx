@@ -90,7 +90,7 @@ export default function MapContainer({
           </div>
         </div>
         <div style="margin-top: 16px; display: flex; gap: 8px;">
-          <button onclick="window.openPropertyDetail(${property.id})"
+          <button onclick="window.openBuildingDetail(${property.id})"
                   style="background-color: #0168B7; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; flex: 1;">
             詳細ページを開く
           </button>
@@ -158,7 +158,7 @@ export default function MapContainer({
   useEffect(() => {
     if (isLoaded && map) {
       // 詳細ページを新しいタブで開く関数
-      window.openPropertyDetail = (propertyId) => {
+      window.openBuildingDetail = (propertyId) => {
         window.open(`/building/${propertyId}`, '_blank');
       };
 

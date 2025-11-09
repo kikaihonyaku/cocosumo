@@ -27,7 +27,7 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 
-export default function PropertyInfoPanel({ property, onSave, loading, isMobile = false, onFormChange }) {
+export default function BuildingInfoPanel({ property, onSave, loading, isMobile = false, onFormChange }) {
   const [formData, setFormData] = useState({
     name: '',
     address: '',
