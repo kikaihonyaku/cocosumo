@@ -48,7 +48,20 @@ class Api::V1::VrScenesController < ApplicationController
     end
 
     if @vr_scene.save
-      render json: @vr_scene.as_json(methods: [:photo_url]), status: :created
+      # 保存後に関連データをreloadしてから返す
+      @vr_scene.reload
+      render json: @vr_scene.as_json(
+        methods: [:photo_url, :before_photo_url, :after_photo_url, :virtual_staging_scene?],
+        include: {
+          room_photo: {
+            only: [:id, :photo_type, :caption]
+          },
+          virtual_staging: {
+            only: [:id, :title, :description],
+            methods: [:before_photo_url, :after_photo_url]
+          }
+        }
+      ), status: :created
     else
       render json: { errors: @vr_scene.errors.full_messages }, status: :unprocessable_entity
     end
@@ -57,7 +70,18 @@ class Api::V1::VrScenesController < ApplicationController
   # PATCH/PUT /api/v1/vr_tours/:vr_tour_id/vr_scenes/:id
   def update
     if @vr_scene.update(vr_scene_params)
-      render json: @vr_scene.as_json(methods: [:photo_url])
+      render json: @vr_scene.as_json(
+        methods: [:photo_url, :before_photo_url, :after_photo_url, :virtual_staging_scene?],
+        include: {
+          room_photo: {
+            only: [:id, :photo_type, :caption]
+          },
+          virtual_staging: {
+            only: [:id, :title, :description],
+            methods: [:before_photo_url, :after_photo_url]
+          }
+        }
+      )
     else
       render json: { errors: @vr_scene.errors.full_messages }, status: :unprocessable_entity
     end
@@ -108,7 +132,7 @@ class Api::V1::VrScenesController < ApplicationController
   end
 
   def set_vr_scene
-    @vr_scene = @vr_tour.vr_scenes.unscoped.find(params[:id])
+    @vr_scene = @vr_tour.vr_scenes.unscoped.includes(:room_photo, virtual_staging: [:before_photo, :after_photo]).find(params[:id])
   end
 
   def vr_scene_params

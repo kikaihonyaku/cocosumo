@@ -101,7 +101,7 @@ export default function PanoramaViewer({
               markers: markers.map(marker => ({
                 id: marker.id,
                 position: { yaw: marker.yaw, pitch: marker.pitch },
-                html: marker.html || `<div style="background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 4px;">${marker.text || 'ホットスポット'}</div>`,
+                html: marker.html || `<div class="hotspot-marker" style="background: rgba(33, 150, 243, 0.9); color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.5); cursor: pointer; user-select: none;">${marker.text || 'ホットスポット'}</div>`,
                 tooltip: marker.tooltip,
                 data: marker.data
               }))

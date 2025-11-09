@@ -660,15 +660,46 @@ export default function VrTourEditor() {
                   <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>
                     {selectedScene['virtual_staging_scene?'] && selectedScene.before_photo_url && selectedScene.after_photo_url ? (
                       <>
+                        {addingHotspot && (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 16,
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              zIndex: 1000,
+                              bgcolor: 'primary.main',
+                              color: 'white',
+                              px: 3,
+                              py: 1,
+                              borderRadius: 1,
+                              boxShadow: 3
+                            }}
+                          >
+                            <Typography variant="body2">
+                              360度ビュー上の任意の場所をクリックしてホットスポットを配置してください
+                            </Typography>
+                          </Box>
+                        )}
                         <ComparisonPanoramaViewer
                           key={viewerKey}
                           beforeImageUrl={selectedScene.before_photo_url}
                           afterImageUrl={selectedScene.after_photo_url}
                           initialView={selectedScene.initial_view || { yaw: 0, pitch: 0 }}
+                          markers={selectedScene.hotspots || []}
+                          editable={addingHotspot}
+                          onMarkerClick={(marker) => {
+                            if (marker.type === 'add') {
+                              setPendingPosition(marker.position);
+                              setAddingHotspot(false);
+                            } else {
+                              // 既存のホットスポットをクリックしたら編集ダイアログを開く
+                              if (editHotspotCallback) {
+                                editHotspotCallback(marker.id);
+                              }
+                            }
+                          }}
                         />
-                        <Alert severity="info" sx={{ mt: 2 }}>
-                          バーチャルステージングシーンではホットスポットの追加はできません
-                        </Alert>
                       </>
                     ) : selectedScene.photo_url ? (
                       <>
@@ -739,26 +770,18 @@ export default function VrTourEditor() {
               overflow: 'auto'
             }}>
               {selectedScene ? (
-                selectedScene['virtual_staging_scene?'] ? (
-                  <Box sx={{ p: 3, textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      バーチャルステージングシーンではホットスポットの編集はできません
-                    </Typography>
-                  </Box>
-                ) : (
-                  <HotspotEditor
-                    hotspots={selectedScene.hotspots || []}
-                    scenes={scenes}
-                    currentSceneId={selectedScene.id}
-                    onHotspotsChange={handleHotspotsChange}
-                    onAddHotspotRequest={() => {
-                      setAddingHotspot(true);
-                      setPendingPosition(null);
-                    }}
-                    pendingPosition={pendingPosition}
-                    onHotspotEdit={(callback) => setEditHotspotCallback(() => callback)}
-                  />
-                )
+                <HotspotEditor
+                  hotspots={selectedScene.hotspots || []}
+                  scenes={scenes}
+                  currentSceneId={selectedScene.id}
+                  onHotspotsChange={handleHotspotsChange}
+                  onAddHotspotRequest={() => {
+                    setAddingHotspot(true);
+                    setPendingPosition(null);
+                  }}
+                  pendingPosition={pendingPosition}
+                  onHotspotEdit={(callback) => setEditHotspotCallback(() => callback)}
+                />
               ) : (
                 <Box sx={{ p: 3, textAlign: 'center' }}>
                   <Typography variant="body2" color="text.secondary">

@@ -1,13 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Viewer } from "@photo-sphere-viewer/core";
+import { MarkersPlugin } from "@photo-sphere-viewer/markers-plugin";
 import "@photo-sphere-viewer/core/index.css";
+import "@photo-sphere-viewer/markers-plugin/index.css";
 import { Box, CircularProgress, Alert, Typography } from "@mui/material";
 
 export default function ComparisonPanoramaViewer({
   beforeImageUrl,
   afterImageUrl,
   initialView = { yaw: 0, pitch: 0 },
-  fullscreenContainerId = null
+  fullscreenContainerId = null,
+  markers = [],
+  onMarkerClick,
+  editable = false
 }) {
   const beforeContainerRef = useRef(null);
   const afterContainerRef = useRef(null);
@@ -71,6 +76,17 @@ export default function ComparisonPanoramaViewer({
           defaultYaw: initialView.yaw || 0,
           defaultPitch: initialView.pitch || 0,
           navbar: false, // ナビゲーションバーを非表示
+          plugins: [
+            [MarkersPlugin, {
+              markers: markers.map(marker => ({
+                id: marker.id,
+                position: { yaw: marker.yaw, pitch: marker.pitch },
+                html: marker.html || `<div class="hotspot-marker" style="background: rgba(33, 150, 243, 0.9); color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.5); cursor: pointer; user-select: none;">${marker.text || 'ホットスポット'}</div>`,
+                tooltip: marker.tooltip,
+                data: marker.data
+              }))
+            }]
+          ],
         });
 
         // Afterビューアーを作成
@@ -80,6 +96,17 @@ export default function ComparisonPanoramaViewer({
           defaultYaw: initialView.yaw || 0,
           defaultPitch: initialView.pitch || 0,
           navbar: false,
+          plugins: [
+            [MarkersPlugin, {
+              markers: markers.map(marker => ({
+                id: marker.id,
+                position: { yaw: marker.yaw, pitch: marker.pitch },
+                html: marker.html || `<div class="hotspot-marker" style="background: rgba(33, 150, 243, 0.9); color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.5); cursor: pointer; user-select: none;">${marker.text || 'ホットスポット'}</div>`,
+                tooltip: marker.tooltip,
+                data: marker.data
+              }))
+            }]
+          ],
         });
 
         beforeViewerRef.current = beforeViewer;
@@ -135,11 +162,51 @@ export default function ComparisonPanoramaViewer({
           });
         };
 
+        const setupMarkerEvents = () => {
+          // Beforeビューアーのマーカーイベント
+          const beforeMarkersPlugin = beforeViewer.getPlugin(MarkersPlugin);
+          if (onMarkerClick) {
+            beforeMarkersPlugin.addEventListener('select-marker', (e) => {
+              onMarkerClick(e.marker);
+            });
+          }
+
+          // Afterビューアーのマーカーイベント
+          const afterMarkersPlugin = afterViewer.getPlugin(MarkersPlugin);
+          if (onMarkerClick) {
+            afterMarkersPlugin.addEventListener('select-marker', (e) => {
+              onMarkerClick(e.marker);
+            });
+          }
+
+          // エディタブルモードの場合、クリックでマーカー追加
+          if (editable) {
+            beforeViewer.addEventListener('click', (e) => {
+              if (e.data) {
+                onMarkerClick && onMarkerClick({
+                  type: 'add',
+                  position: { yaw: e.data.yaw, pitch: e.data.pitch }
+                });
+              }
+            });
+
+            afterViewer.addEventListener('click', (e) => {
+              if (e.data) {
+                onMarkerClick && onMarkerClick({
+                  type: 'add',
+                  position: { yaw: e.data.yaw, pitch: e.data.pitch }
+                });
+              }
+            });
+          }
+        };
+
         const checkBothReady = () => {
           readyCount++;
           if (readyCount === 2) {
             setLoading(false);
             setupViewSync();
+            setupMarkerEvents();
           }
         };
 
@@ -177,6 +244,43 @@ export default function ComparisonPanoramaViewer({
       }
     };
   }, [beforeImageUrl, afterImageUrl]);
+
+  // マーカーの更新
+  useEffect(() => {
+    if (beforeViewerRef.current && afterViewerRef.current && markers) {
+      try {
+        // Beforeビューアーのマーカーを更新
+        const beforeMarkersPlugin = beforeViewerRef.current.getPlugin(MarkersPlugin);
+        beforeMarkersPlugin.clearMarkers();
+        markers.forEach(marker => {
+          const markerConfig = {
+            id: marker.id,
+            position: { yaw: marker.yaw || 0, pitch: marker.pitch || 0 },
+            html: marker.html || `<div class="hotspot-marker" style="background: rgba(33, 150, 243, 0.9); color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.5); cursor: pointer; user-select: none;">${marker.text || 'ホットスポット'}</div>`,
+            tooltip: marker.tooltip,
+            data: marker.data
+          };
+          beforeMarkersPlugin.addMarker(markerConfig);
+        });
+
+        // Afterビューアーのマーカーを更新
+        const afterMarkersPlugin = afterViewerRef.current.getPlugin(MarkersPlugin);
+        afterMarkersPlugin.clearMarkers();
+        markers.forEach(marker => {
+          const markerConfig = {
+            id: marker.id,
+            position: { yaw: marker.yaw || 0, pitch: marker.pitch || 0 },
+            html: marker.html || `<div class="hotspot-marker" style="background: rgba(33, 150, 243, 0.9); color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.5); cursor: pointer; user-select: none;">${marker.text || 'ホットスポット'}</div>`,
+            tooltip: marker.tooltip,
+            data: marker.data
+          };
+          afterMarkersPlugin.addMarker(markerConfig);
+        });
+      } catch (err) {
+        console.error('Marker update error:', err);
+      }
+    }
+  }, [markers]);
 
   // スライダー操作
   const handleMouseDown = () => {

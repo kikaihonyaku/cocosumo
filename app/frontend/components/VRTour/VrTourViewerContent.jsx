@@ -166,6 +166,9 @@ export default function VrTourViewerContent({
                   afterImageUrl={currentScene.after_photo_url}
                   initialView={currentScene.initial_view || { yaw: 0, pitch: 0 }}
                   fullscreenContainerId={containerId}
+                  markers={currentScene.hotspots || []}
+                  onMarkerClick={handleMarkerClick}
+                  editable={false}
                 />
               ) : (
                 <PanoramaViewer
