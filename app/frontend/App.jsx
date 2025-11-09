@@ -23,6 +23,8 @@ import VirtualStagingEditor from "./pages/VirtualStagingEditor";
 import VirtualStagingViewer from "./pages/VirtualStagingViewer";
 import PublicVirtualStaging from "./pages/PublicVirtualStaging";
 import VirtualStagings from "./pages/VirtualStagings";
+import PropertyPublicationEditor from "./pages/PropertyPublicationEditor";
+import PublicPropertyDetail from "./pages/PublicPropertyDetail";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -49,15 +51,16 @@ function Layout() {
   const location = useLocation();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const isMapSystem = location.pathname === '/map';
-  const isPropertyDetail = location.pathname.startsWith('/property/');
-  const isRoomDetail = location.pathname.startsWith('/room/');
+  const isPropertyDetail = location.pathname.startsWith('/building/');
+  const isRoomDetail = location.pathname.startsWith('/room/') && !location.pathname.includes('/vr-tour/') && !location.pathname.includes('/virtual-staging/') && !location.pathname.includes('/property-publication/');
   const isVrTour = location.pathname.includes('/vr-tour/');
   const isVirtualStaging = location.pathname.includes('/virtual-staging/');
+  const isPropertyPublication = location.pathname.includes('/property-publication/');
   const isPhotoEditor = location.pathname.includes('/photos/') && location.pathname.endsWith('/edit');
 
-  // 物件詳細、部屋詳細、VRツアー、バーチャルステージング、画像編集ページでは常に全画面レイアウト（独自ヘッダーを使用）
+  // 物件詳細、部屋詳細、VRツアー、バーチャルステージング、物件公開ページ、画像編集ページでは常に全画面レイアウト（独自ヘッダーを使用）
   // 地図システムページではデスクトップのみ全画面レイアウト
-  if (isPropertyDetail || isRoomDetail || isVrTour || isVirtualStaging || isPhotoEditor || (!isMobile && isMapSystem)) {
+  if (isPropertyDetail || isRoomDetail || isVrTour || isVirtualStaging || isPropertyPublication || isPhotoEditor || (!isMobile && isMapSystem)) {
     return (
       <div style={{ fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif" }}>
         <Outlet />
@@ -103,6 +106,8 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/vr/:id" element={<PublicVrTour />} />
           <Route path="/virtual-staging/:id" element={<PublicVirtualStaging />} />
+          {/* 物件公開ページ（publication_idで識別） */}
+          <Route path="/property/:publicationId" element={<PublicPropertyDetail />} />
 
           {/* 認証が必要なページ */}
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
@@ -114,7 +119,7 @@ export default function App() {
             <Route path="/buildings/new" element={<BuildingForm />} />
             <Route path="/buildings/:id/edit" element={<BuildingForm />} />
             <Route path="/buildings/:buildingId/rooms/new" element={<RoomForm />} />
-            <Route path="/property/:id" element={<PropertyDetail />} />
+            <Route path="/building/:id" element={<PropertyDetail />} />
             <Route path="/room/:id" element={<RoomDetail />} />
             <Route path="/rooms/new" element={<RoomForm />} />
             <Route path="/rooms/:id/edit" element={<RoomForm />} />
@@ -126,6 +131,8 @@ export default function App() {
             <Route path="/room/:roomId/virtual-staging/new" element={<VirtualStagingEditor />} />
             <Route path="/room/:roomId/virtual-staging/:id/edit" element={<VirtualStagingEditor />} />
             <Route path="/room/:roomId/virtual-staging/:id/viewer" element={<VirtualStagingViewer />} />
+            <Route path="/room/:roomId/property-publication/new" element={<PropertyPublicationEditor />} />
+            <Route path="/room/:roomId/property-publication/:id/edit" element={<PropertyPublicationEditor />} />
           </Route>
         </Routes>
       </AuthProvider>

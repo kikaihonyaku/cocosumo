@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_08_213251) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_09_085329) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -96,6 +96,72 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_08_213251) do
     t.datetime "updated_at", null: false
     t.index ["building_id"], name: "index_owners_on_building_id"
     t.index ["tenant_id"], name: "index_owners_on_tenant_id"
+  end
+
+  create_table "property_inquiries", force: :cascade do |t|
+    t.integer "property_publication_id", null: false
+    t.string "name", null: false
+    t.string "email", null: false
+    t.string "phone"
+    t.text "message", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_property_inquiries_on_created_at"
+    t.index ["property_publication_id"], name: "index_property_inquiries_on_property_publication_id"
+  end
+
+  create_table "property_publication_photos", force: :cascade do |t|
+    t.integer "property_publication_id", null: false
+    t.integer "room_photo_id", null: false
+    t.integer "display_order", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["display_order"], name: "index_property_publication_photos_on_display_order"
+    t.index ["property_publication_id", "room_photo_id"], name: "index_pub_photos_on_pub_and_photo", unique: true
+    t.index ["property_publication_id"], name: "index_property_publication_photos_on_property_publication_id"
+    t.index ["room_photo_id"], name: "index_property_publication_photos_on_room_photo_id"
+  end
+
+  create_table "property_publication_virtual_stagings", force: :cascade do |t|
+    t.integer "property_publication_id", null: false
+    t.integer "virtual_staging_id", null: false
+    t.integer "display_order", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["display_order"], name: "index_property_publication_virtual_stagings_on_display_order"
+    t.index ["property_publication_id", "virtual_staging_id"], name: "index_pub_virtual_stagings_on_pub_and_vs", unique: true
+    t.index ["property_publication_id"], name: "idx_on_property_publication_id_b3b5dbf46f"
+    t.index ["virtual_staging_id"], name: "idx_on_virtual_staging_id_caed2d8ed5"
+  end
+
+  create_table "property_publication_vr_tours", force: :cascade do |t|
+    t.integer "property_publication_id", null: false
+    t.integer "vr_tour_id", null: false
+    t.integer "display_order", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["display_order"], name: "index_property_publication_vr_tours_on_display_order"
+    t.index ["property_publication_id", "vr_tour_id"], name: "index_pub_vr_tours_on_pub_and_vr_tour", unique: true
+    t.index ["property_publication_id"], name: "index_property_publication_vr_tours_on_property_publication_id"
+    t.index ["vr_tour_id"], name: "index_property_publication_vr_tours_on_vr_tour_id"
+  end
+
+  create_table "property_publications", force: :cascade do |t|
+    t.integer "room_id", null: false
+    t.string "publication_id", null: false
+    t.string "title"
+    t.text "catch_copy"
+    t.text "pr_text"
+    t.integer "status", default: 0, null: false
+    t.json "visible_fields"
+    t.datetime "published_at"
+    t.datetime "discarded_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["discarded_at"], name: "index_property_publications_on_discarded_at"
+    t.index ["publication_id"], name: "index_property_publications_on_publication_id", unique: true
+    t.index ["room_id"], name: "index_property_publications_on_room_id"
+    t.index ["status"], name: "index_property_publications_on_status"
   end
 
   create_table "room_photos", force: :cascade do |t|
@@ -208,6 +274,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_08_213251) do
   add_foreign_key "buildings", "tenants"
   add_foreign_key "owners", "buildings"
   add_foreign_key "owners", "tenants"
+  add_foreign_key "property_inquiries", "property_publications"
+  add_foreign_key "property_publication_photos", "property_publications"
+  add_foreign_key "property_publication_photos", "room_photos"
+  add_foreign_key "property_publication_virtual_stagings", "property_publications"
+  add_foreign_key "property_publication_virtual_stagings", "virtual_stagings"
+  add_foreign_key "property_publication_vr_tours", "property_publications"
+  add_foreign_key "property_publication_vr_tours", "vr_tours"
+  add_foreign_key "property_publications", "rooms"
   add_foreign_key "room_photos", "rooms"
   add_foreign_key "rooms", "buildings"
   add_foreign_key "users", "tenants"

@@ -129,7 +129,7 @@ export default function RoomForm() {
 
       if (response.ok) {
         // 物件詳細ページに戻る
-        navigate(`/property/${formData.building_id}`);
+        navigate(`/building/${formData.building_id}`);
       } else {
         setError(data.errors?.join(', ') || '保存に失敗しました');
       }
@@ -143,7 +143,7 @@ export default function RoomForm() {
 
   const handleCancel = () => {
     if (formData.building_id) {
-      navigate(`/property/${formData.building_id}`);
+      navigate(`/building/${formData.building_id}`);
     } else {
       navigate('/buildings');
     }

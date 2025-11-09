@@ -149,7 +149,7 @@ export default function Buildings() {
                 <CardActions>
                   <Button
                     size="small"
-                    onClick={() => navigate(`/property/${building.id}`)}
+                    onClick={() => navigate(`/building/${building.id}`)}
                   >
                     詳細を見る
                   </Button>

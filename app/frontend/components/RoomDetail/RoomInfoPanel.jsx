@@ -112,7 +112,7 @@ export default function RoomInfoPanel({ room, onSave, loading, isMobile = false,
       const data = await response.json();
 
       if (response.ok && data.success) {
-        window.location.href = `/property/${room.building_id}`;
+        window.location.href = `/building/${room.building_id}`;
       } else {
         alert(data.error || '削除に失敗しました');
         setDeleting(false);

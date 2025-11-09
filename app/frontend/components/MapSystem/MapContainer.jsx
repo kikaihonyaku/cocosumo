@@ -159,7 +159,7 @@ export default function MapContainer({
     if (isLoaded && map) {
       // 詳細ページを新しいタブで開く関数
       window.openPropertyDetail = (propertyId) => {
-        window.open(`/property/${propertyId}`, '_blank');
+        window.open(`/building/${propertyId}`, '_blank');
       };
 
       // グローバル関数として物件選択関数を設定（右パネル用）

@@ -185,7 +185,7 @@ export default function MapSystem() {
   // 新規物件登録成功時のハンドラー
   const handleBuildingRegistered = (newBuilding) => {
     // 物件詳細画面を別タブで開く
-    window.open(`/property/${newBuilding.id}`, '_blank');
+    window.open(`/building/${newBuilding.id}`, '_blank');
     // 物件一覧を再取得
     fetchBuildings(searchConditions);
   };
@@ -511,7 +511,7 @@ export default function MapSystem() {
                                 <Button
                                   variant="contained"
                                   fullWidth
-                                  onClick={() => window.open(`/property/${selectedObject.data.id}`, '_blank')}
+                                  onClick={() => window.open(`/building/${selectedObject.data.id}`, '_blank')}
                                   sx={{
                                     minHeight: isMobile ? '48px' : 'auto',
                                     fontSize: isMobile ? '1rem' : '0.875rem'

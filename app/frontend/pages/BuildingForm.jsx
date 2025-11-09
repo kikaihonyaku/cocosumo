@@ -102,7 +102,7 @@ export default function BuildingForm() {
           // geocodingが失敗しているかチェック（latitude/longitudeがnullまたは存在しない場合）
           const geocodingFailed = !data.latitude || !data.longitude;
 
-          navigate(`/property/${data.id}`, {
+          navigate(`/building/${data.id}`, {
             state: { geocodingFailed }
           });
         }

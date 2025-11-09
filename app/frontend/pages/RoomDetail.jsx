@@ -24,6 +24,7 @@ import RoomInfoPanel from "../components/RoomDetail/RoomInfoPanel";
 import RoomPhotosPanel from "../components/RoomDetail/RoomPhotosPanel";
 import RoomVRTourPanel from "../components/RoomDetail/RoomVRTourPanel";
 import RoomVirtualStagingPanel from "../components/RoomDetail/RoomVirtualStagingPanel";
+import RoomPropertyPublicationPanel from "../components/RoomDetail/RoomPropertyPublicationPanel";
 
 export default function RoomDetail() {
   const { id } = useParams();
@@ -221,7 +222,7 @@ export default function RoomDetail() {
           <Toolbar variant="dense" sx={{ minHeight: '52px', py: 1 }}>
             <IconButton
               edge="start"
-              onClick={() => navigate(`/property/${room.building_id}`)}
+              onClick={() => navigate(`/building/${room.building_id}`)}
               sx={{
                 mr: 2,
                 color: 'white',
@@ -378,7 +379,7 @@ export default function RoomDetail() {
             flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
-            gap: 2,
+            gap: 1,
             minHeight: isLgUp ? 800 : 'auto',
           }}>
             {/* バーチャルステージング */}
@@ -388,7 +389,7 @@ export default function RoomDetail() {
               display: 'flex',
               flexDirection: 'column',
               flex: 1,
-              minHeight: 350,
+              minHeight: isLgUp ? 0 : 350,
             }}>
               <RoomVirtualStagingPanel
                 roomId={room.id}
@@ -402,9 +403,23 @@ export default function RoomDetail() {
               display: 'flex',
               flexDirection: 'column',
               flex: 1,
-              minHeight: 350,
+              minHeight: isLgUp ? 0 : 350,
             }}>
               <RoomVRTourPanel
+                roomId={room.id}
+              />
+            </Paper>
+
+            {/* 物件公開ページ */}
+            <Paper elevation={3} sx={{
+              borderRadius: 2,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              flex: 1,
+              minHeight: isLgUp ? 0 : 350,
+            }}>
+              <RoomPropertyPublicationPanel
                 roomId={room.id}
               />
             </Paper>

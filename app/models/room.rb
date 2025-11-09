@@ -5,6 +5,7 @@ class Room < ApplicationRecord
   has_many :ai_generated_images, dependent: :destroy
   has_many :vr_tours, dependent: :destroy
   has_many :virtual_stagings, dependent: :destroy
+  has_many :property_publications, dependent: :destroy
 
   # Validations
   validates :room_number, presence: true
