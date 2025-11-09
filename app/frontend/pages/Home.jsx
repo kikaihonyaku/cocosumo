@@ -45,17 +45,39 @@ export default function Home() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h3" component="h1" gutterBottom sx={{ mb: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 6, px: { xs: 2, sm: 3, md: 4 } }}>
+      <Typography
+        variant="h3"
+        component="h1"
+        gutterBottom
+        sx={{
+          mb: 4,
+          fontWeight: 700,
+          background: 'linear-gradient(45deg, #0168B7 30%, #4087cc 90%)',
+          backgroundClip: 'text',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+        }}
+      >
         CoCoスモへようこそ
       </Typography>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
         {/* 物件管理カード */}
-        <Grid item xs={12} md={6} lg={4}>
-          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <CardContent sx={{ flexGrow: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
+          <Card sx={{
+            height: '100%',
+            minHeight: 240,
+            display: 'flex',
+            flexDirection: 'column',
+            transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            }
+          }}>
+            <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
                 <MapIcon sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
                 <Typography variant="h5" component="h2">
                   物件管理
@@ -65,7 +87,7 @@ export default function Home() {
                 地図上で物件を管理し、建物・部屋情報を効率的に登録・編集できます。
               </Typography>
             </CardContent>
-            <CardActions>
+            <CardActions sx={{ p: 2, pt: 0 }}>
               <Button
                 component={Link}
                 to="/map"
@@ -80,10 +102,20 @@ export default function Home() {
         </Grid>
 
         {/* VRツアー管理カード */}
-        <Grid item xs={12} md={6} lg={4}>
-          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <CardContent sx={{ flexGrow: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
+          <Card sx={{
+            height: '100%',
+            minHeight: 240,
+            display: 'flex',
+            flexDirection: 'column',
+            transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            }
+          }}>
+            <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
                 <VrpanoIcon sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
                 <Typography variant="h5" component="h2">
                   VRツアー管理
@@ -93,7 +125,7 @@ export default function Home() {
                 360度パノラマ写真でバーチャルツアーを作成・管理できます。
               </Typography>
             </CardContent>
-            <CardActions>
+            <CardActions sx={{ p: 2, pt: 0 }}>
               <Button
                 component={Link}
                 to="/vr-tours"
@@ -108,10 +140,20 @@ export default function Home() {
         </Grid>
 
         {/* バーチャルステージング管理カード */}
-        <Grid item xs={12} md={6} lg={4}>
-          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <CardContent sx={{ flexGrow: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
+          <Card sx={{
+            height: '100%',
+            minHeight: 240,
+            display: 'flex',
+            flexDirection: 'column',
+            transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            }
+          }}>
+            <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
                 <CompareArrowsIcon sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
                 <Typography variant="h5" component="h2">
                   バーチャルステージング
@@ -121,7 +163,7 @@ export default function Home() {
                 Before/After画像比較で、リノベーション前後を視覚的に表現できます。
               </Typography>
             </CardContent>
-            <CardActions>
+            <CardActions sx={{ p: 2, pt: 0 }}>
               <Button
                 component={Link}
                 to="/virtual-stagings"
@@ -136,10 +178,20 @@ export default function Home() {
         </Grid>
 
         {/* 管理者設定カード */}
-        <Grid item xs={12} md={6} lg={4}>
-          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <CardContent sx={{ flexGrow: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
+          <Card sx={{
+            height: '100%',
+            minHeight: 240,
+            display: 'flex',
+            flexDirection: 'column',
+            transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            }
+          }}>
+            <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
                 <SettingsIcon sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
                 <Typography variant="h5" component="h2">
                   管理者設定
@@ -149,7 +201,7 @@ export default function Home() {
                 ユーザー管理やテナント設定を行います。（管理者のみ）
               </Typography>
             </CardContent>
-            <CardActions>
+            <CardActions sx={{ p: 2, pt: 0 }}>
               <Button
                 size="large"
                 variant="outlined"
@@ -171,7 +223,7 @@ export default function Home() {
         <Card>
           <CardContent>
             <Typography variant="body2" color="text.secondary">
-              CoCoスモをご利用いただきありがとうございます。現在、順次機能を追加中です。
+              CoCoスモをご利用いただきありがとうございます。現在、順次機能を追加中です。(2025/11/09)
             </Typography>
           </CardContent>
         </Card>

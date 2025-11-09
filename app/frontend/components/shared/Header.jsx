@@ -52,6 +52,7 @@ export default function Header() {
     { to: "/home", label: "ホーム", end: false },
     { to: "/map", label: "物件管理" },
     { to: "/vr-tours", label: "VRツアー管理" },
+    { to: "/virtual-stagings", label: "バーチャルステージング" },
   ];
 
   return (
