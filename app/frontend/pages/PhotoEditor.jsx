@@ -189,6 +189,13 @@ export default function PhotoEditor() {
 
       // 画像を描画
       ctx.drawImage(img, 0, 0, width, height);
+
+      // 初回ロード時: オリジナル画像を履歴に保存
+      if (editHistory.length === 0) {
+        const imageDataUrl = canvas.toDataURL('image/png');
+        setEditHistory([imageDataUrl]);
+        setCurrentHistoryIndex(0);
+      }
     };
 
     img.onerror = () => {
@@ -478,9 +485,6 @@ export default function PhotoEditor() {
 
     setAiProcessing(true);
 
-    // AI編集実行前に現在の画像を履歴に保存
-    saveToHistory();
-
     try {
       // Canvasから画像Blobを取得
       const blob = await new Promise((resolve) => {
@@ -534,10 +538,8 @@ export default function PhotoEditor() {
           // 編集後の画像を新しいオリジナルとして保存
           originalImageRef.current = img;
 
-          // 編集後の画像を履歴に保存（次のフレームで実行）
-          requestAnimationFrame(() => {
-            saveToHistory();
-          });
+          // 編集後の画像を履歴に保存
+          saveToHistory();
         };
         img.src = `data:image/png;base64,${data.image}`;
       } else {
