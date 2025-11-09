@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -15,6 +15,11 @@ import {
   DialogContent,
   DialogActions,
   Chip,
+  AppBar,
+  Toolbar,
+  ThemeProvider,
+  useMediaQuery,
+  Tooltip,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -23,13 +28,17 @@ import {
   Public as PublicIcon,
   PublicOff as PublicOffIcon,
   ContentCopy as ContentCopyIcon,
+  VisibilityOff as UnpublishIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 import BeforeAfterSlider from '../components/VirtualStaging/BeforeAfterSlider';
 import PhotoSelector from '../components/VirtualStaging/PhotoSelector';
+import muiTheme from '../theme/muiTheme';
 
 const VirtualStagingEditor = () => {
   const { roomId, id } = useParams();
   const navigate = useNavigate();
+  const isMdUp = useMediaQuery(muiTheme.breakpoints.up('md'));
   const [loading, setLoading] = useState(false);
   const [roomPhotos, setRoomPhotos] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -217,63 +226,130 @@ const VirtualStagingEditor = () => {
   const canShowPreview = virtualStaging.before_photo_id && virtualStaging.after_photo_id;
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* ヘッダー */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton onClick={() => navigate(`/room/${roomId}`)}>
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h4">
-            {isEditMode ? 'バーチャルステージング編集' : 'バーチャルステージング作成'}
-          </Typography>
-          {isPublished && (
-            <Chip label="公開中" color="success" size="small" />
-          )}
-        </Box>
+    <ThemeProvider theme={muiTheme}>
+      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        {/* ヘッダー */}
+        <AppBar position="static" elevation={0} sx={{
+          bgcolor: 'primary.main',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+          borderRadius: '12px 12px 0 0',
+        }}>
+          <Toolbar variant="dense" sx={{ minHeight: '52px', py: 1 }}>
+            <IconButton
+              edge="start"
+              onClick={() => navigate(`/room/${roomId}`)}
+              sx={{ mr: 2, color: 'white' }}
+            >
+              <ArrowBackIcon />
+            </IconButton>
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
+                {isEditMode ? 'バーチャルステージング編集' : 'バーチャルステージング作成'}
+              </Typography>
+              {isEditMode && virtualStaging.title && (
+                <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
+                  {virtualStaging.title}
+                </Typography>
+              )}
+            </Box>
 
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="contained"
-            startIcon={<SaveIcon />}
-            onClick={handleSave}
-            disabled={loading}
-          >
-            保存
-          </Button>
-          {isEditMode && !isPublished && (
+            {/* ステータス表示 */}
+            {isEditMode && (
+              <Chip
+                label={isPublished ? '公開中' : '下書き'}
+                color={isPublished ? 'success' : 'default'}
+                icon={isPublished ? <PublicIcon /> : <UnpublishIcon />}
+                sx={{ mr: { xs: 0.5, md: 2 }, display: { xs: 'none', sm: 'flex' } }}
+              />
+            )}
+
+            {/* 保存ボタン */}
             <Button
               variant="contained"
-              color="success"
-              startIcon={<PublicIcon />}
-              onClick={() => setPublishDialog(true)}
+              color="secondary"
+              startIcon={isMdUp ? <SaveIcon /> : null}
+              onClick={handleSave}
               disabled={loading}
+              sx={{
+                mr: { xs: 0.5, md: 2 },
+                minWidth: { xs: 'auto', md: 'auto' },
+                px: { xs: 1, md: 2 }
+              }}
             >
-              公開
+              {isMdUp ? '保存' : <SaveIcon />}
             </Button>
-          )}
-          {isEditMode && isPublished && (
-            <>
+
+            {/* 公開ボタン */}
+            {isEditMode && !isPublished && (
               <Button
-                variant="outlined"
-                startIcon={<ContentCopyIcon />}
-                onClick={handleCopyUrl}
-              >
-                URLコピー
-              </Button>
-              <Button
-                variant="outlined"
-                color="warning"
-                startIcon={<PublicOffIcon />}
-                onClick={handleUnpublish}
+                variant="contained"
+                color="success"
+                startIcon={isMdUp ? <PublicIcon /> : null}
+                onClick={() => setPublishDialog(true)}
                 disabled={loading}
+                sx={{
+                  mr: { xs: 0, md: 2 },
+                  minWidth: { xs: 'auto', md: 'auto' },
+                  px: { xs: 1, md: 2 },
+                  bgcolor: 'success.main',
+                  '&:hover': {
+                    bgcolor: 'success.dark',
+                  }
+                }}
               >
-                非公開化
+                {isMdUp ? '公開する' : <PublicIcon />}
               </Button>
-            </>
-          )}
-        </Box>
-      </Box>
+            )}
+
+            {/* 公開中のボタン群 */}
+            {isEditMode && isPublished && (
+              <>
+                <Button
+                  variant="outlined"
+                  startIcon={isMdUp ? <ContentCopyIcon /> : null}
+                  onClick={handleCopyUrl}
+                  sx={{
+                    mr: { xs: 0.5, md: 1 },
+                    minWidth: { xs: 'auto', md: 'auto' },
+                    px: { xs: 1, md: 2 },
+                    color: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                    '&:hover': {
+                      borderColor: 'white',
+                      bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    }
+                  }}
+                >
+                  {isMdUp ? 'URLコピー' : <ContentCopyIcon />}
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="warning"
+                  startIcon={isMdUp ? <UnpublishIcon /> : null}
+                  onClick={handleUnpublish}
+                  disabled={loading}
+                  sx={{
+                    mr: { xs: 0, md: 2 },
+                    minWidth: { xs: 'auto', md: 'auto' },
+                    px: { xs: 1, md: 2 },
+                    color: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                    '&:hover': {
+                      borderColor: 'white',
+                      bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    }
+                  }}
+                >
+                  {isMdUp ? '非公開にする' : <UnpublishIcon />}
+                </Button>
+              </>
+            )}
+          </Toolbar>
+        </AppBar>
+
+        {/* メインコンテンツ */}
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+          <Container maxWidth="lg" sx={{ py: 4 }}>
 
       {/* フォームエリア */}
       <Paper sx={{ p: 3, mb: 3 }}>
@@ -306,15 +382,37 @@ const VirtualStagingEditor = () => {
               <Typography variant="subtitle2" gutterBottom>
                 Before画像 *
               </Typography>
-              <Button
-                variant="outlined"
-                onClick={() => setBeforePhotoDialog(true)}
-                fullWidth
-              >
-                {virtualStaging.before_photo_id
-                  ? roomPhotos.find((p) => p.id === virtualStaging.before_photo_id)?.caption || `画像 ${virtualStaging.before_photo_id}`
-                  : '画像を選択してください'}
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => setBeforePhotoDialog(true)}
+                  fullWidth
+                >
+                  {virtualStaging.before_photo_id
+                    ? roomPhotos.find((p) => p.id === virtualStaging.before_photo_id)?.caption || `画像 ${virtualStaging.before_photo_id}`
+                    : '画像を選択してください'}
+                </Button>
+                {virtualStaging.before_photo_id && (
+                  <Tooltip title="画像を編集">
+                    <IconButton
+                      component={RouterLink}
+                      to={`/rooms/${roomId}/photos/${virtualStaging.before_photo_id}/edit`}
+                      color="primary"
+                      sx={{
+                        borderRadius: 1,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          bgcolor: 'action.hover'
+                        }
+                      }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
             </Box>
 
             {/* After画像 */}
@@ -322,15 +420,37 @@ const VirtualStagingEditor = () => {
               <Typography variant="subtitle2" gutterBottom>
                 After画像 *
               </Typography>
-              <Button
-                variant="outlined"
-                onClick={() => setAfterPhotoDialog(true)}
-                fullWidth
-              >
-                {virtualStaging.after_photo_id
-                  ? roomPhotos.find((p) => p.id === virtualStaging.after_photo_id)?.caption || `画像 ${virtualStaging.after_photo_id}`
-                  : '画像を選択してください'}
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => setAfterPhotoDialog(true)}
+                  fullWidth
+                >
+                  {virtualStaging.after_photo_id
+                    ? roomPhotos.find((p) => p.id === virtualStaging.after_photo_id)?.caption || `画像 ${virtualStaging.after_photo_id}`
+                    : '画像を選択してください'}
+                </Button>
+                {virtualStaging.after_photo_id && (
+                  <Tooltip title="画像を編集">
+                    <IconButton
+                      component={RouterLink}
+                      to={`/rooms/${roomId}/photos/${virtualStaging.after_photo_id}/edit`}
+                      color="primary"
+                      sx={{
+                        borderRadius: 1,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          bgcolor: 'action.hover'
+                        }
+                      }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
             </Box>
           </Box>
         </Box>
@@ -438,7 +558,10 @@ const VirtualStagingEditor = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+          </Container>
+        </Box>
+      </Box>
+    </ThemeProvider>
   );
 };
 
