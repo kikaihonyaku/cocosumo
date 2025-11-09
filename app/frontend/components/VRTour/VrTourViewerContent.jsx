@@ -295,10 +295,10 @@ export default function VrTourViewerContent({
                         }
                       }}
                     >
-                      {scene.photo_url ? (
+                      {scene.photo_url || scene.before_photo_url ? (
                         <CardMedia
                           component="img"
-                          image={scene.photo_url}
+                          image={scene.photo_url || scene.before_photo_url}
                           alt={scene.title}
                           sx={{
                             width: 160,
