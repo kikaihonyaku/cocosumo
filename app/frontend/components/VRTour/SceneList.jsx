@@ -23,7 +23,9 @@ import {
   CardMedia,
   CardContent,
   Chip,
-  Grid
+  Grid,
+  Tabs,
+  Tab
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -138,17 +140,20 @@ function SortableSceneItem({ scene, isSelected, onSceneClick, onEditScene, onDel
 export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDelete, onScenesChange }) {
   const [scenes, setScenes] = useState([]);
   const [roomPhotos, setRoomPhotos] = useState([]);
+  const [virtualStagings, setVirtualStagings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [newScene, setNewScene] = useState({
     title: '',
-    room_photo_id: ''
+    room_photo_id: null,
+    virtual_staging_id: null
   });
   const [selectedSceneId, setSelectedSceneId] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingScene, setEditingScene] = useState(null);
   const [selectedPhotoCategory, setSelectedPhotoCategory] = useState('all');
+  const [photoSourceTab, setPhotoSourceTab] = useState(0); // 0: 通常写真, 1: バーチャルステージング
 
   // ドラッグ&ドロップのセンサー設定
   const sensors = useSensors(
@@ -172,6 +177,7 @@ export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDele
   useEffect(() => {
     fetchScenes();
     fetchRoomPhotos();
+    fetchVirtualStagings();
   }, [vrTourId]);
 
   const fetchScenes = async () => {
@@ -222,10 +228,36 @@ export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDele
     }
   };
 
+  const fetchVirtualStagings = async () => {
+    try {
+      const response = await fetch(`/api/v1/rooms/${roomId}/virtual_stagings`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setVirtualStagings(data || []);
+      }
+    } catch (err) {
+      console.error('バーチャルステージングの取得エラー:', err);
+    }
+  };
+
   const handleAddScene = async () => {
-    if (!newScene.title || !newScene.room_photo_id) {
-      alert('タイトルと写真を選択してください');
+    if (!newScene.title || (!newScene.room_photo_id && !newScene.virtual_staging_id)) {
+      alert('タイトルと写真またはバーチャルステージングを選択してください');
       return;
+    }
+
+    // room_photo_idとvirtual_staging_idが両方設定されないようにする
+    const sceneData = { ...newScene };
+    if (sceneData.virtual_staging_id) {
+      delete sceneData.room_photo_id;
+    } else if (sceneData.room_photo_id) {
+      delete sceneData.virtual_staging_id;
     }
 
     try {
@@ -235,15 +267,16 @@ export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDele
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ vr_scene: newScene }),
+        body: JSON.stringify({ vr_scene: sceneData }),
       });
 
       if (response.ok) {
         setAddDialogOpen(false);
-        setNewScene({ title: '', room_photo_id: '' });
+        setNewScene({ title: '', room_photo_id: null, virtual_staging_id: null });
         fetchScenes();
       } else {
         const data = await response.json();
+        console.error('Scene creation error:', data);
         alert(data.errors?.join(', ') || 'シーンの追加に失敗しました');
       }
     } catch (err) {
@@ -394,6 +427,7 @@ export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDele
           onClick={() => {
             setAddDialogOpen(true);
             setSelectedPhotoCategory('all');
+            setPhotoSourceTab(0);
           }}
         >
           シーンを追加
@@ -455,79 +489,168 @@ export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDele
                 パノラマ写真を選択 *
               </Typography>
 
-              {roomPhotos.length === 0 ? (
-                <Alert severity="warning">
-                  写真がありません。部屋に360度パノラマ写真を事前に登録してください。
-                </Alert>
-              ) : (
-                <>
-                  {/* カテゴリ絞り込み */}
-                  <Box sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Chip
-                      label="全て"
-                      onClick={() => setSelectedPhotoCategory('all')}
-                      color={selectedPhotoCategory === 'all' ? 'primary' : 'default'}
-                      variant={selectedPhotoCategory === 'all' ? 'filled' : 'outlined'}
-                      size="small"
-                    />
-                    {Object.entries(PHOTO_CATEGORIES).map(([key, label]) => (
-                      <Chip
-                        key={key}
-                        label={label}
-                        onClick={() => setSelectedPhotoCategory(key)}
-                        color={selectedPhotoCategory === key ? 'primary' : 'default'}
-                        variant={selectedPhotoCategory === key ? 'filled' : 'outlined'}
-                        size="small"
-                      />
-                    ))}
-                  </Box>
+              {/* タブ切り替え */}
+              <Tabs value={photoSourceTab} onChange={(e, v) => setPhotoSourceTab(v)} sx={{ mb: 2 }}>
+                <Tab label="通常写真" />
+                <Tab label="バーチャルステージング" />
+              </Tabs>
 
-                  {/* 写真グリッド */}
-                  <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
-                    <Grid container spacing={1.5}>
-                      {roomPhotos
-                        .filter(photo =>
-                          selectedPhotoCategory === 'all' || photo.photo_type === selectedPhotoCategory
-                        )
-                        .map((photo) => (
-                          <Grid item xs={4} sm={3} md={2} key={photo.id}>
+              {/* 通常写真タブ */}
+              {photoSourceTab === 0 && (
+                <>
+                  {roomPhotos.length === 0 ? (
+                    <Alert severity="warning">
+                      写真がありません。部屋に360度パノラマ写真を事前に登録してください。
+                    </Alert>
+                  ) : (
+                    <>
+                      {/* カテゴリ絞り込み */}
+                      <Box sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Chip
+                          label="全て"
+                          onClick={() => setSelectedPhotoCategory('all')}
+                          color={selectedPhotoCategory === 'all' ? 'primary' : 'default'}
+                          variant={selectedPhotoCategory === 'all' ? 'filled' : 'outlined'}
+                          size="small"
+                        />
+                        {Object.entries(PHOTO_CATEGORIES).map(([key, label]) => (
+                          <Chip
+                            key={key}
+                            label={label}
+                            onClick={() => setSelectedPhotoCategory(key)}
+                            color={selectedPhotoCategory === key ? 'primary' : 'default'}
+                            variant={selectedPhotoCategory === key ? 'filled' : 'outlined'}
+                            size="small"
+                          />
+                        ))}
+                      </Box>
+
+                      {/* 写真グリッド */}
+                      <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+                        <Grid container spacing={1.5}>
+                          {roomPhotos
+                            .filter(photo =>
+                              selectedPhotoCategory === 'all' || photo.photo_type === selectedPhotoCategory
+                            )
+                            .map((photo) => (
+                              <Grid item xs={4} sm={3} md={2} key={photo.id}>
+                                <Card
+                                  sx={{
+                                    cursor: 'pointer',
+                                    border: newScene.room_photo_id === photo.id ? 2 : 1,
+                                    borderColor: newScene.room_photo_id === photo.id ? 'primary.main' : 'divider',
+                                    transition: 'all 0.2s',
+                                    '&:hover': {
+                                      boxShadow: 3,
+                                      transform: 'translateY(-2px)',
+                                    },
+                                  }}
+                                  onClick={() => setNewScene({ ...newScene, room_photo_id: photo.id })}
+                                >
+                                  <CardMedia
+                                    component="img"
+                                    height="80"
+                                    image={photo.photo_url}
+                                    alt={getPhotoDisplayName(photo)}
+                                    sx={{ objectFit: 'cover' }}
+                                  />
+                                  <CardContent sx={{ p: 0.75 }}>
+                                    <Typography variant="caption" noWrap sx={{ display: 'block', fontSize: '0.7rem' }}>
+                                      {photo.caption || `写真${photo.id}`}
+                                    </Typography>
+                                  </CardContent>
+                                </Card>
+                              </Grid>
+                            ))}
+                        </Grid>
+                      </Box>
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* バーチャルステージングタブ */}
+              {photoSourceTab === 1 && (
+                <>
+                  {virtualStagings.length === 0 ? (
+                    <Alert severity="warning">
+                      バーチャルステージングがありません。先にバーチャルステージングを作成してください。
+                    </Alert>
+                  ) : (
+                    <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+                      <Grid container spacing={2}>
+                        {virtualStagings.map((staging) => (
+                          <Grid item xs={12} sm={6} key={staging.id}>
                             <Card
                               sx={{
                                 cursor: 'pointer',
-                                border: newScene.room_photo_id === photo.id ? 2 : 1,
-                                borderColor: newScene.room_photo_id === photo.id ? 'primary.main' : 'divider',
+                                border: newScene.virtual_staging_id === staging.id ? 2 : 1,
+                                borderColor: newScene.virtual_staging_id === staging.id ? 'primary.main' : 'divider',
                                 transition: 'all 0.2s',
                                 '&:hover': {
                                   boxShadow: 3,
                                   transform: 'translateY(-2px)',
                                 },
                               }}
-                              onClick={() => setNewScene({ ...newScene, room_photo_id: photo.id })}
+                              onClick={() => setNewScene({ ...newScene, virtual_staging_id: staging.id, room_photo_id: null })}
                             >
-                              <CardMedia
-                                component="img"
-                                height="80"
-                                image={photo.photo_url}
-                                alt={getPhotoDisplayName(photo)}
-                                sx={{ objectFit: 'cover' }}
-                              />
-                              <CardContent sx={{ p: 0.75 }}>
-                                <Typography variant="caption" noWrap sx={{ display: 'block', fontSize: '0.7rem' }}>
-                                  {photo.caption || `写真${photo.id}`}
+                              {/* Before/After画像をサイドバイサイドで表示 */}
+                              <Box sx={{ display: 'flex', height: 120 }}>
+                                <Box sx={{ flex: 1, position: 'relative' }}>
+                                  <CardMedia
+                                    component="img"
+                                    height="120"
+                                    image={staging.before_photo_url}
+                                    alt={`${staging.title} - Before`}
+                                    sx={{ objectFit: 'cover' }}
+                                  />
+                                  <Chip
+                                    label="Before"
+                                    size="small"
+                                    color="info"
+                                    sx={{ position: 'absolute', top: 4, left: 4 }}
+                                  />
+                                </Box>
+                                <Box sx={{ flex: 1, position: 'relative' }}>
+                                  <CardMedia
+                                    component="img"
+                                    height="120"
+                                    image={staging.after_photo_url}
+                                    alt={`${staging.title} - After`}
+                                    sx={{ objectFit: 'cover' }}
+                                  />
+                                  <Chip
+                                    label="After"
+                                    size="small"
+                                    color="success"
+                                    sx={{ position: 'absolute', top: 4, right: 4 }}
+                                  />
+                                </Box>
+                              </Box>
+                              <CardContent sx={{ p: 1 }}>
+                                <Typography variant="caption" sx={{ display: 'block', fontWeight: 'bold', fontSize: '0.8rem' }}>
+                                  {staging.title}
                                 </Typography>
+                                {staging.description && (
+                                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.7rem' }}>
+                                    {staging.description}
+                                  </Typography>
+                                )}
                               </CardContent>
                             </Card>
                           </Grid>
                         ))}
-                    </Grid>
-                  </Box>
+                      </Grid>
+                    </Box>
+                  )}
                 </>
               )}
             </Box>
 
             <Alert severity="info">
-              現在、部屋に登録されている写真から選択します。<br />
-              360度パノラマ写真を事前に部屋に登録してください。
+              {photoSourceTab === 0
+                ? '部屋に登録されている360度パノラマ写真から選択します。'
+                : 'バーチャルステージングを選択すると、VRツアーでBefore/Afterをスライダーで比較できます。'}
             </Alert>
           </Box>
         </DialogContent>
@@ -538,7 +661,7 @@ export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDele
           <Button
             onClick={handleAddScene}
             variant="contained"
-            disabled={!newScene.title || !newScene.room_photo_id}
+            disabled={!newScene.title || (!newScene.room_photo_id && !newScene.virtual_staging_id)}
           >
             追加
           </Button>

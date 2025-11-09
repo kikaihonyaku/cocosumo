@@ -25,6 +25,7 @@ import {
   ExpandMore as ExpandMoreIcon
 } from "@mui/icons-material";
 import PanoramaViewer from "./PanoramaViewer";
+import ComparisonPanoramaViewer from "./ComparisonPanoramaViewer";
 import MinimapDisplay from "./MinimapDisplay";
 
 export default function VrTourViewerContent({
@@ -155,19 +156,29 @@ export default function VrTourViewerContent({
 
       {/* VRビューア */}
       <Box sx={{ height: '100vh', width: '100%', position: 'relative' }} id={containerId}>
-        {currentScene && currentScene.photo_url ? (
+        {currentScene && (currentScene.photo_url || currentScene['virtual_staging_scene?']) ? (
           <>
             <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
-              <PanoramaViewer
-                key={currentScene.id}
-                imageUrl={currentScene.photo_url}
-                initialView={currentScene.initial_view || { yaw: 0, pitch: 0 }}
-                markers={currentScene.hotspots || []}
-                editable={false}
-                onMarkerClick={handleMarkerClick}
-                onViewChange={handleViewChange}
-                fullscreenContainerId={containerId}
-              />
+              {currentScene['virtual_staging_scene?'] && currentScene.before_photo_url && currentScene.after_photo_url ? (
+                <ComparisonPanoramaViewer
+                  key={currentScene.id}
+                  beforeImageUrl={currentScene.before_photo_url}
+                  afterImageUrl={currentScene.after_photo_url}
+                  initialView={currentScene.initial_view || { yaw: 0, pitch: 0 }}
+                  fullscreenContainerId={containerId}
+                />
+              ) : (
+                <PanoramaViewer
+                  key={currentScene.id}
+                  imageUrl={currentScene.photo_url}
+                  initialView={currentScene.initial_view || { yaw: 0, pitch: 0 }}
+                  markers={currentScene.hotspots || []}
+                  editable={false}
+                  onMarkerClick={handleMarkerClick}
+                  onViewChange={handleViewChange}
+                  fullscreenContainerId={containerId}
+                />
+              )}
             </Box>
 
             {/* 現在のシーン情報 */}

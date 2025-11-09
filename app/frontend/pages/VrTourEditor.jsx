@@ -35,6 +35,7 @@ import {
 } from "@mui/icons-material";
 import SceneList from "../components/VRTour/SceneList";
 import PanoramaViewer from "../components/VRTour/PanoramaViewer";
+import ComparisonPanoramaViewer from "../components/VRTour/ComparisonPanoramaViewer";
 import HotspotEditor from "../components/VRTour/HotspotEditor";
 import VrTourPreview from "../components/VRTour/VrTourPreview";
 import MinimapEditor from "../components/VRTour/MinimapEditor";
@@ -657,7 +658,19 @@ export default function VrTourEditor() {
                     </Typography>
                   </Box>
                   <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>
-                    {selectedScene.photo_url ? (
+                    {selectedScene['virtual_staging_scene?'] && selectedScene.before_photo_url && selectedScene.after_photo_url ? (
+                      <>
+                        <ComparisonPanoramaViewer
+                          key={viewerKey}
+                          beforeImageUrl={selectedScene.before_photo_url}
+                          afterImageUrl={selectedScene.after_photo_url}
+                          initialView={selectedScene.initial_view || { yaw: 0, pitch: 0 }}
+                        />
+                        <Alert severity="info" sx={{ mt: 2 }}>
+                          バーチャルステージングシーンではホットスポットの追加はできません
+                        </Alert>
+                      </>
+                    ) : selectedScene.photo_url ? (
                       <>
                         {addingHotspot && (
                           <Box
@@ -726,18 +739,26 @@ export default function VrTourEditor() {
               overflow: 'auto'
             }}>
               {selectedScene ? (
-                <HotspotEditor
-                  hotspots={selectedScene.hotspots || []}
-                  scenes={scenes}
-                  currentSceneId={selectedScene.id}
-                  onHotspotsChange={handleHotspotsChange}
-                  onAddHotspotRequest={() => {
-                    setAddingHotspot(true);
-                    setPendingPosition(null);
-                  }}
-                  pendingPosition={pendingPosition}
-                  onHotspotEdit={(callback) => setEditHotspotCallback(() => callback)}
-                />
+                selectedScene['virtual_staging_scene?'] ? (
+                  <Box sx={{ p: 3, textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      バーチャルステージングシーンではホットスポットの編集はできません
+                    </Typography>
+                  </Box>
+                ) : (
+                  <HotspotEditor
+                    hotspots={selectedScene.hotspots || []}
+                    scenes={scenes}
+                    currentSceneId={selectedScene.id}
+                    onHotspotsChange={handleHotspotsChange}
+                    onAddHotspotRequest={() => {
+                      setAddingHotspot(true);
+                      setPendingPosition(null);
+                    }}
+                    pendingPosition={pendingPosition}
+                    onHotspotEdit={(callback) => setEditHotspotCallback(() => callback)}
+                  />
+                )
               ) : (
                 <Box sx={{ p: 3, textAlign: 'center' }}>
                   <Typography variant="body2" color="text.secondary">

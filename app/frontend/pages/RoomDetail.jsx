@@ -381,20 +381,6 @@ export default function RoomDetail() {
             gap: 2,
             minHeight: isLgUp ? 800 : 'auto',
           }}>
-            {/* VRツアー */}
-            <Paper elevation={3} sx={{
-              borderRadius: 2,
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              flex: 1,
-              minHeight: 350,
-            }}>
-              <RoomVRTourPanel
-                roomId={room.id}
-              />
-            </Paper>
-
             {/* バーチャルステージング */}
             <Paper elevation={3} sx={{
               borderRadius: 2,
@@ -405,6 +391,20 @@ export default function RoomDetail() {
               minHeight: 350,
             }}>
               <RoomVirtualStagingPanel
+                roomId={room.id}
+              />
+            </Paper>
+
+            {/* VRツアー */}
+            <Paper elevation={3} sx={{
+              borderRadius: 2,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              flex: 1,
+              minHeight: 350,
+            }}>
+              <RoomVRTourPanel
                 roomId={room.id}
               />
             </Paper>

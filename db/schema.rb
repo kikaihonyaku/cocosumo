@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_05_211012) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_08_213251) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -171,7 +171,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_211012) do
 
   create_table "vr_scenes", force: :cascade do |t|
     t.integer "vr_tour_id", null: false
-    t.integer "room_photo_id", null: false
+    t.integer "room_photo_id"
     t.string "title"
     t.integer "display_order"
     t.text "initial_view"
@@ -179,8 +179,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_211012) do
     t.text "minimap_position"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "virtual_staging_id"
     t.index ["display_order"], name: "index_vr_scenes_on_display_order"
     t.index ["room_photo_id"], name: "index_vr_scenes_on_room_photo_id"
+    t.index ["virtual_staging_id"], name: "index_vr_scenes_on_virtual_staging_id"
     t.index ["vr_tour_id"], name: "index_vr_scenes_on_vr_tour_id"
   end
 
@@ -213,6 +215,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_211012) do
   add_foreign_key "virtual_stagings", "room_photos", column: "before_photo_id"
   add_foreign_key "virtual_stagings", "rooms"
   add_foreign_key "vr_scenes", "room_photos"
+  add_foreign_key "vr_scenes", "virtual_stagings"
   add_foreign_key "vr_scenes", "vr_tours"
   add_foreign_key "vr_tours", "room_photos", column: "minimap_room_photo_id"
   add_foreign_key "vr_tours", "rooms"

@@ -6,12 +6,16 @@ class Api::V1::VrScenesController < ApplicationController
 
   # GET /api/v1/vr_tours/:vr_tour_id/vr_scenes
   def index
-    @vr_scenes = @vr_tour.vr_scenes.includes(:room_photo)
+    @vr_scenes = @vr_tour.vr_scenes.includes(:room_photo, virtual_staging: [:before_photo, :after_photo])
     render json: @vr_scenes.as_json(
-      methods: [:photo_url],
+      methods: [:photo_url, :before_photo_url, :after_photo_url, :virtual_staging_scene?],
       include: {
         room_photo: {
           only: [:id, :photo_type, :caption]
+        },
+        virtual_staging: {
+          only: [:id, :title, :description],
+          methods: [:before_photo_url, :after_photo_url]
         }
       }
     )
@@ -20,10 +24,14 @@ class Api::V1::VrScenesController < ApplicationController
   # GET /api/v1/vr_tours/:vr_tour_id/vr_scenes/:id
   def show
     render json: @vr_scene.as_json(
-      methods: [:photo_url],
+      methods: [:photo_url, :before_photo_url, :after_photo_url, :virtual_staging_scene?],
       include: {
         room_photo: {
           only: [:id, :photo_type, :caption]
+        },
+        virtual_staging: {
+          only: [:id, :title, :description],
+          methods: [:before_photo_url, :after_photo_url]
         }
       }
     )
@@ -106,6 +114,7 @@ class Api::V1::VrScenesController < ApplicationController
   def vr_scene_params
     params.require(:vr_scene).permit(
       :room_photo_id,
+      :virtual_staging_id,
       :title,
       :display_order,
       initial_view: {},
