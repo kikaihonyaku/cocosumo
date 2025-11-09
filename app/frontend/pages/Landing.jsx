@@ -23,7 +23,7 @@ export default function Landing() {
       {/* ヒーローセクション */}
       <section className="container mx-auto px-4 py-20 text-center">
         <div className="flex justify-center items-center mb-8 w-full">
-          <img src="/cocosumo_logo_top.png" alt="CoCoスモ" className="h-48 mx-auto" />
+          <img src="/cocosumo_logo_top.png" alt="CoCoスモ" className="h-32 sm:h-48 mx-auto object-contain max-w-full" />
         </div>
         <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
           AI画像生成、VRツアー作成、物件管理を一つのプラットフォームで。
@@ -109,13 +109,19 @@ export default function Landing() {
           <p className="text-gray-600 mb-6">
             サービスについてのご質問やご相談は、お気軽にお問い合わせください。
           </p>
-          <a
-            href="mailto:admin@cocosumo.space"
-            className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors"
-          >
-            <span className="mr-2">✉️</span>
-            admin@cocosumo.space
-          </a>
+          <div className="flex flex-col items-center gap-4">
+            <a
+              href="mailto:admin@cocosumo.space"
+              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors"
+            >
+              <span className="mr-2">✉️</span>
+              メールで問い合わせる
+            </a>
+            <div className="flex items-center gap-2 text-gray-700">
+              <span className="text-sm text-gray-500">メールアドレス:</span>
+              <span className="font-mono text-base select-all">admin@cocosumo.space</span>
+            </div>
+          </div>
         </div>
       </section>
 
