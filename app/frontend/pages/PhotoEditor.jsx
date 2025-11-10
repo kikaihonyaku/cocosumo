@@ -29,6 +29,9 @@ import {
   useTheme,
   ToggleButton,
   ToggleButtonGroup,
+  Switch,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -46,6 +49,46 @@ import {
   AspectRatio as AspectRatioIcon,
 } from '@mui/icons-material';
 import muiTheme from '../theme/muiTheme';
+
+// アスペクト比の定数定義
+const ASPECT_RATIOS = [
+  { value: '1:1', label: '1:1 (正方形)', ratio: 1 },
+  { value: '4:3', label: '4:3 (横)', ratio: 4 / 3 },
+  { value: '16:9', label: '16:9 (横)', ratio: 16 / 9 },
+  { value: '3:4', label: '3:4 (縦)', ratio: 3 / 4 },
+  { value: '9:16', label: '9:16 (縦)', ratio: 9 / 16 },
+  { value: 'free', label: 'フリー (任意)', ratio: null },
+];
+
+// サイズプリセットの定義（Web用・SNS用）
+const SIZE_PRESETS = {
+  '1:1': [
+    { label: '1200×1200 (大)', width: 1200, height: 1200 },
+    { label: '1080×1080 (Instagram)', width: 1080, height: 1080 },
+    { label: '800×800 (中)', width: 800, height: 800 },
+  ],
+  '4:3': [
+    { label: '1200×900 (大)', width: 1200, height: 900 },
+    { label: '800×600 (中)', width: 800, height: 600 },
+  ],
+  '16:9': [
+    { label: '1920×1080 (Full HD)', width: 1920, height: 1080 },
+    { label: '1280×720 (HD)', width: 1280, height: 720 },
+    { label: '1200×675 (Twitter/X)', width: 1200, height: 675 },
+    { label: '800×450 (小)', width: 800, height: 450 },
+  ],
+  '3:4': [
+    { label: '1080×1440 (Instagram)', width: 1080, height: 1440 },
+    { label: '900×1200 (大)', width: 900, height: 1200 },
+    { label: '600×800 (中)', width: 600, height: 800 },
+  ],
+  '9:16': [
+    { label: '1080×1920 (Instagram Story)', width: 1080, height: 1920 },
+    { label: '675×1200 (大)', width: 675, height: 1200 },
+    { label: '450×800 (中)', width: 450, height: 800 },
+  ],
+  'free': [],
+};
 
 export default function PhotoEditor() {
   const { roomId, buildingId, photoId } = useParams();
@@ -112,10 +155,12 @@ export default function PhotoEditor() {
 
   // クロップ機能
   const [cropMode, setCropMode] = useState(false); // クロップモードのON/OFF
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState('4:3'); // '4:3' or '16:9'
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState('4:3'); // アスペクト比
   const [cropArea, setCropArea] = useState(null); // {x, y, width, height} クロップ範囲（Canvas座標）
   const [isDragging, setIsDragging] = useState(false); // ドラッグ中かどうか
   const [dragStart, setDragStart] = useState(null); // {x, y} ドラッグ開始位置（Canvas座標）
+  const [resizeEnabled, setResizeEnabled] = useState(true); // リサイズあり/なし
+  const [selectedPresetSize, setSelectedPresetSize] = useState(0); // 選択されたプリセットサイズのインデックス
 
   useEffect(() => {
     fetchPhoto();
@@ -432,7 +477,8 @@ export default function PhotoEditor() {
   // クロップ用のマウスイベントハンドラー
   // アスペクト比の取得
   const getAspectRatio = () => {
-    return selectedAspectRatio === '4:3' ? 4 / 3 : 16 / 9;
+    const aspectRatioConfig = ASPECT_RATIOS.find(ar => ar.value === selectedAspectRatio);
+    return aspectRatioConfig?.ratio;
   };
 
   // Canvasの座標を取得
@@ -480,27 +526,40 @@ export default function PhotoEditor() {
     let width = Math.abs(coords.x - dragStart.x);
     let height = Math.abs(coords.y - dragStart.y);
 
-    // アスペクト比を維持して調整
-    // 横幅を基準にする
-    if (width / height > aspectRatio) {
-      // 横が長すぎる場合、横を調整
-      width = height * aspectRatio;
-    } else {
-      // 縦が長すぎる場合、縦を調整
-      height = width / aspectRatio;
+    // アスペクト比を維持して調整（フリーフォームの場合はスキップ）
+    if (aspectRatio !== null) {
+      // 横幅を基準にする
+      if (width / height > aspectRatio) {
+        // 横が長すぎる場合、横を調整
+        width = height * aspectRatio;
+      } else {
+        // 縦が長すぎる場合、縦を調整
+        height = width / aspectRatio;
+      }
     }
 
     // Canvas境界内に収める
     const maxWidth = canvas.width;
     const maxHeight = canvas.height;
 
-    if (width > maxWidth) {
-      width = maxWidth;
-      height = width / aspectRatio;
-    }
-    if (height > maxHeight) {
-      height = maxHeight;
-      width = height * aspectRatio;
+    if (aspectRatio !== null) {
+      // アスペクト比固定の場合
+      if (width > maxWidth) {
+        width = maxWidth;
+        height = width / aspectRatio;
+      }
+      if (height > maxHeight) {
+        height = maxHeight;
+        width = height * aspectRatio;
+      }
+    } else {
+      // フリーフォームの場合
+      if (width > maxWidth) {
+        width = maxWidth;
+      }
+      if (height > maxHeight) {
+        height = maxHeight;
+      }
     }
 
     // 左上座標を計算（ドラッグ方向に応じて調整）
@@ -603,20 +662,31 @@ export default function PhotoEditor() {
     ctx.strokeRect(cropArea.x, cropArea.y, cropArea.width, cropArea.height);
 
     // サイズ情報を表示
-    const targetWidth = selectedAspectRatio === '4:3' ? 1200 : 1280;
-    const targetHeight = selectedAspectRatio === '4:3' ? 900 : 720;
-    const sizeText = `${targetWidth} × ${targetHeight}px`;
+    let sizeText = '';
+    if (resizeEnabled && selectedAspectRatio !== 'free') {
+      const presets = SIZE_PRESETS[selectedAspectRatio];
+      if (presets && presets[selectedPresetSize]) {
+        const preset = presets[selectedPresetSize];
+        sizeText = `${preset.width} × ${preset.height}px`;
+      }
+    } else if (selectedAspectRatio === 'free') {
+      sizeText = `${Math.round(cropArea.width)} × ${Math.round(cropArea.height)}px`;
+    } else {
+      sizeText = `${Math.round(cropArea.width)} × ${Math.round(cropArea.height)}px (リサイズなし)`;
+    }
 
-    ctx.font = isMobile ? '12px Arial' : '16px Arial';
-    ctx.fillStyle = '#00ff00';
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
-    ctx.lineWidth = 3;
+    if (sizeText) {
+      ctx.font = isMobile ? '12px Arial' : '16px Arial';
+      ctx.fillStyle = '#00ff00';
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.lineWidth = 3;
 
-    const textX = cropArea.x + 10;
-    const textY = cropArea.y + (isMobile ? 20 : 25);
+      const textX = cropArea.x + 10;
+      const textY = cropArea.y + (isMobile ? 20 : 25);
 
-    ctx.strokeText(sizeText, textX, textY);
-    ctx.fillText(sizeText, textX, textY);
+      ctx.strokeText(sizeText, textX, textY);
+      ctx.fillText(sizeText, textX, textY);
+    }
   };
 
   // 現在のCanvas画像を履歴に保存
@@ -764,14 +834,6 @@ export default function PhotoEditor() {
       cropArea.height
     );
 
-    // 最終出力サイズを設定
-    const targetWidth = selectedAspectRatio === '4:3' ? 1200 : 1280;
-    const targetHeight = selectedAspectRatio === '4:3' ? 900 : 720;
-
-    // メインCanvasをリサイズして描画
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
-
     // 一時Canvasにクロップした画像を描画
     const croppedCanvas = document.createElement('canvas');
     croppedCanvas.width = cropArea.width;
@@ -779,8 +841,31 @@ export default function PhotoEditor() {
     const croppedCtx = croppedCanvas.getContext('2d');
     croppedCtx.putImageData(croppedImageData, 0, 0);
 
-    // メインCanvasに指定サイズでリサイズして描画
-    ctx.drawImage(croppedCanvas, 0, 0, targetWidth, targetHeight);
+    // 最終出力サイズを決定
+    let finalWidth, finalHeight;
+    if (resizeEnabled && selectedAspectRatio !== 'free') {
+      // リサイズありの場合、プリセットサイズを使用
+      const presets = SIZE_PRESETS[selectedAspectRatio];
+      if (presets && presets[selectedPresetSize]) {
+        finalWidth = presets[selectedPresetSize].width;
+        finalHeight = presets[selectedPresetSize].height;
+      } else {
+        // プリセットがない場合は元のサイズ
+        finalWidth = cropArea.width;
+        finalHeight = cropArea.height;
+      }
+    } else {
+      // リサイズなし、またはフリーフォームの場合は元のサイズ
+      finalWidth = cropArea.width;
+      finalHeight = cropArea.height;
+    }
+
+    // メインCanvasを最終サイズにリサイズ
+    canvas.width = finalWidth;
+    canvas.height = finalHeight;
+
+    // メインCanvasに最終サイズで描画（リサイズありの場合は拡大縮小される）
+    ctx.drawImage(croppedCanvas, 0, 0, finalWidth, finalHeight);
 
     // 新しい画像を作成してoriginalImageRefを更新
     const newImg = new Image();
@@ -1482,29 +1567,68 @@ export default function PhotoEditor() {
                   <Typography variant="body2" gutterBottom sx={{ fontWeight: 600 }}>
                     アスペクト比を選択
                   </Typography>
-                  <FormControl component="fieldset" fullWidth>
-                    <RadioGroup
+                  <FormControl fullWidth size="small">
+                    <Select
                       value={selectedAspectRatio}
-                      onChange={(e) => setSelectedAspectRatio(e.target.value)}
-                      row
+                      onChange={(e) => {
+                        setSelectedAspectRatio(e.target.value);
+                        setSelectedPresetSize(0); // アスペクト比変更時はプリセットをリセット
+                      }}
+                      disabled={cropMode}
                     >
-                      <FormControlLabel
-                        value="4:3"
-                        control={<Radio />}
-                        label="4:3 (1200×900px)"
-                        disabled={cropMode}
-                        sx={{ flex: 1 }}
-                      />
-                      <FormControlLabel
-                        value="16:9"
-                        control={<Radio />}
-                        label="16:9 (1280×720px)"
-                        disabled={cropMode}
-                        sx={{ flex: 1 }}
-                      />
-                    </RadioGroup>
+                      {ASPECT_RATIOS.map((ar) => (
+                        <MenuItem key={ar.value} value={ar.value}>
+                          {ar.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
                   </FormControl>
                 </Box>
+
+                {/* リサイズトグル */}
+                <Box sx={{ mb: 2 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={resizeEnabled}
+                        onChange={(e) => setResizeEnabled(e.target.checked)}
+                        disabled={cropMode || selectedAspectRatio === 'free'}
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        リサイズあり
+                      </Typography>
+                    }
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 4, fontSize: isMobile ? '0.7rem' : '0.75rem' }}>
+                    {resizeEnabled
+                      ? 'トリミング後、指定サイズにリサイズします'
+                      : 'トリミング範囲をそのまま切り出します'}
+                  </Typography>
+                </Box>
+
+                {/* プリセットサイズ選択（リサイズありかつフリーでない場合のみ表示） */}
+                {resizeEnabled && selectedAspectRatio !== 'free' && SIZE_PRESETS[selectedAspectRatio]?.length > 0 && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" gutterBottom sx={{ fontWeight: 600 }}>
+                      出力サイズを選択
+                    </Typography>
+                    <FormControl fullWidth size="small">
+                      <Select
+                        value={selectedPresetSize}
+                        onChange={(e) => setSelectedPresetSize(e.target.value)}
+                        disabled={cropMode}
+                      >
+                        {SIZE_PRESETS[selectedAspectRatio].map((preset, index) => (
+                          <MenuItem key={index} value={index}>
+                            {preset.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Box>
+                )}
 
                 {/* クロップモード切り替え */}
                 <Box sx={{ mb: 2 }}>
@@ -1526,6 +1650,8 @@ export default function PhotoEditor() {
                     <Alert severity="info" sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem', py: isMobile ? 0.5 : 1 }}>
                       {isMobile
                         ? '画像をドラッグしてクロップ範囲を選択してください'
+                        : selectedAspectRatio === 'free'
+                        ? '画像上でドラッグして自由にクロップ範囲を選択してください。'
                         : '画像上でドラッグしてクロップ範囲を選択してください。アスペクト比は自動的に維持されます。'
                       }
                     </Alert>
@@ -1535,7 +1661,16 @@ export default function PhotoEditor() {
                         <Typography variant="caption" color="text.secondary" sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem' }}>
                           選択範囲: {Math.round(cropArea.width)} × {Math.round(cropArea.height)}px
                           <br />
-                          出力サイズ: {selectedAspectRatio === '4:3' ? '1200 × 900' : '1280 × 720'}px
+                          {resizeEnabled && selectedAspectRatio !== 'free' && SIZE_PRESETS[selectedAspectRatio]?.[selectedPresetSize] && (
+                            <>
+                              出力サイズ: {SIZE_PRESETS[selectedAspectRatio][selectedPresetSize].width} × {SIZE_PRESETS[selectedAspectRatio][selectedPresetSize].height}px
+                            </>
+                          )}
+                          {(!resizeEnabled || selectedAspectRatio === 'free') && (
+                            <>
+                              出力サイズ: {Math.round(cropArea.width)} × {Math.round(cropArea.height)}px (リサイズなし)
+                            </>
+                          )}
                         </Typography>
                       </Box>
                     )}
