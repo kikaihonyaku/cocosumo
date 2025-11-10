@@ -1144,26 +1144,44 @@ export default function PhotoEditor() {
             >
               <ArrowBackIcon />
             </IconButton>
-            <Typography
-              variant={isMobile ? 'subtitle1' : 'h6'}
-              component="h1"
-              sx={{
-                flexGrow: 1,
-                fontWeight: 600,
-                fontSize: isMobile ? '0.9rem' : '1.25rem',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: isMobile ? 'nowrap' : 'normal'
-              }}
-            >
-              {isMobile
-                ? (isBuilding ? '建物写真編集' : '部屋写真編集')
-                : (isBuilding
-                  ? `建物写真編集${photo.building_name ? ` ${photo.building_name}` : ''}${photo.photo_type ? ` ${getPhotoTypeLabel(photo.photo_type)}` : ''} ID: ${photo.id}`
-                  : `部屋写真編集${photo.building_name ? ` ${photo.building_name}` : ''}${photo.room_name ? ` ${photo.room_name}` : ''}${photo.photo_type ? ` ${getPhotoTypeLabel(photo.photo_type)}` : ''} ID: ${photo.id}`
-                )
-              }
-            </Typography>
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
+                {isBuilding ? '建物写真編集' : '部屋写真編集'}
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
+                {isBuilding
+                  ? `${photo.building_name || ''}${photo.photo_type ? ` ${getPhotoTypeLabel(photo.photo_type)}` : ''} ID: ${photo.id}`
+                  : `${photo.building_name || ''}${photo.room_name ? ` ${photo.room_name}` : ''}${photo.photo_type ? ` ${getPhotoTypeLabel(photo.photo_type)}` : ''} ID: ${photo.id}`
+                }
+              </Typography>
+            </Box>
+            {/* 編集履歴（Undo/Redo） */}
+            {editHistory.length > 0 && (
+              <Box sx={{ display: 'flex', gap: 1, mr: 2 }}>
+                <IconButton
+                  color="inherit"
+                  onClick={handleUndo}
+                  disabled={currentHistoryIndex <= 0 || aiProcessing}
+                  title="元に戻す"
+                  sx={{
+                    '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.3)' }
+                  }}
+                >
+                  <UndoIcon />
+                </IconButton>
+                <IconButton
+                  color="inherit"
+                  onClick={handleRedo}
+                  disabled={currentHistoryIndex >= editHistory.length - 1 || aiProcessing}
+                  title="やり直す"
+                  sx={{
+                    '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.3)' }
+                  }}
+                >
+                  <RedoIcon />
+                </IconButton>
+              </Box>
+            )}
             {isMobile ? (
               <IconButton
                 color="inherit"
@@ -1315,42 +1333,6 @@ export default function PhotoEditor() {
               width: isMobile ? '100%' : '360px',
               flex: isMobile ? 1 : '0 0 360px'
             }}>
-              {/* 編集履歴（Undo/Redo） */}
-              {editHistory.length > 0 && (
-                <Paper elevation={2} sx={{ p: 1.5, mb: 1.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      編集履歴
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<UndoIcon />}
-                        onClick={handleUndo}
-                        disabled={currentHistoryIndex <= 0 || aiProcessing}
-                        sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem', px: isMobile ? 1 : 2 }}
-                      >
-                        {isMobile ? '戻る' : '元に戻す'}
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<RedoIcon />}
-                        onClick={handleRedo}
-                        disabled={currentHistoryIndex >= editHistory.length - 1 || aiProcessing}
-                        sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem', px: isMobile ? 1 : 2 }}
-                      >
-                        {isMobile ? '進む' : 'やり直す'}
-                      </Button>
-                    </Box>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', fontSize: isMobile ? '0.65rem' : '0.7rem' }}>
-                    {currentHistoryIndex + 1} / {editHistory.length} (最大{MAX_HISTORY}件)
-                  </Typography>
-                </Paper>
-              )}
-
               {/* AI画像処理 */}
               <Paper elevation={2} sx={{ p: 1.5 }}>
                 <Typography variant="h6" gutterBottom>
