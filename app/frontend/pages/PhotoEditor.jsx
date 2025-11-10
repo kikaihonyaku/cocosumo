@@ -42,6 +42,8 @@ import {
   Image as ImageIcon,
   Undo as UndoIcon,
   Redo as RedoIcon,
+  Crop as CropIcon,
+  AspectRatio as AspectRatioIcon,
 } from '@mui/icons-material';
 import muiTheme from '../theme/muiTheme';
 
@@ -54,6 +56,8 @@ export default function PhotoEditor() {
   const canvasRef = useRef(null);
   const originalImageRef = useRef(null);
   const canvasContainerRef = useRef(null);
+  const tempCanvasRef = useRef(null); // クロップオーバーレイ用の一時Canvas
+  const cachedImageRef = useRef(null); // クロップモード時のキャッシュ画像
 
   // photo_typeを日本語に変換
   const getPhotoTypeLabel = (photoType) => {
@@ -105,6 +109,13 @@ export default function PhotoEditor() {
   // 保存オプション
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [saveOption, setSaveOption] = useState('overwrite'); // 'overwrite' or 'new'
+
+  // クロップ機能
+  const [cropMode, setCropMode] = useState(false); // クロップモードのON/OFF
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState('4:3'); // '4:3' or '16:9'
+  const [cropArea, setCropArea] = useState(null); // {x, y, width, height} クロップ範囲（Canvas座標）
+  const [isDragging, setIsDragging] = useState(false); // ドラッグ中かどうか
+  const [dragStart, setDragStart] = useState(null); // {x, y} ドラッグ開始位置（Canvas座標）
 
   useEffect(() => {
     fetchPhoto();
@@ -330,6 +341,24 @@ export default function PhotoEditor() {
     }
   }, [brightness, contrast, saturation]);
 
+  // クロップ範囲が変更されたときにオーバーレイを再描画
+  useEffect(() => {
+    if (cropMode && cropArea && cachedImageRef.current) {
+      // キャッシュ画像を使うので常に軽量
+      requestAnimationFrame(() => {
+        drawCropOverlay();
+      });
+    } else if (cropMode && !cropArea && cachedImageRef.current) {
+      // クロップ範囲がない場合はキャッシュ画像を復元
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(cachedImageRef.current, 0, 0);
+      }
+    }
+  }, [cropArea, cropMode]);
+
   // ウィンドウサイズ変更時に画像をリサイズ（AI編集後の画像を保持）
   useEffect(() => {
     const handleResize = () => {
@@ -400,6 +429,196 @@ export default function PhotoEditor() {
     setClickPoints([]);
   };
 
+  // クロップ用のマウスイベントハンドラー
+  // アスペクト比の取得
+  const getAspectRatio = () => {
+    return selectedAspectRatio === '4:3' ? 4 / 3 : 16 / 9;
+  };
+
+  // Canvasの座標を取得
+  const getCanvasCoordinates = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top,
+    };
+  };
+
+  // クロップドラッグ開始
+  const handleCropMouseDown = (e) => {
+    if (!cropMode) return;
+    e.preventDefault();
+
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
+
+    setIsDragging(true);
+    setDragStart(coords);
+    setCropArea(null);
+  };
+
+  // クロップドラッグ中
+  const handleCropMouseMove = (e) => {
+    if (!cropMode || !isDragging || !dragStart) return;
+    e.preventDefault();
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
+
+    const aspectRatio = getAspectRatio();
+
+    // ドラッグ方向とサイズを計算
+    let width = Math.abs(coords.x - dragStart.x);
+    let height = Math.abs(coords.y - dragStart.y);
+
+    // アスペクト比を維持して調整
+    // 横幅を基準にする
+    if (width / height > aspectRatio) {
+      // 横が長すぎる場合、横を調整
+      width = height * aspectRatio;
+    } else {
+      // 縦が長すぎる場合、縦を調整
+      height = width / aspectRatio;
+    }
+
+    // Canvas境界内に収める
+    const maxWidth = canvas.width;
+    const maxHeight = canvas.height;
+
+    if (width > maxWidth) {
+      width = maxWidth;
+      height = width / aspectRatio;
+    }
+    if (height > maxHeight) {
+      height = maxHeight;
+      width = height * aspectRatio;
+    }
+
+    // 左上座標を計算（ドラッグ方向に応じて調整）
+    let x = coords.x < dragStart.x ? dragStart.x - width : dragStart.x;
+    let y = coords.y < dragStart.y ? dragStart.y - height : dragStart.y;
+
+    // Canvas境界を超えないように調整
+    if (x < 0) {
+      x = 0;
+    }
+    if (y < 0) {
+      y = 0;
+    }
+    if (x + width > maxWidth) {
+      x = maxWidth - width;
+    }
+    if (y + height > maxHeight) {
+      y = maxHeight - height;
+    }
+
+    setCropArea({ x, y, width, height });
+  };
+
+  // クロップドラッグ終了
+  const handleCropMouseUp = (e) => {
+    if (!cropMode || !isDragging) return;
+    e.preventDefault();
+
+    setIsDragging(false);
+    setDragStart(null);
+  };
+
+  // クロップモードの切り替え
+  const handleToggleCropMode = () => {
+    const newCropMode = !cropMode;
+    setCropMode(newCropMode);
+
+    if (newCropMode) {
+      // クロップモードをONにする場合、現在の画像をキャッシュ
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const cacheCanvas = document.createElement('canvas');
+        cacheCanvas.width = canvas.width;
+        cacheCanvas.height = canvas.height;
+        const cacheCtx = cacheCanvas.getContext('2d');
+        cacheCtx.drawImage(canvas, 0, 0);
+        cachedImageRef.current = cacheCanvas;
+      }
+    } else {
+      // クロップモードをOFFにする場合、状態をクリア
+      setCropArea(null);
+      setIsDragging(false);
+      setDragStart(null);
+      cachedImageRef.current = null;
+    }
+  };
+
+  // クロップのキャンセル
+  const handleCancelCrop = () => {
+    // キャッシュ画像を復元
+    const canvas = canvasRef.current;
+    const cachedImage = cachedImageRef.current;
+    if (canvas && cachedImage) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(cachedImage, 0, 0);
+    }
+
+    setCropArea(null);
+    setIsDragging(false);
+    setDragStart(null);
+  };
+
+  // クロップオーバーレイを描画
+  const drawCropOverlay = () => {
+    const canvas = canvasRef.current;
+    const cachedImage = cachedImageRef.current;
+    if (!canvas || !cropArea || !cachedImage) return;
+
+    const ctx = canvas.getContext('2d');
+
+    // キャッシュ画像を描画（元の画像を復元）
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(cachedImage, 0, 0);
+
+    // 半透明の暗いオーバーレイを全体に描画
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // クロップ範囲に元の画像を再描画（オーバーレイなし）
+    ctx.drawImage(
+      cachedImage,
+      cropArea.x, cropArea.y, cropArea.width, cropArea.height,
+      cropArea.x, cropArea.y, cropArea.width, cropArea.height
+    );
+
+    // クロップ範囲の枠線を描画
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(cropArea.x, cropArea.y, cropArea.width, cropArea.height);
+
+    // サイズ情報を表示
+    const targetWidth = selectedAspectRatio === '4:3' ? 1200 : 1280;
+    const targetHeight = selectedAspectRatio === '4:3' ? 900 : 720;
+    const sizeText = `${targetWidth} × ${targetHeight}px`;
+
+    ctx.font = isMobile ? '12px Arial' : '16px Arial';
+    ctx.fillStyle = '#00ff00';
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.lineWidth = 3;
+
+    const textX = cropArea.x + 10;
+    const textY = cropArea.y + (isMobile ? 20 : 25);
+
+    ctx.strokeText(sizeText, textX, textY);
+    ctx.fillText(sizeText, textX, textY);
+  };
+
   // 現在のCanvas画像を履歴に保存
   const saveToHistory = () => {
     const canvas = canvasRef.current;
@@ -436,8 +655,34 @@ export default function PhotoEditor() {
     const img = new Image();
 
     img.onload = () => {
+      // Canvasを画面サイズに合わせてリサイズ
+      const maxWidth = isMobile
+        ? window.innerWidth * 0.95
+        : window.innerWidth * 0.7;
+      const maxHeight = isMobile
+        ? window.innerHeight * 0.5
+        : window.innerHeight * 0.85;
+
+      let displayWidth = img.width;
+      let displayHeight = img.height;
+
+      // アスペクト比を保持してリサイズ
+      if (displayWidth > maxWidth) {
+        displayHeight = (displayHeight * maxWidth) / displayWidth;
+        displayWidth = maxWidth;
+      }
+      if (displayHeight > maxHeight) {
+        displayWidth = (displayWidth * maxHeight) / displayHeight;
+        displayHeight = maxHeight;
+      }
+
+      // Canvasのサイズを調整
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+
+      // 画像を再描画
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
       originalImageRef.current = img;
       setCurrentHistoryIndex(currentHistoryIndex - 1);
     };
@@ -456,13 +701,131 @@ export default function PhotoEditor() {
     const img = new Image();
 
     img.onload = () => {
+      // Canvasを画面サイズに合わせてリサイズ
+      const maxWidth = isMobile
+        ? window.innerWidth * 0.95
+        : window.innerWidth * 0.7;
+      const maxHeight = isMobile
+        ? window.innerHeight * 0.5
+        : window.innerHeight * 0.85;
+
+      let displayWidth = img.width;
+      let displayHeight = img.height;
+
+      // アスペクト比を保持してリサイズ
+      if (displayWidth > maxWidth) {
+        displayHeight = (displayHeight * maxWidth) / displayWidth;
+        displayWidth = maxWidth;
+      }
+      if (displayHeight > maxHeight) {
+        displayWidth = (displayWidth * maxHeight) / displayHeight;
+        displayHeight = maxHeight;
+      }
+
+      // Canvasのサイズを調整
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+
+      // 画像を再描画
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
       originalImageRef.current = img;
       setCurrentHistoryIndex(currentHistoryIndex + 1);
     };
 
     img.src = editHistory[currentHistoryIndex + 1];
+  };
+
+  // クロップを適用
+  const handleApplyCrop = () => {
+    if (!cropArea) {
+      alert('クロップ範囲を選択してください');
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    const cachedImage = cachedImageRef.current;
+    if (!canvas || !cachedImage) return;
+
+    const ctx = canvas.getContext('2d');
+
+    // キャッシュ画像からクロップ範囲を抽出（フィルター適用済み）
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(cachedImage, 0, 0);
+
+    // クロップ範囲を抽出
+    const croppedImageData = tempCtx.getImageData(
+      cropArea.x,
+      cropArea.y,
+      cropArea.width,
+      cropArea.height
+    );
+
+    // 最終出力サイズを設定
+    const targetWidth = selectedAspectRatio === '4:3' ? 1200 : 1280;
+    const targetHeight = selectedAspectRatio === '4:3' ? 900 : 720;
+
+    // メインCanvasをリサイズして描画
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    // 一時Canvasにクロップした画像を描画
+    const croppedCanvas = document.createElement('canvas');
+    croppedCanvas.width = cropArea.width;
+    croppedCanvas.height = cropArea.height;
+    const croppedCtx = croppedCanvas.getContext('2d');
+    croppedCtx.putImageData(croppedImageData, 0, 0);
+
+    // メインCanvasに指定サイズでリサイズして描画
+    ctx.drawImage(croppedCanvas, 0, 0, targetWidth, targetHeight);
+
+    // 新しい画像を作成してoriginalImageRefを更新
+    const newImg = new Image();
+    newImg.onload = () => {
+      originalImageRef.current = newImg;
+
+      // Canvasを画面サイズに合わせてリサイズ
+      const maxWidth = isMobile
+        ? window.innerWidth * 0.95
+        : window.innerWidth * 0.7;
+      const maxHeight = isMobile
+        ? window.innerHeight * 0.5
+        : window.innerHeight * 0.85;
+
+      let displayWidth = newImg.width;
+      let displayHeight = newImg.height;
+
+      // アスペクト比を保持してリサイズ
+      if (displayWidth > maxWidth) {
+        displayHeight = (displayHeight * maxWidth) / displayWidth;
+        displayWidth = maxWidth;
+      }
+      if (displayHeight > maxHeight) {
+        displayWidth = (displayWidth * maxHeight) / displayHeight;
+        displayHeight = maxHeight;
+      }
+
+      // Canvasのサイズを調整
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+
+      // 画像を再描画
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(newImg, 0, 0, displayWidth, displayHeight);
+
+      // 履歴に保存
+      saveToHistory();
+      // クロップモードを終了
+      setCropMode(false);
+      setCropArea(null);
+      setIsDragging(false);
+      setDragStart(null);
+      cachedImageRef.current = null;
+    };
+    newImg.src = canvas.toDataURL('image/png');
   };
 
   const handleAiProcess = async () => {
@@ -774,15 +1137,20 @@ export default function PhotoEditor() {
             >
               <canvas
                 ref={canvasRef}
-                onClick={handleCanvasClick}
-                onTouchStart={handleCanvasClick}
+                onClick={cropMode ? undefined : handleCanvasClick}
+                onTouchStart={cropMode ? undefined : handleCanvasClick}
+                onMouseDown={cropMode ? handleCropMouseDown : undefined}
+                onMouseMove={cropMode ? handleCropMouseMove : undefined}
+                onMouseUp={cropMode ? handleCropMouseUp : undefined}
+                onTouchMove={cropMode ? handleCropMouseMove : undefined}
+                onTouchEnd={cropMode ? handleCropMouseUp : undefined}
                 style={{
                   maxWidth: '100%',
                   maxHeight: '100%',
                   objectFit: 'contain',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  cursor: editMode === 'point' ? 'crosshair' : 'default',
-                  touchAction: editMode === 'point' ? 'none' : 'auto',
+                  cursor: cropMode ? 'crosshair' : (editMode === 'point' ? 'crosshair' : 'default'),
+                  touchAction: (cropMode || editMode === 'point') ? 'none' : 'auto',
                 }}
               />
 
@@ -1099,6 +1467,104 @@ export default function PhotoEditor() {
                   <br />
                   • スタイル参考画像を追加して雰囲気を指定
                 </Alert>
+              </Paper>
+
+              {/* サイズ調整 */}
+              <Paper elevation={2} sx={{ p: 1.5 }}>
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CropIcon />
+                  サイズ調整
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+
+                {/* アスペクト比選択 */}
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" gutterBottom sx={{ fontWeight: 600 }}>
+                    アスペクト比を選択
+                  </Typography>
+                  <FormControl component="fieldset" fullWidth>
+                    <RadioGroup
+                      value={selectedAspectRatio}
+                      onChange={(e) => setSelectedAspectRatio(e.target.value)}
+                      row
+                    >
+                      <FormControlLabel
+                        value="4:3"
+                        control={<Radio />}
+                        label="4:3 (1200×900px)"
+                        disabled={cropMode}
+                        sx={{ flex: 1 }}
+                      />
+                      <FormControlLabel
+                        value="16:9"
+                        control={<Radio />}
+                        label="16:9 (1280×720px)"
+                        disabled={cropMode}
+                        sx={{ flex: 1 }}
+                      />
+                    </RadioGroup>
+                  </FormControl>
+                </Box>
+
+                {/* クロップモード切り替え */}
+                <Box sx={{ mb: 2 }}>
+                  <Button
+                    fullWidth
+                    variant={cropMode ? "contained" : "outlined"}
+                    color={cropMode ? "primary" : "secondary"}
+                    startIcon={<AspectRatioIcon />}
+                    onClick={handleToggleCropMode}
+                    disabled={aiProcessing}
+                  >
+                    {cropMode ? 'クロップモード ON' : 'クロップモードを開始'}
+                  </Button>
+                </Box>
+
+                {/* クロップモード時の説明 */}
+                {cropMode && (
+                  <Box sx={{ mb: 2 }}>
+                    <Alert severity="info" sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem', py: isMobile ? 0.5 : 1 }}>
+                      {isMobile
+                        ? '画像をドラッグしてクロップ範囲を選択してください'
+                        : '画像上でドラッグしてクロップ範囲を選択してください。アスペクト比は自動的に維持されます。'
+                      }
+                    </Alert>
+
+                    {cropArea && (
+                      <Box sx={{ mt: 1 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: isMobile ? '0.7rem' : '0.75rem' }}>
+                          選択範囲: {Math.round(cropArea.width)} × {Math.round(cropArea.height)}px
+                          <br />
+                          出力サイズ: {selectedAspectRatio === '4:3' ? '1200 × 900' : '1280 × 720'}px
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                )}
+
+                {/* 適用/キャンセルボタン */}
+                {cropMode && (
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      color="error"
+                      onClick={handleCancelCrop}
+                      disabled={aiProcessing}
+                    >
+                      キャンセル
+                    </Button>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      color="success"
+                      onClick={handleApplyCrop}
+                      disabled={!cropArea || aiProcessing}
+                    >
+                      適用
+                    </Button>
+                  </Box>
+                )}
               </Paper>
 
               {/* 基本調整 */}
