@@ -58,7 +58,7 @@ export default function RoomVirtualStagingPanel({ roomId, isMaximized, onToggleM
       </Box>
 
       {/* コンテンツ */}
-      <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
         <VirtualStagingList roomId={roomId} />
       </Box>
     </Box>

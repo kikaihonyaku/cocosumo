@@ -58,7 +58,7 @@ export default function RoomVRTourPanel({ roomId, isMaximized, onToggleMaximize,
       </Box>
 
       {/* コンテンツ */}
-      <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
         <VRTourList roomId={roomId} />
       </Box>
     </Box>

@@ -3,20 +3,25 @@ import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
-  Button,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   IconButton,
   Chip,
   CircularProgress,
-  Alert
+  Alert,
+  Tooltip,
+  Menu,
+  MenuItem
 } from "@mui/material";
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as VisibilityIcon,
+  MoreVert as MoreVertIcon,
   Public as PublicIcon,
   Description as DraftIcon
 } from "@mui/icons-material";
@@ -26,6 +31,8 @@ export default function VRTourList({ roomId }) {
   const [vrTours, setVrTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [selectedTour, setSelectedTour] = useState(null);
 
   useEffect(() => {
     fetchVRTours();
@@ -54,13 +61,40 @@ export default function VRTourList({ roomId }) {
     }
   };
 
-  const handleDelete = async (tourId) => {
+  const handleMenuOpen = (event, tour) => {
+    setMenuAnchor(event.currentTarget);
+    setSelectedTour(tour);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setSelectedTour(null);
+  };
+
+  const handleView = () => {
+    if (selectedTour) {
+      navigate(`/room/${roomId}/vr-tour/${selectedTour.id}/viewer`);
+    }
+    handleMenuClose();
+  };
+
+  const handleEdit = () => {
+    if (selectedTour) {
+      navigate(`/room/${roomId}/vr-tour/${selectedTour.id}/edit`);
+    }
+    handleMenuClose();
+  };
+
+  const handleDelete = async () => {
+    if (!selectedTour) return;
+
     if (!confirm('このVRツアーを削除してもよろしいですか?')) {
+      handleMenuClose();
       return;
     }
 
     try {
-      const response = await fetch(`/api/v1/rooms/${roomId}/vr_tours/${tourId}`, {
+      const response = await fetch(`/api/v1/rooms/${roomId}/vr_tours/${selectedTour.id}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -77,6 +111,11 @@ export default function VRTourList({ roomId }) {
       console.error('削除エラー:', err);
       alert('ネットワークエラーが発生しました');
     }
+    handleMenuClose();
+  };
+
+  const handleRowClick = (tour) => {
+    navigate(`/room/${roomId}/vr-tour/${tour.id}/viewer`);
   };
 
   if (loading) {
@@ -98,77 +137,109 @@ export default function VRTourList({ roomId }) {
           まだVRツアーが作成されていません
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          「新規VRツアー作成」ボタンから作成を開始してください
+          「VRツアー作成」ボタンから作成を開始してください
         </Typography>
       </Box>
     );
   }
 
   return (
-    <List>
-      {vrTours.map((tour) => (
-        <ListItem
-          key={tour.id}
+    <>
+      <TableContainer>
+        <Table
+          size="small"
+          stickyHeader
           sx={{
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 1,
-            mb: 1,
-            '&:last-child': { mb: 0 }
+            tableLayout: 'fixed',
+            '& .MuiTableCell-root': {
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }
           }}
         >
-          <ListItemText
-            primary={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="h6">{tour.title}</Typography>
-                <Chip
-                  size="small"
-                  label={tour.status === 'published' ? '公開' : '下書き'}
-                  color={tour.status === 'published' ? 'success' : 'default'}
-                  icon={tour.status === 'published' ? <PublicIcon /> : <DraftIcon />}
-                />
-              </Box>
-            }
-            secondary={
-              <>
-                {tour.description && (
-                  <Typography variant="body2" color="text.secondary" component="span">
-                    {tour.description}
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ width: '45%' }}>タイトル</TableCell>
+              <TableCell sx={{ width: '25%' }}>シーン数</TableCell>
+              <TableCell sx={{ width: '20%' }}>状態</TableCell>
+              <TableCell sx={{ width: '10%' }} align="center">操作</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {vrTours.map((tour) => (
+              <TableRow
+                key={tour.id}
+                hover
+                onClick={() => handleRowClick(tour)}
+                sx={{ cursor: 'pointer' }}
+              >
+                <TableCell>
+                  <Tooltip title={tour.title || '-'} placement="top">
+                    <Typography variant="body2" fontWeight="500" noWrap>
+                      {tour.title || '-'}
+                    </Typography>
+                  </Tooltip>
+                  {tour.description && (
+                    <Tooltip title={tour.description} placement="top">
+                      <Typography variant="caption" color="text.secondary" noWrap>
+                        {tour.description}
+                      </Typography>
+                    </Tooltip>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2">
+                    {tour.vr_scenes?.length || 0}
                   </Typography>
-                )}
-                <Typography variant="caption" color="text.secondary" component="span" sx={{ display: 'block' }}>
-                  シーン数: {tour.vr_scenes?.length || 0}
-                </Typography>
-              </>
-            }
-          />
-          <ListItemSecondaryAction>
-            <IconButton
-              edge="end"
-              aria-label="view"
-              onClick={() => navigate(`/room/${roomId}/vr-tour/${tour.id}/viewer`)}
-              sx={{ mr: 1 }}
-            >
-              <VisibilityIcon />
-            </IconButton>
-            <IconButton
-              edge="end"
-              aria-label="edit"
-              onClick={() => navigate(`/room/${roomId}/vr-tour/${tour.id}/edit`)}
-              sx={{ mr: 1 }}
-            >
-              <EditIcon />
-            </IconButton>
-            <IconButton
-              edge="end"
-              aria-label="delete"
-              onClick={() => handleDelete(tour.id)}
-            >
-              <DeleteIcon />
-            </IconButton>
-          </ListItemSecondaryAction>
-        </ListItem>
-      ))}
-    </List>
+                </TableCell>
+                <TableCell>
+                  <Tooltip title={tour.status === 'published' ? '公開' : '下書き'} placement="top">
+                    <Chip
+                      label={tour.status === 'published' ? '公開' : '下書き'}
+                      size="small"
+                      color={tour.status === 'published' ? 'success' : 'default'}
+                      icon={tour.status === 'published' ? <PublicIcon /> : <DraftIcon />}
+                      sx={{ maxWidth: '100%' }}
+                    />
+                  </Tooltip>
+                </TableCell>
+                <TableCell align="center">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMenuOpen(e, tour);
+                    }}
+                  >
+                    <MoreVertIcon />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* アクションメニュー */}
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={handleView}>
+          <VisibilityIcon sx={{ mr: 1 }} fontSize="small" />
+          表示
+        </MenuItem>
+        <MenuItem onClick={handleEdit}>
+          <EditIcon sx={{ mr: 1 }} fontSize="small" />
+          編集
+        </MenuItem>
+        <MenuItem onClick={handleDelete}>
+          <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
+          削除
+        </MenuItem>
+      </Menu>
+    </>
   );
 }

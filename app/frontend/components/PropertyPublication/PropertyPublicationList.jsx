@@ -1,23 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
-  CardMedia,
   Typography,
   Chip,
   IconButton,
   Menu,
   MenuItem,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Tooltip
 } from '@mui/material';
 import {
   MoreVert as MoreVertIcon,
   Public as PublicIcon,
   PublicOff as PublicOffIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Description as DraftIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -77,7 +82,10 @@ export default function PropertyPublicationList({ roomId }) {
     handleMenuClose();
   };
 
-  const handleTogglePublish = async (publication) => {
+  const handleTogglePublish = async (publication, e) => {
+    if (e) {
+      e.stopPropagation();
+    }
     try {
       const endpoint = publication.status === 'published'
         ? `/api/v1/rooms/${roomId}/property_publications/${publication.id}/unpublish`
@@ -89,6 +97,10 @@ export default function PropertyPublicationList({ roomId }) {
       console.error('Error toggling publish status:', error);
       alert('公開状態の変更に失敗しました');
     }
+  };
+
+  const handleRowClick = (publication) => {
+    navigate(`/room/${roomId}/property-publication/${publication.id}/edit`);
   };
 
   if (loading) {
@@ -106,101 +118,111 @@ export default function PropertyPublicationList({ roomId }) {
   if (propertyPublications.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Typography variant="body2" color="text.secondary">
-          物件公開ページがまだ作成されていません。
+        <Typography variant="body1" color="text.secondary">
+          物件公開ページがまだ作成されていません
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          「物件公開ページ作成」ボタンから作成できます。
+          「物件公開ページ作成」ボタンから作成できます
         </Typography>
       </Box>
     );
   }
 
   return (
-    <Box>
-      {propertyPublications.map((publication) => (
-        <Card
-          key={publication.id}
+    <>
+      <TableContainer>
+        <Table
+          size="small"
+          stickyHeader
           sx={{
-            mb: 2,
-            cursor: 'pointer',
-            '&:hover': { boxShadow: 3 }
+            tableLayout: 'fixed',
+            '& .MuiTableCell-root': {
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }
           }}
-          onClick={() => navigate(`/room/${roomId}/property-publication/${publication.id}/edit`)}
         >
-          <Box sx={{ display: 'flex' }}>
-            {publication.thumbnail_url && (
-              <CardMedia
-                component="img"
-                sx={{ width: 120, height: 120, objectFit: 'cover' }}
-                image={publication.thumbnail_url}
-                alt={publication.title}
-              />
-            )}
-
-            <CardContent sx={{ flex: 1, p: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    {publication.title}
-                  </Typography>
-
-                  {publication.catch_copy && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      {publication.catch_copy}
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ width: '45%' }}>タイトル</TableCell>
+              <TableCell sx={{ width: '25%' }}>状態</TableCell>
+              <TableCell sx={{ width: '20%' }}>公開操作</TableCell>
+              <TableCell sx={{ width: '10%' }} align="center">操作</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {propertyPublications.map((publication) => (
+              <TableRow
+                key={publication.id}
+                hover
+                onClick={() => handleRowClick(publication)}
+                sx={{ cursor: 'pointer' }}
+              >
+                <TableCell>
+                  <Tooltip title={publication.title || '-'} placement="top">
+                    <Typography variant="body2" fontWeight="500" noWrap>
+                      {publication.title || '-'}
                     </Typography>
+                  </Tooltip>
+                  {publication.catch_copy && (
+                    <Tooltip title={publication.catch_copy} placement="top">
+                      <Typography variant="caption" color="text.secondary" noWrap>
+                        {publication.catch_copy}
+                      </Typography>
+                    </Tooltip>
                   )}
-
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                </TableCell>
+                <TableCell>
+                  <Tooltip title={publication.status === 'published' ? '公開中' : '下書き'} placement="top">
                     <Chip
-                      size="small"
                       label={publication.status === 'published' ? '公開中' : '下書き'}
+                      size="small"
                       color={publication.status === 'published' ? 'success' : 'default'}
+                      icon={publication.status === 'published' ? <PublicIcon /> : <DraftIcon />}
+                      sx={{ maxWidth: '100%' }}
                     />
-
-                    {publication.status === 'published' && (
+                  </Tooltip>
+                </TableCell>
+                <TableCell>
+                  {publication.status === 'published' ? (
+                    <Tooltip title="非公開にする">
                       <IconButton
                         size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleTogglePublish(publication);
-                        }}
-                        title="非公開にする"
+                        onClick={(e) => handleTogglePublish(publication, e)}
                       >
                         <PublicOffIcon fontSize="small" />
                       </IconButton>
-                    )}
-
-                    {publication.status === 'draft' && (
+                    </Tooltip>
+                  ) : (
+                    <Tooltip title="公開する">
                       <IconButton
                         size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleTogglePublish(publication);
-                        }}
-                        title="公開する"
+                        onClick={(e) => handleTogglePublish(publication, e)}
                       >
                         <PublicIcon fontSize="small" />
                       </IconButton>
-                    )}
-                  </Box>
-                </Box>
+                    </Tooltip>
+                  )}
+                </TableCell>
+                <TableCell align="center">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMenuOpen(e, publication);
+                    }}
+                  >
+                    <MoreVertIcon />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-                <IconButton
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMenuOpen(e, publication);
-                  }}
-                >
-                  <MoreVertIcon />
-                </IconButton>
-              </Box>
-            </CardContent>
-          </Box>
-        </Card>
-      ))}
-
+      {/* アクションメニュー */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -215,6 +237,6 @@ export default function PropertyPublicationList({ roomId }) {
           削除
         </MenuItem>
       </Menu>
-    </Box>
+    </>
   );
 }

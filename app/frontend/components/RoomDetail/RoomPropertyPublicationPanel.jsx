@@ -58,7 +58,7 @@ export default function RoomPropertyPublicationPanel({ roomId, isMaximized, onTo
       </Box>
 
       {/* コンテンツ */}
-      <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
         <PropertyPublicationList roomId={roomId} />
       </Box>
     </Box>
