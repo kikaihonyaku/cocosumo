@@ -93,6 +93,11 @@ function PropertyPublicationEditor() {
         const response = await axios.get(`/api/v1/rooms/${roomId}/property_publications/${id}`);
         const data = response.data;
 
+        // Ensure visible_fields is an object (not null/undefined)
+        if (!data.visible_fields || typeof data.visible_fields !== 'object') {
+          data.visible_fields = {};
+        }
+
         setPropertyPublication(data);
 
         // Extract selected IDs and comments
@@ -431,7 +436,7 @@ function PropertyPublicationEditor() {
           <VisibleFieldsSelector
             visibleFields={propertyPublication.visible_fields}
             onVisibleFieldsChange={(newFields) =>
-              setPropertyPublication({ ...propertyPublication, visible_fields: newFields })
+              setPropertyPublication(prev => ({ ...prev, visible_fields: newFields }))
             }
           />
         )}
@@ -480,7 +485,7 @@ function PropertyPublicationEditor() {
 
               <Grid container spacing={3}>
                 {/* Left Column */}
-                <Grid item xs={12} md={8}>
+                <Grid size={{ xs: 12, md: 8 }}>
                   {/* Image Gallery */}
                   {previewPhotos.length > 0 && (
                     <Paper sx={{ p: 3, mb: 3 }}>
@@ -647,7 +652,7 @@ function PropertyPublicationEditor() {
                 </Grid>
 
                 {/* Right Column */}
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Paper sx={{ p: 3 }}>
                     <Typography variant="h6" gutterBottom>
                       プレビュー情報

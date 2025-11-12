@@ -275,7 +275,7 @@ export default function PhotoSelector({ roomId, selectedPhotos, onSelectionChang
     <Box>
       <Grid container spacing={3}>
         {/* 左側: 選択可能な写真 */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>
               写真を選択
@@ -364,7 +364,7 @@ export default function PhotoSelector({ roomId, selectedPhotos, onSelectionChang
         </Grid>
 
         {/* 右側: 選択された写真（並び替え可能） */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>
               選択済み写真（{selectedPhotos.length}枚）

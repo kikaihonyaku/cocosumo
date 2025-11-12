@@ -83,7 +83,7 @@ export default function VisibleFieldsSelector({ visibleFields = {}, onVisibleFie
     <Box>
       <Grid container spacing={3}>
         {/* 物件情報 */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <BuildingIcon color="primary" />
@@ -102,6 +102,14 @@ export default function VisibleFieldsSelector({ visibleFields = {}, onVisibleFie
                     <Checkbox
                       checked={currentFields[field.key] || false}
                       onChange={() => handleToggle(field.key)}
+                      sx={{
+                        '&.Mui-checked': {
+                          color: 'primary.main'
+                        },
+                        '& .MuiSvgIcon-root': {
+                          fontSize: 24
+                        }
+                      }}
                     />
                   }
                   label={field.label}
@@ -112,7 +120,7 @@ export default function VisibleFieldsSelector({ visibleFields = {}, onVisibleFie
         </Grid>
 
         {/* 部屋情報 */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <RoomIcon color="primary" />
@@ -131,6 +139,14 @@ export default function VisibleFieldsSelector({ visibleFields = {}, onVisibleFie
                     <Checkbox
                       checked={currentFields[field.key] || false}
                       onChange={() => handleToggle(field.key)}
+                      sx={{
+                        '&.Mui-checked': {
+                          color: 'primary.main'
+                        },
+                        '& .MuiSvgIcon-root': {
+                          fontSize: 24
+                        }
+                      }}
                     />
                   }
                   label={field.label}

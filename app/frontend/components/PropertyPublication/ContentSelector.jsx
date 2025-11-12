@@ -102,7 +102,7 @@ export default function ContentSelector({
     <Box>
       <Grid container spacing={3}>
         {/* VRツアー */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <VrIcon color="primary" />
@@ -212,7 +212,7 @@ export default function ContentSelector({
         </Grid>
 
         {/* バーチャルステージング */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <StagingIcon color="primary" />
