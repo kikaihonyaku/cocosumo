@@ -18,7 +18,13 @@ import {
   DialogContent,
   DialogActions,
   Snackbar,
-  Alert
+  Alert,
+  Grid,
+  Table,
+  TableBody,
+  TableRow,
+  TableCell,
+  Divider
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -27,12 +33,16 @@ import {
   Public as PublicIcon,
   PublicOff as PublicOffIcon,
   ContentCopy as ContentCopyIcon,
-  QrCode as QrCodeIcon
+  QrCode as QrCodeIcon,
+  Home as HomeIcon,
+  LocationOn as LocationOnIcon,
+  AttachMoney as AttachMoneyIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import PhotoSelector from '../components/PropertyPublication/PhotoSelector';
 import ContentSelector from '../components/PropertyPublication/ContentSelector';
 import VisibleFieldsSelector from '../components/PropertyPublication/VisibleFieldsSelector';
+import PhotoGallery from '../components/PropertyPublication/PhotoGallery';
 
 function PropertyPublicationEditor() {
   const { roomId, id } = useParams();
@@ -57,9 +67,14 @@ function PropertyPublicationEditor() {
     public_url: ''
   });
   const [room, setRoom] = useState(null);
-  const [selectedPhotoIds, setSelectedPhotoIds] = useState([]);
+  const [selectedPhotos, setSelectedPhotos] = useState([]); // [{photo_id: number, comment: string}]
   const [selectedVrTourIds, setSelectedVrTourIds] = useState([]);
   const [selectedVirtualStagingIds, setSelectedVirtualStagingIds] = useState([]);
+
+  // Preview data
+  const [previewPhotos, setPreviewPhotos] = useState([]);
+  const [previewVrTours, setPreviewVrTours] = useState([]);
+  const [previewVirtualStagings, setPreviewVirtualStagings] = useState([]);
 
   // Load data
   useEffect(() => {
@@ -80,9 +95,12 @@ function PropertyPublicationEditor() {
 
         setPropertyPublication(data);
 
-        // Extract selected IDs
+        // Extract selected IDs and comments
         if (data.property_publication_photos) {
-          setSelectedPhotoIds(data.property_publication_photos.map(p => p.room_photo.id));
+          setSelectedPhotos(data.property_publication_photos.map(p => ({
+            photo_id: p.room_photo.id,
+            comment: p.comment || ''
+          })));
         }
         if (data.property_publication_vr_tours) {
           setSelectedVrTourIds(data.property_publication_vr_tours.map(v => v.vr_tour.id));
@@ -116,7 +134,7 @@ function PropertyPublicationEditor() {
           status: propertyPublication.status,
           visible_fields: propertyPublication.visible_fields
         },
-        photo_ids: selectedPhotoIds,
+        photos: selectedPhotos,
         vr_tour_ids: selectedVrTourIds,
         virtual_staging_ids: selectedVirtualStagingIds
       };
@@ -175,6 +193,84 @@ function PropertyPublicationEditor() {
 
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
+  };
+
+  // Load preview data when preview tab is opened
+  useEffect(() => {
+    if (activeTab === 4 && room) {
+      loadPreviewData();
+    }
+  }, [activeTab, selectedPhotos, selectedVrTourIds, selectedVirtualStagingIds]);
+
+  const loadPreviewData = async () => {
+    try {
+      // Load photos
+      if (selectedPhotos.length > 0) {
+        const photoPromises = selectedPhotos.map(({ photo_id }) =>
+          axios.get(`/api/v1/rooms/${roomId}/room_photos/${photo_id}`)
+        );
+        const photoResponses = await Promise.all(photoPromises);
+        setPreviewPhotos(photoResponses.map((res, index) => ({
+          room_photo: res.data,
+          display_order: index,
+          comment: selectedPhotos[index].comment
+        })));
+      } else {
+        setPreviewPhotos([]);
+      }
+
+      // Load VR tours
+      if (selectedVrTourIds.length > 0) {
+        const vrTourPromises = selectedVrTourIds.map(vrTourId =>
+          axios.get(`/api/v1/rooms/${roomId}/vr_tours/${vrTourId}`)
+        );
+        const vrTourResponses = await Promise.all(vrTourPromises);
+        setPreviewVrTours(vrTourResponses.map(res => ({ vr_tour: res.data })));
+      } else {
+        setPreviewVrTours([]);
+      }
+
+      // Load virtual stagings
+      if (selectedVirtualStagingIds.length > 0) {
+        const virtualStagingPromises = selectedVirtualStagingIds.map(vsId =>
+          axios.get(`/api/v1/rooms/${roomId}/virtual_stagings/${vsId}`)
+        );
+        const vsResponses = await Promise.all(virtualStagingPromises);
+        setPreviewVirtualStagings(vsResponses.map(res => ({ virtual_staging: res.data })));
+      } else {
+        setPreviewVirtualStagings([]);
+      }
+    } catch (error) {
+      console.error('Error loading preview data:', error);
+    }
+  };
+
+  // Helper functions for display
+  const getRoomTypeLabel = (roomType) => {
+    const labels = {
+      'studio': 'ワンルーム',
+      '1K': '1K',
+      '1DK': '1DK',
+      '1LDK': '1LDK',
+      '2K': '2K',
+      '2DK': '2DK',
+      '2LDK': '2LDK',
+      '3K': '3K',
+      '3DK': '3DK',
+      '3LDK': '3LDK',
+      'other': 'その他'
+    };
+    return labels[roomType] || roomType;
+  };
+
+  const getBuildingTypeLabel = (buildingType) => {
+    const labels = {
+      'apartment': 'アパート',
+      'mansion': 'マンション',
+      'house': '一戸建て',
+      'office': 'オフィス'
+    };
+    return labels[buildingType] || buildingType;
   };
 
   if (loading) {
@@ -264,6 +360,7 @@ function PropertyPublicationEditor() {
           <Tab label="画像選択" />
           <Tab label="コンテンツ" />
           <Tab label="表示項目" />
+          <Tab label="プレビュー" />
         </Tabs>
       </AppBar>
 
@@ -313,8 +410,8 @@ function PropertyPublicationEditor() {
         {activeTab === 1 && (
           <PhotoSelector
             roomId={roomId}
-            selectedPhotoIds={selectedPhotoIds}
-            onSelectionChange={setSelectedPhotoIds}
+            selectedPhotos={selectedPhotos}
+            onSelectionChange={setSelectedPhotos}
           />
         )}
 
@@ -337,6 +434,242 @@ function PropertyPublicationEditor() {
               setPropertyPublication({ ...propertyPublication, visible_fields: newFields })
             }
           />
+        )}
+
+        {/* Tab 4: Preview */}
+        {activeTab === 4 && room && (
+          <Box sx={{ bgcolor: '#f5f5f5', minHeight: '100%', p: 3 }}>
+            <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+              {/* Header */}
+              <Paper sx={{ p: 3, mb: 3 }}>
+                <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+                  {propertyPublication.title || '（タイトル未設定）'}
+                </Typography>
+
+                {propertyPublication.catch_copy && (
+                  <Typography variant="h6" color="primary" gutterBottom sx={{ fontWeight: 'medium' }}>
+                    {propertyPublication.catch_copy}
+                  </Typography>
+                )}
+
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 2 }}>
+                  {propertyPublication.visible_fields?.rent !== false && room.rent && (
+                    <Chip
+                      icon={<AttachMoneyIcon />}
+                      label={`賃料: ${room.rent.toLocaleString()}円`}
+                      color="primary"
+                      size="medium"
+                    />
+                  )}
+                  {propertyPublication.visible_fields?.room_type !== false && room.room_type && (
+                    <Chip
+                      icon={<HomeIcon />}
+                      label={getRoomTypeLabel(room.room_type)}
+                      size="medium"
+                    />
+                  )}
+                  {propertyPublication.visible_fields?.address !== false && room.building?.address && (
+                    <Chip
+                      icon={<LocationOnIcon />}
+                      label={room.building.address}
+                      size="medium"
+                    />
+                  )}
+                </Box>
+              </Paper>
+
+              <Grid container spacing={3}>
+                {/* Left Column */}
+                <Grid item xs={12} md={8}>
+                  {/* Image Gallery */}
+                  {previewPhotos.length > 0 && (
+                    <Paper sx={{ p: 3, mb: 3 }}>
+                      <Typography variant="h6" gutterBottom>
+                        写真
+                      </Typography>
+                      <PhotoGallery photos={previewPhotos} />
+                    </Paper>
+                  )}
+
+                  {/* Property Details */}
+                  <Paper sx={{ p: 3, mb: 3 }}>
+                    <Typography variant="h6" gutterBottom>
+                      物件詳細
+                    </Typography>
+
+                    {propertyPublication.pr_text && (
+                      <>
+                        <Typography variant="body1" paragraph>
+                          {propertyPublication.pr_text}
+                        </Typography>
+                        <Divider sx={{ my: 2 }} />
+                      </>
+                    )}
+
+                    <Table size="small">
+                      <TableBody>
+                        {propertyPublication.visible_fields?.rent !== false && room.rent && (
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 'bold', width: '30%' }}>賃料</TableCell>
+                            <TableCell>{room.rent.toLocaleString()}円</TableCell>
+                          </TableRow>
+                        )}
+                        {propertyPublication.visible_fields?.management_fee !== false && room.management_fee && (
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 'bold' }}>管理費</TableCell>
+                            <TableCell>{room.management_fee.toLocaleString()}円</TableCell>
+                          </TableRow>
+                        )}
+                        {propertyPublication.visible_fields?.deposit !== false && room.deposit && (
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 'bold' }}>敷金</TableCell>
+                            <TableCell>{room.deposit.toLocaleString()}円</TableCell>
+                          </TableRow>
+                        )}
+                        {propertyPublication.visible_fields?.key_money !== false && room.key_money && (
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 'bold' }}>礼金</TableCell>
+                            <TableCell>{room.key_money.toLocaleString()}円</TableCell>
+                          </TableRow>
+                        )}
+                        {propertyPublication.visible_fields?.room_type !== false && room.room_type && (
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 'bold' }}>間取り</TableCell>
+                            <TableCell>{getRoomTypeLabel(room.room_type)}</TableCell>
+                          </TableRow>
+                        )}
+                        {propertyPublication.visible_fields?.area !== false && room.area && (
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 'bold' }}>専有面積</TableCell>
+                            <TableCell>{room.area}m²</TableCell>
+                          </TableRow>
+                        )}
+                        {propertyPublication.visible_fields?.floor !== false && room.floor && (
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 'bold' }}>階数</TableCell>
+                            <TableCell>{room.floor}階</TableCell>
+                          </TableRow>
+                        )}
+                        {propertyPublication.visible_fields?.building_type !== false && room.building?.building_type && (
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 'bold' }}>建物種別</TableCell>
+                            <TableCell>{getBuildingTypeLabel(room.building.building_type)}</TableCell>
+                          </TableRow>
+                        )}
+                        {propertyPublication.visible_fields?.structure !== false && room.building?.structure && (
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 'bold' }}>構造</TableCell>
+                            <TableCell>{room.building.structure}</TableCell>
+                          </TableRow>
+                        )}
+                        {propertyPublication.visible_fields?.built_year !== false && room.building?.built_year && (
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 'bold' }}>築年</TableCell>
+                            <TableCell>{room.building.built_year}年</TableCell>
+                          </TableRow>
+                        )}
+                        {propertyPublication.visible_fields?.facilities !== false && room.facilities && (
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 'bold' }}>設備</TableCell>
+                            <TableCell>{room.facilities}</TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </Paper>
+
+                  {/* VR Tour & Virtual Staging */}
+                  {(previewVrTours.length > 0 || previewVirtualStagings.length > 0) && (
+                    <Paper sx={{ p: 3, mb: 3 }}>
+                      <Typography variant="h6" gutterBottom>
+                        バーチャルコンテンツ
+                      </Typography>
+
+                      {/* VR Tours */}
+                      {previewVrTours.length > 0 && (
+                        <Box sx={{ mb: 3 }}>
+                          {previewVrTours.map((item, index) => (
+                            <Box key={item.vr_tour.id} sx={{ mb: 3 }}>
+                              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                                VRツアー: {item.vr_tour.title}
+                              </Typography>
+                              {item.vr_tour.description && (
+                                <Typography variant="body2" color="text.secondary" gutterBottom>
+                                  {item.vr_tour.description}
+                                </Typography>
+                              )}
+                              <Box
+                                component="iframe"
+                                src={`/vr/${item.vr_tour.public_id}`}
+                                sx={{
+                                  width: '100%',
+                                  height: 500,
+                                  border: '1px solid #e0e0e0',
+                                  borderRadius: 1,
+                                  mt: 1
+                                }}
+                              />
+                            </Box>
+                          ))}
+                        </Box>
+                      )}
+
+                      {/* Virtual Stagings */}
+                      {previewVirtualStagings.length > 0 && (
+                        <Box>
+                          {previewVirtualStagings.map((item, index) => (
+                            <Box key={item.virtual_staging.id} sx={{ mb: 3 }}>
+                              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                                バーチャルステージング: {item.virtual_staging.title}
+                              </Typography>
+                              {item.virtual_staging.description && (
+                                <Typography variant="body2" color="text.secondary" gutterBottom>
+                                  {item.virtual_staging.description}
+                                </Typography>
+                              )}
+                              <Box
+                                component="iframe"
+                                src={`/virtual-staging/${item.virtual_staging.public_id}`}
+                                sx={{
+                                  width: '100%',
+                                  height: 500,
+                                  border: '1px solid #e0e0e0',
+                                  borderRadius: 1,
+                                  mt: 1
+                                }}
+                              />
+                            </Box>
+                          ))}
+                        </Box>
+                      )}
+                    </Paper>
+                  )}
+                </Grid>
+
+                {/* Right Column */}
+                <Grid item xs={12} md={4}>
+                  <Paper sx={{ p: 3 }}>
+                    <Typography variant="h6" gutterBottom>
+                      プレビュー情報
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      これは編集中の内容のプレビューです。実際の公開ページとは異なる場合があります。
+                    </Typography>
+                    <Divider sx={{ my: 2 }} />
+                    <Typography variant="body2" gutterBottom>
+                      <strong>選択された画像:</strong> {selectedPhotos.length}枚
+                    </Typography>
+                    <Typography variant="body2" gutterBottom>
+                      <strong>VRツアー:</strong> {selectedVrTourIds.length}件
+                    </Typography>
+                    <Typography variant="body2" gutterBottom>
+                      <strong>バーチャルステージング:</strong> {selectedVirtualStagingIds.length}件
+                    </Typography>
+                  </Paper>
+                </Grid>
+              </Grid>
+            </Box>
+          </Box>
         )}
       </Box>
 

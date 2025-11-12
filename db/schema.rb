@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_09_085329) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_12_194237) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -116,6 +116,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_09_085329) do
     t.integer "display_order", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "comment"
     t.index ["display_order"], name: "index_property_publication_photos_on_display_order"
     t.index ["property_publication_id", "room_photo_id"], name: "index_pub_photos_on_pub_and_photo", unique: true
     t.index ["property_publication_id"], name: "index_property_publication_photos_on_property_publication_id"

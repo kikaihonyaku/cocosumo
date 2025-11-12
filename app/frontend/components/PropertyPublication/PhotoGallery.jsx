@@ -4,7 +4,8 @@ import {
   IconButton,
   ImageList,
   ImageListItem,
-  Paper
+  Paper,
+  Typography
 } from '@mui/material';
 import {
   ChevronLeft as ChevronLeftIcon,
@@ -113,6 +114,27 @@ export default function PhotoGallery({ photos = [] }) {
               {currentIndex + 1} / {photos.length}
             </Box>
           </>
+        )}
+
+        {/* Photo Comment Overlay */}
+        {currentPhoto.comment && (
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              bgcolor: 'rgba(0, 0, 0, 0.75)',
+              color: 'white',
+              px: 3,
+              py: 2,
+              backdropFilter: 'blur(4px)'
+            }}
+          >
+            <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
+              {currentPhoto.comment}
+            </Typography>
+          </Box>
         )}
       </Box>
 

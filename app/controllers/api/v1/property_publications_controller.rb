@@ -37,6 +37,7 @@ class Api::V1::PropertyPublicationsController < ApplicationController
     render json: @property_publication.as_json(
       include: {
         property_publication_photos: {
+          only: [:id, :display_order, :comment],
           include: {
             room_photo: {
               only: [:id, :photo_type, :caption],
@@ -84,6 +85,7 @@ class Api::V1::PropertyPublicationsController < ApplicationController
       result = @property_publication.as_json(
         include: {
           property_publication_photos: {
+            only: [:id, :display_order, :comment],
             include: {
               room_photo: {
                 only: [:id, :photo_type, :caption],
@@ -136,8 +138,17 @@ class Api::V1::PropertyPublicationsController < ApplicationController
 
     ActiveRecord::Base.transaction do
       if @property_publication.save
-        # 写真の関連付け
-        if params[:photo_ids].present?
+        # 写真の関連付け（新形式）
+        if params[:photos].present?
+          params[:photos].each_with_index do |photo_data, index|
+            @property_publication.property_publication_photos.create!(
+              room_photo_id: photo_data[:photo_id],
+              comment: photo_data[:comment],
+              display_order: index
+            )
+          end
+        # 写真の関連付け（旧形式との互換性）
+        elsif params[:photo_ids].present?
           params[:photo_ids].each_with_index do |photo_id, index|
             @property_publication.property_publication_photos.create!(
               room_photo_id: photo_id,
@@ -179,8 +190,18 @@ class Api::V1::PropertyPublicationsController < ApplicationController
   def update
     ActiveRecord::Base.transaction do
       if @property_publication.update(property_publication_params)
-        # 写真の関連付けを更新
-        if params[:photo_ids]
+        # 写真の関連付けを更新（新形式）
+        if params[:photos]
+          @property_publication.property_publication_photos.destroy_all
+          params[:photos].each_with_index do |photo_data, index|
+            @property_publication.property_publication_photos.create!(
+              room_photo_id: photo_data[:photo_id],
+              comment: photo_data[:comment],
+              display_order: index
+            )
+          end
+        # 写真の関連付けを更新（旧形式との互換性）
+        elsif params[:photo_ids]
           @property_publication.property_publication_photos.destroy_all
           params[:photo_ids].each_with_index do |photo_id, index|
             @property_publication.property_publication_photos.create!(
