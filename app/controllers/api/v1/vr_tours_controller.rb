@@ -10,11 +10,15 @@ class Api::V1::VrToursController < ApplicationController
     if params[:room_id]
       # 部屋単位の一覧
       @vr_tours = @room.vr_tours.includes(:vr_scenes)
-      render json: @vr_tours.as_json(include: {
-        vr_scenes: {
-          methods: [:photo_url]
-        }
-      })
+      render json: @vr_tours.as_json(
+        only: [:id, :title, :description, :status],
+        include: {
+          vr_scenes: {
+            methods: [:photo_url]
+          }
+        },
+        methods: [:thumbnail_url, :scenes_count]
+      )
     else
       # 全VRツアー一覧
       @vr_tours = VrTour.includes(:vr_scenes, room: :building).order(updated_at: :desc)

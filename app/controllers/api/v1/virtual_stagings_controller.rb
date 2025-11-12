@@ -10,7 +10,10 @@ class Api::V1::VirtualStagingsController < ApplicationController
     if params[:room_id]
       # 部屋単位の一覧
       @virtual_stagings = @room.virtual_stagings.includes(:before_photo, :after_photo)
-      render json: @virtual_stagings.as_json(methods: [:before_photo_url, :after_photo_url, :thumbnail_url])
+      render json: @virtual_stagings.as_json(
+        only: [:id, :title, :description, :status],
+        methods: [:before_photo_url, :after_photo_url, :thumbnail_url]
+      )
     else
       # 全バーチャルステージング一覧
       @virtual_stagings = VirtualStaging.includes(:before_photo, :after_photo, room: :building).order(updated_at: :desc)

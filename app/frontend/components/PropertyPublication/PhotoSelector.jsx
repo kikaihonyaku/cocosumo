@@ -330,7 +330,13 @@ export default function PhotoSelector({ roomId, selectedPhotos, onSelectionChang
                   >
                     <Checkbox
                       checked={false}
-                      sx={{ alignSelf: 'center', ml: 1 }}
+                      sx={{
+                        alignSelf: 'center',
+                        ml: 1,
+                        '& .MuiSvgIcon-root': {
+                          fontSize: 28
+                        }
+                      }}
                     />
                     <CardMedia
                       component="img"

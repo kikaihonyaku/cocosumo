@@ -11,12 +11,20 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  FormControlLabel
+  FormControlLabel,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button
 } from '@mui/material';
 import {
   ThreeSixty as VrIcon,
   Chair as StagingIcon,
-  CheckCircle as CheckCircleIcon
+  CheckCircle as CheckCircleIcon,
+  Visibility as VisibilityIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -31,6 +39,7 @@ export default function ContentSelector({
   const [virtualStagings, setVirtualStagings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [previewDialog, setPreviewDialog] = useState({ open: false, type: null, item: null });
 
   useEffect(() => {
     loadContent();
@@ -67,6 +76,14 @@ export default function ContentSelector({
       ? selectedVirtualStagingIds.filter(id => id !== stagingId)
       : [...selectedVirtualStagingIds, stagingId];
     onVirtualStagingSelectionChange(newSelection);
+  };
+
+  const handlePreview = (type, item) => {
+    setPreviewDialog({ open: true, type, item });
+  };
+
+  const handleClosePreview = () => {
+    setPreviewDialog({ open: false, type: null, item: null });
   };
 
   if (loading) {
@@ -111,13 +128,23 @@ export default function ContentSelector({
                       border: selectedVrTourIds.includes(tour.id) ? '2px solid' : '1px solid',
                       borderColor: selectedVrTourIds.includes(tour.id) ? 'primary.main' : 'divider',
                       bgcolor: selectedVrTourIds.includes(tour.id) ? 'action.selected' : 'background.paper',
-                      '&:hover': { bgcolor: 'action.hover' }
+                      '&:hover': { bgcolor: 'action.hover' },
+                      position: 'relative'
                     }}
                     onClick={() => handleVrTourToggle(tour.id)}
                   >
                     <Checkbox
                       checked={selectedVrTourIds.includes(tour.id)}
-                      sx={{ alignSelf: 'center', ml: 1 }}
+                      sx={{
+                        alignSelf: 'center',
+                        ml: 1,
+                        '&.Mui-checked': {
+                          color: 'primary.main'
+                        },
+                        '& .MuiSvgIcon-root': {
+                          fontSize: 28
+                        }
+                      }}
                     />
                     <CardMedia
                       component="img"
@@ -126,9 +153,17 @@ export default function ContentSelector({
                       alt={tour.title}
                     />
                     <CardContent sx={{ flex: 1 }}>
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        {tour.title}
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Typography variant="subtitle1" fontWeight={600}>
+                          {tour.title}
+                        </Typography>
+                        <Chip
+                          label={tour.status === 'published' ? '公開中' : '下書き'}
+                          size="small"
+                          color={tour.status === 'published' ? 'success' : 'default'}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
                       {tour.description && (
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                           {tour.description}
@@ -136,12 +171,33 @@ export default function ContentSelector({
                       )}
                       <Box sx={{ mt: 1 }}>
                         <Chip
-                          label={`${tour.vr_tour_scenes?.length || 0}シーン`}
+                          label={`${tour.scenes_count || tour.vr_scenes?.length || 0}シーン`}
                           size="small"
                           variant="outlined"
                         />
                       </Box>
                     </CardContent>
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePreview('vr_tour', tour);
+                      }}
+                      sx={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        bgcolor: 'background.paper',
+                        boxShadow: 1,
+                        '&:hover': {
+                          bgcolor: 'primary.main',
+                          color: 'white'
+                        }
+                      }}
+                      size="small"
+                      title="プレビュー"
+                    >
+                      <VisibilityIcon fontSize="small" />
+                    </IconButton>
                   </Card>
                 ))}
               </Box>
@@ -182,13 +238,23 @@ export default function ContentSelector({
                       border: selectedVirtualStagingIds.includes(staging.id) ? '2px solid' : '1px solid',
                       borderColor: selectedVirtualStagingIds.includes(staging.id) ? 'primary.main' : 'divider',
                       bgcolor: selectedVirtualStagingIds.includes(staging.id) ? 'action.selected' : 'background.paper',
-                      '&:hover': { bgcolor: 'action.hover' }
+                      '&:hover': { bgcolor: 'action.hover' },
+                      position: 'relative'
                     }}
                     onClick={() => handleVirtualStagingToggle(staging.id)}
                   >
                     <Checkbox
                       checked={selectedVirtualStagingIds.includes(staging.id)}
-                      sx={{ alignSelf: 'center', ml: 1 }}
+                      sx={{
+                        alignSelf: 'center',
+                        ml: 1,
+                        '&.Mui-checked': {
+                          color: 'primary.main'
+                        },
+                        '& .MuiSvgIcon-root': {
+                          fontSize: 28
+                        }
+                      }}
                     />
                     <CardMedia
                       component="img"
@@ -197,22 +263,44 @@ export default function ContentSelector({
                       alt={staging.title}
                     />
                     <CardContent sx={{ flex: 1 }}>
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        {staging.title}
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Typography variant="subtitle1" fontWeight={600}>
+                          {staging.title}
+                        </Typography>
+                        <Chip
+                          label={staging.status === 'published' ? '公開中' : '下書き'}
+                          size="small"
+                          color={staging.status === 'published' ? 'success' : 'default'}
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      </Box>
                       {staging.description && (
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                           {staging.description}
                         </Typography>
                       )}
-                      <Box sx={{ mt: 1 }}>
-                        <Chip
-                          label={`${staging.virtual_staging_scenes?.length || 0}シーン`}
-                          size="small"
-                          variant="outlined"
-                        />
-                      </Box>
                     </CardContent>
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePreview('virtual_staging', staging);
+                      }}
+                      sx={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        bgcolor: 'background.paper',
+                        boxShadow: 1,
+                        '&:hover': {
+                          bgcolor: 'primary.main',
+                          color: 'white'
+                        }
+                      }}
+                      size="small"
+                      title="プレビュー"
+                    >
+                      <VisibilityIcon fontSize="small" />
+                    </IconButton>
                   </Card>
                 ))}
               </Box>
@@ -226,6 +314,55 @@ export default function ContentSelector({
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Preview Dialog */}
+      <Dialog
+        open={previewDialog.open}
+        onClose={handleClosePreview}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {previewDialog.type === 'vr_tour' ? <VrIcon /> : <StagingIcon />}
+            <Typography variant="h6">
+              {previewDialog.item?.title || 'プレビュー'}
+            </Typography>
+          </Box>
+          <IconButton onClick={handleClosePreview} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {previewDialog.type === 'vr_tour' && previewDialog.item && (
+            <Box
+              component="iframe"
+              src={`/room/${roomId}/vr-tour/${previewDialog.item.id}/viewer`}
+              sx={{
+                width: '100%',
+                height: 600,
+                border: 'none',
+                borderRadius: 1
+              }}
+            />
+          )}
+          {previewDialog.type === 'virtual_staging' && previewDialog.item && (
+            <Box
+              component="iframe"
+              src={`/room/${roomId}/virtual-staging/${previewDialog.item.id}/viewer`}
+              sx={{
+                width: '100%',
+                height: 600,
+                border: 'none',
+                borderRadius: 1
+              }}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePreview}>閉じる</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
