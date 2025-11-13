@@ -26,6 +26,9 @@ class PropertyPublication < ApplicationRecord
   # Enum for status
   enum :status, { draft: 0, published: 1 }, default: :draft
 
+  # Enum for template_type
+  enum :template_type, { template1: 0, template2: 1, template3: 2 }, default: :template1
+
   # Scopes
   scope :published, -> { where(status: :published) }
   scope :draft, -> { where(status: :draft) }

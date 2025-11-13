@@ -24,7 +24,12 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  Divider
+  Divider,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  FormControlLabel,
+  Radio
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -36,7 +41,8 @@ import {
   QrCode as QrCodeIcon,
   Home as HomeIcon,
   LocationOn as LocationOnIcon,
-  AttachMoney as AttachMoneyIcon
+  AttachMoney as AttachMoneyIcon,
+  OpenInNew as OpenInNewIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import PhotoSelector from '../components/PropertyPublication/PhotoSelector';
@@ -62,6 +68,7 @@ function PropertyPublicationEditor() {
     catch_copy: '',
     pr_text: '',
     status: 'draft',
+    template_type: 'template1',
     visible_fields: {},
     publication_id: '',
     public_url: ''
@@ -137,6 +144,7 @@ function PropertyPublicationEditor() {
           catch_copy: propertyPublication.catch_copy,
           pr_text: propertyPublication.pr_text,
           status: propertyPublication.status,
+          template_type: propertyPublication.template_type,
           visible_fields: propertyPublication.visible_fields
         },
         photos: selectedPhotos,
@@ -408,6 +416,131 @@ function PropertyPublicationEditor() {
               rows={4}
               placeholder="物件の詳細な説明や特徴を記載してください"
             />
+
+            <Divider sx={{ my: 3 }} />
+
+            <FormControl component="fieldset" sx={{ mt: 2 }}>
+              <FormLabel component="legend" sx={{ mb: 2, fontWeight: 'bold' }}>
+                テンプレート選択
+              </FormLabel>
+              <RadioGroup
+                value={propertyPublication.template_type}
+                onChange={(e) => setPropertyPublication({ ...propertyPublication, template_type: e.target.value })}
+              >
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                    <FormControlLabel
+                      value="template1"
+                      control={<Radio />}
+                      label={
+                        <Box>
+                          <Typography variant="body1" fontWeight="bold">テンプレート1</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            サンプル: SUUMO風デザイン
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<OpenInNewIcon />}
+                        onClick={() => window.open('https://suumo.jp/chintai/jnc_000092620118/?bc=100395360648', '_blank')}
+                      >
+                        サンプル
+                      </Button>
+                      {isEditMode && propertyPublication.publication_id && (
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<VisibilityIcon />}
+                          onClick={() => {
+                            window.open(`/property/${propertyPublication.publication_id}?preview=true&template=template1`, '_blank');
+                          }}
+                        >
+                          プレビュー
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                    <FormControlLabel
+                      value="template2"
+                      control={<Radio />}
+                      label={
+                        <Box>
+                          <Typography variant="body1" fontWeight="bold">テンプレート2</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            サンプル: RoomSpot風デザイン
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<OpenInNewIcon />}
+                        onClick={() => window.open('https://www.roomspot.net/rent/1139288674810000284493/', '_blank')}
+                      >
+                        サンプル
+                      </Button>
+                      {isEditMode && propertyPublication.publication_id && (
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<VisibilityIcon />}
+                          onClick={() => {
+                            window.open(`/property/${propertyPublication.publication_id}?preview=true&template=template2`, '_blank');
+                          }}
+                        >
+                          プレビュー
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                    <FormControlLabel
+                      value="template3"
+                      control={<Radio />}
+                      label={
+                        <Box>
+                          <Typography variant="body1" fontWeight="bold">テンプレート3</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            サンプル: H-Sys風デザイン
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<OpenInNewIcon />}
+                        onClick={() => window.open('https://www.h-sys.jp/chintai/detail-690a5b9951464927a166209b/', '_blank')}
+                      >
+                        サンプル
+                      </Button>
+                      {isEditMode && propertyPublication.publication_id && (
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<VisibilityIcon />}
+                          onClick={() => {
+                            window.open(`/property/${propertyPublication.publication_id}?preview=true&template=template3`, '_blank');
+                          }}
+                        >
+                          プレビュー
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
+              </RadioGroup>
+            </FormControl>
           </Paper>
         )}
 

@@ -78,7 +78,11 @@ class Api::V1::PropertyPublicationsController < ApplicationController
   def show_public
     @property_publication = PropertyPublication.kept.find_by!(publication_id: params[:publication_id])
 
-    if @property_publication.published?
+    # プレビューモードの場合はログインユーザーのみアクセス可能
+    is_preview = params[:preview].present?
+
+    # 公開中か、またはプレビューモードでログイン済みの場合のみ表示
+    if @property_publication.published? || (is_preview && current_user)
       # Get host from request
       host = "#{request.protocol}#{request.host_with_port}"
 
@@ -126,7 +130,11 @@ class Api::V1::PropertyPublicationsController < ApplicationController
 
       render json: result
     else
-      render json: { error: 'この物件公開ページは公開されていません' }, status: :not_found
+      if is_preview
+        render json: { error: 'プレビューを表示するにはログインが必要です' }, status: :unauthorized
+      else
+        render json: { error: 'この物件公開ページは公開されていません' }, status: :not_found
+      end
     end
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'この物件公開ページは見つかりませんでした' }, status: :not_found
@@ -328,6 +336,7 @@ class Api::V1::PropertyPublicationsController < ApplicationController
       :catch_copy,
       :pr_text,
       :status,
+      :template_type,
       visible_fields: {}
     )
   end

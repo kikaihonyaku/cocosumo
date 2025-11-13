@@ -77,3 +77,6 @@ end
 
 gem "vite_rails", "~> 3.0"
 gem "google-cloud-ai_platform-v1"
+
+gem "rqrcode", "~> 3.1"
+gem "chunky_png", "~> 1.4"

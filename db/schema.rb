@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_12_194237) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_13_184913) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -159,6 +159,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_194237) do
     t.datetime "discarded_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "template_type", default: 0, null: false
     t.index ["discarded_at"], name: "index_property_publications_on_discarded_at"
     t.index ["publication_id"], name: "index_property_publications_on_publication_id", unique: true
     t.index ["room_id"], name: "index_property_publications_on_room_id"
