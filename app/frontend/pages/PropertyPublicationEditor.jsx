@@ -584,71 +584,83 @@ function PropertyPublicationEditor() {
                   </Paper>
 
                   {/* VR Tour & Virtual Staging */}
-                  {(previewVrTours.length > 0 || previewVirtualStagings.length > 0) && (
-                    <Paper sx={{ p: 3, mb: 3 }}>
-                      <Typography variant="h6" gutterBottom>
-                        バーチャルコンテンツ
+                  <Paper sx={{ p: 3, mb: 3 }}>
+                    <Typography variant="h6" gutterBottom>
+                      バーチャルコンテンツ
+                    </Typography>
+
+                    {/* VR Tours */}
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                        VRツアー
                       </Typography>
-
-                      {/* VR Tours */}
-                      {previewVrTours.length > 0 && (
-                        <Box sx={{ mb: 3 }}>
-                          {previewVrTours.map((item, index) => (
-                            <Box key={item.vr_tour.id} sx={{ mb: 3 }}>
-                              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                                VRツアー: {item.vr_tour.title}
+                      {previewVrTours.length > 0 ? (
+                        previewVrTours.map((item, index) => (
+                          <Box key={item.vr_tour.id} sx={{ mb: 3 }}>
+                            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                              {item.vr_tour.title}
+                            </Typography>
+                            {item.vr_tour.description && (
+                              <Typography variant="body2" color="text.secondary" gutterBottom>
+                                {item.vr_tour.description}
                               </Typography>
-                              {item.vr_tour.description && (
-                                <Typography variant="body2" color="text.secondary" gutterBottom>
-                                  {item.vr_tour.description}
-                                </Typography>
-                              )}
-                              <Box
-                                component="iframe"
-                                src={`/vr/${item.vr_tour.public_id}`}
-                                sx={{
-                                  width: '100%',
-                                  height: 500,
-                                  border: '1px solid #e0e0e0',
-                                  borderRadius: 1,
-                                  mt: 1
-                                }}
-                              />
-                            </Box>
-                          ))}
-                        </Box>
+                            )}
+                            <Box
+                              component="iframe"
+                              src={`/room/${roomId}/vr-tour/${item.vr_tour.id}/viewer`}
+                              sx={{
+                                width: '100%',
+                                height: 500,
+                                border: '1px solid #e0e0e0',
+                                borderRadius: 1,
+                                mt: 1
+                              }}
+                            />
+                          </Box>
+                        ))
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          VRツアーが選択されていません
+                        </Typography>
                       )}
+                    </Box>
 
-                      {/* Virtual Stagings */}
-                      {previewVirtualStagings.length > 0 && (
-                        <Box>
-                          {previewVirtualStagings.map((item, index) => (
-                            <Box key={item.virtual_staging.id} sx={{ mb: 3 }}>
-                              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                                バーチャルステージング: {item.virtual_staging.title}
+                    {/* Virtual Stagings */}
+                    <Box>
+                      <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                        バーチャルステージング
+                      </Typography>
+                      {previewVirtualStagings.length > 0 ? (
+                        previewVirtualStagings.map((item, index) => (
+                          <Box key={item.virtual_staging.id} sx={{ mb: 3 }}>
+                            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                              {item.virtual_staging.title}
+                            </Typography>
+                            {item.virtual_staging.description && (
+                              <Typography variant="body2" color="text.secondary" gutterBottom>
+                                {item.virtual_staging.description}
                               </Typography>
-                              {item.virtual_staging.description && (
-                                <Typography variant="body2" color="text.secondary" gutterBottom>
-                                  {item.virtual_staging.description}
-                                </Typography>
-                              )}
-                              <Box
-                                component="iframe"
-                                src={`/virtual-staging/${item.virtual_staging.public_id}`}
-                                sx={{
-                                  width: '100%',
-                                  height: 500,
-                                  border: '1px solid #e0e0e0',
-                                  borderRadius: 1,
-                                  mt: 1
-                                }}
-                              />
-                            </Box>
-                          ))}
-                        </Box>
+                            )}
+                            <Box
+                              component="iframe"
+                              src={`/room/${roomId}/virtual-staging/${item.virtual_staging.id}/viewer`}
+                              sx={{
+                                width: '100%',
+                                height: 500,
+                                border: '1px solid #e0e0e0',
+                                borderRadius: 1,
+                                mt: 1
+                              }}
+                            />
+                          </Box>
+                        ))
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          バーチャルステージングが選択されていません
+                        </Typography>
                       )}
-                    </Paper>
-                  )}
+                    </Box>
+                  </Paper>
                 </Grid>
 
                 {/* Right Column */}

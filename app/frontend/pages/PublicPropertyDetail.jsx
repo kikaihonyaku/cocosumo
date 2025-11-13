@@ -263,7 +263,7 @@ function PublicPropertyDetail() {
 
         <Grid container spacing={3}>
           {/* Left Column */}
-          <Grid item xs={12} md={8}>
+          <Grid size={{ xs: 12, md: 8 }}>
             {/* Image Gallery */}
             {property_publication_photos && property_publication_photos.length > 0 && (
               <Paper sx={{ p: 3, mb: 3 }}>
@@ -431,7 +431,7 @@ function PublicPropertyDetail() {
           </Grid>
 
           {/* Right Column */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             {/* Inquiry Form - Hidden in print */}
             <Paper sx={{ p: 3, mb: 3, position: 'sticky', top: 20 }} className="no-print">
               <InquiryForm publicationId={publicationId} />
