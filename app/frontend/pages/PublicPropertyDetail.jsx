@@ -27,6 +27,7 @@ function PublicPropertyDetail() {
   const urlParams = new URLSearchParams(window.location.search);
   const isPreview = urlParams.get('preview') === 'true';
   const roomId = urlParams.get('roomId');
+  const publicationIdParam = urlParams.get('publicationId');
 
   useEffect(() => {
     loadData();
@@ -222,11 +223,19 @@ function PublicPropertyDetail() {
         <Box className="no-print" sx={{ bgcolor: 'background.default', py: 2 }}>
           <Container maxWidth="xl">
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <IconButton onClick={() => navigate(`/room/${roomId}`)}>
+              <IconButton onClick={() => {
+                if (publicationIdParam) {
+                  // 編集画面から来た場合は編集画面に戻る
+                  navigate(`/room/${roomId}/property-publication/${publicationIdParam}/edit`);
+                } else {
+                  // 部屋詳細から来た場合は部屋詳細に戻る
+                  navigate(`/room/${roomId}`);
+                }
+              }}>
                 <ArrowBackIcon />
               </IconButton>
               <Typography variant="h6" sx={{ flexGrow: 1 }}>プレビュー</Typography>
-              {data && data.id && (
+              {!publicationIdParam && data && data.id && (
                 <Button
                   variant="contained"
                   startIcon={<EditIcon />}

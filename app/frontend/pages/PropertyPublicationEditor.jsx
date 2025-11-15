@@ -486,7 +486,7 @@ function PropertyPublicationEditor() {
                           size="small"
                           startIcon={<VisibilityIcon />}
                           onClick={() => {
-                            window.open(`/property/${propertyPublication.publication_id}?preview=true&template=template0`, '_blank');
+                            navigate(`/property/${propertyPublication.publication_id}?preview=true&template=template0&roomId=${roomId}&publicationId=${id}`);
                           }}
                         >
                           プレビュー
@@ -523,7 +523,7 @@ function PropertyPublicationEditor() {
                           size="small"
                           startIcon={<VisibilityIcon />}
                           onClick={() => {
-                            window.open(`/property/${propertyPublication.publication_id}?preview=true&template=template1`, '_blank');
+                            navigate(`/property/${propertyPublication.publication_id}?preview=true&template=template1&roomId=${roomId}&publicationId=${id}`);
                           }}
                         >
                           プレビュー
@@ -560,7 +560,7 @@ function PropertyPublicationEditor() {
                           size="small"
                           startIcon={<VisibilityIcon />}
                           onClick={() => {
-                            window.open(`/property/${propertyPublication.publication_id}?preview=true&template=template2`, '_blank');
+                            navigate(`/property/${propertyPublication.publication_id}?preview=true&template=template2&roomId=${roomId}&publicationId=${id}`);
                           }}
                         >
                           プレビュー
@@ -597,7 +597,7 @@ function PropertyPublicationEditor() {
                           size="small"
                           startIcon={<VisibilityIcon />}
                           onClick={() => {
-                            window.open(`/property/${propertyPublication.publication_id}?preview=true&template=template3`, '_blank');
+                            navigate(`/property/${propertyPublication.publication_id}?preview=true&template=template3&roomId=${roomId}&publicationId=${id}`);
                           }}
                         >
                           プレビュー
