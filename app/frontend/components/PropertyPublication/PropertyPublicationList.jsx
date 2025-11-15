@@ -22,6 +22,7 @@ import {
   PublicOff as PublicOffIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Visibility as VisibilityIcon,
   Description as DraftIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -62,6 +63,13 @@ export default function PropertyPublicationList({ roomId }) {
     setSelectedPublication(null);
   };
 
+  const handleView = () => {
+    if (selectedPublication) {
+      navigate(`/property/${selectedPublication.publication_id}?preview=true&roomId=${roomId}`);
+    }
+    handleMenuClose();
+  };
+
   const handleEdit = () => {
     if (selectedPublication) {
       navigate(`/room/${roomId}/property-publication/${selectedPublication.id}/edit`);
@@ -100,7 +108,7 @@ export default function PropertyPublicationList({ roomId }) {
   };
 
   const handleRowClick = (publication) => {
-    navigate(`/room/${roomId}/property-publication/${publication.id}/edit`);
+    navigate(`/property/${publication.publication_id}?preview=true&roomId=${roomId}`);
   };
 
   if (loading) {
@@ -228,6 +236,10 @@ export default function PropertyPublicationList({ roomId }) {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
+        <MenuItem onClick={handleView}>
+          <VisibilityIcon sx={{ mr: 1 }} fontSize="small" />
+          表示
+        </MenuItem>
         <MenuItem onClick={handleEdit}>
           <EditIcon fontSize="small" sx={{ mr: 1 }} />
           編集

@@ -297,20 +297,36 @@ function PropertyPublicationEditor() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Header */}
-      <AppBar position="static" color="default" elevation={1}>
-        <Toolbar>
-          <IconButton edge="start" onClick={() => navigate(`/room/${roomId}`)}>
+      <AppBar position="static" elevation={0} sx={{
+        bgcolor: 'primary.main',
+        borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+        borderRadius: '12px 12px 0 0',
+      }}>
+        <Toolbar variant="dense" sx={{ minHeight: '52px', py: 1 }}>
+          <IconButton
+            edge="start"
+            onClick={() => navigate(`/room/${roomId}`)}
+            sx={{ mr: 2, color: 'white' }}
+          >
             <ArrowBackIcon />
           </IconButton>
 
-          <Typography variant="h6" sx={{ flexGrow: 1, ml: 2 }}>
-            {isEditMode ? '物件公開ページ編集' : '物件公開ページ作成'}
-          </Typography>
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
+              {isEditMode ? '物件公開ページ編集' : '物件公開ページ作成'}
+            </Typography>
+            {room && (
+              <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
+                {room.building?.name} - {room.room_number}号室
+              </Typography>
+            )}
+          </Box>
 
           {isEditMode && (
             <Chip
               label={propertyPublication.status === 'published' ? '公開中' : '下書き'}
               color={propertyPublication.status === 'published' ? 'success' : 'default'}
+              icon={propertyPublication.status === 'published' ? <PublicIcon /> : <PublicOffIcon />}
               size="small"
               sx={{ mr: 2 }}
             />
@@ -318,6 +334,7 @@ function PropertyPublicationEditor() {
 
           <Button
             variant="contained"
+            color="secondary"
             startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
             onClick={handleSave}
             disabled={saving}
@@ -333,14 +350,22 @@ function PropertyPublicationEditor() {
                   variant="outlined"
                   startIcon={<PublicOffIcon />}
                   onClick={handleUnpublish}
-                  sx={{ mr: 1 }}
+                  sx={{
+                    mr: 1,
+                    color: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                    '&:hover': {
+                      borderColor: 'white',
+                      bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    }
+                  }}
                 >
                   非公開
                 </Button>
               ) : (
                 <Button
                   variant="contained"
-                  color="success"
+                  color="secondary"
                   startIcon={<PublicIcon />}
                   onClick={handlePublish}
                   sx={{ mr: 1 }}
@@ -351,10 +376,18 @@ function PropertyPublicationEditor() {
 
               {propertyPublication.status === 'published' && (
                 <>
-                  <IconButton onClick={handleCopyUrl} title="URLをコピー">
+                  <IconButton
+                    onClick={handleCopyUrl}
+                    title="URLをコピー"
+                    sx={{ color: 'white' }}
+                  >
                     <ContentCopyIcon />
                   </IconButton>
-                  <IconButton onClick={() => setQrCodeDialog(true)} title="QRコード">
+                  <IconButton
+                    onClick={() => setQrCodeDialog(true)}
+                    title="QRコード"
+                    sx={{ color: 'white' }}
+                  >
                     <QrCodeIcon />
                   </IconButton>
                 </>
@@ -362,64 +395,69 @@ function PropertyPublicationEditor() {
             </>
           )}
         </Toolbar>
-
-        <Tabs
-          value={activeTab}
-          onChange={(e, newValue) => setActiveTab(newValue)}
-          variant="scrollable"
-          scrollButtons="auto"
-        >
-          <Tab label="基本情報" />
-          <Tab label="画像選択" />
-          <Tab label="コンテンツ" />
-          <Tab label="表示項目" />
-          <Tab label="プレビュー" />
-        </Tabs>
       </AppBar>
+
+      {/* Tabs */}
+      <Tabs
+        value={activeTab}
+        onChange={(e, newValue) => setActiveTab(newValue)}
+        variant="scrollable"
+        scrollButtons="auto"
+        sx={{ px: 2, pt: 1 }}
+      >
+        <Tab label="基本情報" />
+        <Tab label="画像選択" />
+        <Tab label="コンテンツ" />
+        <Tab label="表示項目" />
+        <Tab label="プレビュー" />
+      </Tabs>
 
       {/* Content */}
       <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
         {/* Tab 0: Basic Info */}
         {activeTab === 0 && (
-          <Paper sx={{ p: 3, maxWidth: 800 }}>
-            <Typography variant="h6" gutterBottom>
-              基本情報
-            </Typography>
+          <Box sx={{ display: 'flex', gap: 3, maxWidth: 1400 }}>
+            {/* 基本情報カード */}
+            <Paper sx={{ p: 3, flex: 1 }}>
+              <Typography variant="h6" gutterBottom>
+                基本情報
+              </Typography>
 
-            <TextField
-              fullWidth
-              label="タイトル"
-              value={propertyPublication.title}
-              onChange={(e) => setPropertyPublication({ ...propertyPublication, title: e.target.value })}
-              margin="normal"
-              required
-            />
+              <TextField
+                fullWidth
+                label="タイトル"
+                value={propertyPublication.title}
+                onChange={(e) => setPropertyPublication({ ...propertyPublication, title: e.target.value })}
+                margin="normal"
+                required
+              />
 
-            <TextField
-              fullWidth
-              label="キャッチコピー"
-              value={propertyPublication.catch_copy}
-              onChange={(e) => setPropertyPublication({ ...propertyPublication, catch_copy: e.target.value })}
-              margin="normal"
-              multiline
-              rows={2}
-              placeholder="物件の魅力を一言で表現してください"
-            />
+              <TextField
+                fullWidth
+                label="キャッチコピー"
+                value={propertyPublication.catch_copy}
+                onChange={(e) => setPropertyPublication({ ...propertyPublication, catch_copy: e.target.value })}
+                margin="normal"
+                multiline
+                rows={2}
+                placeholder="物件の魅力を一言で表現してください"
+              />
 
-            <TextField
-              fullWidth
-              label="PR文"
-              value={propertyPublication.pr_text}
-              onChange={(e) => setPropertyPublication({ ...propertyPublication, pr_text: e.target.value })}
-              margin="normal"
-              multiline
-              rows={4}
-              placeholder="物件の詳細な説明や特徴を記載してください"
-            />
+              <TextField
+                fullWidth
+                label="PR文"
+                value={propertyPublication.pr_text}
+                onChange={(e) => setPropertyPublication({ ...propertyPublication, pr_text: e.target.value })}
+                margin="normal"
+                multiline
+                rows={4}
+                placeholder="物件の詳細な説明や特徴を記載してください"
+              />
+            </Paper>
 
-            <Divider sx={{ my: 3 }} />
-
-            <FormControl component="fieldset" sx={{ mt: 2 }}>
+            {/* テンプレート選択カード */}
+            <Paper sx={{ p: 3, flex: 1 }}>
+              <FormControl component="fieldset" sx={{ width: '100%' }}>
               <FormLabel component="legend" sx={{ mb: 2, fontWeight: 'bold' }}>
                 テンプレート選択
               </FormLabel>
@@ -570,7 +608,8 @@ function PropertyPublicationEditor() {
                 </Box>
               </RadioGroup>
             </FormControl>
-          </Paper>
+            </Paper>
+          </Box>
         )}
 
         {/* Tab 1: Photo Selection */}

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
   CircularProgress,
-  Alert
+  Alert,
+  IconButton,
+  Typography
 } from '@mui/material';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import axios from 'axios';
 import Template0 from '../components/PropertyPublication/templates/Template0';
 import Template1 from '../components/PropertyPublication/templates/Template1';
@@ -14,9 +17,15 @@ import Template3 from '../components/PropertyPublication/templates/Template3';
 
 function PublicPropertyDetail() {
   const { publicationId } = useParams();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
+
+  // URLクエリパラメータを取得
+  const urlParams = new URLSearchParams(window.location.search);
+  const isPreview = urlParams.get('preview') === 'true';
+  const roomId = urlParams.get('roomId');
 
   useEffect(() => {
     loadData();
@@ -26,9 +35,6 @@ function PublicPropertyDetail() {
     setLoading(true);
     setError(null);
     try {
-      // URLからpreviewパラメータとtemplateパラメータを取得
-      const urlParams = new URLSearchParams(window.location.search);
-      const isPreview = urlParams.get('preview') === 'true';
       const templateParam = urlParams.get('template');
 
       const response = await axios.get(`/api/v1/property_publications/${publicationId}/public`, {
@@ -209,6 +215,20 @@ function PublicPropertyDetail() {
           display: none;
         }
       `}</style>
+
+      {/* プレビューモード時の戻るボタン */}
+      {isPreview && roomId && (
+        <Box className="no-print" sx={{ bgcolor: 'background.default', py: 2 }}>
+          <Container maxWidth="xl">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <IconButton onClick={() => navigate(`/room/${roomId}`)}>
+                <ArrowBackIcon />
+              </IconButton>
+              <Typography variant="h6">プレビュー</Typography>
+            </Box>
+          </Container>
+        </Box>
+      )}
 
       {renderTemplate()}
     </>
