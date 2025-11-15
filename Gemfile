@@ -80,3 +80,7 @@ gem "google-cloud-ai_platform-v1"
 
 gem "rqrcode", "~> 3.1"
 gem "chunky_png", "~> 1.4"
+
+# GIS data handling (GeoJSON only)
+gem "rgeo", "~> 3.0"
+gem "rgeo-geojson", "~> 2.1"

@@ -48,6 +48,23 @@ Rails.application.routes.draw do
       # 削除済み物件一覧
       get 'buildings_archived', to: 'buildings#archived'
 
+      # 学区情報
+      resources :school_districts, only: [:index, :show] do
+        collection do
+          get :stats
+        end
+      end
+
+      # 管理者用API
+      namespace :admin do
+        resources :map_layers do
+          member do
+            post :append_features    # フィーチャー追加
+            post :replace_features   # データ上書き
+          end
+        end
+      end
+
       # 部屋詳細・更新・削除はスタンドアロン
       resources :rooms, only: [:show, :update, :destroy] do
         # 部屋写真管理

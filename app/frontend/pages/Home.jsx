@@ -20,7 +20,7 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 
 export default function Home() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -198,17 +198,19 @@ export default function Home() {
                 </Typography>
               </Box>
               <Typography variant="body2" color="text.secondary">
-                ユーザー管理やテナント設定を行います。（管理者のみ）
+                レイヤー管理、ユーザー管理やテナント設定を行います。（管理者のみ）
               </Typography>
             </CardContent>
             <CardActions sx={{ p: 2, pt: 0 }}>
               <Button
+                component={Link}
+                to="/admin/layers"
                 size="large"
                 variant="outlined"
                 fullWidth
-                disabled
+                disabled={user?.role === 'member'}
               >
-                近日公開
+                レイヤー管理
               </Button>
             </CardActions>
           </Card>

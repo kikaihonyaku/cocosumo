@@ -37,6 +37,7 @@ export default function LeftPanel({
   onLayerToggle,
   searchConditions = {},
   selectedLayers = [],
+  availableLayers = [],
   onHoverChange,
   isLoading = false,
   error = null,
@@ -133,14 +134,6 @@ export default function LeftPanel({
 
     onSearch(newConditions);
   };
-
-  const availableLayers = [
-    { id: 'school-district', label: '学区レイヤー', description: '小中学校の学区境界' },
-    { id: 'transport', label: '交通機関レイヤー', description: '駅・バス停・路線' },
-    { id: 'commercial', label: '商業施設レイヤー', description: 'ショッピング・飲食店' },
-    { id: 'medical', label: '医療機関レイヤー', description: '病院・診療所・薬局' },
-    { id: 'parks', label: '公園・緑地レイヤー', description: '公園・緑地・河川' }
-  ];
 
   const conditionChips = getConditionChips();
 

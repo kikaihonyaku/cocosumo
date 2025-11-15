@@ -27,4 +27,14 @@ class ApplicationController < ActionController::Base
       redirect_to root_path, alert: 'ログインが必要です'
     end
   end
+
+  # 管理者権限を要求
+  def require_admin
+    unless current_user&.admin? || current_user&.super_admin?
+      respond_to do |format|
+        format.html { redirect_to root_path, alert: '管理者権限が必要です' }
+        format.json { render json: { error: '管理者権限が必要です' }, status: :forbidden }
+      end
+    end
+  end
 end

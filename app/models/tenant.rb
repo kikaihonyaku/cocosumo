@@ -2,6 +2,7 @@ class Tenant < ApplicationRecord
   # Associations
   has_many :users, dependent: :destroy
   has_many :buildings, dependent: :destroy
+  has_many :map_layers, dependent: :destroy
 
   # Validations
   validates :name, presence: true

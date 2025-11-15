@@ -25,6 +25,7 @@ import PublicVirtualStaging from "./pages/PublicVirtualStaging";
 import VirtualStagings from "./pages/VirtualStagings";
 import PropertyPublicationEditor from "./pages/PropertyPublicationEditor";
 import PublicPropertyDetail from "./pages/PublicPropertyDetail";
+import LayerManagement from "./pages/admin/LayerManagement";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -115,6 +116,7 @@ export default function App() {
             <Route path="/map" element={<MapSystem />} />
             <Route path="/vr-tours" element={<VrTours />} />
             <Route path="/virtual-stagings" element={<VirtualStagings />} />
+            <Route path="/admin/layers" element={<LayerManagement />} />
             <Route path="/buildings" element={<Buildings />} />
             <Route path="/buildings/new" element={<BuildingForm />} />
             <Route path="/buildings/:id/edit" element={<BuildingForm />} />

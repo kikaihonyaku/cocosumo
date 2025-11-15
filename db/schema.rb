@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_15_015642) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_15_222843) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -81,6 +81,26 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_015642) do
     t.datetime "discarded_at"
     t.index ["discarded_at"], name: "index_buildings_on_discarded_at"
     t.index ["tenant_id"], name: "index_buildings_on_tenant_id"
+  end
+
+  create_table "map_layers", force: :cascade do |t|
+    t.integer "tenant_id", null: false
+    t.string "name", null: false
+    t.string "layer_key", null: false
+    t.text "description"
+    t.string "layer_type", null: false
+    t.string "color", default: "#FF6B00"
+    t.float "opacity", default: 0.15
+    t.integer "display_order", default: 0
+    t.boolean "is_active", default: true
+    t.string "icon"
+    t.integer "feature_count", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["is_active"], name: "index_map_layers_on_is_active"
+    t.index ["layer_type"], name: "index_map_layers_on_layer_type"
+    t.index ["tenant_id", "layer_key"], name: "index_map_layers_on_tenant_id_and_layer_key", unique: true
+    t.index ["tenant_id"], name: "index_map_layers_on_tenant_id"
   end
 
   create_table "owners", force: :cascade do |t|
@@ -200,6 +220,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_015642) do
     t.index ["building_id"], name: "index_rooms_on_building_id"
   end
 
+  create_table "school_districts", force: :cascade do |t|
+    t.string "name"
+    t.string "school_name"
+    t.string "school_code"
+    t.string "prefecture"
+    t.string "city"
+    t.string "school_type"
+    t.json "geometry"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "map_layer_id"
+    t.index ["city"], name: "index_school_districts_on_city"
+    t.index ["map_layer_id"], name: "index_school_districts_on_map_layer_id"
+    t.index ["prefecture"], name: "index_school_districts_on_prefecture"
+    t.index ["school_code"], name: "index_school_districts_on_school_code"
+  end
+
   create_table "tenants", force: :cascade do |t|
     t.string "name"
     t.string "subdomain"
@@ -278,6 +315,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_015642) do
   add_foreign_key "ai_generated_images", "rooms"
   add_foreign_key "building_photos", "buildings"
   add_foreign_key "buildings", "tenants"
+  add_foreign_key "map_layers", "tenants"
   add_foreign_key "owners", "buildings"
   add_foreign_key "owners", "tenants"
   add_foreign_key "property_inquiries", "property_publications"
@@ -290,6 +328,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_015642) do
   add_foreign_key "property_publications", "rooms"
   add_foreign_key "room_photos", "rooms"
   add_foreign_key "rooms", "buildings"
+  add_foreign_key "school_districts", "map_layers"
   add_foreign_key "users", "tenants"
   add_foreign_key "virtual_stagings", "room_photos", column: "after_photo_id"
   add_foreign_key "virtual_stagings", "room_photos", column: "before_photo_id"

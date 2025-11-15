@@ -41,6 +41,7 @@ export default function MapSystem() {
   const [error, setError] = useState(null);
   const [searchConditions, setSearchConditions] = useState({});
   const [mapControllers, setMapControllers] = useState(null);
+  const [availableLayers, setAvailableLayers] = useState([]);
 
   // レスポンシブ設定
   const isMdUp = useMediaQuery(muiTheme.breakpoints.up('md'));
@@ -57,6 +58,20 @@ export default function MapSystem() {
   // 初回データ取得
   useEffect(() => {
     fetchBuildings();
+    fetchMapLayers();
+  }, []);
+
+  // ウィンドウがフォーカスされたときにレイヤー情報を再取得
+  // (レイヤー管理画面で変更した後、このページに戻ったときに反映される)
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchMapLayers();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   // 物件データの取得
@@ -103,6 +118,40 @@ export default function MapSystem() {
     }
   };
 
+  // レイヤー情報の取得
+  const fetchMapLayers = async () => {
+    try {
+      const response = await fetch('/api/v1/admin/map_layers', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // map_layersから取得したデータをLeftPanel用に変換
+        const layers = data.map(layer => ({
+          id: layer.layer_key,
+          label: layer.name,
+          description: `${layer.feature_count}件のフィーチャー`,
+          color: layer.color,
+          opacity: layer.opacity,
+          is_active: layer.is_active,
+          layer_type: layer.layer_type,
+        })).filter(layer => layer.is_active); // 有効なレイヤーのみ表示
+
+        setAvailableLayers(layers);
+      } else if (response.status === 403 || response.status === 401) {
+        // 権限がない場合は空配列（レイヤー機能を表示しない）
+        setAvailableLayers([]);
+      }
+    } catch (error) {
+      console.error('レイヤー情報の取得エラー:', error);
+      setAvailableLayers([]);
+    }
+  };
+
   const handleMarkerSelect = (type, data) => {
     setSelectedObject({ type, data });
     setRightPanelVisible(true);
@@ -132,8 +181,6 @@ export default function MapSystem() {
         return prev.filter(id => id !== layerId);
       }
     });
-    // ここでレイヤーの表示を切り替える処理を追加
-    console.log('Layer toggled:', layerId, enabled);
   };
 
   const handleTogglePin = () => {
@@ -260,6 +307,7 @@ export default function MapSystem() {
               onLayerToggle={handleLayerToggle}
               searchConditions={searchConditions}
               selectedLayers={selectedLayers}
+              availableLayers={availableLayers}
               onHoverChange={setLeftPanelHovered}
               isLoading={isLoading}
               error={error}
@@ -368,6 +416,8 @@ export default function MapSystem() {
                     properties={properties}
                     isLoading={isLoading}
                     onNewBuildingClick={() => setBuildingFormModalOpen(true)}
+                    selectedLayers={selectedLayers}
+                    availableLayers={availableLayers}
                   />
                 )}
               </Box>
