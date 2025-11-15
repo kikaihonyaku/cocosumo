@@ -9,13 +9,11 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  Chip,
-  Divider
+  Button
 } from '@mui/material';
 import {
-  Home as HomeIcon,
   LocationOn as LocationOnIcon,
-  AttachMoney as AttachMoneyIcon
+  Email as EmailIcon
 } from '@mui/icons-material';
 import PhotoGallery from '../PhotoGallery';
 import InquiryForm from '../InquiryForm';
@@ -65,212 +63,405 @@ function Template1({ data, publicationId }) {
   };
 
   return (
-    <Box sx={{ bgcolor: '#f9f9f9', minHeight: '100vh', py: 3 }} className="print-container">
-      <Container maxWidth="lg">
-        {/* SUUMO-style Header with prominent rent display */}
-        <Paper sx={{ mb: 3, overflow: 'hidden' }}>
-          {/* Title Section */}
-          <Box sx={{ bgcolor: '#0068b7', color: 'white', px: 3, py: 2 }}>
-            <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold' }}>
-              {title}
-            </Typography>
-            {visibleFields.address && building?.address && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
-                <LocationOnIcon sx={{ fontSize: 18 }} />
-                <Typography variant="body2">
-                  {building.address}
-                </Typography>
-              </Box>
-            )}
-          </Box>
+    <Box className="template1-suumo print-container">
+      {/* SUUMO風のカスタムCSS */}
+      <style>{`
+        .template1-suumo {
+          background-color: #f2f2f2;
+          min-height: 100vh;
+          font-family: "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ ProN W3", "游ゴシック", "Yu Gothic", "メイリオ", Meiryo, sans-serif;
+        }
 
-          {/* Rent Display - SUUMO style prominent */}
-          <Box sx={{ bgcolor: 'white', px: 3, py: 3 }}>
-            {visibleFields.rent && room.rent && (
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="h3" component="div" sx={{
-                  color: '#0068b7',
-                  fontWeight: 'bold',
-                  mb: 1
-                }}>
-                  {room.rent.toLocaleString()}円
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  賃料
-                </Typography>
-              </Box>
-            )}
+        .template1-suumo .suumo-breadcrumb {
+          background: #fff;
+          padding: 12px 0;
+          border-bottom: 1px solid #e5e5e5;
+          font-size: 12px;
+          color: #666;
+        }
 
-            {catch_copy && (
-              <Typography variant="body1" sx={{
-                color: '#333',
-                fontWeight: 'medium',
-                borderLeft: '4px solid #0068b7',
-                pl: 2,
-                my: 2
-              }}>
-                {catch_copy}
-              </Typography>
-            )}
+        .template1-suumo .suumo-title-section {
+          background: #fff;
+          padding: 20px;
+          margin-bottom: 16px;
+        }
 
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 2 }}>
-              {visibleFields.room_type && room.room_type && (
-                <Chip
-                  label={getRoomTypeLabel(room.room_type)}
-                  size="small"
-                  sx={{ bgcolor: '#e3f2fd' }}
-                />
-              )}
-              {visibleFields.area && room.area && (
-                <Chip
-                  label={`${room.area}m²`}
-                  size="small"
-                  sx={{ bgcolor: '#e3f2fd' }}
-                />
-              )}
-              {visibleFields.floor && room.floor && (
-                <Chip
-                  label={`${room.floor}階`}
-                  size="small"
-                  sx={{ bgcolor: '#e3f2fd' }}
-                />
-              )}
+        .template1-suumo .suumo-property-name {
+          font-size: 28px;
+          font-weight: bold;
+          color: #333;
+          margin-bottom: 12px;
+          line-height: 1.4;
+        }
+
+        .template1-suumo .suumo-address {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: #666;
+          font-size: 14px;
+          margin-bottom: 16px;
+        }
+
+        .template1-suumo .suumo-rent-box {
+          background: linear-gradient(to bottom, #fff9ed 0%, #fff 100%);
+          border: 2px solid #ff8c00;
+          border-radius: 4px;
+          padding: 16px 20px;
+          margin-bottom: 16px;
+        }
+
+        .template1-suumo .suumo-rent-amount {
+          font-size: 36px;
+          font-weight: bold;
+          color: #ff6600;
+          line-height: 1.2;
+        }
+
+        .template1-suumo .suumo-rent-label {
+          font-size: 13px;
+          color: #666;
+          margin-top: 4px;
+        }
+
+        .template1-suumo .suumo-action-buttons {
+          display: flex;
+          gap: 12px;
+          margin-top: 16px;
+        }
+
+        .template1-suumo .suumo-btn-primary {
+          background: #00b900;
+          color: white;
+          font-weight: bold;
+          padding: 14px 32px;
+          border-radius: 4px;
+          border: none;
+          font-size: 16px;
+          cursor: pointer;
+          flex: 1;
+          transition: background 0.2s;
+        }
+
+        .template1-suumo .suumo-btn-primary:hover {
+          background: #009900;
+        }
+
+        .template1-suumo .suumo-btn-secondary {
+          background: #fff;
+          color: #00b900;
+          font-weight: bold;
+          padding: 14px 24px;
+          border-radius: 4px;
+          border: 2px solid #00b900;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .template1-suumo .suumo-btn-secondary:hover {
+          background: #f0fff0;
+        }
+
+        .template1-suumo .suumo-section {
+          background: #fff;
+          margin-bottom: 16px;
+          border-radius: 4px;
+          overflow: hidden;
+        }
+
+        .template1-suumo .suumo-section-header {
+          background: #f7f7f7;
+          padding: 14px 20px;
+          border-bottom: 2px solid #00b900;
+          font-size: 18px;
+          font-weight: bold;
+          color: #333;
+        }
+
+        .template1-suumo .suumo-section-body {
+          padding: 20px;
+        }
+
+        .template1-suumo .suumo-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        .template1-suumo .suumo-table tr {
+          border-bottom: 1px solid #e5e5e5;
+        }
+
+        .template1-suumo .suumo-table tr:last-child {
+          border-bottom: none;
+        }
+
+        .template1-suumo .suumo-table th {
+          background: #f9f9f9;
+          padding: 14px 16px;
+          text-align: left;
+          font-weight: bold;
+          color: #333;
+          width: 140px;
+          font-size: 14px;
+          vertical-align: top;
+        }
+
+        .template1-suumo .suumo-table td {
+          padding: 14px 16px;
+          color: #333;
+          font-size: 14px;
+          line-height: 1.6;
+        }
+
+        .template1-suumo .suumo-table td.highlight {
+          color: #ff6600;
+          font-size: 18px;
+          font-weight: bold;
+        }
+
+        .template1-suumo .suumo-photo-count {
+          background: rgba(0, 0, 0, 0.6);
+          color: white;
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 13px;
+          display: inline-block;
+          margin-bottom: 12px;
+        }
+
+        .template1-suumo .suumo-tags {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          margin-top: 12px;
+        }
+
+        .template1-suumo .suumo-tag {
+          background: #e8f5e9;
+          color: #2e7d32;
+          padding: 6px 14px;
+          border-radius: 16px;
+          font-size: 13px;
+          font-weight: 500;
+        }
+
+        .template1-suumo .suumo-catch-copy {
+          background: #fffacd;
+          border-left: 4px solid #ffd700;
+          padding: 16px;
+          margin: 16px 0;
+          font-size: 15px;
+          line-height: 1.7;
+          color: #333;
+        }
+
+        .template1-suumo .suumo-sidebar {
+          position: sticky;
+          top: 20px;
+        }
+
+        .template1-suumo .suumo-contact-box {
+          background: #fff;
+          border: 2px solid #00b900;
+          border-radius: 8px;
+          padding: 20px;
+          margin-bottom: 16px;
+        }
+
+        .template1-suumo .suumo-contact-title {
+          font-size: 18px;
+          font-weight: bold;
+          color: #333;
+          margin-bottom: 16px;
+          text-align: center;
+        }
+      `}</style>
+
+      {/* パンくずリスト風 */}
+      <Box className="suumo-breadcrumb">
+        <Container maxWidth="lg">
+          <Typography variant="body2">
+            ホーム &gt; 賃貸物件 &gt; 物件詳細
+          </Typography>
+        </Container>
+      </Box>
+
+      <Container maxWidth="lg" sx={{ py: 3 }}>
+        {/* タイトル・住所・賃料セクション */}
+        <Paper className="suumo-title-section" elevation={0}>
+          <div className="suumo-property-name">
+            {title}
+          </div>
+
+          {visibleFields.address && building?.address && (
+            <div className="suumo-address">
+              <LocationOnIcon sx={{ fontSize: 18, color: '#00b900' }} />
+              <span>{building.address}</span>
+            </div>
+          )}
+
+          {visibleFields.rent && room.rent && (
+            <Box className="suumo-rent-box">
+              <div className="suumo-rent-amount">
+                {room.rent.toLocaleString()}円
+              </div>
+              <div className="suumo-rent-label">賃料</div>
             </Box>
-          </Box>
+          )}
+
+          {catch_copy && (
+            <div className="suumo-catch-copy">
+              {catch_copy}
+            </div>
+          )}
+
+          <div className="suumo-tags">
+            {visibleFields.room_type && room.room_type && (
+              <span className="suumo-tag">{getRoomTypeLabel(room.room_type)}</span>
+            )}
+            {visibleFields.area && room.area && (
+              <span className="suumo-tag">{room.area}m²</span>
+            )}
+            {visibleFields.floor && room.floor && (
+              <span className="suumo-tag">{room.floor}階</span>
+            )}
+          </div>
+
+          <div className="suumo-action-buttons">
+            <button className="suumo-btn-primary">
+              <EmailIcon sx={{ fontSize: 18, verticalAlign: 'middle', mr: 0.5 }} />
+              空室確認・お問い合わせ（無料）
+            </button>
+            <button className="suumo-btn-secondary">
+              お気に入りに追加
+            </button>
+          </div>
         </Paper>
 
         <Grid container spacing={3}>
           {/* Left Column */}
           <Grid size={{ xs: 12, md: 8 }}>
-            {/* Image Gallery - SUUMO style with white background */}
+            {/* Image Gallery - SUUMO style */}
             {property_publication_photos && property_publication_photos.length > 0 && (
-              <Paper sx={{ mb: 3, overflow: 'hidden' }}>
-                <Box sx={{ bgcolor: '#0068b7', color: 'white', px: 2, py: 1.5 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                    写真（{property_publication_photos.length}点）
-                  </Typography>
-                </Box>
-                <Box sx={{ p: 2 }}>
+              <Box className="suumo-section">
+                <div className="suumo-section-header">
+                  写真
+                  <span className="suumo-photo-count" style={{ marginLeft: '12px' }}>
+                    {property_publication_photos.length}点
+                  </span>
+                </div>
+                <Box className="suumo-section-body">
                   <PhotoGallery photos={property_publication_photos} />
                 </Box>
-              </Paper>
+              </Box>
             )}
 
             {/* PR Text Section */}
             {pr_text && (
-              <Paper sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ color: '#0068b7', fontWeight: 'bold', borderBottom: '3px solid #0068b7', pb: 1, mb: 2 }}>
-                  物件の特徴
-                </Typography>
-                <Typography variant="body1" sx={{ lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-                  {pr_text}
-                </Typography>
-              </Paper>
+              <Box className="suumo-section">
+                <div className="suumo-section-header">物件の特徴・おすすめポイント</div>
+                <Box className="suumo-section-body">
+                  <Typography sx={{ lineHeight: 1.8, whiteSpace: 'pre-line', color: '#333', fontSize: '14px' }}>
+                    {pr_text}
+                  </Typography>
+                </Box>
+              </Box>
             )}
 
-            {/* Property Details - SUUMO style striped table */}
-            <Paper sx={{ mb: 3, overflow: 'hidden' }}>
-              <Box sx={{ bgcolor: '#0068b7', color: 'white', px: 2, py: 1.5 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                  物件詳細
-                </Typography>
+            {/* Property Details - SUUMO style table */}
+            <Box className="suumo-section">
+              <div className="suumo-section-header">物件詳細</div>
+              <Box className="suumo-section-body" sx={{ p: '0 !important' }}>
+                <table className="suumo-table">
+                  <tbody>
+                    {visibleFields.rent && room.rent && (
+                      <tr>
+                        <th>賃料</th>
+                        <td className="highlight">{room.rent.toLocaleString()}円</td>
+                      </tr>
+                    )}
+                    {visibleFields.management_fee && room.management_fee && (
+                      <tr>
+                        <th>管理費等</th>
+                        <td>{room.management_fee.toLocaleString()}円</td>
+                      </tr>
+                    )}
+                    {visibleFields.deposit && room.deposit && (
+                      <tr>
+                        <th>敷金</th>
+                        <td>{room.deposit.toLocaleString()}円</td>
+                      </tr>
+                    )}
+                    {visibleFields.key_money && room.key_money && (
+                      <tr>
+                        <th>礼金</th>
+                        <td>{room.key_money.toLocaleString()}円</td>
+                      </tr>
+                    )}
+                    {visibleFields.room_type && room.room_type && (
+                      <tr>
+                        <th>間取り</th>
+                        <td>{getRoomTypeLabel(room.room_type)}</td>
+                      </tr>
+                    )}
+                    {visibleFields.area && room.area && (
+                      <tr>
+                        <th>専有面積</th>
+                        <td>{room.area}m²</td>
+                      </tr>
+                    )}
+                    {visibleFields.floor && room.floor && (
+                      <tr>
+                        <th>階数</th>
+                        <td>{room.floor}階</td>
+                      </tr>
+                    )}
+                    {visibleFields.building_type && building?.building_type && (
+                      <tr>
+                        <th>建物種別</th>
+                        <td>{getBuildingTypeLabel(building.building_type)}</td>
+                      </tr>
+                    )}
+                    {visibleFields.structure && building?.structure && (
+                      <tr>
+                        <th>構造</th>
+                        <td>{building.structure}</td>
+                      </tr>
+                    )}
+                    {visibleFields.built_year && building?.built_year && (
+                      <tr>
+                        <th>築年数</th>
+                        <td>{building.built_year}年</td>
+                      </tr>
+                    )}
+                    {visibleFields.facilities && room.facilities && (
+                      <tr>
+                        <th>設備・条件</th>
+                        <td>{room.facilities}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </Box>
-
-              <Table>
-                <TableBody>
-                  {visibleFields.rent && room.rent && (
-                    <TableRow sx={{ bgcolor: '#fafafa' }}>
-                      <TableCell sx={{ fontWeight: 'bold', width: '35%', py: 2, borderBottom: '1px solid #e0e0e0' }}>賃料</TableCell>
-                      <TableCell sx={{ py: 2, borderBottom: '1px solid #e0e0e0', color: '#0068b7', fontWeight: 'bold', fontSize: '1.1rem' }}>
-                        {room.rent.toLocaleString()}円
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.management_fee && room.management_fee && (
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2, borderBottom: '1px solid #e0e0e0' }}>管理費</TableCell>
-                      <TableCell sx={{ py: 2, borderBottom: '1px solid #e0e0e0' }}>{room.management_fee.toLocaleString()}円</TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.deposit && room.deposit && (
-                    <TableRow sx={{ bgcolor: '#fafafa' }}>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2, borderBottom: '1px solid #e0e0e0' }}>敷金</TableCell>
-                      <TableCell sx={{ py: 2, borderBottom: '1px solid #e0e0e0' }}>{room.deposit.toLocaleString()}円</TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.key_money && room.key_money && (
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2, borderBottom: '1px solid #e0e0e0' }}>礼金</TableCell>
-                      <TableCell sx={{ py: 2, borderBottom: '1px solid #e0e0e0' }}>{room.key_money.toLocaleString()}円</TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.room_type && room.room_type && (
-                    <TableRow sx={{ bgcolor: '#fafafa' }}>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2, borderBottom: '1px solid #e0e0e0' }}>間取り</TableCell>
-                      <TableCell sx={{ py: 2, borderBottom: '1px solid #e0e0e0' }}>{getRoomTypeLabel(room.room_type)}</TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.area && room.area && (
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2, borderBottom: '1px solid #e0e0e0' }}>専有面積</TableCell>
-                      <TableCell sx={{ py: 2, borderBottom: '1px solid #e0e0e0' }}>{room.area}m²</TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.floor && room.floor && (
-                    <TableRow sx={{ bgcolor: '#fafafa' }}>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2, borderBottom: '1px solid #e0e0e0' }}>階数</TableCell>
-                      <TableCell sx={{ py: 2, borderBottom: '1px solid #e0e0e0' }}>{room.floor}階</TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.building_type && building?.building_type && (
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2, borderBottom: '1px solid #e0e0e0' }}>建物種別</TableCell>
-                      <TableCell sx={{ py: 2, borderBottom: '1px solid #e0e0e0' }}>{getBuildingTypeLabel(building.building_type)}</TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.structure && building?.structure && (
-                    <TableRow sx={{ bgcolor: '#fafafa' }}>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2, borderBottom: '1px solid #e0e0e0' }}>構造</TableCell>
-                      <TableCell sx={{ py: 2, borderBottom: '1px solid #e0e0e0' }}>{building.structure}</TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.built_year && building?.built_year && (
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2, borderBottom: '1px solid #e0e0e0' }}>築年</TableCell>
-                      <TableCell sx={{ py: 2, borderBottom: '1px solid #e0e0e0' }}>{building.built_year}年</TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.facilities && room.facilities && (
-                    <TableRow sx={{ bgcolor: '#fafafa' }}>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2, borderBottom: 'none' }}>設備</TableCell>
-                      <TableCell sx={{ py: 2, borderBottom: 'none' }}>{room.facilities}</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </Paper>
+            </Box>
 
             {/* VR Tour & Virtual Staging - SUUMO style */}
             {((property_publication_vr_tours && property_publication_vr_tours.length > 0) ||
               (property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0)) && (
-              <Paper sx={{ mb: 3, overflow: 'hidden' }}>
-                <Box sx={{ bgcolor: '#0068b7', color: 'white', px: 2, py: 1.5 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                    バーチャル内覧
-                  </Typography>
-                </Box>
-
-                <Box sx={{ p: 2 }}>
+              <Box className="suumo-section">
+                <div className="suumo-section-header">パノラマ写真・VR内覧</div>
+                <Box className="suumo-section-body">
                   {/* VR Tours */}
                   {property_publication_vr_tours && property_publication_vr_tours.length > 0 && (
                     <Box sx={{ mb: 3 }}>
                       {property_publication_vr_tours.map((item) => (
                         <Box key={item.vr_tour.id} sx={{ mb: 3 }}>
-                          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#0068b7' }}>
+                          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#333', fontSize: '15px' }}>
                             VRツアー: {item.vr_tour.title}
                           </Typography>
                           {item.vr_tour.description && (
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                            <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontSize: '13px', mb: 2 }}>
                               {item.vr_tour.description}
                             </Typography>
                           )}
@@ -280,8 +471,8 @@ function Template1({ data, publicationId }) {
                             sx={{
                               width: '100%',
                               height: 500,
-                              border: '2px solid #0068b7',
-                              borderRadius: 1,
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
                               mt: 1
                             }}
                           />
@@ -295,11 +486,11 @@ function Template1({ data, publicationId }) {
                     <Box>
                       {property_publication_virtual_stagings.map((item) => (
                         <Box key={item.virtual_staging.id} sx={{ mb: 3 }}>
-                          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#0068b7' }}>
+                          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#333', fontSize: '15px' }}>
                             バーチャルステージング: {item.virtual_staging.title}
                           </Typography>
                           {item.virtual_staging.description && (
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                            <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontSize: '13px', mb: 2 }}>
                               {item.virtual_staging.description}
                             </Typography>
                           )}
@@ -309,8 +500,8 @@ function Template1({ data, publicationId }) {
                             sx={{
                               width: '100%',
                               height: 500,
-                              border: '2px solid #0068b7',
-                              borderRadius: 1,
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
                               mt: 1
                             }}
                           />
@@ -319,32 +510,30 @@ function Template1({ data, publicationId }) {
                     </Box>
                   )}
                 </Box>
-              </Paper>
+              </Box>
             )}
           </Grid>
 
-          {/* Right Column - SUUMO style */}
+          {/* Right Column - SUUMO style sidebar */}
           <Grid size={{ xs: 12, md: 4 }}>
-            <Paper sx={{ mb: 3, position: 'sticky', top: 20, overflow: 'hidden' }} className="no-print">
-              <Box sx={{ bgcolor: '#0068b7', color: 'white', px: 2, py: 1.5 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                  お問い合わせ
-                </Typography>
-              </Box>
-              <Box sx={{ p: 2 }}>
+            <Box className="suumo-sidebar no-print">
+              <Box className="suumo-contact-box">
+                <div className="suumo-contact-title">
+                  この物件へのお問い合わせ
+                </div>
                 <InquiryForm publicationId={publicationId} />
               </Box>
 
-              <Divider />
-
-              <Box sx={{ p: 2 }}>
-                <ShareButtons
-                  url={public_url || window.location.href}
-                  title={title}
-                  qrCodeUrl={qr_code_data_url}
-                />
+              <Box className="suumo-section" sx={{ mb: 2 }}>
+                <Box className="suumo-section-body">
+                  <ShareButtons
+                    url={public_url || window.location.href}
+                    title={title}
+                    qrCodeUrl={qr_code_data_url}
+                  />
+                </Box>
               </Box>
-            </Paper>
+            </Box>
           </Grid>
         </Grid>
       </Container>

@@ -7,6 +7,7 @@ import {
   Alert
 } from '@mui/material';
 import axios from 'axios';
+import Template0 from '../components/PropertyPublication/templates/Template0';
 import Template1 from '../components/PropertyPublication/templates/Template1';
 import Template2 from '../components/PropertyPublication/templates/Template2';
 import Template3 from '../components/PropertyPublication/templates/Template3';
@@ -137,6 +138,8 @@ function PublicPropertyDetail() {
     const templateType = template_type || 'template1';
 
     switch (templateType) {
+      case 'template0':
+        return <Template0 data={data} publicationId={publicationId} />;
       case 'template2':
         return <Template2 data={data} publicationId={publicationId} />;
       case 'template3':

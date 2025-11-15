@@ -430,11 +430,40 @@ function PropertyPublicationEditor() {
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                     <FormControlLabel
+                      value="template0"
+                      control={<Radio />}
+                      label={
+                        <Box>
+                          <Typography variant="body1" fontWeight="bold">テンプレート0（旧SUUMO風）</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            シンプルなブルー系デザイン
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      {isEditMode && propertyPublication.publication_id && (
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<VisibilityIcon />}
+                          onClick={() => {
+                            window.open(`/property/${propertyPublication.publication_id}?preview=true&template=template0`, '_blank');
+                          }}
+                        >
+                          プレビュー
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                    <FormControlLabel
                       value="template1"
                       control={<Radio />}
                       label={
                         <Box>
-                          <Typography variant="body1" fontWeight="bold">テンプレート1</Typography>
+                          <Typography variant="body1" fontWeight="bold">テンプレート1（新SUUMO風）</Typography>
                           <Typography variant="caption" color="text.secondary">
                             サンプル: SUUMO風デザイン
                           </Typography>
