@@ -14,7 +14,7 @@ class Api::V1::VrToursController < ApplicationController
         only: [:id, :title, :description, :status],
         include: {
           vr_scenes: {
-            methods: [:photo_url]
+            methods: [:photo_url, :virtual_staging_scene?, :before_photo_url, :after_photo_url]
           }
         },
         methods: [:thumbnail_url, :scenes_count]
@@ -42,7 +42,7 @@ class Api::V1::VrToursController < ApplicationController
   def show
     render json: @vr_tour.as_json(include: {
       vr_scenes: {
-        methods: [:photo_url],
+        methods: [:photo_url, :virtual_staging_scene?, :before_photo_url, :after_photo_url],
         include: {
           room_photo: {
             only: [:id, :photo_type, :caption]
@@ -67,7 +67,7 @@ class Api::V1::VrToursController < ApplicationController
     if @vr_tour.published?
       render json: @vr_tour.as_json(include: {
         vr_scenes: {
-          methods: [:photo_url]
+          methods: [:photo_url, :virtual_staging_scene?, :before_photo_url, :after_photo_url]
         },
         room: {
           only: [:id, :room_number],
