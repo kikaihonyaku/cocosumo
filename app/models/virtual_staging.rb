@@ -10,6 +10,10 @@ class VirtualStaging < ApplicationRecord
   validates :title, presence: true
   validates :before_photo_id, presence: true
   validates :after_photo_id, presence: true
+  validates :public_id, presence: true, uniqueness: true
+
+  # コールバック
+  before_validation :generate_public_id, on: :create
 
   # スコープ
   scope :published, -> { where(status: :published) }
@@ -28,5 +32,17 @@ class VirtualStaging < ApplicationRecord
   # サムネイル画像（Before画像を使用）
   def thumbnail_url
     before_photo_url
+  end
+
+  private
+
+  def generate_public_id
+    return if public_id.present?
+
+    loop do
+      # Generate a random 12-character alphanumeric ID
+      self.public_id = SecureRandom.alphanumeric(12).downcase
+      break unless VirtualStaging.exists?(public_id: public_id)
+    end
   end
 end

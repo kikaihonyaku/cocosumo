@@ -7,6 +7,10 @@ class VrTour < ApplicationRecord
 
   # Validations
   validates :title, presence: true
+  validates :public_id, presence: true, uniqueness: true
+
+  # Callbacks
+  before_validation :generate_public_id, on: :create
 
   # Serialize config as JSON
   serialize :config, coder: JSON
@@ -63,6 +67,18 @@ class VrTour < ApplicationRecord
       first_scene.photo_url
     else
       minimap_image_url
+    end
+  end
+
+  private
+
+  def generate_public_id
+    return if public_id.present?
+
+    loop do
+      # Generate a random 12-character alphanumeric ID
+      self.public_id = SecureRandom.alphanumeric(12).downcase
+      break unless VrTour.exists?(public_id: public_id)
     end
   end
 end

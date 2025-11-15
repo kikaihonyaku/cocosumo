@@ -56,9 +56,9 @@ class Api::V1::VirtualStagingsController < ApplicationController
     )
   end
 
-  # GET /api/v1/virtual_stagings/:id/public (公開用、認証不要)
+  # GET /api/v1/virtual_stagings/:public_id/public (公開用、認証不要)
   def show_public
-    @virtual_staging = VirtualStaging.find(params[:id])
+    @virtual_staging = VirtualStaging.find_by!(public_id: params[:public_id])
 
     if @virtual_staging.published?
       render json: @virtual_staging.as_json(

@@ -4,19 +4,19 @@ import { Box, Container, Typography, CircularProgress, Paper } from '@mui/materi
 import BeforeAfterSlider from '../components/VirtualStaging/BeforeAfterSlider';
 
 const PublicVirtualStaging = () => {
-  const { id } = useParams();
+  const { publicId } = useParams();
   const [loading, setLoading] = useState(true);
   const [virtualStaging, setVirtualStaging] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     loadVirtualStaging();
-  }, [id]);
+  }, [publicId]);
 
   const loadVirtualStaging = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/v1/virtual_stagings/${id}/public`);
+      const response = await fetch(`/api/v1/virtual_stagings/${publicId}/public`);
 
       if (response.ok) {
         const data = await response.json();

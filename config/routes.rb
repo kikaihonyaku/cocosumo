@@ -98,22 +98,16 @@ Rails.application.routes.draw do
             post :reorder
           end
         end
-
-        # 公開VRツアー表示用（認証不要）
-        member do
-          get :public, to: 'vr_tours#show_public'
-        end
       end
+
+      # 公開VRツアー表示用（認証不要、public_idで取得）
+      get 'vr_tours/:public_id/public', to: 'vr_tours#show_public', as: :public_vr_tour
 
       # バーチャルステージング一覧
       resources :virtual_stagings, only: [:index]
 
-      # 公開バーチャルステージング表示用（認証不要）
-      resources :virtual_stagings, only: [] do
-        member do
-          get :public, to: 'virtual_stagings#show_public'
-        end
-      end
+      # 公開バーチャルステージング表示用（認証不要、public_idで取得）
+      get 'virtual_stagings/:public_id/public', to: 'virtual_stagings#show_public', as: :public_virtual_staging
 
       # 物件公開ページ一覧
       resources :property_publications, only: [:index]

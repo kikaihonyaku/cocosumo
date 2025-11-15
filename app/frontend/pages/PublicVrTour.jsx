@@ -15,7 +15,7 @@ import {
 import VrTourViewerContent from "../components/VRTour/VrTourViewerContent";
 
 export default function PublicVrTour() {
-  const { id } = useParams();
+  const { publicId } = useParams();
 
   const [vrTour, setVrTour] = useState(null);
   const [scenes, setScenes] = useState([]);
@@ -24,11 +24,11 @@ export default function PublicVrTour() {
 
   useEffect(() => {
     fetchVrTour();
-  }, [id]);
+  }, [publicId]);
 
   const fetchVrTour = async () => {
     try {
-      const response = await fetch(`/api/v1/vr_tours/${id}/public`, {
+      const response = await fetch(`/api/v1/vr_tours/${publicId}/public`, {
         headers: {
           'Content-Type': 'application/json',
         },

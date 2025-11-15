@@ -104,8 +104,8 @@ export default function App() {
           {/* 公開ページ */}
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/vr/:id" element={<PublicVrTour />} />
-          <Route path="/virtual-staging/:id" element={<PublicVirtualStaging />} />
+          <Route path="/vr/:publicId" element={<PublicVrTour />} />
+          <Route path="/virtual-staging/:publicId" element={<PublicVirtualStaging />} />
           {/* 物件公開ページ（publication_idで識別） */}
           <Route path="/property/:publicationId" element={<PublicPropertyDetail />} />
 

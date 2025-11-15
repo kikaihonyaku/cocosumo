@@ -60,9 +60,9 @@ class Api::V1::VrToursController < ApplicationController
     }, methods: [:initial_scene, :minimap_image_url])
   end
 
-  # GET /vr/:id (公開用、認証不要)
+  # GET /vr/:public_id (公開用、認証不要)
   def show_public
-    @vr_tour = VrTour.find(params[:id])
+    @vr_tour = VrTour.find_by!(public_id: params[:public_id])
 
     if @vr_tour.published?
       render json: @vr_tour.as_json(include: {

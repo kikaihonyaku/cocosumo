@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_15_003219) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_15_015642) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -231,8 +231,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_003219) do
     t.datetime "published_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "public_id"
     t.index ["after_photo_id"], name: "index_virtual_stagings_on_after_photo_id"
     t.index ["before_photo_id"], name: "index_virtual_stagings_on_before_photo_id"
+    t.index ["public_id"], name: "index_virtual_stagings_on_public_id", unique: true
     t.index ["room_id"], name: "index_virtual_stagings_on_room_id"
     t.index ["status"], name: "index_virtual_stagings_on_status"
   end
@@ -264,7 +266,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_003219) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "minimap_room_photo_id"
+    t.string "public_id"
     t.index ["minimap_room_photo_id"], name: "index_vr_tours_on_minimap_room_photo_id"
+    t.index ["public_id"], name: "index_vr_tours_on_public_id", unique: true
     t.index ["room_id"], name: "index_vr_tours_on_room_id"
   end
 
