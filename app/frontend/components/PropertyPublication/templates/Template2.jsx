@@ -3,21 +3,14 @@ import {
   Box,
   Container,
   Typography,
-  Paper,
-  Grid,
-  Table,
-  TableBody,
-  TableRow,
-  TableCell,
-  Chip,
-  Divider,
-  Card,
-  CardContent
+  Grid
 } from '@mui/material';
 import {
   Home as HomeIcon,
   LocationOn as LocationOnIcon,
-  AttachMoney as AttachMoneyIcon
+  Square as SquareIcon,
+  Email as EmailIcon,
+  Phone as PhoneIcon
 } from '@mui/icons-material';
 import PhotoGallery from '../PhotoGallery';
 import InquiryForm from '../InquiryForm';
@@ -67,424 +60,654 @@ function Template2({ data, publicationId }) {
   };
 
   return (
-    <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh' }} className="print-container">
-      {/* Hero Section with Full-width Photo Gallery */}
-      {property_publication_photos && property_publication_photos.length > 0 && (
-        <Box sx={{ bgcolor: '#1a1a1a', color: '#fff', mb: 4 }}>
-          <Container maxWidth="xl" disableGutters>
-            <PhotoGallery photos={property_publication_photos} />
-          </Container>
-        </Box>
-      )}
+    <Box className="template2-roomspot print-container">
+      {/* RoomSpot風のカスタムCSS */}
+      <style>{`
+        .template2-roomspot {
+          background: #ffffff;
+          min-height: 100vh;
+          font-family: "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ ProN W3", "Yu Gothic", "游ゴシック", "Meiryo", sans-serif;
+        }
 
-      <Container maxWidth="lg" sx={{ py: 3 }}>
-        {/* Modern Title Section with gradient accent */}
-        <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h3"
-            component="h1"
-            gutterBottom
-            sx={{
-              fontWeight: '700',
-              color: '#1a1a1a',
-              letterSpacing: '-0.02em',
-              mb: 2
-            }}
-          >
-            {title}
-          </Typography>
+        /* Header Section */
+        .template2-roomspot .header-section {
+          background: linear-gradient(135deg, #9acd32 0%, #7cb342 100%);
+          color: white;
+          padding: 16px 0;
+          margin-bottom: 0;
+          box-shadow: 0 2px 4px rgba(154,205,50,0.2);
+        }
 
-          {catch_copy && (
-            <Typography
-              variant="h6"
-              gutterBottom
-              sx={{
-                fontWeight: '500',
-                color: '#666',
-                mb: 4,
-                pb: 2,
-                borderBottom: '3px solid',
-                borderImage: 'linear-gradient(90deg, #1976d2 0%, #42a5f5 100%) 1'
-              }}
-            >
-              {catch_copy}
-            </Typography>
-          )}
+        .template2-roomspot .header-content {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
 
-          {/* Modern Key Information Cards with shadow */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
+        .template2-roomspot .header-logo {
+          font-size: 22px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+        }
+
+        .template2-roomspot .header-badge {
+          background: white;
+          color: #7cb342;
+          padding: 6px 16px;
+          border-radius: 16px;
+          font-size: 12px;
+          font-weight: bold;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+
+        .template2-roomspot .breadcrumb {
+          background: #f8f8f8;
+          padding: 12px 0;
+          margin-bottom: 20px;
+          border-bottom: 1px solid #e0e0e0;
+        }
+
+        .template2-roomspot .breadcrumb-text {
+          font-size: 13px;
+          color: #666;
+        }
+
+        .template2-roomspot .breadcrumb-text a {
+          color: #666;
+          text-decoration: none;
+        }
+
+        .template2-roomspot .breadcrumb-text a:hover {
+          color: #ff1493;
+          text-decoration: underline;
+        }
+
+        .template2-roomspot .breadcrumb-separator {
+          margin: 0 8px;
+          color: #999;
+        }
+
+        /* Main Container */
+        .template2-roomspot .main-container {
+          padding: 20px 0 40px 0;
+          background: #ffffff;
+        }
+
+        /* Title Section */
+        .template2-roomspot .property-title {
+          font-size: 26px;
+          font-weight: bold;
+          color: #333;
+          margin-bottom: 12px;
+          line-height: 1.4;
+          padding-bottom: 12px;
+          border-bottom: 3px solid #9acd32;
+        }
+
+        .template2-roomspot .property-meta {
+          display: flex;
+          gap: 16px;
+          margin-bottom: 24px;
+          flex-wrap: wrap;
+        }
+
+        .template2-roomspot .property-meta-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 14px;
+          color: #666;
+        }
+
+        /* 2 Column Layout */
+        .template2-roomspot .two-column {
+          display: grid;
+          grid-template-columns: 1fr 380px;
+          gap: 24px;
+          margin-bottom: 32px;
+        }
+
+        /* Photo Gallery */
+        .template2-roomspot .photo-section {
+          background: white;
+        }
+
+        /* Price Box - Pink */
+        .template2-roomspot .price-box {
+          background: #fff;
+          border: 3px solid #ff1493;
+          border-radius: 8px;
+          padding: 20px;
+          margin-bottom: 16px;
+        }
+
+        .template2-roomspot .price-label {
+          color: #ff1493;
+          font-size: 14px;
+          font-weight: bold;
+          margin-bottom: 8px;
+        }
+
+        .template2-roomspot .price-amount {
+          color: #ff1493;
+          font-size: 36px;
+          font-weight: bold;
+          line-height: 1.2;
+          margin-bottom: 4px;
+        }
+
+        .template2-roomspot .price-tax {
+          color: #666;
+          font-size: 12px;
+        }
+
+        /* Quick Info Grid */
+        .template2-roomspot .quick-info {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+
+        .template2-roomspot .quick-info-item {
+          background: #f5f5f5;
+          padding: 12px;
+          border-radius: 4px;
+          text-align: center;
+        }
+
+        .template2-roomspot .quick-info-label {
+          font-size: 11px;
+          color: #666;
+          margin-bottom: 4px;
+        }
+
+        .template2-roomspot .quick-info-value {
+          font-size: 16px;
+          font-weight: bold;
+          color: #333;
+        }
+
+        /* Point Badge */
+        .template2-roomspot .point-badge {
+          background: #9acd32;
+          color: white;
+          padding: 4px 12px;
+          border-radius: 3px;
+          font-size: 12px;
+          font-weight: bold;
+          display: inline-block;
+          margin-bottom: 8px;
+        }
+
+        /* Catch Copy */
+        .template2-roomspot .catch-copy-box {
+          background: #fffacd;
+          border-left: 4px solid #9acd32;
+          padding: 12px 16px;
+          margin-bottom: 20px;
+          font-size: 14px;
+          line-height: 1.7;
+        }
+
+        /* Section Title */
+        .template2-roomspot .section-title {
+          font-size: 18px;
+          font-weight: bold;
+          color: #333;
+          margin-bottom: 16px;
+          padding-bottom: 8px;
+          border-bottom: 2px solid #9acd32;
+        }
+
+        /* Property Details Table */
+        .template2-roomspot .details-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 32px;
+          background: white;
+        }
+
+        .template2-roomspot .details-table tr {
+          border-bottom: 1px solid #e0e0e0;
+        }
+
+        .template2-roomspot .details-table tr:nth-child(even) {
+          background: #f9f9f9;
+        }
+
+        .template2-roomspot .details-table th {
+          background: #f0f0f0;
+          padding: 14px 16px;
+          text-align: left;
+          font-weight: bold;
+          color: #333;
+          width: 180px;
+          font-size: 14px;
+          vertical-align: top;
+        }
+
+        .template2-roomspot .details-table td {
+          padding: 14px 16px;
+          color: #333;
+          font-size: 14px;
+          line-height: 1.6;
+        }
+
+        .template2-roomspot .details-table td.highlight {
+          color: #ff1493;
+          font-size: 18px;
+          font-weight: bold;
+        }
+
+        /* Contact Form Section */
+        .template2-roomspot .contact-section {
+          background: #e8f5e9;
+          border-radius: 8px;
+          padding: 24px;
+          margin-bottom: 24px;
+        }
+
+        .template2-roomspot .contact-title {
+          font-size: 18px;
+          font-weight: bold;
+          color: #333;
+          margin-bottom: 16px;
+          text-align: center;
+        }
+
+        /* CTA Button - Pink */
+        .template2-roomspot .cta-button {
+          background: #ff1493;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          padding: 16px 32px;
+          font-size: 16px;
+          font-weight: bold;
+          width: 100%;
+          cursor: pointer;
+          transition: background 0.3s;
+        }
+
+        .template2-roomspot .cta-button:hover {
+          background: #e6127f;
+        }
+
+        /* Feature Icons */
+        .template2-roomspot .feature-icons {
+          display: flex;
+          gap: 16px;
+          margin: 16px 0;
+          flex-wrap: wrap;
+        }
+
+        .template2-roomspot .feature-icon {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          color: #9acd32;
+        }
+
+        .template2-roomspot .feature-icon-label {
+          font-size: 11px;
+          color: #666;
+        }
+
+        /* PR Text */
+        .template2-roomspot .pr-text {
+          font-size: 14px;
+          line-height: 1.8;
+          color: #333;
+          white-space: pre-line;
+          margin-bottom: 24px;
+        }
+
+        /* VR Section */
+        .template2-roomspot .vr-section {
+          margin-bottom: 32px;
+        }
+
+        .template2-roomspot .vr-item {
+          margin-bottom: 24px;
+        }
+
+        .template2-roomspot .vr-item-title {
+          font-size: 16px;
+          font-weight: bold;
+          color: #ff1493;
+          margin-bottom: 8px;
+        }
+
+        .template2-roomspot .vr-item-description {
+          font-size: 13px;
+          color: #666;
+          margin-bottom: 12px;
+          line-height: 1.6;
+        }
+
+        .template2-roomspot .vr-iframe {
+          width: 100%;
+          height: 500px;
+          border: 2px solid #e0e0e0;
+          border-radius: 8px;
+        }
+
+        /* Share Section */
+        .template2-roomspot .share-box {
+          background: white;
+          border: 2px solid #e0e0e0;
+          border-radius: 8px;
+          padding: 20px;
+        }
+
+        .template2-roomspot .share-title {
+          font-size: 14px;
+          font-weight: bold;
+          color: #333;
+          margin-bottom: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 960px) {
+          .template2-roomspot .header-section {
+            padding: 12px 0;
+          }
+
+          .template2-roomspot .header-logo {
+            font-size: 18px;
+          }
+
+          .template2-roomspot .header-badge {
+            font-size: 10px;
+            padding: 5px 12px;
+          }
+
+          .template2-roomspot .property-title {
+            font-size: 20px;
+          }
+
+          .template2-roomspot .two-column {
+            grid-template-columns: 1fr;
+          }
+
+          .template2-roomspot .details-table th {
+            width: 120px;
+            font-size: 13px;
+          }
+
+          .template2-roomspot .details-table td {
+            font-size: 13px;
+          }
+
+          .template2-roomspot .quick-info {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+
+      {/* Header Section */}
+      <Box className="header-section no-print">
+        <Container maxWidth="lg">
+          <div className="header-content">
+            <div className="header-logo">RoomSpot</div>
+            <div className="header-badge">賃貸物件情報</div>
+          </div>
+        </Container>
+      </Box>
+
+      {/* Breadcrumb */}
+      <Box className="breadcrumb no-print">
+        <Container maxWidth="lg">
+          <div className="breadcrumb-text">
+            <a href="/">ホーム</a>
+            <span className="breadcrumb-separator">›</span>
+            <a href="/properties">賃貸物件</a>
+            <span className="breadcrumb-separator">›</span>
+            <span>{title}</span>
+          </div>
+        </Container>
+      </Box>
+
+      <Container maxWidth="lg" className="main-container">
+        {/* Property Title */}
+        <h1 className="property-title">{title}</h1>
+
+        {/* Property Meta Info */}
+        {visibleFields.address && building?.address && (
+          <div className="property-meta">
+            <div className="property-meta-item">
+              <LocationOnIcon sx={{ fontSize: 18, color: '#9acd32' }} />
+              <span>{building.address}</span>
+            </div>
+            {visibleFields.building_type && building?.building_type && (
+              <div className="property-meta-item">
+                <HomeIcon sx={{ fontSize: 18, color: '#9acd32' }} />
+                <span>{getBuildingTypeLabel(building.building_type)}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 2 Column Layout */}
+        <div className="two-column">
+          {/* Left Column - Photos */}
+          <div className="photo-section">
+            {property_publication_photos && property_publication_photos.length > 0 && (
+              <PhotoGallery photos={property_publication_photos} />
+            )}
+
+            {/* Feature Icons */}
+            <div className="feature-icons" style={{ marginTop: '16px' }}>
+              <div className="feature-icon">
+                <HomeIcon sx={{ fontSize: 32, color: '#9acd32' }} />
+                <span className="feature-icon-label">賃貸</span>
+              </div>
+              <div className="feature-icon">
+                <LocationOnIcon sx={{ fontSize: 32, color: '#9acd32' }} />
+                <span className="feature-icon-label">好立地</span>
+              </div>
+              {visibleFields.area && room.area && (
+                <div className="feature-icon">
+                  <SquareIcon sx={{ fontSize: 32, color: '#9acd32' }} />
+                  <span className="feature-icon-label">広々</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column - Price & Info */}
+          <div>
+            {/* Price Box */}
             {visibleFields.rent && room.rent && (
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <Card
-                  elevation={0}
-                  sx={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    transition: 'transform 0.2s',
-                    '&:hover': { transform: 'translateY(-4px)' }
-                  }}
-                >
-                  <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                    <AttachMoneyIcon sx={{ fontSize: 48, mb: 1 }} />
-                    <Typography variant="caption" display="block" sx={{ opacity: 0.9, mb: 1 }}>
-                      賃料
-                    </Typography>
-                    <Typography variant="h4" fontWeight="bold">
-                      {room.rent.toLocaleString()}円
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            )}
-            {visibleFields.room_type && room.room_type && (
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <Card
-                  elevation={0}
-                  sx={{
-                    background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                    color: 'white',
-                    transition: 'transform 0.2s',
-                    '&:hover': { transform: 'translateY(-4px)' }
-                  }}
-                >
-                  <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                    <HomeIcon sx={{ fontSize: 48, mb: 1 }} />
-                    <Typography variant="caption" display="block" sx={{ opacity: 0.9, mb: 1 }}>
-                      間取り
-                    </Typography>
-                    <Typography variant="h4" fontWeight="bold">
-                      {getRoomTypeLabel(room.room_type)}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            )}
-            {visibleFields.area && room.area && (
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <Card
-                  elevation={0}
-                  sx={{
-                    background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                    color: 'white',
-                    transition: 'transform 0.2s',
-                    '&:hover': { transform: 'translateY(-4px)' }
-                  }}
-                >
-                  <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                    <HomeIcon sx={{ fontSize: 48, mb: 1 }} />
-                    <Typography variant="caption" display="block" sx={{ opacity: 0.9, mb: 1 }}>
-                      専有面積
-                    </Typography>
-                    <Typography variant="h4" fontWeight="bold">
-                      {room.area}m²
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            )}
-          </Grid>
-
-          {visibleFields.address && building?.address && (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                p: 2,
-                bgcolor: 'white',
-                borderRadius: 2,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-              }}
-            >
-              <LocationOnIcon sx={{ color: '#1976d2' }} />
-              <Typography variant="body1" fontWeight="500" color="text.primary">
-                {building.address}
-              </Typography>
-            </Box>
-          )}
-        </Box>
-
-        <Grid container spacing={3}>
-          {/* Left Column */}
-          <Grid size={{ xs: 12, md: 8 }}>
-            {/* PR Text with modern styling */}
-            {pr_text && (
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 4,
-                  mb: 3,
-                  borderRadius: 3,
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
-                  background: 'linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%)'
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  gutterBottom
-                  fontWeight="bold"
-                  sx={{
-                    color: '#1a1a1a',
-                    mb: 2,
-                    pb: 1,
-                    borderBottom: '2px solid #1976d2'
-                  }}
-                >
-                  物件の特徴
-                </Typography>
-                <Typography variant="body1" sx={{ whiteSpace: 'pre-line', lineHeight: 1.9, color: '#555' }}>
-                  {pr_text}
-                </Typography>
-              </Paper>
+              <div className="price-box">
+                <div className="price-label">賃料</div>
+                <div className="price-amount">¥{room.rent.toLocaleString()}</div>
+                <div className="price-tax">※表示価格は税込です</div>
+              </div>
             )}
 
-            {/* Property Details with modern card design */}
-            <Paper
-              elevation={0}
-              sx={{
-                mb: 3,
-                borderRadius: 3,
-                overflow: 'hidden',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.06)'
-              }}
-            >
-              <Box sx={{ bgcolor: '#1976d2', color: 'white', p: 2 }}>
-                <Typography variant="h6" fontWeight="bold">
-                  物件詳細
-                </Typography>
-              </Box>
+            {/* Quick Info Grid */}
+            <div className="quick-info">
+              {visibleFields.room_type && room.room_type && (
+                <div className="quick-info-item">
+                  <div className="quick-info-label">間取り</div>
+                  <div className="quick-info-value">{getRoomTypeLabel(room.room_type)}</div>
+                </div>
+              )}
+              {visibleFields.area && room.area && (
+                <div className="quick-info-item">
+                  <div className="quick-info-label">専有面積</div>
+                  <div className="quick-info-value">{room.area}m²</div>
+                </div>
+              )}
+              {visibleFields.floor && room.floor && (
+                <div className="quick-info-item">
+                  <div className="quick-info-label">階数</div>
+                  <div className="quick-info-value">{room.floor}階</div>
+                </div>
+              )}
+              {visibleFields.deposit && room.deposit && (
+                <div className="quick-info-item">
+                  <div className="quick-info-label">敷金</div>
+                  <div className="quick-info-value">{room.deposit.toLocaleString()}円</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-              <Table>
-                <TableBody>
-                  {visibleFields.rent && room.rent && (
-                    <TableRow sx={{ '&:hover': { bgcolor: '#f5f9ff' } }}>
-                      <TableCell sx={{ fontWeight: 'bold', width: '40%', py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        賃料
-                      </TableCell>
-                      <TableCell sx={{ py: 2.5, borderBottom: '1px solid #e8e8e8', color: '#1976d2', fontWeight: 'bold', fontSize: '1.1rem' }}>
-                        {room.rent.toLocaleString()}円
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.management_fee && room.management_fee && (
-                    <TableRow sx={{ '&:hover': { bgcolor: '#f5f9ff' } }}>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        管理費
-                      </TableCell>
-                      <TableCell sx={{ py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        {room.management_fee.toLocaleString()}円
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.deposit && room.deposit && (
-                    <TableRow sx={{ '&:hover': { bgcolor: '#f5f9ff' } }}>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        敷金
-                      </TableCell>
-                      <TableCell sx={{ py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        {room.deposit.toLocaleString()}円
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.key_money && room.key_money && (
-                    <TableRow sx={{ '&:hover': { bgcolor: '#f5f9ff' } }}>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        礼金
-                      </TableCell>
-                      <TableCell sx={{ py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        {room.key_money.toLocaleString()}円
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.room_type && room.room_type && (
-                    <TableRow sx={{ '&:hover': { bgcolor: '#f5f9ff' } }}>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        間取り
-                      </TableCell>
-                      <TableCell sx={{ py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        {getRoomTypeLabel(room.room_type)}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.area && room.area && (
-                    <TableRow sx={{ '&:hover': { bgcolor: '#f5f9ff' } }}>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        専有面積
-                      </TableCell>
-                      <TableCell sx={{ py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        {room.area}m²
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.floor && room.floor && (
-                    <TableRow sx={{ '&:hover': { bgcolor: '#f5f9ff' } }}>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        階数
-                      </TableCell>
-                      <TableCell sx={{ py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        {room.floor}階
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.building_type && building?.building_type && (
-                    <TableRow sx={{ '&:hover': { bgcolor: '#f5f9ff' } }}>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        建物種別
-                      </TableCell>
-                      <TableCell sx={{ py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        {getBuildingTypeLabel(building.building_type)}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.structure && building?.structure && (
-                    <TableRow sx={{ '&:hover': { bgcolor: '#f5f9ff' } }}>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        構造
-                      </TableCell>
-                      <TableCell sx={{ py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        {building.structure}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.built_year && building?.built_year && (
-                    <TableRow sx={{ '&:hover': { bgcolor: '#f5f9ff' } }}>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        築年
-                      </TableCell>
-                      <TableCell sx={{ py: 2.5, borderBottom: '1px solid #e8e8e8' }}>
-                        {building.built_year}年
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {visibleFields.facilities && room.facilities && (
-                    <TableRow sx={{ '&:hover': { bgcolor: '#f5f9ff' } }}>
-                      <TableCell sx={{ fontWeight: 'bold', py: 2.5, borderBottom: 'none' }}>
-                        設備
-                      </TableCell>
-                      <TableCell sx={{ py: 2.5, borderBottom: 'none' }}>
-                        {room.facilities}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </Paper>
+        {/* Catch Copy */}
+        {catch_copy && (
+          <div>
+            <span className="point-badge">おすすめポイント</span>
+            <div className="catch-copy-box">{catch_copy}</div>
+          </div>
+        )}
 
-            {/* VR Tour & Virtual Staging with modern styling */}
-            {((property_publication_vr_tours && property_publication_vr_tours.length > 0) ||
-              (property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0)) && (
-              <Paper
-                elevation={0}
-                sx={{
-                  mb: 3,
-                  borderRadius: 3,
-                  overflow: 'hidden',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.06)'
-                }}
-              >
-                <Box sx={{ bgcolor: '#1976d2', color: 'white', p: 2 }}>
-                  <Typography variant="h6" fontWeight="bold">
-                    バーチャルコンテンツ
-                  </Typography>
-                </Box>
+        {/* PR Text */}
+        {pr_text && (
+          <div>
+            <h2 className="section-title">物件の特徴</h2>
+            <div className="pr-text">{pr_text}</div>
+          </div>
+        )}
 
-                <Box sx={{ p: 3 }}>
+        {/* Property Details Table */}
+        <div>
+          <h2 className="section-title">物件詳細情報</h2>
+          <table className="details-table">
+            <tbody>
+              {visibleFields.rent && room.rent && (
+                <tr>
+                  <th>賃料</th>
+                  <td className="highlight">¥{room.rent.toLocaleString()}</td>
+                </tr>
+              )}
+              {visibleFields.management_fee && room.management_fee && (
+                <tr>
+                  <th>管理費・共益費</th>
+                  <td>{room.management_fee.toLocaleString()}円</td>
+                </tr>
+              )}
+              {visibleFields.deposit && room.deposit && (
+                <tr>
+                  <th>敷金</th>
+                  <td>{room.deposit.toLocaleString()}円</td>
+                </tr>
+              )}
+              {visibleFields.key_money && room.key_money && (
+                <tr>
+                  <th>礼金</th>
+                  <td>{room.key_money.toLocaleString()}円</td>
+                </tr>
+              )}
+              {visibleFields.room_type && room.room_type && (
+                <tr>
+                  <th>間取り</th>
+                  <td>{getRoomTypeLabel(room.room_type)}</td>
+                </tr>
+              )}
+              {visibleFields.area && room.area && (
+                <tr>
+                  <th>専有面積</th>
+                  <td>{room.area}m²</td>
+                </tr>
+              )}
+              {visibleFields.floor && room.floor && (
+                <tr>
+                  <th>所在階</th>
+                  <td>{room.floor}階</td>
+                </tr>
+              )}
+              {visibleFields.building_type && building?.building_type && (
+                <tr>
+                  <th>建物種別</th>
+                  <td>{getBuildingTypeLabel(building.building_type)}</td>
+                </tr>
+              )}
+              {visibleFields.structure && building?.structure && (
+                <tr>
+                  <th>構造</th>
+                  <td>{building.structure}</td>
+                </tr>
+              )}
+              {visibleFields.built_year && building?.built_year && (
+                <tr>
+                  <th>築年月</th>
+                  <td>{building.built_year}年</td>
+                </tr>
+              )}
+              {visibleFields.facilities && room.facilities && (
+                <tr>
+                  <th>設備・条件</th>
+                  <td>{room.facilities}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-                  {property_publication_vr_tours && property_publication_vr_tours.length > 0 && (
-                    <Box sx={{ mb: 3 }}>
-                      {property_publication_vr_tours.map((item) => (
-                        <Box key={item.vr_tour.id} sx={{ mb: 3 }}>
-                          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#1976d2' }}>
-                            VRツアー: {item.vr_tour.title}
-                          </Typography>
-                          {item.vr_tour.description && (
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                              {item.vr_tour.description}
-                            </Typography>
-                          )}
-                          <Box
-                            component="iframe"
-                            src={`/vr/${item.vr_tour.public_id}`}
-                            sx={{
-                              width: '100%',
-                              height: 500,
-                              border: '2px solid #1976d2',
-                              borderRadius: 2,
-                              mt: 1
-                            }}
-                          />
-                        </Box>
-                      ))}
-                    </Box>
-                  )}
+        {/* VR Tour & Virtual Staging */}
+        {((property_publication_vr_tours && property_publication_vr_tours.length > 0) ||
+          (property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0)) && (
+          <div className="vr-section">
+            <h2 className="section-title">バーチャルコンテンツ</h2>
 
-                  {property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0 && (
-                    <Box>
-                      {property_publication_virtual_stagings.map((item) => (
-                        <Box key={item.virtual_staging.id} sx={{ mb: 3 }}>
-                          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#1976d2' }}>
-                            バーチャルステージング: {item.virtual_staging.title}
-                          </Typography>
-                          {item.virtual_staging.description && (
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                              {item.virtual_staging.description}
-                            </Typography>
-                          )}
-                          <Box
-                            component="iframe"
-                            src={`/virtual-staging/${item.virtual_staging.public_id}`}
-                            sx={{
-                              width: '100%',
-                              height: 500,
-                              border: '2px solid #1976d2',
-                              borderRadius: 2,
-                              mt: 1
-                            }}
-                          />
-                        </Box>
-                      ))}
-                    </Box>
-                  )}
-                </Box>
-              </Paper>
+            {property_publication_vr_tours && property_publication_vr_tours.length > 0 && (
+              <div>
+                {property_publication_vr_tours.map((item) => (
+                  <div key={item.vr_tour.id} className="vr-item">
+                    <div className="vr-item-title">VRツアー: {item.vr_tour.title}</div>
+                    {item.vr_tour.description && (
+                      <div className="vr-item-description">{item.vr_tour.description}</div>
+                    )}
+                    <iframe
+                      src={`/vr/${item.vr_tour.public_id}`}
+                      className="vr-iframe"
+                      title={item.vr_tour.title}
+                    />
+                  </div>
+                ))}
+              </div>
             )}
-          </Grid>
 
-          {/* Right Column - Modern sticky sidebar */}
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Paper
-              elevation={0}
-              sx={{
-                mb: 3,
-                position: 'sticky',
-                top: 20,
-                borderRadius: 3,
-                overflow: 'hidden',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-              }}
-              className="no-print"
-            >
-              <Box sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', p: 2 }}>
-                <Typography variant="h6" fontWeight="bold">
-                  お問い合わせ
-                </Typography>
-              </Box>
-              <Box sx={{ p: 3 }}>
-                <InquiryForm publicationId={publicationId} />
-              </Box>
+            {property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0 && (
+              <div>
+                {property_publication_virtual_stagings.map((item) => (
+                  <div key={item.virtual_staging.id} className="vr-item">
+                    <div className="vr-item-title">バーチャルステージング: {item.virtual_staging.title}</div>
+                    {item.virtual_staging.description && (
+                      <div className="vr-item-description">{item.virtual_staging.description}</div>
+                    )}
+                    <iframe
+                      src={`/virtual-staging/${item.virtual_staging.public_id}`}
+                      className="vr-iframe"
+                      title={item.virtual_staging.title}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-              <Divider />
+        {/* Contact Form Section */}
+        <div className="contact-section no-print">
+          <div className="contact-title">お問い合わせ</div>
+          <InquiryForm publicationId={publicationId} />
+        </div>
 
-              <Box sx={{ p: 3, bgcolor: '#f8f9fa' }}>
-                <ShareButtons
-                  url={public_url || window.location.href}
-                  title={title}
-                  qrCodeUrl={qr_code_data_url}
-                />
-              </Box>
-            </Paper>
-          </Grid>
-        </Grid>
+        {/* Share Section */}
+        <div className="share-box no-print">
+          <div className="share-title">この物件をシェア</div>
+          <ShareButtons
+            url={public_url || window.location.href}
+            title={title}
+            qrCodeUrl={qr_code_data_url}
+          />
+        </div>
       </Container>
     </Box>
   );

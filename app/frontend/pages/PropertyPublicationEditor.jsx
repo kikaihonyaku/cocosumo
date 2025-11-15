@@ -500,9 +500,9 @@ function PropertyPublicationEditor() {
                       control={<Radio />}
                       label={
                         <Box>
-                          <Typography variant="body1" fontWeight="bold">テンプレート2</Typography>
+                          <Typography variant="body1" fontWeight="bold">テンプレート2（RoomSpot風）</Typography>
                           <Typography variant="caption" color="text.secondary">
-                            サンプル: RoomSpot風デザイン
+                            グラデーションヒーロー、モダンカードデザイン
                           </Typography>
                         </Box>
                       }
