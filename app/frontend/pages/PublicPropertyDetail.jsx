@@ -6,9 +6,10 @@ import {
   CircularProgress,
   Alert,
   IconButton,
-  Typography
+  Typography,
+  Button
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon, Edit as EditIcon } from '@mui/icons-material';
 import axios from 'axios';
 import Template0 from '../components/PropertyPublication/templates/Template0';
 import Template1 from '../components/PropertyPublication/templates/Template1';
@@ -216,7 +217,7 @@ function PublicPropertyDetail() {
         }
       `}</style>
 
-      {/* プレビューモード時の戻るボタン */}
+      {/* プレビューモード時のヘッダー */}
       {isPreview && roomId && (
         <Box className="no-print" sx={{ bgcolor: 'background.default', py: 2 }}>
           <Container maxWidth="xl">
@@ -224,7 +225,16 @@ function PublicPropertyDetail() {
               <IconButton onClick={() => navigate(`/room/${roomId}`)}>
                 <ArrowBackIcon />
               </IconButton>
-              <Typography variant="h6">プレビュー</Typography>
+              <Typography variant="h6" sx={{ flexGrow: 1 }}>プレビュー</Typography>
+              {data && data.id && (
+                <Button
+                  variant="contained"
+                  startIcon={<EditIcon />}
+                  onClick={() => navigate(`/room/${roomId}/property-publication/${data.id}/edit`)}
+                >
+                  編集
+                </Button>
+              )}
             </Box>
           </Container>
         </Box>

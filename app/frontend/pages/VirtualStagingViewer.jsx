@@ -7,8 +7,9 @@ import {
   Typography,
   IconButton,
   CircularProgress,
+  Button,
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon, Edit as EditIcon } from '@mui/icons-material';
 import BeforeAfterSlider from '../components/VirtualStaging/BeforeAfterSlider';
 
 const VirtualStagingViewer = () => {
@@ -87,7 +88,7 @@ const VirtualStagingViewer = () => {
           <IconButton onClick={() => navigate(`/room/${roomId}`)}>
             <ArrowBackIcon />
           </IconButton>
-          <Box>
+          <Box sx={{ flexGrow: 1 }}>
             <Typography variant="h5">{virtualStaging.title}</Typography>
             {virtualStaging.description && (
               <Typography variant="body2" color="text.secondary">
@@ -95,6 +96,13 @@ const VirtualStagingViewer = () => {
               </Typography>
             )}
           </Box>
+          <Button
+            variant="contained"
+            startIcon={<EditIcon />}
+            onClick={() => navigate(`/room/${roomId}/virtual-staging/${id}/edit`)}
+          >
+            編集
+          </Button>
         </Box>
 
         {/* スライダー表示 */}
