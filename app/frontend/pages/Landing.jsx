@@ -111,7 +111,7 @@ export default function Landing() {
           </p>
           <div className="flex flex-col items-center gap-4">
             <a
-              href="mailto:admin@cocosumo.space"
+              href="mailto:support@cocosumo.space"
               className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors"
             >
               <span className="mr-2">✉️</span>
@@ -119,7 +119,7 @@ export default function Landing() {
             </a>
             <div className="flex items-center gap-2 text-gray-700">
               <span className="text-sm text-gray-500">メールアドレス:</span>
-              <span className="font-mono text-base select-all">admin@cocosumo.space</span>
+              <span className="font-mono text-base select-all">support@cocosumo.space</span>
             </div>
           </div>
         </div>

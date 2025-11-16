@@ -62,6 +62,20 @@ export default function Home() {
         CoCoスモへようこそ
       </Typography>
 
+      {/* お知らせセクション */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h5" gutterBottom>
+          お知らせ
+        </Typography>
+        <Card>
+          <CardContent>
+            <Typography variant="body2" color="text.secondary">
+              CoCoスモをご利用いただきありがとうございます。現在、順次機能を追加中です。(2025/11/17)
+            </Typography>
+          </CardContent>
+        </Card>
+      </Box>
+
       <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
         {/* 物件管理カード */}
         <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
@@ -216,20 +230,6 @@ export default function Home() {
           </Card>
         </Grid>
       </Grid>
-
-      {/* お知らせセクション */}
-      <Box sx={{ mt: 6 }}>
-        <Typography variant="h5" gutterBottom>
-          お知らせ
-        </Typography>
-        <Card>
-          <CardContent>
-            <Typography variant="body2" color="text.secondary">
-              CoCoスモをご利用いただきありがとうございます。現在、順次機能を追加中です。(2025/11/09)
-            </Typography>
-          </CardContent>
-        </Card>
-      </Box>
     </Container>
   );
 }
