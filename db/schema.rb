@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_15_222843) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_16_220928) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -97,6 +97,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_222843) do
     t.integer "feature_count", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "attribution"
     t.index ["is_active"], name: "index_map_layers_on_is_active"
     t.index ["layer_type"], name: "index_map_layers_on_layer_type"
     t.index ["tenant_id", "layer_key"], name: "index_map_layers_on_tenant_id_and_layer_key", unique: true

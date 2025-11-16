@@ -2,9 +2,6 @@ class SchoolDistrict < ApplicationRecord
   belongs_to :map_layer, optional: true
 
   # バリデーション
-  validates :name, presence: true
-  validates :school_name, presence: true
-  validates :prefecture, presence: true
   validates :geometry, presence: true
 
   # スコープ

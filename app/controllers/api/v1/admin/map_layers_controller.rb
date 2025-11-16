@@ -125,7 +125,7 @@ class Api::V1::Admin::MapLayersController < ApplicationController
   end
 
   def layer_params
-    params.permit(:name, :layer_key, :description, :layer_type, :color, :opacity, :display_order, :is_active, :icon)
+    params.permit(:name, :layer_key, :description, :layer_type, :color, :opacity, :display_order, :is_active, :icon, :attribution)
   end
 
   # GeoJSONファイルをインポート
@@ -135,9 +135,9 @@ class Api::V1::Admin::MapLayersController < ApplicationController
   # @return [Hash] { success: Boolean, count: Integer, error: String }
   def import_geojson_file(file, layer, append: false)
     begin
-      # ファイルサイズチェック（10MB制限）
-      if file.size > 10.megabytes
-        return { success: false, error: 'ファイルサイズが大きすぎます（最大10MB）' }
+      # ファイルサイズチェック（100MB制限）
+      if file.size > 100.megabytes
+        return { success: false, error: 'ファイルサイズが大きすぎます（最大100MB）' }
       end
 
       # JSONを解析
@@ -173,12 +173,23 @@ class Api::V1::Admin::MapLayersController < ApplicationController
       properties = feature['properties']
       geometry = feature['geometry']
 
+      # 国土数値情報の標準的なプロパティマッピング（実際の構造に基づく）
+      # A27_001: 都道府県コード（例：11208）
+      # A27_002: 設置者名（例：所沢市立）
+      # A27_003: 学校コード（例：B111220800179）
+      # A27_004: 学校名（例：泉小学校）
+      # A27_005: 住所（例：所沢市山口657）
+      school_name = properties['A27_004'] || properties['school_name'] || '不明'
+      city = properties['A27_002'] || properties['city'] || ''
+      school_code = properties['A27_003']&.to_s || properties['code']&.to_s || ''
+      district_name = properties['name'] || "#{school_name}区"
+
       school_district = layer.school_districts.build(
-        name: properties['A27_007'] || properties['name'] || '',
-        school_name: properties['A27_007'] || properties['school_name'] || '',
-        school_code: properties['A27_005']&.to_s || properties['code']&.to_s || '',
+        name: district_name,
+        school_name: school_name,
+        school_code: school_code,
         prefecture: properties['prefecture'] || '埼玉県',
-        city: properties['A27_006'] || properties['city'] || '',
+        city: city,
         school_type: properties['school_type'] || '小学校',
         geometry: geometry
       )

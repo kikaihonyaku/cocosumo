@@ -63,7 +63,9 @@ class MapLayer < ApplicationRecord
       color: color,
       opacity: opacity,
       is_active: is_active,
-      feature_count: feature_count
+      feature_count: feature_count,
+      attribution: attribution,
+      display_order: display_order
     }
   end
 end

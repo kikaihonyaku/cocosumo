@@ -139,6 +139,7 @@ export default function MapSystem() {
           opacity: layer.opacity,
           is_active: layer.is_active,
           layer_type: layer.layer_type,
+          attribution: layer.attribution,
         })).filter(layer => layer.is_active); // 有効なレイヤーのみ表示
 
         setAvailableLayers(layers);

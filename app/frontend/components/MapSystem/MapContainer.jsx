@@ -161,7 +161,7 @@ export default function MapContainer({
   const juniorHighSchoolPolygonsRef = React.useRef([]);
 
   // 学区ポリゴンを地図に表示（汎用化：色とrefを引数で指定）
-  const displaySchoolDistricts = useCallback((geojson, polygonsRef, color, schoolType) => {
+  const displaySchoolDistricts = useCallback((geojson, polygonsRef, color, schoolType, attribution) => {
     if (!map || !geojson || !geojson.features) {
       return;
     }
@@ -195,6 +195,7 @@ export default function MapContainer({
 
         // クリックイベントを追加
         polygon.addListener('click', (event) => {
+          const formattedAttribution = attribution ? attribution.replace(/\n/g, '<br>') : '';
           const infoWindow = new google.maps.InfoWindow({
             content: `
               <div style="padding: 8px; font-family: 'Segoe UI', sans-serif;">
@@ -202,6 +203,7 @@ export default function MapContainer({
                 <p style="margin: 4px 0; font-size: 0.875rem; color: #666;">${properties.name}</p>
                 <p style="margin: 4px 0; font-size: 0.875rem; color: #666;">${properties.city}</p>
                 <p style="margin: 4px 0; font-size: 0.875rem; color: #666;">${properties.school_type}</p>
+                ${formattedAttribution ? `<p style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 0.75rem; color: #999;">${formattedAttribution}</p>` : ''}
               </div>
             `,
             position: event.latLng,
@@ -229,6 +231,7 @@ export default function MapContainer({
 
           // クリックイベントを追加
           polygon.addListener('click', (event) => {
+            const formattedAttribution = attribution ? attribution.replace(/\n/g, '<br>') : '';
             const infoWindow = new google.maps.InfoWindow({
               content: `
                 <div style="padding: 8px; font-family: 'Segoe UI', sans-serif;">
@@ -236,6 +239,7 @@ export default function MapContainer({
                   <p style="margin: 4px 0; font-size: 0.875rem; color: #666;">${properties.name}</p>
                   <p style="margin: 4px 0; font-size: 0.875rem; color: #666;">${properties.city}</p>
                   <p style="margin: 4px 0; font-size: 0.875rem; color: #666;">${properties.school_type}</p>
+                  ${formattedAttribution ? `<p style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 0.75rem; color: #999;">${formattedAttribution}</p>` : ''}
                 </div>
               `,
               position: event.latLng,
@@ -252,7 +256,7 @@ export default function MapContainer({
   }, [map]);
 
   // 学区データを取得（汎用化：school_typeパラメータ追加）
-  const fetchSchoolDistricts = useCallback(async (schoolTypeParam, polygonsRef, color, schoolType) => {
+  const fetchSchoolDistricts = useCallback(async (schoolTypeParam, polygonsRef, color, schoolType, attribution) => {
     try {
       const response = await fetch(`/api/v1/school_districts?school_type=${schoolTypeParam}`, {
         credentials: 'include',
@@ -263,7 +267,7 @@ export default function MapContainer({
 
       if (response.ok) {
         const geojson = await response.json();
-        displaySchoolDistricts(geojson, polygonsRef, color, schoolType);
+        displaySchoolDistricts(geojson, polygonsRef, color, schoolType, attribution);
       } else if (response.status === 401) {
         window.location.href = '/login';
       }
@@ -279,9 +283,10 @@ export default function MapContainer({
     const isElementarySchoolLayerVisible = selectedLayers.includes('elementary-school-district');
 
     if (isElementarySchoolLayerVisible) {
-      // availableLayersから色を取得
+      // availableLayersから色とattributionを取得
       const layerConfig = availableLayers.find(layer => layer.id === 'elementary-school-district');
       const color = layerConfig?.color || '#FF6B00'; // デフォルト色
+      const attribution = layerConfig?.attribution || '';
 
       // 色が変わった場合は再描画
       const needsRedraw = elementarySchoolPolygonsRef.current.length > 0 &&
@@ -293,7 +298,7 @@ export default function MapContainer({
           elementarySchoolPolygonsRef.current.forEach(polygon => polygon.setMap(null));
           elementarySchoolPolygonsRef.current = [];
         }
-        fetchSchoolDistricts('elementary', elementarySchoolPolygonsRef, color, '小学校区');
+        fetchSchoolDistricts('elementary', elementarySchoolPolygonsRef, color, '小学校区', attribution);
       }
     } else {
       // 小学校区ポリゴンを非表示
@@ -311,9 +316,10 @@ export default function MapContainer({
     const isJuniorHighSchoolLayerVisible = selectedLayers.includes('junior-high-school-district');
 
     if (isJuniorHighSchoolLayerVisible) {
-      // availableLayersから色を取得
+      // availableLayersから色とattributionを取得
       const layerConfig = availableLayers.find(layer => layer.id === 'junior-high-school-district');
       const color = layerConfig?.color || '#2196F3'; // デフォルト色
+      const attribution = layerConfig?.attribution || '';
 
       // 色が変わった場合は再描画
       const needsRedraw = juniorHighSchoolPolygonsRef.current.length > 0 &&
@@ -325,7 +331,7 @@ export default function MapContainer({
           juniorHighSchoolPolygonsRef.current.forEach(polygon => polygon.setMap(null));
           juniorHighSchoolPolygonsRef.current = [];
         }
-        fetchSchoolDistricts('junior_high', juniorHighSchoolPolygonsRef, color, '中学校区');
+        fetchSchoolDistricts('junior_high', juniorHighSchoolPolygonsRef, color, '中学校区', attribution);
       }
     } else {
       // 中学校区ポリゴンを非表示

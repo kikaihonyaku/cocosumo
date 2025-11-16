@@ -71,6 +71,7 @@ export default function LayerManagement() {
     name: '',
     layer_key: '',
     description: '',
+    attribution: '',
     layer_type: 'school_districts',
     school_type: 'elementary', // school_districts用
     color: '#FF6B00',
@@ -123,6 +124,7 @@ export default function LayerManagement() {
       name: '',
       layer_key: '',
       description: '',
+      attribution: '',
       layer_type: 'school_districts',
       school_type: 'elementary',
       color: '#FF6B00',
@@ -147,6 +149,7 @@ export default function LayerManagement() {
       formDataObj.append('name', formData.name);
       formDataObj.append('layer_key', formData.layer_key);
       formDataObj.append('description', formData.description);
+      formDataObj.append('attribution', formData.attribution);
       formDataObj.append('layer_type', formData.layer_type);
       formDataObj.append('color', formData.color);
       formDataObj.append('opacity', formData.opacity);
@@ -210,6 +213,7 @@ export default function LayerManagement() {
       name: layer.name,
       layer_key: layer.layer_key,
       description: layer.description || '',
+      attribution: layer.attribution || '',
       layer_type: layer.layer_type,
       color: layer.color,
       opacity: layer.opacity,
@@ -549,6 +553,16 @@ export default function LayerManagement() {
               rows={2}
             />
 
+            <TextField
+              label="出典情報"
+              value={formData.attribution}
+              onChange={(e) => setFormData({ ...formData, attribution: e.target.value })}
+              fullWidth
+              multiline
+              rows={2}
+              helperText="例：出典：国土交通省国土数値情報ダウンロードサイト（https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A27-2023.html）"
+            />
+
             <FormControl fullWidth>
               <InputLabel>レイヤータイプ</InputLabel>
               <Select
@@ -684,6 +698,16 @@ export default function LayerManagement() {
               fullWidth
               multiline
               rows={2}
+            />
+
+            <TextField
+              label="出典情報"
+              value={formData.attribution}
+              onChange={(e) => setFormData({ ...formData, attribution: e.target.value })}
+              fullWidth
+              multiline
+              rows={2}
+              helperText="例：出典：国土交通省国土数値情報ダウンロードサイト（https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A27-2023.html）"
             />
 
             <FormControl fullWidth disabled>
