@@ -9,6 +9,7 @@ import {
   Button,
   Paper,
   Zoom,
+  CircularProgress,
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -34,6 +35,7 @@ export default function MapContainer({
 }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mapType, setMapType] = useState('roadmap');
+  const [layerLoadingStates, setLayerLoadingStates] = useState({});
 
   const {
     map,
@@ -256,8 +258,11 @@ export default function MapContainer({
   }, [map]);
 
   // 学区データを取得（汎用化：school_typeパラメータ追加）
-  const fetchSchoolDistricts = useCallback(async (schoolTypeParam, polygonsRef, color, schoolType, attribution) => {
+  const fetchSchoolDistricts = useCallback(async (schoolTypeParam, polygonsRef, color, schoolType, attribution, layerKey) => {
     try {
+      // ローディング開始
+      setLayerLoadingStates(prev => ({ ...prev, [layerKey]: true }));
+
       const response = await fetch(`/api/v1/school_districts?school_type=${schoolTypeParam}`, {
         credentials: 'include',
         headers: {
@@ -273,6 +278,9 @@ export default function MapContainer({
       }
     } catch (error) {
       console.error(`Error fetching school districts (${schoolType}):`, error);
+    } finally {
+      // ローディング終了
+      setLayerLoadingStates(prev => ({ ...prev, [layerKey]: false }));
     }
   }, [displaySchoolDistricts]);
 
@@ -298,7 +306,7 @@ export default function MapContainer({
           elementarySchoolPolygonsRef.current.forEach(polygon => polygon.setMap(null));
           elementarySchoolPolygonsRef.current = [];
         }
-        fetchSchoolDistricts('elementary', elementarySchoolPolygonsRef, color, '小学校区', attribution);
+        fetchSchoolDistricts('elementary', elementarySchoolPolygonsRef, color, '小学校区', attribution, 'elementary-school-district');
       }
     } else {
       // 小学校区ポリゴンを非表示
@@ -331,7 +339,7 @@ export default function MapContainer({
           juniorHighSchoolPolygonsRef.current.forEach(polygon => polygon.setMap(null));
           juniorHighSchoolPolygonsRef.current = [];
         }
-        fetchSchoolDistricts('junior_high', juniorHighSchoolPolygonsRef, color, '中学校区', attribution);
+        fetchSchoolDistricts('junior_high', juniorHighSchoolPolygonsRef, color, '中学校区', attribution, 'junior-high-school-district');
       }
     } else {
       // 中学校区ポリゴンを非表示
@@ -620,6 +628,31 @@ export default function MapContainer({
           </Fab>
         </Tooltip>
       </Box>
+
+      {/* レイヤー読み込み中インジケーター */}
+      {Object.entries(layerLoadingStates).some(([_, isLoading]) => isLoading) && (
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 20,
+            right: 20,
+            bgcolor: 'rgba(255, 255, 255, 0.95)',
+            borderRadius: 2,
+            boxShadow: 3,
+            padding: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            zIndex: 100,
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <CircularProgress size={20} thickness={4} />
+          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+            レイヤーを読み込み中...
+          </Typography>
+        </Box>
+      )}
 
     </Box>
   );
