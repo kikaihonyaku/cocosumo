@@ -169,19 +169,35 @@ class Api::V1::Admin::MapLayersController < ApplicationController
   def import_school_districts(geojson, layer)
     count = 0
 
+    # レイヤー名から学校種別を判定
+    detected_school_type = if layer.name.include?('中学')
+                            '中学校'
+                          elsif layer.name.include?('高校') || layer.name.include?('高等学校')
+                            '高校'
+                          else
+                            '小学校'
+                          end
+
     geojson['features'].each do |feature|
       properties = feature['properties']
       geometry = feature['geometry']
 
       # 国土数値情報の標準的なプロパティマッピング（実際の構造に基づく）
-      # A27_001: 都道府県コード（例：11208）
-      # A27_002: 設置者名（例：所沢市立）
-      # A27_003: 学校コード（例：B111220800179）
-      # A27_004: 学校名（例：泉小学校）
-      # A27_005: 住所（例：所沢市山口657）
-      school_name = properties['A27_004'] || properties['school_name'] || '不明'
-      city = properties['A27_002'] || properties['city'] || ''
-      school_code = properties['A27_003']&.to_s || properties['code']&.to_s || ''
+      # 小学校: A27_*** プロパティ
+      #   A27_001: 都道府県コード（例：11208）
+      #   A27_002: 設置者名（例：所沢市立）
+      #   A27_003: 学校コード（例：B111220800179）
+      #   A27_004: 学校名（例：泉小学校）
+      #   A27_005: 住所（例：所沢市山口657）
+      # 中学校: A32_*** プロパティ
+      #   A32_001: 都道府県コード（例：11230）
+      #   A32_002: 市区町村名（例：新座市）
+      #   A32_003: 学校コード（例：C111223000062）
+      #   A32_004: 学校名（例：第六中学校）
+      #   A32_005: 住所（例：新座市野寺4-8-1）
+      school_name = properties['A32_004'] || properties['A27_004'] || properties['school_name'] || '不明'
+      city = properties['A32_002'] || properties['A27_002'] || properties['city'] || ''
+      school_code = (properties['A32_003'] || properties['A27_003'] || properties['code'])&.to_s || ''
       district_name = properties['name'] || "#{school_name}区"
 
       school_district = layer.school_districts.build(
@@ -190,7 +206,7 @@ class Api::V1::Admin::MapLayersController < ApplicationController
         school_code: school_code,
         prefecture: properties['prefecture'] || '埼玉県',
         city: city,
-        school_type: properties['school_type'] || '小学校',
+        school_type: properties['school_type'] || detected_school_type,
         geometry: geometry
       )
 
