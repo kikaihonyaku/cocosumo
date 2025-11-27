@@ -195,6 +195,21 @@ export default function MapContainer({
           map: map,
         });
 
+        // マウスホバー時のハイライト効果
+        polygon.addListener('mouseover', () => {
+          polygon.setOptions({
+            strokeWeight: 4,
+            fillOpacity: 0.35,
+          });
+        });
+
+        polygon.addListener('mouseout', () => {
+          polygon.setOptions({
+            strokeWeight: 2,
+            fillOpacity: 0.15,
+          });
+        });
+
         // クリックイベントを追加
         polygon.addListener('click', (event) => {
           const formattedAttribution = attribution ? attribution.replace(/\n/g, '<br>') : '';
@@ -229,6 +244,21 @@ export default function MapContainer({
             fillColor: color,
             fillOpacity: 0.15,
             map: map,
+          });
+
+          // マウスホバー時のハイライト効果
+          polygon.addListener('mouseover', () => {
+            polygon.setOptions({
+              strokeWeight: 4,
+              fillOpacity: 0.35,
+            });
+          });
+
+          polygon.addListener('mouseout', () => {
+            polygon.setOptions({
+              strokeWeight: 2,
+              fillOpacity: 0.15,
+            });
           });
 
           // クリックイベントを追加
