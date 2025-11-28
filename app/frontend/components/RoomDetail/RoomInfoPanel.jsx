@@ -16,6 +16,8 @@ import {
   DialogContentText,
   DialogActions,
   CircularProgress,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -35,6 +37,14 @@ export default function RoomInfoPanel({ room, onSave, loading, isMobile = false,
     deposit: '',
     key_money: '',
     description: '',
+    direction: '',
+    parking_fee: '',
+    available_date: '',
+    renewal_fee: '',
+    guarantor_required: true,
+    pets_allowed: false,
+    two_person_allowed: false,
+    office_use_allowed: false,
     ...room
   });
 
@@ -57,16 +67,25 @@ export default function RoomInfoPanel({ room, onSave, loading, isMobile = false,
         management_fee: room.management_fee ? Math.round(parseFloat(room.management_fee)) : '',
         deposit: room.deposit ? Math.round(parseFloat(room.deposit)) : '',
         key_money: room.key_money ? Math.round(parseFloat(room.key_money)) : '',
+        // 新規フィールド
+        direction: room.direction || '',
+        parking_fee: room.parking_fee ? Math.round(parseFloat(room.parking_fee)) : '',
+        available_date: room.available_date || '',
+        renewal_fee: room.renewal_fee ? Math.round(parseFloat(room.renewal_fee)) : '',
+        guarantor_required: room.guarantor_required ?? true,
+        pets_allowed: room.pets_allowed || false,
+        two_person_allowed: room.two_person_allowed || false,
+        office_use_allowed: room.office_use_allowed || false,
       });
     }
   }, [room]);
 
   const handleChange = (field) => (event) => {
-    let value = event.target.value;
+    let value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
 
     // 金額フィールドは整数に変換
-    const monetaryFields = ['rent', 'management_fee', 'deposit', 'key_money'];
-    if (monetaryFields.includes(field) && value !== '') {
+    const monetaryFields = ['rent', 'management_fee', 'deposit', 'key_money', 'parking_fee', 'renewal_fee'];
+    if (monetaryFields.includes(field) && value !== '' && event.target.type !== 'checkbox') {
       value = Math.round(parseFloat(value)) || 0;
     }
 
@@ -144,6 +163,18 @@ export default function RoomInfoPanel({ room, onSave, loading, isMobile = false,
     { id: 'vacant', name: '空室' },
     { id: 'occupied', name: '入居中' },
     { id: 'reserved', name: '予約済み' },
+  ];
+
+  const directionOptions = [
+    { id: '', name: '未設定' },
+    { id: 'north', name: '北' },
+    { id: 'northeast', name: '北東' },
+    { id: 'east', name: '東' },
+    { id: 'southeast', name: '南東' },
+    { id: 'south', name: '南' },
+    { id: 'southwest', name: '南西' },
+    { id: 'west', name: '西' },
+    { id: 'northwest', name: '北西' },
   ];
 
   return (
@@ -229,21 +260,39 @@ export default function RoomInfoPanel({ room, onSave, loading, isMobile = false,
               />
             </Box>
 
-            <FormControl fullWidth size="small">
-              <InputLabel>間取り</InputLabel>
-              <Select
-                value={formData.room_type || ''}
-                label="間取り"
-                onChange={handleChange('room_type')}
-                variant="outlined"
-              >
-                {roomTypes.map((type) => (
-                  <MenuItem key={type.id} value={type.id}>
-                    {type.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <FormControl sx={{ flex: 1 }} size="small">
+                <InputLabel>間取り</InputLabel>
+                <Select
+                  value={formData.room_type || ''}
+                  label="間取り"
+                  onChange={handleChange('room_type')}
+                  variant="outlined"
+                >
+                  {roomTypes.map((type) => (
+                    <MenuItem key={type.id} value={type.id}>
+                      {type.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl sx={{ flex: 1 }} size="small">
+                <InputLabel>向き</InputLabel>
+                <Select
+                  value={formData.direction || ''}
+                  label="向き"
+                  onChange={handleChange('direction')}
+                  variant="outlined"
+                >
+                  {directionOptions.map((option) => (
+                    <MenuItem key={option.id} value={option.id}>
+                      {option.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
 
             <TextField
               fullWidth
@@ -321,6 +370,116 @@ export default function RoomInfoPanel({ room, onSave, loading, isMobile = false,
                 InputProps={{
                   endAdornment: <Typography variant="body2" color="text.secondary">円</Typography>
                 }}
+              />
+            </Box>
+
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="更新料"
+                type="number"
+                value={formData.renewal_fee || ''}
+                onChange={handleChange('renewal_fee')}
+                variant="outlined"
+                size="small"
+                sx={{ flex: 1 }}
+                inputProps={{ step: 1 }}
+                InputProps={{
+                  endAdornment: <Typography variant="body2" color="text.secondary">円</Typography>
+                }}
+              />
+
+              <TextField
+                label="駐車場料金"
+                type="number"
+                value={formData.parking_fee || ''}
+                onChange={handleChange('parking_fee')}
+                variant="outlined"
+                size="small"
+                sx={{ flex: 1 }}
+                inputProps={{ step: 1 }}
+                InputProps={{
+                  endAdornment: <Typography variant="body2" color="text.secondary">円/月</Typography>
+                }}
+              />
+            </Box>
+
+            <TextField
+              fullWidth
+              label="入居可能日"
+              type="date"
+              value={formData.available_date || ''}
+              onChange={handleChange('available_date')}
+              variant="outlined"
+              size="small"
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+          </Stack>
+        </Box>
+
+        {/* 入居条件 */}
+        <Box>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
+            入居条件
+          </Typography>
+          <Stack spacing={1}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.guarantor_required || false}
+                    onChange={handleChange('guarantor_required')}
+                    sx={{
+                      '& .MuiSvgIcon-root': { fontSize: 24 },
+                      color: '#9e9e9e',
+                      '&.Mui-checked': { color: '#1976d2' }
+                    }}
+                  />
+                }
+                label="保証人必要"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.pets_allowed || false}
+                    onChange={handleChange('pets_allowed')}
+                    sx={{
+                      '& .MuiSvgIcon-root': { fontSize: 24 },
+                      color: '#9e9e9e',
+                      '&.Mui-checked': { color: '#1976d2' }
+                    }}
+                  />
+                }
+                label="ペット可"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.two_person_allowed || false}
+                    onChange={handleChange('two_person_allowed')}
+                    sx={{
+                      '& .MuiSvgIcon-root': { fontSize: 24 },
+                      color: '#9e9e9e',
+                      '&.Mui-checked': { color: '#1976d2' }
+                    }}
+                  />
+                }
+                label="二人入居可"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.office_use_allowed || false}
+                    onChange={handleChange('office_use_allowed')}
+                    sx={{
+                      '& .MuiSvgIcon-root': { fontSize: 24 },
+                      color: '#9e9e9e',
+                      '&.Mui-checked': { color: '#1976d2' }
+                    }}
+                  />
+                }
+                label="事務所利用可"
               />
             </Box>
           </Stack>

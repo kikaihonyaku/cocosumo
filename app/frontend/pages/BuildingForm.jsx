@@ -10,7 +10,10 @@ import {
   Alert,
   CircularProgress,
   MenuItem,
-  Grid
+  Grid,
+  FormControlLabel,
+  Checkbox,
+  Divider
 } from "@mui/material";
 
 export default function BuildingForm() {
@@ -26,8 +29,12 @@ export default function BuildingForm() {
     address: "",
     building_type: "mansion",
     total_units: "",
-    built_year: "",
-    description: ""
+    built_date: "",
+    description: "",
+    has_elevator: false,
+    has_bicycle_parking: false,
+    has_parking: false,
+    parking_spaces: ""
   });
 
   useEffect(() => {
@@ -52,8 +59,12 @@ export default function BuildingForm() {
           address: data.address || "",
           building_type: data.building_type || "mansion",
           total_units: data.total_units || "",
-          built_year: data.built_year || "",
-          description: data.description || ""
+          built_date: data.built_date || "",
+          description: data.description || "",
+          has_elevator: data.has_elevator || false,
+          has_bicycle_parking: data.has_bicycle_parking || false,
+          has_parking: data.has_parking || false,
+          parking_spaces: data.parking_spaces || ""
         });
       } else {
         setError('物件情報の取得に失敗しました');
@@ -67,10 +78,10 @@ export default function BuildingForm() {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -200,14 +211,13 @@ export default function BuildingForm() {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="築年"
-                name="built_year"
-                type="number"
-                placeholder="2020"
-                value={formData.built_year}
+                label="築年月日"
+                name="built_date"
+                type="date"
+                value={formData.built_date || ""}
                 onChange={handleChange}
                 disabled={submitting}
-                helperText="西暦で入力"
+                InputLabelProps={{ shrink: true }}
               />
             </Grid>
 
@@ -223,6 +233,69 @@ export default function BuildingForm() {
                 disabled={submitting}
               />
             </Grid>
+
+            <Grid item xs={12}>
+              <Divider sx={{ my: 1 }} />
+              <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+                建物設備
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.has_elevator}
+                    onChange={handleChange}
+                    name="has_elevator"
+                    disabled={submitting}
+                  />
+                }
+                label="エレベーター"
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.has_bicycle_parking}
+                    onChange={handleChange}
+                    name="has_bicycle_parking"
+                    disabled={submitting}
+                  />
+                }
+                label="駐輪場"
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.has_parking}
+                    onChange={handleChange}
+                    name="has_parking"
+                    disabled={submitting}
+                  />
+                }
+                label="駐車場"
+              />
+            </Grid>
+
+            {formData.has_parking && (
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="駐車場台数"
+                  name="parking_spaces"
+                  type="number"
+                  value={formData.parking_spaces}
+                  onChange={handleChange}
+                  disabled={submitting}
+                />
+              </Grid>
+            )}
           </Grid>
 
           <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>

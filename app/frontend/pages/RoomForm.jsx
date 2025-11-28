@@ -10,7 +10,10 @@ import {
   Alert,
   CircularProgress,
   MenuItem,
-  Grid
+  Grid,
+  FormControlLabel,
+  Checkbox,
+  Divider
 } from "@mui/material";
 import { ArrowBack as ArrowBackIcon } from "@mui/icons-material";
 
@@ -36,7 +39,15 @@ export default function RoomForm() {
     deposit: "",
     key_money: "",
     status: "vacant",
-    description: ""
+    description: "",
+    direction: "",
+    parking_fee: "",
+    available_date: "",
+    renewal_fee: "",
+    guarantor_required: true,
+    pets_allowed: false,
+    two_person_allowed: false,
+    office_use_allowed: false
   });
 
   useEffect(() => {
@@ -86,7 +97,15 @@ export default function RoomForm() {
           deposit: data.deposit || "",
           key_money: data.key_money || "",
           status: data.status || "vacant",
-          description: data.description || ""
+          description: data.description || "",
+          direction: data.direction || "",
+          parking_fee: data.parking_fee || "",
+          available_date: data.available_date || "",
+          renewal_fee: data.renewal_fee || "",
+          guarantor_required: data.guarantor_required ?? true,
+          pets_allowed: data.pets_allowed || false,
+          two_person_allowed: data.two_person_allowed || false,
+          office_use_allowed: data.office_use_allowed || false
         });
       } else {
         setError('部屋情報の取得に失敗しました');
@@ -100,10 +119,10 @@ export default function RoomForm() {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -336,6 +355,135 @@ export default function RoomForm() {
                 value={formData.description}
                 onChange={handleChange}
                 disabled={submitting}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Divider sx={{ my: 1 }} />
+              <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+                追加情報
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                select
+                fullWidth
+                label="向き"
+                name="direction"
+                value={formData.direction}
+                onChange={handleChange}
+                disabled={submitting}
+              >
+                <MenuItem value="">未設定</MenuItem>
+                <MenuItem value="north">北</MenuItem>
+                <MenuItem value="northeast">北東</MenuItem>
+                <MenuItem value="east">東</MenuItem>
+                <MenuItem value="southeast">南東</MenuItem>
+                <MenuItem value="south">南</MenuItem>
+                <MenuItem value="southwest">南西</MenuItem>
+                <MenuItem value="west">西</MenuItem>
+                <MenuItem value="northwest">北西</MenuItem>
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="入居可能日"
+                name="available_date"
+                type="date"
+                value={formData.available_date}
+                onChange={handleChange}
+                disabled={submitting}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="駐車場料金（円/月）"
+                name="parking_fee"
+                type="number"
+                value={formData.parking_fee}
+                onChange={handleChange}
+                disabled={submitting}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="更新料（円）"
+                name="renewal_fee"
+                type="number"
+                value={formData.renewal_fee}
+                onChange={handleChange}
+                disabled={submitting}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Divider sx={{ my: 1 }} />
+              <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+                入居条件
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.guarantor_required}
+                    onChange={handleChange}
+                    name="guarantor_required"
+                    disabled={submitting}
+                  />
+                }
+                label="保証人必要"
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.pets_allowed}
+                    onChange={handleChange}
+                    name="pets_allowed"
+                    disabled={submitting}
+                  />
+                }
+                label="ペット可"
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.two_person_allowed}
+                    onChange={handleChange}
+                    name="two_person_allowed"
+                    disabled={submitting}
+                  />
+                }
+                label="二人入居可"
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.office_use_allowed}
+                    onChange={handleChange}
+                    name="office_use_allowed"
+                    disabled={submitting}
+                  />
+                }
+                label="事務所利用可"
               />
             </Grid>
           </Grid>

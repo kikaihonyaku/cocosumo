@@ -18,6 +18,8 @@ import {
   DialogActions,
   IconButton,
   Tooltip,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   Business as BusinessIcon,
@@ -32,12 +34,16 @@ export default function BuildingInfoPanel({ property, onSave, loading, isMobile 
     name: '',
     address: '',
     building_type: '',
-    built_year: '',
+    built_date: '',
     description: '',
     postcode: '',
     total_units: '',
     structure: '',
     floors: '',
+    has_elevator: false,
+    has_bicycle_parking: false,
+    has_parking: false,
+    parking_spaces: '',
     ...property
   });
 
@@ -53,21 +59,26 @@ export default function BuildingInfoPanel({ property, onSave, loading, isMobile 
         name: property.name || '',
         address: property.address || '',
         building_type: property.building_type || '',
-        built_year: property.built_year || '',
+        built_date: property.built_date || '',
         description: property.description || '',
         postcode: property.postcode || '',
         total_units: property.total_units || '',
         structure: property.structure || '',
         floors: property.floors || '',
+        has_elevator: property.has_elevator || false,
+        has_bicycle_parking: property.has_bicycle_parking || false,
+        has_parking: property.has_parking || false,
+        parking_spaces: property.parking_spaces || '',
         ...property
       });
     }
   }, [property]);
 
   const handleChange = (field) => (event) => {
+    const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
     setFormData(prev => ({
       ...prev,
-      [field]: event.target.value
+      [field]: value
     }));
     setHasUnsavedChanges(true);
   };
@@ -214,36 +225,21 @@ export default function BuildingInfoPanel({ property, onSave, loading, isMobile 
               size="small"
             />
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>建物種別</InputLabel>
-                <Select
-                  value={formData.building_type || ''}
-                  label="建物種別"
-                  onChange={handleChange('building_type')}
-                  variant="outlined"
-                >
-                  {buildingTypes.map((type) => (
-                    <MenuItem key={type.id} value={type.id}>
-                      {type.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <TextField
-                fullWidth
-                label="築年"
-                type="number"
-                value={formData.built_year || ''}
-                onChange={handleChange('built_year')}
+            <FormControl fullWidth size="small">
+              <InputLabel>建物種別</InputLabel>
+              <Select
+                value={formData.building_type || ''}
+                label="建物種別"
+                onChange={handleChange('building_type')}
                 variant="outlined"
-                size="small"
-                InputProps={{
-                  endAdornment: <Typography variant="body2" color="text.secondary">年</Typography>
-                }}
-              />
-            </Box>
+              >
+                {buildingTypes.map((type) => (
+                  <MenuItem key={type.id} value={type.id}>
+                    {type.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
             <TextField
               fullWidth
@@ -317,6 +313,19 @@ export default function BuildingInfoPanel({ property, onSave, loading, isMobile 
             建築情報
           </Typography>
           <Stack spacing={2}>
+            <TextField
+              label="築年月日"
+              type="date"
+              value={formData.built_date || ''}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, built_date: e.target.value }));
+                setHasUnsavedChanges(true);
+              }}
+              variant="outlined"
+              size="small"
+              InputLabelProps={{ shrink: true }}
+            />
+
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
                 label="構造"
@@ -349,6 +358,7 @@ export default function BuildingInfoPanel({ property, onSave, loading, isMobile 
               onChange={handleChange('total_units')}
               variant="outlined"
               size="small"
+              sx={{ maxWidth: 200 }}
               InputProps={{
                 endAdornment: <Typography variant="body2" color="text.secondary">戸</Typography>
               }}
@@ -399,13 +409,57 @@ export default function BuildingInfoPanel({ property, onSave, loading, isMobile 
               </Stack>
             </Box>
 
-            {/* 駐車場情報 */}
+            {/* 設備情報 */}
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
-                駐車場情報
+                設備情報
               </Typography>
               <Stack spacing={2}>
-                <Box sx={{ display: 'flex', gap: 2 }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.has_elevator || false}
+                        onChange={handleChange('has_elevator')}
+                        sx={{
+                          '& .MuiSvgIcon-root': { fontSize: 24 },
+                          color: '#9e9e9e',
+                          '&.Mui-checked': { color: '#1976d2' }
+                        }}
+                      />
+                    }
+                    label="エレベーター"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.has_bicycle_parking || false}
+                        onChange={handleChange('has_bicycle_parking')}
+                        sx={{
+                          '& .MuiSvgIcon-root': { fontSize: 24 },
+                          color: '#9e9e9e',
+                          '&.Mui-checked': { color: '#1976d2' }
+                        }}
+                      />
+                    }
+                    label="駐輪場"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.has_parking || false}
+                        onChange={handleChange('has_parking')}
+                        sx={{
+                          '& .MuiSvgIcon-root': { fontSize: 24 },
+                          color: '#9e9e9e',
+                          '&.Mui-checked': { color: '#1976d2' }
+                        }}
+                      />
+                    }
+                    label="駐車場"
+                  />
+                </Box>
+                {formData.has_parking && (
                   <TextField
                     label="駐車場台数"
                     type="number"
@@ -413,43 +467,22 @@ export default function BuildingInfoPanel({ property, onSave, loading, isMobile 
                     onChange={handleChange('parking_spaces')}
                     variant="outlined"
                     size="small"
-                    sx={{ flex: 1 }}
+                    sx={{ maxWidth: 200 }}
                     InputProps={{
                       endAdornment: <Typography variant="body2" color="text.secondary">台</Typography>
                     }}
                   />
-                  <TextField
-                    label="駐車場料金"
-                    type="number"
-                    value={formData.parking_fee || ''}
-                    onChange={handleChange('parking_fee')}
-                    variant="outlined"
-                    size="small"
-                    sx={{ flex: 1 }}
-                    InputProps={{
-                      endAdornment: <Typography variant="body2" color="text.secondary">円/月</Typography>
-                    }}
-                  />
-                </Box>
-              </Stack>
-            </Box>
-
-            {/* 設備情報 */}
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
-                設備情報
-              </Typography>
-              <Stack spacing={2}>
+                )}
                 <TextField
                   fullWidth
-                  label="設備・特記事項"
+                  label="その他設備・特記事項"
                   multiline
                   rows={3}
                   value={formData.facilities || ''}
                   onChange={handleChange('facilities')}
                   variant="outlined"
                   size="small"
-                  placeholder="例: エレベーター、オートロック、防犯カメラ、宅配BOXなど"
+                  placeholder="例: オートロック、防犯カメラ、宅配BOXなど"
                 />
               </Stack>
             </Box>

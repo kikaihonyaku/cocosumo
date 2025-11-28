@@ -79,7 +79,15 @@ class Api::V1::RoomsController < ApplicationController
       :tenant_phone,
       :contract_start_date,
       :contract_end_date,
-      :notes
+      :notes,
+      :direction,
+      :parking_fee,
+      :available_date,
+      :renewal_fee,
+      :guarantor_required,
+      :pets_allowed,
+      :two_person_allowed,
+      :office_use_allowed
     )
   end
 

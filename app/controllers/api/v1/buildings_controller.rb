@@ -172,11 +172,15 @@ class Api::V1::BuildingsController < ApplicationController
       :longitude,
       :building_type,
       :total_units,
-      :built_year,
+      :built_date,
       :description,
       :postcode,
       :structure,
-      :floors
+      :floors,
+      :has_elevator,
+      :has_bicycle_parking,
+      :has_parking,
+      :parking_spaces
     )
   end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_16_220928) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_28_205525) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -74,11 +74,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_16_220928) do
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "built_year"
     t.string "postcode"
     t.string "structure"
     t.integer "floors"
     t.datetime "discarded_at"
+    t.boolean "has_elevator"
+    t.boolean "has_bicycle_parking"
+    t.boolean "has_parking"
+    t.integer "parking_spaces"
+    t.date "built_date"
     t.index ["discarded_at"], name: "index_buildings_on_discarded_at"
     t.index ["tenant_id"], name: "index_buildings_on_tenant_id"
   end
@@ -218,6 +222,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_16_220928) do
     t.date "contract_start_date"
     t.date "contract_end_date"
     t.text "notes"
+    t.string "direction"
+    t.decimal "parking_fee"
+    t.date "available_date"
+    t.decimal "renewal_fee"
+    t.boolean "guarantor_required", default: true
+    t.boolean "pets_allowed", default: false
+    t.boolean "two_person_allowed", default: false
+    t.boolean "office_use_allowed", default: false
     t.index ["building_id"], name: "index_rooms_on_building_id"
   end
 
