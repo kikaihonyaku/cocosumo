@@ -31,6 +31,7 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
   const selectedPlaceMarkerRef = useRef(null); // AI応答から選択された場所のマーカー
+  const addressMarkersRef = useRef([]); // AI応答から抽出された住所のマーカー群
   const widgetElementRef = useRef(null); // Google Maps Grounding Widget要素
   const streetViewRef = useRef(null); // ストリートビューコンテナ
   const panoramaRef = useRef(null); // ストリートビューパノラマインスタンス
@@ -174,6 +175,101 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
       });
     }
   }, [selectedPlace]);
+
+  // AI応答から抽出された住所をマーカーとして表示
+  // addressesは { address: string, name: string }[] の形式
+  const handleAddressesFound = (addresses) => {
+    if (!mapInstanceRef.current || !window.google?.maps || addresses.length === 0) return;
+
+    console.log('Addresses found:', addresses);
+
+    // 既存のマーカーを削除
+    addressMarkersRef.current.forEach(marker => {
+      marker.setMap(null);
+    });
+    addressMarkersRef.current = [];
+
+    const geocoder = new window.google.maps.Geocoder();
+    const bounds = new window.google.maps.LatLngBounds();
+    let geocodedCount = 0;
+
+    // 物件位置をboundsに追加
+    if (property?.latitude && property?.longitude) {
+      const propertyLat = parseFloat(property.latitude);
+      const propertyLng = parseFloat(property.longitude);
+      if (!isNaN(propertyLat) && !isNaN(propertyLng)) {
+        bounds.extend({ lat: propertyLat, lng: propertyLng });
+      }
+    }
+
+    addresses.forEach((item, index) => {
+      const { address, name } = item;
+      geocoder.geocode({ address }, (results, status) => {
+        geocodedCount++;
+
+        if (status === 'OK' && results[0]) {
+          const location = results[0].geometry.location;
+          const lat = location.lat();
+          const lng = location.lng();
+
+          console.log(`Geocoded address ${index + 1}:`, { name, address }, { lat, lng });
+
+          // マーカーを作成
+          const marker = new window.google.maps.Marker({
+            position: { lat, lng },
+            map: mapInstanceRef.current,
+            title: name || address,
+            icon: {
+              url: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png', // 緑のマーカー
+            },
+            label: {
+              text: String(index + 1),
+              color: 'white',
+              fontWeight: 'bold',
+            },
+          });
+
+          // 情報ウィンドウを作成（名称がある場合は名称も表示）
+          const infoContent = name
+            ? `
+              <div style="padding: 8px; max-width: 280px;">
+                <h4 style="margin: 0 0 6px 0; font-size: 14px; color: #1976d2; font-weight: 600;">${name}</h4>
+                <p style="margin: 0; font-size: 12px; color: #666;">${address}</p>
+              </div>
+            `
+            : `
+              <div style="padding: 8px; max-width: 250px;">
+                <p style="margin: 0; font-size: 13px; color: #333;">${address}</p>
+              </div>
+            `;
+
+          const infoWindow = new window.google.maps.InfoWindow({
+            content: infoContent,
+          });
+
+          marker.addListener('click', () => {
+            infoWindow.open(mapInstanceRef.current, marker);
+          });
+
+          addressMarkersRef.current.push(marker);
+          bounds.extend({ lat, lng });
+        } else {
+          console.error(`Geocoding failed for address ${index + 1}:`, address, status);
+        }
+
+        // 全てのジオコーディングが完了したら地図の表示範囲を調整
+        if (geocodedCount === addresses.length && addressMarkersRef.current.length > 0) {
+          mapInstanceRef.current.fitBounds(bounds);
+          // ズームが細かすぎる場合は調整
+          const listener = window.google.maps.event.addListenerOnce(mapInstanceRef.current, 'idle', () => {
+            if (mapInstanceRef.current.getZoom() > 16) {
+              mapInstanceRef.current.setZoom(16);
+            }
+          });
+        }
+      });
+    });
+  };
 
   // ストリートビュー表示切り替え時に地図をリサイズ
   useEffect(() => {
@@ -777,6 +873,7 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
           property={property}
           onPlaceClick={onPlaceClick}
           onWidgetTokenChange={onWidgetTokenChange}
+          onAddressesFound={handleAddressesFound}
         />
       )}
     </Box>

@@ -20,7 +20,7 @@ import {
   Maximize as MaximizeIcon,
 } from '@mui/icons-material';
 
-export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenChange }) {
+export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenChange, onAddressesFound }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
@@ -100,11 +100,21 @@ export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenCha
           onWidgetTokenChange(data.widget_context_token);
         }
 
+        const answerText = data.answer || data.text || '';
+
         // AIの応答のみを会話履歴に追加
         setConversationHistory(prev => [
           ...prev,
-          { role: 'model', text: data.answer || data.text || '' }
+          { role: 'model', text: answerText }
         ]);
+
+        // 回答から住所を抽出して親に通知
+        if (onAddressesFound) {
+          const addresses = extractAddresses(answerText);
+          if (addresses.length > 0) {
+            onAddressesFound(addresses);
+          }
+        }
       } else {
         throw new Error('予期しないレスポンス形式です');
       }
@@ -146,6 +156,75 @@ export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenCha
   const addressPatternJP = /〒\d{3}-\d{4}\s*[^\n〒。！？）)]+/g;
   // 英語形式: "6-chōme-6-16 Bingohigashi, Kasukabe, Saitama 344-0032, Japan"
   const addressPatternEN = /[\d\w\-ō]+\s+[\w\-ō]+(?:,\s*[\w\-ō\s]+){2,},\s*Japan/gi;
+
+  // テキストから住所と名称を抽出する関数
+  const extractAddresses = (text) => {
+    if (!text || typeof text !== 'string') return [];
+
+    const matches = [];
+
+    // 日本語形式の住所を検出
+    let match;
+    const patternJP = new RegExp(addressPatternJP);
+    while ((match = patternJP.exec(text)) !== null) {
+      matches.push({ index: match.index, length: match[0].length, address: match[0] });
+    }
+
+    // 英語形式の住所を検出
+    const patternEN = new RegExp(addressPatternEN);
+    while ((match = patternEN.exec(text)) !== null) {
+      matches.push({ index: match.index, length: match[0].length, address: match[0] });
+    }
+
+    // マッチをインデックス順にソート
+    matches.sort((a, b) => a.index - b.index);
+
+    // 重複を除去（重なっている場合は先に見つかったものを優先）
+    const uniqueMatches = [];
+    for (const m of matches) {
+      const isOverlapping = uniqueMatches.some(
+        um => (m.index >= um.index && m.index < um.index + um.length) ||
+              (um.index >= m.index && um.index < m.index + m.length)
+      );
+      if (!isOverlapping) {
+        uniqueMatches.push(m);
+      }
+    }
+
+    // 住所の前にある名称を抽出
+    return uniqueMatches.map(m => {
+      // 住所の前の部分を取得（同じ行内）
+      const beforeText = text.substring(0, m.index);
+      const lastNewline = beforeText.lastIndexOf('\n');
+      const lineStart = lastNewline === -1 ? 0 : lastNewline + 1;
+      const lineBeforeAddress = text.substring(lineStart, m.index).trim();
+
+      // 名称を抽出（**太字**、番号付きリスト、箇条書きなどを考慮）
+      let name = '';
+
+      // **名称** 形式を検出
+      const boldMatch = lineBeforeAddress.match(/\*\*([^*]+)\*\*/);
+      if (boldMatch) {
+        name = boldMatch[1].trim();
+      } else {
+        // 「1. 名称:」「- 名称:」「・名称:」などの形式
+        const listMatch = lineBeforeAddress.match(/^[\d\.\-\*・•]+\s*(.+?)[:：]?\s*$/);
+        if (listMatch) {
+          name = listMatch[1].trim();
+        } else {
+          // 住所の直前のテキスト（コロンや括弧で区切られている場合）
+          const colonMatch = lineBeforeAddress.match(/([^:：]+)[:：]\s*$/);
+          if (colonMatch) {
+            name = colonMatch[1].trim();
+            // さらに番号やリストマーカーを除去
+            name = name.replace(/^[\d\.\-\*・•]+\s*/, '').trim();
+          }
+        }
+      }
+
+      return { address: m.address, name: name || '' };
+    });
+  };
 
   // テキスト内の住所を検出してクリック可能なリンクに変換
   const processTextWithAddresses = (text) => {
