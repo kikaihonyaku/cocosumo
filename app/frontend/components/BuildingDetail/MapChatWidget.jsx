@@ -28,9 +28,13 @@ export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenCha
   const [conversationHistory, setConversationHistory] = useState([]);
   const [isMinimized, setIsMinimized] = useState(true); // 初期表示は最小化（閉じた状態）
   const [suggestions] = useState([
-    'この物件周辺のおすすめの飲食店を教えてください',
     '最寄り駅からのアクセス方法を教えてください',
+    'この物件周辺のおすすめの飲食店を教えてください',
     '近くにスーパーやコンビニはありますか？',
+    '周辺の治安や住みやすさについて教えてください',
+    '近くに子供が通える病院はありますか？',
+    'テニスの習い事がしたいです。近くにありますか？',
+    '近くにバス停がありますか？',
   ]);
   const chatEndRef = useRef(null);
 
@@ -271,7 +275,7 @@ export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenCha
           borderRadius: 2,
           display: 'flex',
           flexDirection: 'column',
-          height: isMinimized ? 'auto' : 280,
+          height: isMinimized ? 'auto' : 400,
         }}
       >
         {/* ヘッダー - 最小化時も表示 */}
