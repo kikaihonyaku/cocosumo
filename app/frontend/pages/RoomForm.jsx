@@ -132,7 +132,8 @@ export default function RoomForm() {
     setSubmitting(true);
 
     try {
-      const url = isEdit ? `/api/v1/rooms/${id}` : '/api/v1/rooms';
+      // 新規作成時はネストされたルート、編集時はスタンドアロンルートを使用
+      const url = isEdit ? `/api/v1/rooms/${id}` : `/api/v1/buildings/${formData.building_id}/rooms`;
       const method = isEdit ? 'PATCH' : 'POST';
 
       const response = await fetch(url, {

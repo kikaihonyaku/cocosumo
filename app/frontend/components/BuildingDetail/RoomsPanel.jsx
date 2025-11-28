@@ -10,7 +10,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
   Chip,
   Dialog,
@@ -28,6 +27,11 @@ import {
   MenuItem as MenuItemComponent,
   Alert,
   CircularProgress,
+  Divider,
+  Collapse,
+  FormControlLabel,
+  Checkbox,
+  InputAdornment,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -38,6 +42,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   HourglassEmpty as HourglassEmptyIcon,
+  ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 
 export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
@@ -49,6 +54,7 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [formData, setFormData] = useState({
     room_number: '',
     floor: '',
@@ -56,7 +62,39 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
     rent: '',
     status: 'vacant',
     room_type: '1K',
+    management_fee: '',
+    deposit: '',
+    key_money: '',
+    direction: '',
+    available_date: '',
+    parking_fee: '',
+    renewal_fee: '',
+    guarantor_required: true,
+    pets_allowed: false,
+    two_person_allowed: false,
+    office_use_allowed: false,
+    description: '',
   });
+
+  // 向きの定義
+  const directions = [
+    { id: '', name: '未設定' },
+    { id: 'north', name: '北' },
+    { id: 'northeast', name: '北東' },
+    { id: 'east', name: '東' },
+    { id: 'southeast', name: '南東' },
+    { id: 'south', name: '南' },
+    { id: 'southwest', name: '南西' },
+    { id: 'west', name: '西' },
+    { id: 'northwest', name: '北西' },
+  ];
+
+  // チェックボックスの共通スタイル
+  const checkboxStyle = {
+    '& .MuiSvgIcon-root': { fontSize: 24 },
+    color: '#9e9e9e',
+    '&.Mui-checked': { color: '#1976d2' }
+  };
 
   // 部屋ステータスの定義
   const roomStatuses = [
@@ -111,6 +149,7 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
 
   const handleAddRoom = () => {
     setEditingRoom(null);
+    setShowAdvanced(false);
     setFormData({
       room_number: '',
       floor: '',
@@ -118,12 +157,25 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
       rent: '',
       status: 'vacant',
       room_type: '1K',
+      management_fee: '',
+      deposit: '',
+      key_money: '',
+      direction: '',
+      available_date: '',
+      parking_fee: '',
+      renewal_fee: '',
+      guarantor_required: true,
+      pets_allowed: false,
+      two_person_allowed: false,
+      office_use_allowed: false,
+      description: '',
     });
     setRoomDialogOpen(true);
   };
 
   const handleEditRoom = (room) => {
     setEditingRoom(room);
+    setShowAdvanced(false);
     setFormData({
       room_number: room.room_number || '',
       floor: room.floor || '',
@@ -131,6 +183,18 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
       rent: room.rent || '',
       status: room.status || 'vacant',
       room_type: room.room_type || '1K',
+      management_fee: room.management_fee || '',
+      deposit: room.deposit || '',
+      key_money: room.key_money || '',
+      direction: room.direction || '',
+      available_date: room.available_date || '',
+      parking_fee: room.parking_fee || '',
+      renewal_fee: room.renewal_fee || '',
+      guarantor_required: room.guarantor_required ?? true,
+      pets_allowed: room.pets_allowed || false,
+      two_person_allowed: room.two_person_allowed || false,
+      office_use_allowed: room.office_use_allowed || false,
+      description: room.description || '',
     });
     setRoomDialogOpen(true);
     handleMenuClose();
@@ -146,11 +210,12 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
     try {
       setLoading(true);
 
+      // 編集時はスタンドアロンルート、新規作成時はネストされたルートを使用
       const url = editingRoom
-        ? `/api/v1/buildings/${propertyId}/rooms/${editingRoom.id}`
+        ? `/api/v1/rooms/${editingRoom.id}`
         : `/api/v1/buildings/${propertyId}/rooms`;
 
-      const method = editingRoom ? 'PUT' : 'POST';
+      const method = editingRoom ? 'PATCH' : 'POST';
 
       const response = await fetch(url, {
         method,
@@ -182,7 +247,8 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
     try {
       setLoading(true);
 
-      const response = await fetch(`/api/v1/buildings/${propertyId}/rooms/${roomToDelete.id}`, {
+      // 削除はスタンドアロンルートを使用
+      const response = await fetch(`/api/v1/rooms/${roomToDelete.id}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -217,9 +283,10 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
   };
 
   const handleChange = (field) => (event) => {
+    const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
     setFormData(prev => ({
       ...prev,
-      [field]: event.target.value
+      [field]: value
     }));
   };
 
@@ -398,100 +465,297 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
         onClose={() => setRoomDialogOpen(false)}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: { maxHeight: '90vh' }
+        }}
       >
         <DialogTitle>
           {editingRoom ? '部屋編集' : '部屋追加'}
         </DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="部屋番号"
-                value={formData.room_number}
-                onChange={handleChange('room_number')}
-                required
-                size="small"
-                placeholder="例: 101"
-              />
-            </Grid>
+        <DialogContent dividers sx={{ overflowY: 'auto' }}>
+          {/* 基本情報 */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 600, mb: 2 }}>
+              基本情報
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="部屋番号"
+                  value={formData.room_number}
+                  onChange={handleChange('room_number')}
+                  required
+                  size="small"
+                  placeholder="例: 101"
+                />
+              </Grid>
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="階数"
-                type="number"
-                value={formData.floor}
-                onChange={handleChange('floor')}
-                size="small"
-              />
-            </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="階数"
+                  type="number"
+                  value={formData.floor}
+                  onChange={handleChange('floor')}
+                  required
+                  size="small"
+                />
+              </Grid>
 
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth size="small">
-                <InputLabel>間取り</InputLabel>
-                <Select
-                  value={formData.room_type}
-                  label="間取り"
-                  onChange={handleChange('room_type')}
-                >
-                  {roomTypes.map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+              <Grid item xs={12} sm={4}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>間取り</InputLabel>
+                  <Select
+                    value={formData.room_type}
+                    label="間取り"
+                    onChange={handleChange('room_type')}
+                  >
+                    {roomTypes.map((type) => (
+                      <MenuItem key={type} value={type}>
+                        {type}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="面積"
-                type="number"
-                value={formData.area}
-                onChange={handleChange('area')}
-                size="small"
-                InputProps={{
-                  endAdornment: <Typography variant="body2" color="text.secondary">㎡</Typography>
-                }}
-              />
-            </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="面積"
+                  type="number"
+                  value={formData.area}
+                  onChange={handleChange('area')}
+                  size="small"
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">㎡</InputAdornment>
+                  }}
+                />
+              </Grid>
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="賃料"
-                type="number"
-                value={formData.rent}
-                onChange={handleChange('rent')}
-                size="small"
-                InputProps={{
-                  endAdornment: <Typography variant="body2" color="text.secondary">円</Typography>
-                }}
-              />
-            </Grid>
+              <Grid item xs={12} sm={4}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>向き</InputLabel>
+                  <Select
+                    value={formData.direction}
+                    label="向き"
+                    onChange={handleChange('direction')}
+                  >
+                    {directions.map((dir) => (
+                      <MenuItem key={dir.id} value={dir.id}>
+                        {dir.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
 
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth size="small">
-                <InputLabel>状態</InputLabel>
-                <Select
-                  value={formData.status}
-                  label="状態"
-                  onChange={handleChange('status')}
-                >
-                  {roomStatuses.map((status) => (
-                    <MenuItem key={status.id} value={status.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {status.icon}
-                        {status.name}
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Grid item xs={12} sm={4}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>状態</InputLabel>
+                  <Select
+                    value={formData.status}
+                    label="状態"
+                    onChange={handleChange('status')}
+                  >
+                    {roomStatuses.map((status) => (
+                      <MenuItem key={status.id} value={status.id}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {status.icon}
+                          {status.name}
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
             </Grid>
-          </Grid>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* 賃料情報 */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 600, mb: 2 }}>
+              賃料・費用
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="賃料"
+                  type="number"
+                  value={formData.rent}
+                  onChange={handleChange('rent')}
+                  size="small"
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">円</InputAdornment>
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="管理費"
+                  type="number"
+                  value={formData.management_fee}
+                  onChange={handleChange('management_fee')}
+                  size="small"
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">円</InputAdornment>
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="敷金"
+                  type="number"
+                  value={formData.deposit}
+                  onChange={handleChange('deposit')}
+                  size="small"
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">円</InputAdornment>
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="礼金"
+                  type="number"
+                  value={formData.key_money}
+                  onChange={handleChange('key_money')}
+                  size="small"
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">円</InputAdornment>
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="入居可能日"
+                  type="date"
+                  value={formData.available_date}
+                  onChange={handleChange('available_date')}
+                  size="small"
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+            </Grid>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* 詳細設定（折りたたみ） */}
+          <Box>
+            <Button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              endIcon={<ExpandMoreIcon sx={{ transform: showAdvanced ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />}
+              sx={{ textTransform: 'none', color: 'primary.main', mb: 1 }}
+            >
+              詳細設定
+            </Button>
+
+            <Collapse in={showAdvanced}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="駐車場料金"
+                    type="number"
+                    value={formData.parking_fee}
+                    onChange={handleChange('parking_fee')}
+                    size="small"
+                    InputProps={{
+                      endAdornment: <InputAdornment position="end">円/月</InputAdornment>
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="更新料"
+                    type="number"
+                    value={formData.renewal_fee}
+                    onChange={handleChange('renewal_fee')}
+                    size="small"
+                    InputProps={{
+                      endAdornment: <InputAdornment position="end">円</InputAdornment>
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                    入居条件
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={formData.guarantor_required}
+                          onChange={handleChange('guarantor_required')}
+                          sx={checkboxStyle}
+                        />
+                      }
+                      label="保証人必要"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={formData.pets_allowed}
+                          onChange={handleChange('pets_allowed')}
+                          sx={checkboxStyle}
+                        />
+                      }
+                      label="ペット可"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={formData.two_person_allowed}
+                          onChange={handleChange('two_person_allowed')}
+                          sx={checkboxStyle}
+                        />
+                      }
+                      label="二人入居可"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={formData.office_use_allowed}
+                          onChange={handleChange('office_use_allowed')}
+                          sx={checkboxStyle}
+                        />
+                      }
+                      label="事務所利用可"
+                    />
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="備考"
+                    multiline
+                    rows={3}
+                    value={formData.description}
+                    onChange={handleChange('description')}
+                    size="small"
+                    placeholder="部屋に関する特記事項など"
+                  />
+                </Grid>
+              </Grid>
+            </Collapse>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setRoomDialogOpen(false)}>
@@ -500,7 +764,7 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
           <Button
             onClick={handleSaveRoom}
             variant="contained"
-            disabled={loading || !formData.room_number}
+            disabled={loading || !formData.room_number || !formData.floor}
           >
             {loading ? <CircularProgress size={20} /> : '保存'}
           </Button>
