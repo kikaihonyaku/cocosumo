@@ -63,6 +63,15 @@ Rails.application.routes.draw do
             post :replace_features   # データ上書き
           end
         end
+
+        # SUUMO インポート
+        resources :suumo_imports, only: [:create] do
+          collection do
+            post :sync      # 同期実行（小規模インポート用）
+            post :preview   # プレビュー（保存せずに解析結果を確認）
+            get :tenants    # テナント一覧
+          end
+        end
       end
 
       # 部屋詳細・更新・削除はスタンドアロン

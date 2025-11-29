@@ -252,6 +252,10 @@ GEM
       google-protobuf (>= 3.18, < 5.a)
       googleapis-common-protos (~> 1.7.0)
       grpc (~> 1.41)
+    httparty (0.23.2)
+      csv
+      mini_mime (>= 1.0.0)
+      multi_xml (>= 0.5.2)
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
     importmap-rails (2.2.2)
@@ -297,6 +301,8 @@ GEM
     minitest (5.26.0)
     msgpack (1.8.0)
     multi_json (1.17.0)
+    multi_xml (0.7.2)
+      bigdecimal (~> 3.1)
     mutex_m (0.3.0)
     net-http (0.6.0)
       uri
@@ -560,9 +566,11 @@ DEPENDENCIES
   gemini-ai
   geocoder
   google-cloud-ai_platform-v1
+  httparty
   importmap-rails
   jbuilder
   kamal
+  nokogiri
   pg (~> 1.1)
   propshaft
   puma (>= 5.0)
