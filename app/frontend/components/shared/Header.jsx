@@ -1,24 +1,33 @@
 import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { 
-  Box, 
-  Button, 
-  Typography, 
-  AppBar, 
-  Toolbar, 
-  IconButton, 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemButton, 
-  ListItemText, 
+import {
+  Box,
+  Button,
+  Typography,
+  AppBar,
+  Toolbar,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
   Divider,
   useMediaQuery,
-  useTheme
+  useTheme,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  Collapse
 } from "@mui/material";
-import { 
-  Menu as MenuIcon, 
-  Close as CloseIcon 
+import {
+  Menu as MenuIcon,
+  Close as CloseIcon,
+  AdminPanelSettings as AdminIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  CloudDownload as CloudDownloadIcon,
+  Layers as LayersIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -27,6 +36,8 @@ export default function Header() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [adminMenuAnchor, setAdminMenuAnchor] = useState(null);
+  const [mobileAdminExpanded, setMobileAdminExpanded] = useState(false);
   
   const navStyle = ({ isActive }) => ({
     fontWeight: isActive ? "700" : "400",
@@ -47,6 +58,23 @@ export default function Header() {
   const handleMobileMenuClose = () => {
     setMobileMenuOpen(false);
   };
+
+  const handleAdminMenuOpen = (event) => {
+    setAdminMenuAnchor(event.currentTarget);
+  };
+
+  const handleAdminMenuClose = () => {
+    setAdminMenuAnchor(null);
+  };
+
+  const handleMobileAdminToggle = () => {
+    setMobileAdminExpanded(!mobileAdminExpanded);
+  };
+
+  const adminMenuItems = [
+    { to: "/admin/suumo-import", label: "SUUMOインポート", icon: <CloudDownloadIcon fontSize="small" /> },
+    { to: "/admin/layers", label: "レイヤー管理", icon: <LayersIcon fontSize="small" /> },
+  ];
 
   const menuItems = [
     { to: "/home", label: "ホーム", end: false },
@@ -100,17 +128,63 @@ export default function Header() {
           
           {!isMobile && (
             <>
-              <Box sx={{ flexGrow: 1, display: 'flex' }}>
+              <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
                 {menuItems.map((item) => (
-                  <NavLink 
+                  <NavLink
                     key={item.to}
-                    to={item.to} 
-                    style={navStyle} 
+                    to={item.to}
+                    style={navStyle}
                     end={item.end}
                   >
                     {item.label}
                   </NavLink>
                 ))}
+                {/* 管理者メニュー */}
+                <Button
+                  onClick={handleAdminMenuOpen}
+                  sx={{
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    textTransform: 'none',
+                    '&:hover': {
+                      color: 'white',
+                      bgcolor: 'rgba(255, 255, 255, 0.1)'
+                    }
+                  }}
+                  endIcon={<ExpandMoreIcon />}
+                  startIcon={<AdminIcon />}
+                >
+                  管理
+                </Button>
+                <Menu
+                  anchorEl={adminMenuAnchor}
+                  open={Boolean(adminMenuAnchor)}
+                  onClose={handleAdminMenuClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'left',
+                  }}
+                >
+                  {adminMenuItems.map((item) => (
+                    <MenuItem
+                      key={item.to}
+                      component={NavLink}
+                      to={item.to}
+                      onClick={handleAdminMenuClose}
+                      sx={{
+                        '&.active': {
+                          bgcolor: 'action.selected',
+                        }
+                      }}
+                    >
+                      <ListItemIcon>{item.icon}</ListItemIcon>
+                      <ListItemText>{item.label}</ListItemText>
+                    </MenuItem>
+                  ))}
+                </Menu>
               </Box>
 
               {user && (
@@ -183,13 +257,55 @@ export default function Header() {
                   },
                 }}
               >
-                <ListItemText 
+                <ListItemText
                   primary={item.label}
                   sx={{ color: 'white' }}
                 />
               </ListItemButton>
             </ListItem>
           ))}
+
+          {/* 管理者メニュー（折りたたみ式） */}
+          <ListItem disablePadding>
+            <ListItemButton onClick={handleMobileAdminToggle}>
+              <ListItemIcon sx={{ color: 'white', minWidth: 36 }}>
+                <AdminIcon />
+              </ListItemIcon>
+              <ListItemText primary="管理" sx={{ color: 'white' }} />
+              {mobileAdminExpanded ? (
+                <ExpandLessIcon sx={{ color: 'white' }} />
+              ) : (
+                <ExpandMoreIcon sx={{ color: 'white' }} />
+              )}
+            </ListItemButton>
+          </ListItem>
+          <Collapse in={mobileAdminExpanded} timeout="auto" unmountOnExit>
+            <List component="div" disablePadding>
+              {adminMenuItems.map((item) => (
+                <ListItem key={item.to} disablePadding>
+                  <ListItemButton
+                    component={NavLink}
+                    to={item.to}
+                    onClick={handleMobileMenuClose}
+                    sx={{
+                      pl: 4,
+                      '&.active': {
+                        bgcolor: 'rgba(255, 255, 255, 0.2)',
+                      },
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: 'rgba(255, 255, 255, 0.7)', minWidth: 36 }}>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.label}
+                      sx={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          </Collapse>
         </List>
 
         {user && (
