@@ -664,8 +664,9 @@ export default function MapContainer({
         <Box
           sx={{
             position: 'absolute',
-            bottom: 20,
-            right: 20,
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
             bgcolor: 'rgba(255, 255, 255, 0.95)',
             borderRadius: 2,
             boxShadow: 3,
