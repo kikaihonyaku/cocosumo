@@ -1,8 +1,14 @@
 # frozen_string_literal: true
 
+require "digest"
+
 module Suumo
   class ScraperService
     class ScrapingError < StandardError; end
+
+    # SUUMOから取得する項目のみを更新対象とする
+    SUUMO_BUILDING_ATTRS = %i[name address building_type floors built_date structure].freeze
+    SUUMO_ROOM_ATTRS = %i[floor rent management_fee deposit key_money room_type area].freeze
 
     attr_reader :stats
 
@@ -18,10 +24,13 @@ module Suumo
       @logger = Rails.logger
       @stats = {
         buildings_created: 0,
+        buildings_updated: 0,
         buildings_skipped: 0,
         rooms_created: 0,
+        rooms_updated: 0,
         rooms_skipped: 0,
         images_downloaded: 0,
+        images_skipped: 0,
         errors: []
       }
 
@@ -101,12 +110,37 @@ module Suumo
     end
 
     def find_or_create_building(property_data)
-      normalized_name = normalize_name(property_data[:building_name])
-      existing = @tenant.buildings.find_by("LOWER(REPLACE(name, ' ', '')) = ?", normalized_name.downcase)
+      external_key = generate_building_key(property_data[:address], property_data[:building_name])
+
+      # まずexternal_keyで検索
+      existing = @tenant.buildings.find_by(external_key: external_key) if external_key.present?
+
+      # 見つからない場合は名前の正規化で検索（後方互換性）
+      unless existing
+        normalized_name = normalize_name(property_data[:building_name])
+        existing = @tenant.buildings.find_by("LOWER(REPLACE(name, ' ', '')) = ?", normalized_name.downcase)
+      end
 
       if existing
-        @logger.info "[SUUMO Scraper] Building exists: #{property_data[:building_name]}"
-        @stats[:buildings_skipped] += 1
+        return nil if @options[:dry_run]
+
+        # SUUMO項目のみ更新
+        building_attrs = @data_mapper.map_building(property_data)
+        suumo_attrs = building_attrs.slice(*SUUMO_BUILDING_ATTRS)
+
+        existing.update(suumo_attrs.merge(
+          external_key: external_key,
+          suumo_imported_at: Time.current
+        ))
+
+        @logger.info "[SUUMO Scraper] Updated building: #{property_data[:building_name]}"
+        @stats[:buildings_updated] += 1
+
+        # Download building images (skip existing)
+        unless @options[:skip_images]
+          download_building_images(existing, property_data[:building_image_urls] || [])
+        end
+
         return existing
       end
 
@@ -114,6 +148,8 @@ module Suumo
 
       building_attrs = @data_mapper.map_building(property_data)
       building_attrs[:tenant_id] = @tenant.id
+      building_attrs[:external_key] = external_key
+      building_attrs[:suumo_imported_at] = Time.current
 
       building = Building.new(building_attrs)
 
@@ -134,13 +170,45 @@ module Suumo
       end
     end
 
+    def generate_building_key(address, name)
+      return nil if address.blank? && name.blank?
+
+      normalized = normalize_name(address.to_s) + normalize_name(name.to_s)
+      Digest::SHA256.hexdigest(normalized)[0..15]
+    end
+
     def process_room(building, room_data, image_urls)
       room_number = room_data[:room_number] || extract_room_number(room_data)
+      suumo_code = extract_suumo_code(room_data[:detail_url])
 
-      existing = building.rooms.find_by(room_number: room_number)
+      # まずsuumo_room_codeで検索
+      existing = building.rooms.find_by(suumo_room_code: suumo_code) if suumo_code.present?
+
+      # 見つからない場合は部屋番号で検索（後方互換性）
+      existing ||= building.rooms.find_by(room_number: room_number)
+
       if existing
-        @logger.info "[SUUMO Scraper] Room exists: #{building.name} - #{room_number}"
-        @stats[:rooms_skipped] += 1
+        return if @options[:dry_run]
+
+        # SUUMO項目のみ更新
+        room_attrs = @data_mapper.map_room(room_data)
+        suumo_attrs = room_attrs.slice(*SUUMO_ROOM_ATTRS)
+
+        existing.update(suumo_attrs.merge(
+          suumo_room_code: suumo_code,
+          suumo_detail_url: room_data[:detail_url],
+          suumo_imported_at: Time.current
+        ))
+
+        @logger.info "[SUUMO Scraper] Updated room: #{building.name} - #{existing.room_number}"
+        @stats[:rooms_updated] += 1
+
+        # Download room images (skip existing)
+        unless @options[:skip_images]
+          room_images = room_data[:image_urls] || image_urls || []
+          download_room_images(existing, room_images)
+        end
+
         return
       end
 
@@ -148,6 +216,9 @@ module Suumo
 
       room_attrs = @data_mapper.map_room(room_data)
       room_attrs[:room_number] = room_number
+      room_attrs[:suumo_room_code] = suumo_code
+      room_attrs[:suumo_detail_url] = room_data[:detail_url]
+      room_attrs[:suumo_imported_at] = Time.current
 
       room = building.rooms.new(room_attrs)
 
@@ -166,15 +237,36 @@ module Suumo
       end
     end
 
+    def extract_suumo_code(detail_url)
+      return nil unless detail_url
+
+      # https://suumo.jp/chintai/jnc_000012345678/ から jnc_000012345678 を抽出
+      if detail_url =~ /\/(jnc_[a-z0-9]+)\/?/i
+        $1
+      elsif detail_url =~ /\/([a-z]+_\d+)\/?/i
+        $1
+      else
+        nil
+      end
+    end
+
     def download_building_images(building, image_urls)
       image_urls.each_with_index do |url, index|
+        # source_urlで既存チェック
+        if building.building_photos.exists?(source_url: url)
+          @logger.debug "[SUUMO Scraper] Building image already exists: #{url}"
+          @stats[:images_skipped] += 1
+          next
+        end
+
         photo_type = index.zero? ? :exterior : :other
 
         if @image_downloader.download_and_attach_building_photo(
           url: url,
           building: building,
           photo_type: photo_type,
-          display_order: index
+          display_order: index,
+          source_url: url
         )
           @stats[:images_downloaded] += 1
         end
@@ -185,6 +277,13 @@ module Suumo
 
     def download_room_images(room, image_urls)
       image_urls.each_with_index do |url, index|
+        # source_urlで既存チェック
+        if room.room_photos.exists?(source_url: url)
+          @logger.debug "[SUUMO Scraper] Room image already exists: #{url}"
+          @stats[:images_skipped] += 1
+          next
+        end
+
         # Try to detect photo type from URL or default to interior/other
         photo_type = detect_room_photo_type(url, index)
 
@@ -192,7 +291,8 @@ module Suumo
           url: url,
           room: room,
           photo_type: photo_type,
-          display_order: index
+          display_order: index,
+          source_url: url
         )
           @stats[:images_downloaded] += 1
         end

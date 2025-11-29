@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_28_205525) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_29_102700) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -60,6 +60,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_28_205525) do
     t.integer "display_order"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "source_url"
+    t.index ["building_id", "source_url"], name: "index_building_photos_on_building_id_and_source_url", unique: true, where: "source_url IS NOT NULL"
     t.index ["building_id"], name: "index_building_photos_on_building_id"
   end
 
@@ -83,7 +85,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_28_205525) do
     t.boolean "has_parking"
     t.integer "parking_spaces"
     t.date "built_date"
+    t.string "external_key"
+    t.datetime "suumo_imported_at"
     t.index ["discarded_at"], name: "index_buildings_on_discarded_at"
+    t.index ["tenant_id", "external_key"], name: "index_buildings_on_tenant_id_and_external_key", unique: true, where: "external_key IS NOT NULL"
     t.index ["tenant_id"], name: "index_buildings_on_tenant_id"
   end
 
@@ -199,6 +204,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_28_205525) do
     t.integer "display_order"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "source_url"
+    t.index ["room_id", "source_url"], name: "index_room_photos_on_room_id_and_source_url", unique: true, where: "source_url IS NOT NULL"
     t.index ["room_id"], name: "index_room_photos_on_room_id"
   end
 
@@ -230,7 +237,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_28_205525) do
     t.boolean "pets_allowed", default: false
     t.boolean "two_person_allowed", default: false
     t.boolean "office_use_allowed", default: false
+    t.string "suumo_room_code"
+    t.string "suumo_detail_url"
+    t.datetime "suumo_imported_at"
     t.index ["building_id"], name: "index_rooms_on_building_id"
+    t.index ["suumo_room_code"], name: "index_rooms_on_suumo_room_code", where: "suumo_room_code IS NOT NULL"
   end
 
   create_table "school_districts", force: :cascade do |t|
@@ -248,6 +259,29 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_28_205525) do
     t.index ["map_layer_id"], name: "index_school_districts_on_map_layer_id"
     t.index ["prefecture"], name: "index_school_districts_on_prefecture"
     t.index ["school_code"], name: "index_school_districts_on_school_code"
+  end
+
+  create_table "suumo_import_histories", force: :cascade do |t|
+    t.integer "tenant_id", null: false
+    t.string "url", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.integer "buildings_created", default: 0
+    t.integer "buildings_updated", default: 0
+    t.integer "rooms_created", default: 0
+    t.integer "rooms_updated", default: 0
+    t.integer "images_downloaded", default: 0
+    t.integer "images_skipped", default: 0
+    t.integer "error_count", default: 0
+    t.text "log_data"
+    t.json "options"
+    t.text "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["started_at"], name: "index_suumo_import_histories_on_started_at"
+    t.index ["status"], name: "index_suumo_import_histories_on_status"
+    t.index ["tenant_id"], name: "index_suumo_import_histories_on_tenant_id"
   end
 
   create_table "tenants", force: :cascade do |t|
@@ -342,6 +376,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_28_205525) do
   add_foreign_key "room_photos", "rooms"
   add_foreign_key "rooms", "buildings"
   add_foreign_key "school_districts", "map_layers"
+  add_foreign_key "suumo_import_histories", "tenants"
   add_foreign_key "users", "tenants"
   add_foreign_key "virtual_stagings", "room_photos", column: "after_photo_id"
   add_foreign_key "virtual_stagings", "room_photos", column: "before_photo_id"

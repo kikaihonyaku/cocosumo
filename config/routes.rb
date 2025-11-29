@@ -65,7 +65,7 @@ Rails.application.routes.draw do
         end
 
         # SUUMO インポート
-        resources :suumo_imports, only: [:create] do
+        resources :suumo_imports, only: [:index, :show, :create] do
           collection do
             post :sync      # 同期実行（小規模インポート用）
             post :preview   # プレビュー（保存せずに解析結果を確認）

@@ -8,7 +8,7 @@ module Suumo
     end
 
     # Download and attach a building photo
-    def download_and_attach_building_photo(url:, building:, photo_type:, display_order: 0)
+    def download_and_attach_building_photo(url:, building:, photo_type:, display_order: 0, source_url: nil)
       @logger.info "[SUUMO ImageDownloader] Downloading building photo: #{url}"
 
       tempfile = download_image(url)
@@ -20,7 +20,8 @@ module Suumo
 
         photo = building.building_photos.new(
           photo_type: photo_type,
-          display_order: display_order
+          display_order: display_order,
+          source_url: source_url || url
         )
 
         photo.photo.attach(
@@ -46,7 +47,7 @@ module Suumo
     end
 
     # Download and attach a room photo
-    def download_and_attach_room_photo(url:, room:, photo_type:, display_order: 0)
+    def download_and_attach_room_photo(url:, room:, photo_type:, display_order: 0, source_url: nil)
       @logger.info "[SUUMO ImageDownloader] Downloading room photo: #{url}"
 
       tempfile = download_image(url)
@@ -58,7 +59,8 @@ module Suumo
 
         photo = room.room_photos.new(
           photo_type: photo_type,
-          display_order: display_order
+          display_order: display_order,
+          source_url: source_url || url
         )
 
         photo.photo.attach(

@@ -31,6 +31,11 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Tooltip,
 } from '@mui/material';
 import {
   PlayArrow as PlayArrowIcon,
@@ -43,6 +48,11 @@ import {
   MeetingRoom as MeetingRoomIcon,
   Image as ImageIcon,
   Schedule as ScheduleIcon,
+  Refresh as RefreshIcon,
+  AccessTime as AccessTimeIcon,
+  Close as CloseIcon,
+  HourglassEmpty as HourglassEmptyIcon,
+  Loop as LoopIcon,
 } from '@mui/icons-material';
 
 export default function SuumoImport() {
@@ -60,9 +70,16 @@ export default function SuumoImport() {
   const [importLogs, setImportLogs] = useState([]);
   const logEndRef = useRef(null);
 
+  // 履歴関連
+  const [histories, setHistories] = useState([]);
+  const [loadingHistories, setLoadingHistories] = useState(false);
+  const [selectedHistory, setSelectedHistory] = useState(null);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+
   // テナント一覧を取得
   useEffect(() => {
     fetchTenants();
+    fetchHistories();
   }, []);
 
   // ログが追加されたら自動スクロール
@@ -94,6 +111,43 @@ export default function SuumoImport() {
     } catch (error) {
       console.error('Error fetching tenants:', error);
       showSnackbar('テナント一覧の取得に失敗しました', 'error');
+    }
+  };
+
+  const fetchHistories = async () => {
+    try {
+      setLoadingHistories(true);
+      const response = await fetch('/api/v1/admin/suumo_imports', {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setHistories(data.histories || []);
+      }
+    } catch (error) {
+      console.error('Error fetching histories:', error);
+    } finally {
+      setLoadingHistories(false);
+    }
+  };
+
+  const fetchHistoryDetail = async (historyId) => {
+    try {
+      const response = await fetch(`/api/v1/admin/suumo_imports/${historyId}`, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedHistory(data.history);
+        setHistoryDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Error fetching history detail:', error);
+      showSnackbar('履歴の取得に失敗しました', 'error');
     }
   };
 
@@ -187,16 +241,22 @@ export default function SuumoImport() {
         setImportResult(data.stats);
         addLog('インポートが完了しました！', 'success');
         addLog(`物件作成: ${data.stats.buildings_created}件`, 'success');
+        addLog(`物件更新: ${data.stats.buildings_updated || 0}件`, 'success');
         addLog(`物件スキップ: ${data.stats.buildings_skipped}件`, 'info');
         addLog(`部屋作成: ${data.stats.rooms_created}件`, 'success');
+        addLog(`部屋更新: ${data.stats.rooms_updated || 0}件`, 'success');
         addLog(`部屋スキップ: ${data.stats.rooms_skipped}件`, 'info');
         addLog(`画像ダウンロード: ${data.stats.images_downloaded}件`, 'success');
+        addLog(`画像スキップ: ${data.stats.images_skipped || 0}件`, 'info');
 
         if (data.stats.errors && data.stats.errors.length > 0) {
           data.stats.errors.forEach(err => addLog(`エラー: ${err}`, 'error'));
         }
 
         showSnackbar('インポートが完了しました', 'success');
+
+        // 履歴を更新
+        fetchHistories();
       } else {
         const error = await response.json();
         addLog(`インポートエラー: ${error.error}`, 'error');
@@ -204,6 +264,9 @@ export default function SuumoImport() {
           addLog(`詳細: ${error.details}`, 'error');
         }
         showSnackbar(error.error || 'インポートに失敗しました', 'error');
+
+        // 履歴を更新
+        fetchHistories();
       }
     } catch (error) {
       console.error('Import error:', error);
@@ -242,9 +305,13 @@ export default function SuumoImport() {
       if (response.ok) {
         const data = await response.json();
         addLog(`ジョブID: ${data.job_id}`, 'success');
+        addLog(`履歴ID: ${data.history_id}`, 'info');
         addLog('インポートジョブがバックグラウンドで実行されています', 'info');
         addLog('完了後、物件一覧で確認できます', 'info');
         showSnackbar('インポートジョブを開始しました', 'success');
+
+        // 履歴を更新
+        fetchHistories();
       } else {
         const error = await response.json();
         addLog(`エラー: ${error.error}`, 'error');
@@ -269,6 +336,37 @@ export default function SuumoImport() {
   const formatPrice = (price) => {
     if (!price) return '-';
     return `¥${price.toLocaleString()}`;
+  };
+
+  const formatDateTime = (isoString) => {
+    if (!isoString) return '-';
+    return new Date(isoString).toLocaleString('ja-JP');
+  };
+
+  const formatDuration = (seconds) => {
+    if (!seconds) return '-';
+    if (seconds < 60) return `${seconds}秒`;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}分${secs}秒`;
+  };
+
+  const getStatusChip = (status) => {
+    const statusConfig = {
+      pending: { label: '待機中', color: 'default', icon: <HourglassEmptyIcon sx={{ fontSize: 16 }} /> },
+      running: { label: '実行中', color: 'primary', icon: <LoopIcon sx={{ fontSize: 16 }} /> },
+      completed: { label: '完了', color: 'success', icon: <CheckCircleIcon sx={{ fontSize: 16 }} /> },
+      failed: { label: 'エラー', color: 'error', icon: <ErrorIcon sx={{ fontSize: 16 }} /> },
+    };
+    const config = statusConfig[status] || statusConfig.pending;
+    return (
+      <Chip
+        label={config.label}
+        color={config.color}
+        size="small"
+        icon={config.icon}
+      />
+    );
   };
 
   return (
@@ -369,6 +467,95 @@ export default function SuumoImport() {
         </Box>
       </Paper>
 
+      {/* インポート履歴 */}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6">
+            インポート履歴
+          </Typography>
+          <IconButton onClick={fetchHistories} disabled={loadingHistories}>
+            <RefreshIcon />
+          </IconButton>
+        </Box>
+
+        {loadingHistories ? (
+          <LinearProgress />
+        ) : histories.length === 0 ? (
+          <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+            まだ履歴がありません
+          </Typography>
+        ) : (
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>実行日時</TableCell>
+                  <TableCell>テナント</TableCell>
+                  <TableCell>状態</TableCell>
+                  <TableCell align="right">物件</TableCell>
+                  <TableCell align="right">部屋</TableCell>
+                  <TableCell align="right">画像</TableCell>
+                  <TableCell align="right">実行時間</TableCell>
+                  <TableCell>URL</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {histories.map((history) => (
+                  <TableRow
+                    key={history.id}
+                    hover
+                    onClick={() => fetchHistoryDetail(history.id)}
+                    sx={{ cursor: 'pointer' }}
+                  >
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <AccessTimeIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                        <Typography variant="body2">
+                          {formatDateTime(history.started_at || history.created_at)}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>{history.tenant_name}</TableCell>
+                    <TableCell>{getStatusChip(history.status)}</TableCell>
+                    <TableCell align="right">
+                      <Tooltip title={`作成: ${history.buildings_created}, 更新: ${history.buildings_updated}`}>
+                        <span>{history.buildings_created + history.buildings_updated}</span>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Tooltip title={`作成: ${history.rooms_created}, 更新: ${history.rooms_updated}`}>
+                        <span>{history.rooms_created + history.rooms_updated}</span>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Tooltip title={`DL: ${history.images_downloaded}, スキップ: ${history.images_skipped}`}>
+                        <span>{history.images_downloaded}</span>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell align="right">{formatDuration(history.duration_seconds)}</TableCell>
+                    <TableCell>
+                      <Tooltip title={history.url}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            maxWidth: 200,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {history.url}
+                        </Typography>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Paper>
+
       {/* インポート結果サマリー */}
       {importResult && (
         <Paper sx={{ p: 3, mb: 3 }}>
@@ -378,42 +565,60 @@ export default function SuumoImport() {
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', mt: 2 }}>
-            <Card sx={{ minWidth: 150 }}>
+            <Card sx={{ minWidth: 180 }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <HomeIcon color="primary" />
                   <Typography variant="body2" color="text.secondary">物件</Typography>
                 </Box>
-                <Typography variant="h4" color="success.main">{importResult.buildings_created}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  作成 / {importResult.buildings_skipped} スキップ
-                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'baseline' }}>
+                  <Box>
+                    <Typography variant="h4" color="success.main">{importResult.buildings_created}</Typography>
+                    <Typography variant="caption" color="text.secondary">作成</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="h5" color="info.main">{importResult.buildings_updated || 0}</Typography>
+                    <Typography variant="caption" color="text.secondary">更新</Typography>
+                  </Box>
+                </Box>
               </CardContent>
             </Card>
 
-            <Card sx={{ minWidth: 150 }}>
+            <Card sx={{ minWidth: 180 }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <MeetingRoomIcon color="primary" />
                   <Typography variant="body2" color="text.secondary">部屋</Typography>
                 </Box>
-                <Typography variant="h4" color="success.main">{importResult.rooms_created}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  作成 / {importResult.rooms_skipped} スキップ
-                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'baseline' }}>
+                  <Box>
+                    <Typography variant="h4" color="success.main">{importResult.rooms_created}</Typography>
+                    <Typography variant="caption" color="text.secondary">作成</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="h5" color="info.main">{importResult.rooms_updated || 0}</Typography>
+                    <Typography variant="caption" color="text.secondary">更新</Typography>
+                  </Box>
+                </Box>
               </CardContent>
             </Card>
 
-            <Card sx={{ minWidth: 150 }}>
+            <Card sx={{ minWidth: 180 }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <ImageIcon color="primary" />
                   <Typography variant="body2" color="text.secondary">画像</Typography>
                 </Box>
-                <Typography variant="h4" color="success.main">{importResult.images_downloaded}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  ダウンロード
-                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'baseline' }}>
+                  <Box>
+                    <Typography variant="h4" color="success.main">{importResult.images_downloaded}</Typography>
+                    <Typography variant="caption" color="text.secondary">DL</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="h5" color="text.secondary">{importResult.images_skipped || 0}</Typography>
+                    <Typography variant="caption" color="text.secondary">スキップ</Typography>
+                  </Box>
+                </Box>
               </CardContent>
             </Card>
 
@@ -564,6 +769,137 @@ export default function SuumoImport() {
           </Box>
         </Paper>
       )}
+
+      {/* 履歴詳細ダイアログ */}
+      <Dialog
+        open={historyDialogOpen}
+        onClose={() => setHistoryDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        {selectedHistory && (
+          <>
+            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                インポート詳細
+                {getStatusChip(selectedHistory.status)}
+              </Box>
+              <IconButton onClick={() => setHistoryDialogOpen(false)}>
+                <CloseIcon />
+              </IconButton>
+            </DialogTitle>
+            <DialogContent dividers>
+              {/* 基本情報 */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  基本情報
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">テナント</Typography>
+                    <Typography variant="body2">{selectedHistory.tenant_name}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">実行時間</Typography>
+                    <Typography variant="body2">{formatDuration(selectedHistory.duration_seconds)}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">開始日時</Typography>
+                    <Typography variant="body2">{formatDateTime(selectedHistory.started_at)}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">完了日時</Typography>
+                    <Typography variant="body2">{formatDateTime(selectedHistory.completed_at)}</Typography>
+                  </Box>
+                </Box>
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="caption" color="text.secondary">URL</Typography>
+                  <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
+                    {selectedHistory.url}
+                  </Typography>
+                </Box>
+                {selectedHistory.error_message && (
+                  <Alert severity="error" sx={{ mt: 2 }}>
+                    {selectedHistory.error_message}
+                  </Alert>
+                )}
+              </Box>
+
+              {/* 統計情報 */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  処理結果
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <Chip
+                    icon={<HomeIcon />}
+                    label={`物件: 作成${selectedHistory.buildings_created} / 更新${selectedHistory.buildings_updated}`}
+                    variant="outlined"
+                  />
+                  <Chip
+                    icon={<MeetingRoomIcon />}
+                    label={`部屋: 作成${selectedHistory.rooms_created} / 更新${selectedHistory.rooms_updated}`}
+                    variant="outlined"
+                  />
+                  <Chip
+                    icon={<ImageIcon />}
+                    label={`画像: DL${selectedHistory.images_downloaded} / スキップ${selectedHistory.images_skipped}`}
+                    variant="outlined"
+                  />
+                  {selectedHistory.error_count > 0 && (
+                    <Chip
+                      icon={<ErrorIcon />}
+                      label={`エラー: ${selectedHistory.error_count}`}
+                      color="error"
+                      variant="outlined"
+                    />
+                  )}
+                </Box>
+              </Box>
+
+              {/* ログ */}
+              {selectedHistory.logs && selectedHistory.logs.length > 0 && (
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    実行ログ
+                  </Typography>
+                  <Box
+                    sx={{
+                      bgcolor: 'grey.900',
+                      color: 'grey.100',
+                      p: 2,
+                      borderRadius: 1,
+                      maxHeight: 300,
+                      overflow: 'auto',
+                      fontFamily: 'monospace',
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    {selectedHistory.logs.map((log, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          color: log.type === 'error' ? 'error.light' :
+                                 log.type === 'success' ? 'success.light' :
+                                 'grey.300',
+                          mb: 0.5,
+                        }}
+                      >
+                        <span style={{ color: '#888' }}>[{log.timestamp}]</span> {log.message}
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setHistoryDialogOpen(false)}>
+                閉じる
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
 
       {/* スナックバー */}
       <Snackbar

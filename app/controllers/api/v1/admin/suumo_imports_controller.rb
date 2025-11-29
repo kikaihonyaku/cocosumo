@@ -1,9 +1,33 @@
 # frozen_string_literal: true
 
+require "httparty"
+
 class Api::V1::Admin::SuumoImportsController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
   before_action :require_admin
+
+  # GET /api/v1/admin/suumo_imports
+  # List import histories
+  def index
+    histories = SuumoImportHistory.recent.includes(:tenant).limit(50)
+
+    render json: {
+      histories: histories.map { |h| history_to_json(h) }
+    }
+  end
+
+  # GET /api/v1/admin/suumo_imports/:id
+  # Get import history detail
+  def show
+    history = SuumoImportHistory.find(params[:id])
+
+    render json: {
+      history: history_to_json(history, include_logs: true)
+    }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "履歴が見つかりません" }, status: :not_found
+  end
 
   # POST /api/v1/admin/suumo_imports
   # Start a SUUMO import job
@@ -32,16 +56,26 @@ class Api::V1::Admin::SuumoImportsController < ApplicationController
       skip_images: params[:skip_images] == true || params[:skip_images] == "true"
     }.compact
 
+    # 履歴レコードを作成
+    history = SuumoImportHistory.create!(
+      tenant: tenant,
+      url: url,
+      status: "pending",
+      options: options
+    )
+
     # Start background job
     job = SuumoImportJob.perform_later(
       tenant_id: tenant.id,
       url: url,
-      options: options
+      options: options,
+      history_id: history.id
     )
 
     render json: {
       message: "インポートジョブを開始しました",
       job_id: job.job_id,
+      history_id: history.id,
       tenant: tenant.name,
       url: url,
       options: options
@@ -75,21 +109,55 @@ class Api::V1::Admin::SuumoImportsController < ApplicationController
       skip_images: params[:skip_images] == true || params[:skip_images] == "true"
     }.compact
 
+    # 履歴レコードを作成
+    history = SuumoImportHistory.create!(
+      tenant: tenant,
+      url: url,
+      status: "pending",
+      options: options
+    )
+
+    # 実行開始
+    history.start!
+    history.add_log("URL: #{url}", "info")
+    history.add_log("最大ページ数: #{options[:max_pages] || 1}", "info")
+    history.add_log("画像スキップ: #{options[:skip_images] ? 'はい' : 'いいえ'}", "info")
+
     # Run synchronously
     service = Suumo::ScraperService.new(tenant: tenant, options: options)
     stats = service.scrape(url)
 
+    # 完了
+    history.complete!(stats)
+
+    # ログに詳細を追加
+    history.add_log("物件作成: #{stats[:buildings_created]}件", "success")
+    history.add_log("物件更新: #{stats[:buildings_updated]}件", "success")
+    history.add_log("部屋作成: #{stats[:rooms_created]}件", "success")
+    history.add_log("部屋更新: #{stats[:rooms_updated]}件", "success")
+    history.add_log("画像ダウンロード: #{stats[:images_downloaded]}件", "success")
+    history.add_log("画像スキップ: #{stats[:images_skipped]}件", "info")
+
+    if stats[:errors].present?
+      stats[:errors].each { |err| history.add_log("エラー: #{err}", "error") }
+    end
+
     render json: {
       message: "インポートが完了しました",
-      stats: stats
+      stats: stats,
+      history_id: history.id
     }
   rescue StandardError => e
     Rails.logger.error "[SUUMO Import] Error: #{e.message}"
     Rails.logger.error e.backtrace.first(10).join("\n")
 
+    # 履歴を失敗状態に更新
+    history&.fail!(e.message)
+
     render json: {
       error: "インポート中にエラーが発生しました",
-      details: e.message
+      details: e.message,
+      history_id: history&.id
     }, status: :internal_server_error
   end
 
@@ -176,5 +244,35 @@ class Api::V1::Admin::SuumoImportsController < ApplicationController
     end
 
     render json: { tenants: tenants }
+  end
+
+  private
+
+  def history_to_json(history, include_logs: false)
+    result = {
+      id: history.id,
+      tenant_id: history.tenant_id,
+      tenant_name: history.tenant&.name,
+      url: history.url,
+      status: history.status,
+      started_at: history.started_at&.iso8601,
+      completed_at: history.completed_at&.iso8601,
+      duration_seconds: history.duration_seconds,
+      buildings_created: history.buildings_created,
+      buildings_updated: history.buildings_updated,
+      rooms_created: history.rooms_created,
+      rooms_updated: history.rooms_updated,
+      images_downloaded: history.images_downloaded,
+      images_skipped: history.images_skipped,
+      error_count: history.error_count,
+      error_message: history.error_message,
+      options: history.options,
+      total_items_processed: history.total_items_processed,
+      created_at: history.created_at&.iso8601
+    }
+
+    result[:logs] = history.parsed_logs if include_logs
+
+    result
   end
 end
