@@ -23,6 +23,23 @@ class RoomPhoto < ApplicationRecord
   default_scope -> { order(display_order: :asc) }
 
   # Methods
+
+  # Check if this photo has any dependencies that prevent it from being moved
+  def has_dependencies?
+    dependency_names.any?
+  end
+
+  # Get names of all dependencies
+  def dependency_names
+    names = []
+    names << 'AI生成画像' if AiGeneratedImage.exists?(room_photo_id: id)
+    names << 'VRシーン' if VrScene.exists?(room_photo_id: id)
+    names << 'バーチャルステージング' if VirtualStaging.where(before_photo_id: id).or(VirtualStaging.where(after_photo_id: id)).exists?
+    names << '物件公開ページ' if PropertyPublicationPhoto.exists?(room_photo_id: id)
+    names << 'VRツアーミニマップ' if VrTour.exists?(minimap_room_photo_id: id)
+    names
+  end
+
   def photo_url
     return nil unless photo.attached?
 

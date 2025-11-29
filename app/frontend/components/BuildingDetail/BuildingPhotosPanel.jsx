@@ -18,6 +18,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Alert,
 } from '@mui/material';
 import {
   PhotoLibrary as PhotoLibraryIcon,
@@ -32,6 +33,7 @@ import {
   Download as DownloadIcon,
   ArrowBackIos as ArrowBackIosIcon,
   ArrowForwardIos as ArrowForwardIosIcon,
+  MeetingRoom as MeetingRoomIcon,
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -46,7 +48,18 @@ const PHOTO_CATEGORIES = {
   other: { label: 'その他', value: 'other' },
 };
 
-export default function BuildingPhotosPanel({ propertyId, buildingName, onPhotosUpdate, isMaximized, onToggleMaximize, isMobile = false }) {
+// RoomPhoto のカテゴリ定義
+const ROOM_PHOTO_CATEGORIES = {
+  interior: { label: '室内', value: 'interior' },
+  living: { label: 'リビング', value: 'living' },
+  kitchen: { label: 'キッチン', value: 'kitchen' },
+  bathroom: { label: 'バスルーム', value: 'bathroom' },
+  floor_plan: { label: '間取り図', value: 'floor_plan' },
+  exterior: { label: '外観', value: 'exterior' },
+  other: { label: 'その他', value: 'other' },
+};
+
+export default function BuildingPhotosPanel({ propertyId, buildingName, rooms = [], onPhotosUpdate, isMaximized, onToggleMaximize, isMobile = false }) {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -59,6 +72,11 @@ export default function BuildingPhotosPanel({ propertyId, buildingName, onPhotos
   const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
   const [photoToEdit, setPhotoToEdit] = useState(null);
   const [newCategory, setNewCategory] = useState('');
+  // 部屋への移動機能用
+  const [moveToRoomDialogOpen, setMoveToRoomDialogOpen] = useState(false);
+  const [moveTargetRoomId, setMoveTargetRoomId] = useState('');
+  const [moveTargetCategory, setMoveTargetCategory] = useState('other');
+  const [moving, setMoving] = useState(false);
 
   // フィルタリングされた写真リスト
   const filteredPhotos = selectedCategory === 'all'
@@ -218,6 +236,63 @@ export default function BuildingPhotosPanel({ propertyId, buildingName, onPhotos
     } catch (error) {
       console.error('カテゴリ更新エラー:', error);
       alert(error.message);
+    }
+  };
+
+  // 部屋移動ダイアログを開く
+  const handleOpenMoveToRoomDialog = (photo) => {
+    setPhotoToEdit(photo);
+
+    // 元のカテゴリに合わせてデフォルトの移動先カテゴリを設定
+    if (photo.photo_type === 'exterior') {
+      setMoveTargetCategory('exterior');
+    } else {
+      setMoveTargetCategory('other');
+    }
+
+    // デフォルトで最初の部屋を選択
+    if (rooms.length > 0) {
+      setMoveTargetRoomId(rooms[0].id);
+    }
+
+    setMoveToRoomDialogOpen(true);
+  };
+
+  // 部屋への移動を実行
+  const handleMoveToRoom = async () => {
+    if (!photoToEdit || !moveTargetRoomId) return;
+
+    setMoving(true);
+    try {
+      const response = await fetch(`/api/v1/buildings/${propertyId}/photos/${photoToEdit.id}/move_to_room`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          target_room_id: moveTargetRoomId,
+          photo_type: moveTargetCategory,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || '写真の移動に失敗しました');
+      }
+
+      await fetchPhotos();
+      setMoveToRoomDialogOpen(false);
+      setEditCategoryDialogOpen(false);
+      setPhotoToEdit(null);
+      if (onPhotosUpdate) onPhotosUpdate();
+      alert('写真を部屋に移動しました');
+
+    } catch (error) {
+      console.error('写真移動エラー:', error);
+      alert(error.message);
+    } finally {
+      setMoving(false);
     }
   };
 
@@ -781,6 +856,97 @@ export default function BuildingPhotosPanel({ propertyId, buildingName, onPhotos
               sx={{ textTransform: 'none' }}
             >
               画像を編集
+            </Button>
+          )}
+
+          {/* 部屋に移動ボタン */}
+          {photoToEdit && rooms.length > 0 && (
+            <Button
+              onClick={() => handleOpenMoveToRoomDialog(photoToEdit)}
+              startIcon={<MeetingRoomIcon />}
+              variant="outlined"
+              color="secondary"
+              fullWidth
+              sx={{ textTransform: 'none' }}
+            >
+              部屋写真に移動
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {/* 部屋への移動ダイアログ */}
+      <Dialog
+        open={moveToRoomDialogOpen}
+        onClose={() => !moving && setMoveToRoomDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <MeetingRoomIcon color="secondary" />
+          部屋写真に移動
+        </DialogTitle>
+        <DialogContent>
+          {rooms.length === 0 ? (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              この建物には部屋が登録されていません。
+              先に部屋を追加してください。
+            </Alert>
+          ) : (
+            <Box sx={{ py: 2 }}>
+              <Alert severity="info" sx={{ mb: 3 }}>
+                この写真を選択した部屋の写真に移動します。
+                移動後は建物写真から削除されます。
+              </Alert>
+
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <InputLabel>移動先の部屋</InputLabel>
+                <Select
+                  value={moveTargetRoomId}
+                  label="移動先の部屋"
+                  onChange={(e) => setMoveTargetRoomId(e.target.value)}
+                >
+                  {rooms.map((room) => (
+                    <MenuItem key={room.id} value={room.id}>
+                      {room.room_number}号室
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth>
+                <InputLabel>移動先のカテゴリ</InputLabel>
+                <Select
+                  value={moveTargetCategory}
+                  label="移動先のカテゴリ"
+                  onChange={(e) => setMoveTargetCategory(e.target.value)}
+                >
+                  {Object.entries(ROOM_PHOTO_CATEGORIES).map(([key, category]) => (
+                    <MenuItem key={key} value={category.value}>
+                      {category.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setMoveToRoomDialogOpen(false)}
+            disabled={moving}
+          >
+            キャンセル
+          </Button>
+          {rooms.length > 0 && (
+            <Button
+              onClick={handleMoveToRoom}
+              variant="contained"
+              color="secondary"
+              disabled={moving || !moveTargetRoomId}
+              startIcon={moving ? <CircularProgress size={20} /> : <MeetingRoomIcon />}
+            >
+              {moving ? '移動中...' : '移動する'}
             </Button>
           )}
         </DialogActions>

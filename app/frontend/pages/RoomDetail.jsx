@@ -338,6 +338,7 @@ export default function RoomDetail() {
           }}>
             <RoomPhotosPanel
               roomId={room.id}
+              buildingId={room.building?.id}
               buildingName={room.building?.name}
               roomNumber={room.room_number}
               onPhotosUpdate={handlePhotosUpdate}

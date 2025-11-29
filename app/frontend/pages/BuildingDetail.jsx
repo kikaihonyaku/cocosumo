@@ -462,6 +462,7 @@ export default function BuildingDetail() {
                 <BuildingPhotosPanel
                   propertyId={id}
                   buildingName={property.name}
+                  rooms={rooms}
                   onPhotosUpdate={() => {}}
                   isMaximized={false} // モバイルでは最大化無効
                   onToggleMaximize={() => {}} // 無効化
@@ -681,6 +682,7 @@ export default function BuildingDetail() {
                   <BuildingPhotosPanel
                     propertyId={id}
                     buildingName={property.name}
+                    rooms={rooms}
                     onPhotosUpdate={() => {}}
                     isMaximized={false}
                     onToggleMaximize={() => {}}

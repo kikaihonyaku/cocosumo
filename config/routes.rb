@@ -33,6 +33,7 @@ Rails.application.routes.draw do
             post :replace
             post :duplicate
             get :proxy
+            post :move_to_room
           end
         end
         resources :owners
@@ -82,6 +83,8 @@ Rails.application.routes.draw do
             post :replace
             post :duplicate
             get :proxy
+            get :check_dependencies
+            post :move_to_building
           end
         end
 

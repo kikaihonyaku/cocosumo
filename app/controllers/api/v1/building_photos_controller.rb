@@ -2,7 +2,7 @@ class Api::V1::BuildingPhotosController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
   before_action :set_building
-  before_action :set_building_photo, only: [:show, :update, :destroy, :replace, :duplicate, :proxy]
+  before_action :set_building_photo, only: [:show, :update, :destroy, :replace, :duplicate, :proxy, :move_to_room]
 
   # GET /api/v1/buildings/:building_id/photos
   def index
@@ -150,6 +150,30 @@ class Api::V1::BuildingPhotosController < ApplicationController
     else
       render json: { error: '写真ファイルが指定されていません' }, status: :bad_request
     end
+  end
+
+  # POST /api/v1/buildings/:building_id/photos/:id/move_to_room
+  # 写真を部屋に移動
+  def move_to_room
+    room = Room.find(params[:target_room_id])
+
+    # 移動先の部屋がこの建物に属していることを確認
+    unless room.building_id == @building.id
+      render json: { success: false, error: '移動先の部屋はこの建物に属していません' }, status: :unprocessable_entity
+      return
+    end
+
+    service = PhotoMoverService.new(@building_photo)
+    new_photo = service.move_to_room(room, target_photo_type: params[:photo_type])
+
+    render json: {
+      success: true,
+      message: '写真を部屋に移動しました',
+      new_photo_id: new_photo.id,
+      new_photo: new_photo.as_json(methods: [:photo_url])
+    }
+  rescue ActiveRecord::RecordNotFound => e
+    render json: { success: false, error: '移動先の部屋が見つかりません' }, status: :not_found
   end
 
   # GET /api/v1/buildings/:building_id/photos/:id/proxy

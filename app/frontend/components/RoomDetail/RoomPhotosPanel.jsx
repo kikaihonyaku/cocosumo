@@ -18,6 +18,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Alert,
 } from '@mui/material';
 import {
   PhotoLibrary as PhotoLibraryIcon,
@@ -33,6 +34,8 @@ import {
   Download as DownloadIcon,
   ArrowBackIos as ArrowBackIosIcon,
   ArrowForwardIos as ArrowForwardIosIcon,
+  Apartment as ApartmentIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -48,7 +51,17 @@ const PHOTO_CATEGORIES = {
   other: { label: 'その他', value: 'other' },
 };
 
-export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPhotosUpdate, isMaximized, onToggleMaximize, isMobile = false }) {
+// BuildingPhoto のカテゴリ定義
+const BUILDING_PHOTO_CATEGORIES = {
+  exterior: { label: '外観', value: 'exterior' },
+  entrance: { label: 'エントランス', value: 'entrance' },
+  common_area: { label: '共用部', value: 'common_area' },
+  parking: { label: '駐車場', value: 'parking' },
+  surroundings: { label: '周辺環境', value: 'surroundings' },
+  other: { label: 'その他', value: 'other' },
+};
+
+export default function RoomPhotosPanel({ roomId, buildingId, buildingName, roomNumber, onPhotosUpdate, isMaximized, onToggleMaximize, isMobile = false }) {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -61,6 +74,12 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
   const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
   const [photoToEdit, setPhotoToEdit] = useState(null);
   const [newCategory, setNewCategory] = useState('');
+  // 建物への移動機能用
+  const [moveToBuildingDialogOpen, setMoveToBuildingDialogOpen] = useState(false);
+  const [moveTargetCategory, setMoveTargetCategory] = useState('other');
+  const [photoDependencies, setPhotoDependencies] = useState(null);
+  const [checkingDependencies, setCheckingDependencies] = useState(false);
+  const [moving, setMoving] = useState(false);
 
   // フィルタリングされた写真リスト
   const filteredPhotos = selectedCategory === 'all'
@@ -222,6 +241,81 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
     } catch (error) {
       console.error('カテゴリ更新エラー:', error);
       alert(error.message);
+    }
+  };
+
+  // 依存関係をチェックして建物移動ダイアログを開く
+  const handleOpenMoveToBuildingDialog = async (photo) => {
+    setPhotoToEdit(photo);
+    setCheckingDependencies(true);
+    setPhotoDependencies(null);
+
+    // 元のカテゴリに合わせてデフォルトの移動先カテゴリを設定
+    if (photo.photo_type === 'exterior') {
+      setMoveTargetCategory('exterior');
+    } else {
+      setMoveTargetCategory('other');
+    }
+
+    setMoveToBuildingDialogOpen(true);
+
+    try {
+      const response = await fetch(`/api/v1/rooms/${roomId}/room_photos/${photo.id}/check_dependencies`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPhotoDependencies(data);
+      } else {
+        setPhotoDependencies({ has_dependencies: false, dependencies: [] });
+      }
+    } catch (error) {
+      console.error('依存関係チェックエラー:', error);
+      setPhotoDependencies({ has_dependencies: false, dependencies: [] });
+    } finally {
+      setCheckingDependencies(false);
+    }
+  };
+
+  // 建物への移動を実行
+  const handleMoveToBuilding = async () => {
+    if (!photoToEdit || !buildingId) return;
+
+    setMoving(true);
+    try {
+      const response = await fetch(`/api/v1/rooms/${roomId}/room_photos/${photoToEdit.id}/move_to_building`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          target_building_id: buildingId,
+          photo_type: moveTargetCategory,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || '写真の移動に失敗しました');
+      }
+
+      await fetchPhotos();
+      setMoveToBuildingDialogOpen(false);
+      setEditCategoryDialogOpen(false);
+      setPhotoToEdit(null);
+      if (onPhotosUpdate) onPhotosUpdate();
+      alert('写真を建物に移動しました');
+
+    } catch (error) {
+      console.error('写真移動エラー:', error);
+      alert(error.message);
+    } finally {
+      setMoving(false);
     }
   };
 
@@ -809,6 +903,98 @@ export default function RoomPhotosPanel({ roomId, buildingName, roomNumber, onPh
               sx={{ textTransform: 'none' }}
             >
               画像を編集
+            </Button>
+          )}
+
+          {/* 建物に移動ボタン */}
+          {photoToEdit && buildingId && (
+            <Button
+              onClick={() => handleOpenMoveToBuildingDialog(photoToEdit)}
+              startIcon={<ApartmentIcon />}
+              variant="outlined"
+              color="secondary"
+              fullWidth
+              sx={{ textTransform: 'none' }}
+            >
+              建物写真に移動
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {/* 建物への移動ダイアログ */}
+      <Dialog
+        open={moveToBuildingDialogOpen}
+        onClose={() => !moving && setMoveToBuildingDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <ApartmentIcon color="secondary" />
+          建物写真に移動
+        </DialogTitle>
+        <DialogContent>
+          {checkingDependencies ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+              <CircularProgress size={32} />
+              <Typography sx={{ ml: 2 }}>依存関係をチェック中...</Typography>
+            </Box>
+          ) : photoDependencies?.has_dependencies ? (
+            <Box sx={{ py: 2 }}>
+              <Alert severity="warning" icon={<WarningIcon />} sx={{ mb: 2 }}>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                  この写真は移動できません
+                </Typography>
+                <Typography variant="body2">
+                  以下の関連データがあるため、移動前に削除または解除が必要です：
+                </Typography>
+                <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                  {photoDependencies.dependencies.map((dep, index) => (
+                    <li key={index}>{dep}</li>
+                  ))}
+                </Box>
+              </Alert>
+            </Box>
+          ) : (
+            <Box sx={{ py: 2 }}>
+              <Alert severity="info" sx={{ mb: 3 }}>
+                この写真を「{buildingName}」の建物写真に移動します。
+                移動後は部屋写真から削除されます。
+              </Alert>
+
+              <FormControl fullWidth sx={{ mt: 2 }}>
+                <InputLabel>移動先のカテゴリ</InputLabel>
+                <Select
+                  value={moveTargetCategory}
+                  label="移動先のカテゴリ"
+                  onChange={(e) => setMoveTargetCategory(e.target.value)}
+                >
+                  {Object.entries(BUILDING_PHOTO_CATEGORIES).map(([key, category]) => (
+                    <MenuItem key={key} value={category.value}>
+                      {category.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setMoveToBuildingDialogOpen(false)}
+            disabled={moving}
+          >
+            キャンセル
+          </Button>
+          {!checkingDependencies && !photoDependencies?.has_dependencies && (
+            <Button
+              onClick={handleMoveToBuilding}
+              variant="contained"
+              color="secondary"
+              disabled={moving}
+              startIcon={moving ? <CircularProgress size={20} /> : <ApartmentIcon />}
+            >
+              {moving ? '移動中...' : '移動する'}
             </Button>
           )}
         </DialogActions>
