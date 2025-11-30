@@ -39,7 +39,10 @@ export default function MapSystem() {
   const [properties, setProperties] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [searchConditions, setSearchConditions] = useState({});
+  const [searchConditions, setSearchConditions] = useState({
+    externalImport: true,      // 外部取込み（デフォルト: チェックあり）
+    ownRegistration: true,     // 自社登録（デフォルト: チェックあり）
+  });
   const [mapControllers, setMapControllers] = useState(null);
   const [availableLayers, setAvailableLayers] = useState([]);
 
@@ -89,6 +92,14 @@ export default function MapSystem() {
       if (conditions.minRooms) params.append('min_rooms', conditions.minRooms);
       if (conditions.maxRooms) params.append('max_rooms', conditions.maxRooms);
       if (conditions.maxVacancyRate) params.append('max_vacancy_rate', conditions.maxVacancyRate);
+
+      // 登録元フィルタ
+      if (conditions.externalImport !== undefined) {
+        params.append('external_import', conditions.externalImport);
+      }
+      if (conditions.ownRegistration !== undefined) {
+        params.append('own_registration', conditions.ownRegistration);
+      }
 
       const queryString = params.toString();
       const url = queryString ? `/api/v1/buildings?${queryString}` : '/api/v1/buildings';

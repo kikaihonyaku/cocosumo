@@ -48,6 +48,25 @@ class Api::V1::BuildingsController < ApplicationController
       end
     end
 
+    # 登録元フィルタ（外部取込み / 自社登録）
+    if params[:external_import].present? || params[:own_registration].present?
+      ext = ActiveModel::Type::Boolean.new.cast(params[:external_import])
+      own = ActiveModel::Type::Boolean.new.cast(params[:own_registration])
+
+      if ext && own
+        # 両方true: フィルタなし（全件）
+      elsif ext && !own
+        # 外部取込みのみ
+        @buildings = @buildings.where.not(suumo_imported_at: nil)
+      elsif !ext && own
+        # 自社登録のみ
+        @buildings = @buildings.where(suumo_imported_at: nil)
+      else
+        # 両方false: 0件
+        @buildings = @buildings.none
+      end
+    end
+
     # 距離順ソート
     if params[:sort_by_distance].present? && params[:lat].present? && params[:lng].present?
       @buildings = @buildings.order_by_distance(params[:lat].to_f, params[:lng].to_f)

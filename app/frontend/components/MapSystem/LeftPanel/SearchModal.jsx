@@ -8,6 +8,10 @@ import {
   Select,
   MenuItem,
   FormControl,
+  FormControlLabel,
+  FormGroup,
+  FormLabel,
+  Checkbox,
   InputLabel,
   Button,
   IconButton,
@@ -27,7 +31,9 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
     minRooms: '',
     maxRooms: '',
     maxVacancyRate: '',
-    hasVacancy: ''
+    hasVacancy: '',
+    externalImport: true,     // 外部取込み（デフォルト: チェックあり）
+    ownRegistration: true     // 自社登録（デフォルト: チェックあり）
   });
 
   // モーダルが開かれた時に現在の条件を設定
@@ -40,7 +46,9 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
         minRooms: currentConditions.minRooms || '',
         maxRooms: currentConditions.maxRooms || '',
         maxVacancyRate: currentConditions.maxVacancyRate || '',
-        hasVacancy: currentConditions.hasVacancy || ''
+        hasVacancy: currentConditions.hasVacancy || '',
+        externalImport: currentConditions.externalImport !== undefined ? currentConditions.externalImport : true,
+        ownRegistration: currentConditions.ownRegistration !== undefined ? currentConditions.ownRegistration : true
       });
     }
   }, [isOpen, currentConditions]);
@@ -59,16 +67,19 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
   };
 
   const handleReset = () => {
-    setSearchForm({
+    const defaultForm = {
       propertyName: '',
       address: '',
       buildingType: '',
       minRooms: '',
       maxRooms: '',
       maxVacancyRate: '',
-      hasVacancy: ''
-    });
-    onSearch({});
+      hasVacancy: '',
+      externalImport: true,    // デフォルトは両方チェックあり
+      ownRegistration: true
+    };
+    setSearchForm(defaultForm);
+    onSearch(defaultForm);
   };
 
   // ESCキーでモーダルを閉じる
@@ -249,6 +260,43 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
                   sx={{ '@media (min-width: 600px)': { gridColumn: '1 / 2' } }}
                 />
               </Box>
+            </Box>
+
+            {/* 登録元セクション */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: 'primary.main' }}>
+                登録元
+              </Typography>
+              <FormGroup row>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={searchForm.externalImport}
+                      onChange={(e) => handleInputChange('externalImport', e.target.checked)}
+                      sx={{
+                        '& .MuiSvgIcon-root': { fontSize: 24 },
+                        color: '#9e9e9e',
+                        '&.Mui-checked': { color: '#1976d2' }
+                      }}
+                    />
+                  }
+                  label="外部取込み"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={searchForm.ownRegistration}
+                      onChange={(e) => handleInputChange('ownRegistration', e.target.checked)}
+                      sx={{
+                        '& .MuiSvgIcon-root': { fontSize: 24 },
+                        color: '#9e9e9e',
+                        '&.Mui-checked': { color: '#1976d2' }
+                      }}
+                    />
+                  }
+                  label="自社登録"
+                />
+              </FormGroup>
             </Box>
           </Box>
         </DialogContent>
