@@ -44,6 +44,12 @@ Rails.application.routes.draw do
           post :restore    # 論理削除からの復元
           post :grounding  # Grounding with Google Maps
         end
+
+        # GIS検索アクション
+        collection do
+          get :nearest           # 最寄り物件検索
+          get :by_school_district # 学区内物件検索
+        end
       end
 
       # 削除済み物件一覧
@@ -53,6 +59,7 @@ Rails.application.routes.draw do
       resources :school_districts, only: [:index, :show] do
         collection do
           get :stats
+          get :find_by_location  # 座標から学区検索
         end
       end
 

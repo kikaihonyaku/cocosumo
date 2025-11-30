@@ -1,25 +1,31 @@
-# SQLite. Versions 3.8.0 and up are supported.
-#   gem install sqlite3
-#
-#   Ensure the SQLite 3 gem is defined in your Gemfile
-#   gem "sqlite3"
+# PostgreSQL with PostGIS for all environments
+# Configure connection via environment variables:
+#   DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME
 #
 default: &default
-  adapter: sqlite3
+  adapter: postgresql
+  encoding: unicode
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   timeout: 5000
 
 development:
   <<: *default
-  database: storage/development.sqlite3
+  database: <%= ENV.fetch("DB_NAME", "cocosumo_development") %>
+  username: <%= ENV.fetch("DB_USER", "cocosumo") %>
+  password: <%= ENV.fetch("DB_PASSWORD", "cocosumo_dev") %>
+  host: <%= ENV.fetch("DB_HOST", "localhost") %>
+  port: <%= ENV.fetch("DB_PORT", 5432) %>
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
 # Do not set this db to the same as development or production.
 test:
   <<: *default
-  database: storage/test.sqlite3
-
+  database: <%= ENV.fetch("DB_NAME_TEST", "cocosumo_test") %>
+  username: <%= ENV.fetch("DB_USER", "cocosumo") %>
+  password: <%= ENV.fetch("DB_PASSWORD_TEST", "cocosumo_test") %>
+  host: <%= ENV.fetch("DB_HOST", "localhost") %>
+  port: <%= ENV.fetch("DB_PORT_TEST", 5433) %>
 
 # Production uses PostgreSQL (Cloud SQL)
 production:

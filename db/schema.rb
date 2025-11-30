@@ -10,7 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_29_102700) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_30_010005) do
+  create_schema "topology"
+
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "pg_catalog.plpgsql"
+  enable_extension "postgis"
+  enable_extension "topology.postgis_topology"
+
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -61,7 +68,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_29_102700) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "source_url"
-    t.index ["building_id", "source_url"], name: "index_building_photos_on_building_id_and_source_url", unique: true, where: "source_url IS NOT NULL"
+    t.index ["building_id", "source_url"], name: "index_building_photos_on_building_id_and_source_url", unique: true, where: "(source_url IS NOT NULL)"
     t.index ["building_id"], name: "index_building_photos_on_building_id"
   end
 
@@ -87,8 +94,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_29_102700) do
     t.date "built_date"
     t.string "external_key"
     t.datetime "suumo_imported_at"
+    t.st_point "location", geographic: true
     t.index ["discarded_at"], name: "index_buildings_on_discarded_at"
-    t.index ["tenant_id", "external_key"], name: "index_buildings_on_tenant_id_and_external_key", unique: true, where: "external_key IS NOT NULL"
+    t.index ["location"], name: "index_buildings_on_location", using: :gist
+    t.index ["tenant_id", "external_key"], name: "index_buildings_on_tenant_id_and_external_key", unique: true, where: "(external_key IS NOT NULL)"
     t.index ["tenant_id"], name: "index_buildings_on_tenant_id"
   end
 
@@ -205,7 +214,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_29_102700) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "source_url"
-    t.index ["room_id", "source_url"], name: "index_room_photos_on_room_id_and_source_url", unique: true, where: "source_url IS NOT NULL"
+    t.index ["room_id", "source_url"], name: "index_room_photos_on_room_id_and_source_url", unique: true, where: "(source_url IS NOT NULL)"
     t.index ["room_id"], name: "index_room_photos_on_room_id"
   end
 
@@ -241,7 +250,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_29_102700) do
     t.string "suumo_detail_url"
     t.datetime "suumo_imported_at"
     t.index ["building_id"], name: "index_rooms_on_building_id"
-    t.index ["suumo_room_code"], name: "index_rooms_on_suumo_room_code", where: "suumo_room_code IS NOT NULL"
+    t.index ["suumo_room_code"], name: "index_rooms_on_suumo_room_code", where: "(suumo_room_code IS NOT NULL)"
   end
 
   create_table "school_districts", force: :cascade do |t|
@@ -255,7 +264,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_29_102700) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "map_layer_id"
+    t.st_multi_polygon "geom", geographic: true
     t.index ["city"], name: "index_school_districts_on_city"
+    t.index ["geom"], name: "index_school_districts_on_geom", using: :gist
     t.index ["map_layer_id"], name: "index_school_districts_on_map_layer_id"
     t.index ["prefecture"], name: "index_school_districts_on_prefecture"
     t.index ["school_code"], name: "index_school_districts_on_school_code"

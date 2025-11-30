@@ -14,9 +14,10 @@ FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 # Rails app lives here
 WORKDIR /rails
 
-# Install base packages
+# Install base packages (including PostGIS dependencies)
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 libvips postgresql-client && \
+    apt-get install --no-install-recommends -y curl libjemalloc2 libvips postgresql-client \
+    libgeos-c1v5 libproj25 proj-bin && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Set production environment
@@ -30,7 +31,8 @@ FROM base AS build
 
 # Install packages needed to build gems and Node.js
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libyaml-dev pkg-config curl && \
+    apt-get install --no-install-recommends -y build-essential git libyaml-dev pkg-config curl \
+    libpq-dev libgeos-dev libproj-dev && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install --no-install-recommends -y nodejs && \
     npm install -g npm@latest && \

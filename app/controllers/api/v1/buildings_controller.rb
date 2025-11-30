@@ -14,6 +14,31 @@ class Api::V1::BuildingsController < ApplicationController
     @buildings = @buildings.where("total_units >= ?", params[:min_rooms]) if params[:min_rooms].present?
     @buildings = @buildings.where("total_units <= ?", params[:max_rooms]) if params[:max_rooms].present?
 
+    # === GIS検索 ===
+
+    # 矩形範囲検索 (bounds: "sw_lat,sw_lng,ne_lat,ne_lng")
+    if params[:bounds].present?
+      bounds = params[:bounds].split(',').map(&:to_f)
+      if bounds.length == 4
+        sw_lat, sw_lng, ne_lat, ne_lng = bounds
+        @buildings = @buildings.within_bounds(sw_lat, sw_lng, ne_lat, ne_lng)
+      end
+    end
+
+    # 半径検索 (lat, lng, radius in meters)
+    if params[:lat].present? && params[:lng].present? && params[:radius].present?
+      @buildings = @buildings.within_radius(
+        params[:lat].to_f,
+        params[:lng].to_f,
+        params[:radius].to_i
+      )
+    end
+
+    # ポリゴン検索 (polygon: WKT形式 "POLYGON((lng1 lat1, lng2 lat2, ...))")
+    if params[:polygon].present?
+      @buildings = @buildings.within_polygon(params[:polygon])
+    end
+
     # 空室有無のフィルタ
     if params[:has_vacancy].present?
       if params[:has_vacancy] == 'true'
@@ -23,10 +48,41 @@ class Api::V1::BuildingsController < ApplicationController
       end
     end
 
-    @buildings = @buildings.order(created_at: :desc)
+    # 距離順ソート
+    if params[:sort_by_distance].present? && params[:lat].present? && params[:lng].present?
+      @buildings = @buildings.order_by_distance(params[:lat].to_f, params[:lng].to_f)
+    else
+      @buildings = @buildings.order(created_at: :desc)
+    end
 
     # 空室数・空室率を含めて返す
-    render json: @buildings.as_json(methods: [:room_cnt, :free_cnt])
+    render json: @buildings.as_json(methods: [:room_cnt, :free_cnt, :latitude, :longitude])
+  end
+
+  # GET /api/v1/buildings/nearest
+  # 最寄り物件検索
+  def nearest
+    lat = params[:lat].to_f
+    lng = params[:lng].to_f
+    limit = (params[:limit] || 5).to_i
+
+    @buildings = current_tenant.buildings.kept
+      .nearest(lat, lng, limit)
+      .includes(:rooms)
+
+    render json: @buildings.as_json(methods: [:room_cnt, :free_cnt, :latitude, :longitude])
+  end
+
+  # GET /api/v1/buildings/by_school_district
+  # 学区内の物件を検索
+  def by_school_district
+    school_district = SchoolDistrict.find(params[:school_district_id])
+
+    @buildings = current_tenant.buildings.kept
+      .where("ST_Contains(?::geometry, location::geometry)", school_district.geom)
+      .includes(:rooms)
+
+    render json: @buildings.as_json(methods: [:room_cnt, :free_cnt, :latitude, :longitude])
   end
 
   # GET /api/v1/buildings/:id
