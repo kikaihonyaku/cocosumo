@@ -84,6 +84,8 @@ export default function MapSystem() {
   useEffect(() => {
     fetchBuildings();
     fetchMapLayers();
+    // 初期ロード時に詳細検索も実行（左パネルの集計データ取得）
+    fetchAdvancedSearch();
   }, []);
 
   // ウィンドウがフォーカスされたときにレイヤー情報を再取得
@@ -321,6 +323,14 @@ export default function MapSystem() {
   const handleClearGeoFilter = () => {
     setGeoFilter({ type: null, circle: null, polygon: null });
   };
+
+  // geoFilterが変更されたら自動的に検索を実行
+  useEffect(() => {
+    // geoFilterが設定されている場合のみ自動検索
+    if (geoFilter && geoFilter.type) {
+      fetchAdvancedSearch(advancedSearchFilters, geoFilter, searchConditions, selectedRentRanges, selectedAreaRanges, selectedAgeRanges);
+    }
+  }, [geoFilter]);
 
   // タブ変更時に検索タブに切り替えた場合は初回データ取得
   const handleTabChange = (newTab) => {
@@ -858,7 +868,7 @@ export default function MapSystem() {
                 <Paper
                   elevation={2}
                   sx={{
-                    maxHeight: '40vh',
+                    height: '50vh',
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
@@ -883,6 +893,7 @@ export default function MapSystem() {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       minHeight: '40px',
+                      flexShrink: 0,
                     }}
                   >
                     <Box component="h3" sx={{ m: 0, fontSize: '1rem', fontWeight: 600 }}>
@@ -913,7 +924,7 @@ export default function MapSystem() {
                       </Button>
                     </Box>
                   </Box>
-                  <Box sx={{ flex: 1, overflow: 'auto' }}>
+                  <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                     <PropertyTable
                       properties={properties}
                       onPropertySelect={(property) => {

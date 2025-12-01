@@ -198,7 +198,7 @@ export default function PropertyTable({ properties = [], onPropertySelect, searc
   };
 
   return (
-    <Box sx={{ height: '100%', width: '100%' }}>
+    <Box sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
       <DataGrid
         rows={rowsWithId}
         columns={columns}
@@ -217,12 +217,25 @@ export default function PropertyTable({ properties = [], onPropertySelect, searc
         rowHeight={45}
         columnHeaderHeight={45}
         sx={{
+          flex: 1,
           border: 'none',
           '& .MuiDataGrid-row': {
             cursor: 'pointer',
             '&:hover': {
               backgroundColor: 'action.hover',
             },
+          },
+          '& .MuiDataGrid-footerContainer': {
+            minHeight: '36px',
+            maxHeight: '36px',
+          },
+          '& .MuiTablePagination-root': {
+            overflow: 'hidden',
+          },
+          '& .MuiTablePagination-toolbar': {
+            minHeight: '36px',
+            paddingLeft: 1,
+            paddingRight: 1,
           },
         }}
         localeText={{

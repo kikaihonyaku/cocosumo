@@ -110,7 +110,10 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
       PaperProps={{
         sx: {
           borderRadius: 3,
-          maxHeight: '90vh'
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
         }
       }}
     >
@@ -124,7 +127,8 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
           m: 0,
           px: 2,
           py: 0.5,
-          minHeight: '40px'
+          minHeight: '40px',
+          flexShrink: 0,
         }}
       >
         <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
@@ -143,8 +147,8 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
         </IconButton>
       </DialogTitle>
 
-      <Box component="form" onSubmit={handleSearch}>
-        <DialogContent sx={{ p: 3 }}>
+      <Box component="form" onSubmit={handleSearch} sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+        <DialogContent sx={{ p: 3, flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {/* 基本情報セクション */}
             <Box>
@@ -301,7 +305,7 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ p: 3, pt: 1, gap: 1 }}>
+        <DialogActions sx={{ p: 3, pt: 1, gap: 1, flexShrink: 0 }}>
           <Button
             onClick={handleReset}
             variant="outlined"

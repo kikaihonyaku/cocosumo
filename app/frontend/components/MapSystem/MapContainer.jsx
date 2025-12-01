@@ -804,9 +804,11 @@ export default function MapContainer({
             alignItems: 'center',
             gap: 1,
             zIndex: 100,
+            bgcolor: 'primary.main',
+            color: 'white',
           }}
         >
-          <Typography variant="caption" sx={{ px: 1 }}>
+          <Typography variant="caption" sx={{ px: 1, color: 'white' }}>
             範囲指定
           </Typography>
           <ToggleButtonGroup
@@ -814,6 +816,22 @@ export default function MapContainer({
             exclusive
             onChange={(e, newMode) => onDrawingModeChange && onDrawingModeChange(newMode)}
             size="small"
+            sx={{
+              '& .MuiToggleButton-root': {
+                color: 'rgba(255, 255, 255, 0.7)',
+                borderColor: 'rgba(255, 255, 255, 0.3)',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                },
+                '&.Mui-selected': {
+                  color: 'white',
+                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.3)',
+                  },
+                },
+              },
+            }}
           >
             <ToggleButton value="circle" aria-label="円で指定">
               <Tooltip title="円で範囲を指定">
@@ -828,7 +846,16 @@ export default function MapContainer({
           </ToggleButtonGroup>
           {geoFilter && geoFilter.type && (
             <Tooltip title="範囲をクリア">
-              <IconButton size="small" onClick={handleClearDrawing} color="error">
+              <IconButton
+                size="small"
+                onClick={handleClearDrawing}
+                sx={{
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                  },
+                }}
+              >
                 <ClearIcon fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -846,9 +873,11 @@ export default function MapContainer({
             right: 60,
             p: 1.5,
             zIndex: 100,
+            bgcolor: 'primary.main',
+            color: 'white',
           }}
         >
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
             半径: {(geoFilter.circle.radius / 1000).toFixed(2)} km
           </Typography>
         </Paper>
