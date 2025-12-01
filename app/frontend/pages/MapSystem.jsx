@@ -271,9 +271,11 @@ export default function MapSystem() {
     }
   };
 
-  // 詳細検索の適用
-  const handleApplyAdvancedSearch = () => {
-    fetchAdvancedSearch(advancedSearchFilters, geoFilter);
+  // 詳細検索の適用（引数で新しいフィルター値やgeoFilterを受け取れるようにする）
+  const handleApplyAdvancedSearch = (newFilters = null, newGeoFilter = null) => {
+    const filtersToUse = newFilters || advancedSearchFilters;
+    const geoToUse = newGeoFilter !== null ? newGeoFilter : geoFilter;
+    fetchAdvancedSearch(filtersToUse, geoToUse);
   };
 
   // 詳細検索のリセット

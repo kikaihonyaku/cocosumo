@@ -94,27 +94,39 @@ export default function AdvancedSearchTab({
     setLocalAgeRange(filters.ageRange);
   }, [filters]);
 
-  // 間取りチップの選択
+  // 間取りチップの選択（選択後に自動検索）
   const handleRoomTypeToggle = useCallback((roomType) => {
     const currentTypes = filters.roomTypes || [];
     const newTypes = currentTypes.includes(roomType)
       ? currentTypes.filter(t => t !== roomType)
       : [...currentTypes, roomType];
-    onFiltersChange({ ...filters, roomTypes: newTypes });
-  }, [filters, onFiltersChange]);
+    const newFilters = { ...filters, roomTypes: newTypes };
+    onFiltersChange(newFilters);
+    // 自動検索（新しいフィルター値を直接渡す）
+    onApplyFilters && onApplyFilters(newFilters);
+  }, [filters, onFiltersChange, onApplyFilters]);
 
-  // スライダー変更完了時にフィルター更新
+  // スライダー変更完了時にフィルター更新して自動検索
   const handleRentChangeCommitted = useCallback((event, newValue) => {
-    onFiltersChange({ ...filters, rentRange: newValue });
-  }, [filters, onFiltersChange]);
+    const newFilters = { ...filters, rentRange: newValue };
+    onFiltersChange(newFilters);
+    // 自動検索（新しいフィルター値を直接渡す）
+    onApplyFilters && onApplyFilters(newFilters);
+  }, [filters, onFiltersChange, onApplyFilters]);
 
   const handleAreaChangeCommitted = useCallback((event, newValue) => {
-    onFiltersChange({ ...filters, areaRange: newValue });
-  }, [filters, onFiltersChange]);
+    const newFilters = { ...filters, areaRange: newValue };
+    onFiltersChange(newFilters);
+    // 自動検索（新しいフィルター値を直接渡す）
+    onApplyFilters && onApplyFilters(newFilters);
+  }, [filters, onFiltersChange, onApplyFilters]);
 
   const handleAgeChangeCommitted = useCallback((event, newValue) => {
-    onFiltersChange({ ...filters, ageRange: newValue });
-  }, [filters, onFiltersChange]);
+    const newFilters = { ...filters, ageRange: newValue };
+    onFiltersChange(newFilters);
+    // 自動検索（新しいフィルター値を直接渡す）
+    onApplyFilters && onApplyFilters(newFilters);
+  }, [filters, onFiltersChange, onApplyFilters]);
 
   // 賃料のフォーマット
   const formatRent = (value, isMax = false) => {

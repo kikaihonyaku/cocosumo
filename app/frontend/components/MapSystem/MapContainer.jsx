@@ -189,6 +189,30 @@ export default function MapContainer({
     return `POLYGON((${coordinates.join(', ')}))`;
   };
 
+  // 円形geoFilterを作成するヘルパー関数
+  const createCircleGeoFilter = (center, radius) => ({
+    type: 'circle',
+    circle: { center: { lat: center.lat(), lng: center.lng() }, radius },
+    polygon: null,
+  });
+
+  // ポリゴンgeoFilterを作成するヘルパー関数
+  const createPolygonGeoFilter = (wkt) => ({
+    type: 'polygon',
+    circle: null,
+    polygon: wkt,
+  });
+
+  // geoFilterを更新して検索を実行するヘルパー関数
+  const updateGeoFilterAndSearch = useCallback((newGeoFilter) => {
+    if (onGeoFilterChange) {
+      onGeoFilterChange(newGeoFilter);
+    }
+    if (onApplyFilters) {
+      onApplyFilters(null, newGeoFilter);
+    }
+  }, [onGeoFilterChange, onApplyFilters]);
+
   // 描画をクリア
   const clearDrawings = useCallback(() => {
     if (circleRef.current) {
@@ -204,16 +228,11 @@ export default function MapContainer({
   // 描画クリアハンドラ
   const handleClearDrawing = useCallback(() => {
     clearDrawings();
-    if (onClearGeoFilter) {
-      onClearGeoFilter();
-    }
-    if (onDrawingModeChange) {
-      onDrawingModeChange(null);
-    }
-    if (onApplyFilters) {
-      onApplyFilters();
-    }
-  }, [clearDrawings, onClearGeoFilter, onDrawingModeChange, onApplyFilters]);
+    const clearedGeoFilter = { type: null, circle: null, polygon: null };
+    onClearGeoFilter?.();
+    onDrawingModeChange?.(null);
+    updateGeoFilterAndSearch(clearedGeoFilter);
+  }, [clearDrawings, onClearGeoFilter, onDrawingModeChange, updateGeoFilterAndSearch]);
 
   // Drawing Managerの初期化
   useEffect(() => {
@@ -248,123 +267,49 @@ export default function MapContainer({
 
     // 円が描画完了した時のイベント
     window.google.maps.event.addListener(drawingManager, 'circlecomplete', (circle) => {
-      // 既存の図形を削除
       clearDrawings();
-
       circleRef.current = circle;
-      const center = circle.getCenter();
-      const radius = circle.getRadius();
 
-      // フィルタを更新
-      if (onGeoFilterChange) {
-        onGeoFilterChange({
-          type: 'circle',
-          circle: {
-            center: { lat: center.lat(), lng: center.lng() },
-            radius: radius,
-          },
-          polygon: null,
-        });
-      }
-
-      // 描画モードを解除
-      if (onDrawingModeChange) {
-        onDrawingModeChange(null);
-      }
+      const newGeoFilter = createCircleGeoFilter(circle.getCenter(), circle.getRadius());
+      onGeoFilterChange?.(newGeoFilter);
+      onDrawingModeChange?.(null);
       drawingManager.setDrawingMode(null);
 
       // 円の変更イベントをリッスン
       window.google.maps.event.addListener(circle, 'center_changed', () => {
-        const newCenter = circle.getCenter();
-        if (onGeoFilterChange) {
-          onGeoFilterChange({
-            type: 'circle',
-            circle: {
-              center: { lat: newCenter.lat(), lng: newCenter.lng() },
-              radius: circle.getRadius(),
-            },
-            polygon: null,
-          });
-        }
+        const updatedGeoFilter = createCircleGeoFilter(circle.getCenter(), circle.getRadius());
+        updateGeoFilterAndSearch(updatedGeoFilter);
       });
 
       window.google.maps.event.addListener(circle, 'radius_changed', () => {
-        const center = circle.getCenter();
-        if (onGeoFilterChange) {
-          onGeoFilterChange({
-            type: 'circle',
-            circle: {
-              center: { lat: center.lat(), lng: center.lng() },
-              radius: circle.getRadius(),
-            },
-            polygon: null,
-          });
-        }
+        const updatedGeoFilter = createCircleGeoFilter(circle.getCenter(), circle.getRadius());
+        updateGeoFilterAndSearch(updatedGeoFilter);
       });
 
-      // フィルタ適用
-      if (onApplyFilters) {
-        setTimeout(() => onApplyFilters(), 100);
-      }
+      onApplyFilters?.(null, newGeoFilter);
     });
 
     // ポリゴンが描画完了した時のイベント
     window.google.maps.event.addListener(drawingManager, 'polygoncomplete', (polygon) => {
-      // 既存の図形を削除
       clearDrawings();
-
       polygonRef.current = polygon;
+
       const path = polygon.getPath();
-      const wkt = pathToWKT(path);
-
-      // フィルタを更新
-      if (onGeoFilterChange) {
-        onGeoFilterChange({
-          type: 'polygon',
-          circle: null,
-          polygon: wkt,
-        });
-      }
-
-      // 描画モードを解除
-      if (onDrawingModeChange) {
-        onDrawingModeChange(null);
-      }
+      const newGeoFilter = createPolygonGeoFilter(pathToWKT(path));
+      onGeoFilterChange?.(newGeoFilter);
+      onDrawingModeChange?.(null);
       drawingManager.setDrawingMode(null);
 
       // ポリゴンの変更イベントをリッスン
-      window.google.maps.event.addListener(path, 'set_at', () => {
-        const newWkt = pathToWKT(polygon.getPath());
-        if (onGeoFilterChange) {
-          onGeoFilterChange({
-            type: 'polygon',
-            circle: null,
-            polygon: newWkt,
-          });
-        }
-        if (onApplyFilters) {
-          setTimeout(() => onApplyFilters(), 100);
-        }
-      });
+      const handlePathChange = () => {
+        const updatedGeoFilter = createPolygonGeoFilter(pathToWKT(polygon.getPath()));
+        updateGeoFilterAndSearch(updatedGeoFilter);
+      };
 
-      window.google.maps.event.addListener(path, 'insert_at', () => {
-        const newWkt = pathToWKT(polygon.getPath());
-        if (onGeoFilterChange) {
-          onGeoFilterChange({
-            type: 'polygon',
-            circle: null,
-            polygon: newWkt,
-          });
-        }
-        if (onApplyFilters) {
-          setTimeout(() => onApplyFilters(), 100);
-        }
-      });
+      window.google.maps.event.addListener(path, 'set_at', handlePathChange);
+      window.google.maps.event.addListener(path, 'insert_at', handlePathChange);
 
-      // フィルタ適用
-      if (onApplyFilters) {
-        setTimeout(() => onApplyFilters(), 100);
-      }
+      onApplyFilters?.(null, newGeoFilter);
     });
 
     return () => {

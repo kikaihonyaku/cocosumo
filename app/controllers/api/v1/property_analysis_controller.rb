@@ -194,7 +194,7 @@ class Api::V1::PropertyAnalysisController < ApplicationController
     # フィルタ後の部屋IDのセットを作成
     filtered_room_ids = all_rooms.map(&:id).to_set
 
-    # 集計を計算
+    # 最終結果用の集計を計算（棒グラフ選択フィルタ適用後）
     aggregations = calculate_aggregations(all_rooms, buildings)
 
     # レスポンス用に物件データを整形（フィルタ後の部屋のみ含める）
