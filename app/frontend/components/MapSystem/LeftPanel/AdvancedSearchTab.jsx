@@ -14,6 +14,7 @@ import {
   Search as SearchIcon,
   FilterList as FilterListIcon,
 } from '@mui/icons-material';
+import DistributionBarChart from './DistributionBarChart';
 
 // 間取りタイプ定義
 const ROOM_TYPES = [
@@ -73,6 +74,13 @@ export default function AdvancedSearchTab({
   onOpenSearchModal,
   searchConditions = {},
   summary = null,
+  // 棒グラフ選択状態
+  selectedRentRanges = [],
+  selectedAreaRanges = [],
+  selectedAgeRanges = [],
+  onRentRangeToggle,
+  onAreaRangeToggle,
+  onAgeRangeToggle,
 }) {
   // ローカルステートでスライダー値を管理（ドラッグ中のパフォーマンス向上のため）
   const [localRentRange, setLocalRentRange] = useState(filters.rentRange);
@@ -175,7 +183,33 @@ export default function AdvancedSearchTab({
   }, [searchConditions]);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 2 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      {/* スクロール可能なコンテンツエリア */}
+      <Box sx={{
+        flex: 1,
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+        pb: 1,
+        pr: 1,
+        // カスタムスクロールバー（パネルになじむデザイン）
+        '&::-webkit-scrollbar': {
+          width: '6px',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: 'rgba(255, 255, 255, 0.1)',
+          borderRadius: '3px',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: 'rgba(255, 255, 255, 0.3)',
+          borderRadius: '3px',
+          '&:hover': {
+            background: 'rgba(255, 255, 255, 0.5)',
+          },
+        },
+      }}>
       {/* 検索条件ボタン */}
       {onOpenSearchModal && (
         <Box>
@@ -289,10 +323,19 @@ export default function AdvancedSearchTab({
         <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
           賃料
         </Typography>
+        {/* 賃料分布棒グラフ */}
+        {aggregations?.by_rent && (
+          <DistributionBarChart
+            data={aggregations.by_rent}
+            selectedRanges={selectedRentRanges}
+            onToggle={onRentRangeToggle}
+            disabled={isLoading}
+          />
+        )}
         <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 1 }}>
           {formatRent(localRentRange[0])} 〜 {formatRent(localRentRange[1], true)}
         </Typography>
-        <Box sx={{ px: 1 }}>
+        <Box sx={{ pl: 1.5, pr: 1 }}>
           <Slider
             value={localRentRange}
             onChange={(e, value) => setLocalRentRange(value)}
@@ -358,10 +401,19 @@ export default function AdvancedSearchTab({
         <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
           面積
         </Typography>
+        {/* 面積分布棒グラフ */}
+        {aggregations?.by_area && (
+          <DistributionBarChart
+            data={aggregations.by_area}
+            selectedRanges={selectedAreaRanges}
+            onToggle={onAreaRangeToggle}
+            disabled={isLoading}
+          />
+        )}
         <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 1 }}>
           {localAreaRange[0]}㎡ 〜 {localAreaRange[1]}㎡
         </Typography>
-        <Box sx={{ px: 1 }}>
+        <Box sx={{ pl: 1.5, pr: 1 }}>
           <Slider
             value={localAreaRange}
             onChange={(e, value) => setLocalAreaRange(value)}
@@ -397,10 +449,19 @@ export default function AdvancedSearchTab({
         <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
           築年数
         </Typography>
+        {/* 築年数分布棒グラフ */}
+        {aggregations?.by_building_age && (
+          <DistributionBarChart
+            data={aggregations.by_building_age}
+            selectedRanges={selectedAgeRanges}
+            onToggle={onAgeRangeToggle}
+            disabled={isLoading}
+          />
+        )}
         <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 1 }}>
           {localAgeRange[0] === 0 ? '新築' : `築${localAgeRange[0]}年`} 〜 {localAgeRange[1] >= AGE_MAX ? `築${localAgeRange[1]}年+` : `築${localAgeRange[1]}年`}
         </Typography>
-        <Box sx={{ px: 1 }}>
+        <Box sx={{ pl: 1.5, pr: 1 }}>
           <Slider
             value={localAgeRange}
             onChange={(e, value) => setLocalAgeRange(value)}
@@ -430,41 +491,46 @@ export default function AdvancedSearchTab({
           />
         </Box>
       </Box>
+      </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.2)' }} />
-
-      {/* ボタン */}
-      <Box sx={{ display: 'flex', gap: 1 }}>
-        <Button
-          variant="contained"
-          startIcon={<SearchIcon />}
-          onClick={onApplyFilters}
-          disabled={isLoading}
-          sx={{
-            flex: 1,
-            bgcolor: 'rgba(255, 255, 255, 0.9)',
-            color: 'primary.main',
-            '&:hover': { bgcolor: 'white' },
-          }}
-        >
-          検索
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<ClearIcon />}
-          onClick={onResetFilters}
-          disabled={isLoading}
-          sx={{
-            color: 'white',
-            borderColor: 'rgba(255, 255, 255, 0.5)',
-            '&:hover': {
-              borderColor: 'white',
-              bgcolor: 'rgba(255, 255, 255, 0.1)',
-            },
-          }}
-        >
-          リセット
-        </Button>
+      {/* 固定ボタンエリア */}
+      <Box sx={{
+        flexShrink: 0,
+        pt: 1.5,
+        borderTop: '1px solid rgba(255, 255, 255, 0.2)',
+      }}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="contained"
+            startIcon={<SearchIcon />}
+            onClick={onApplyFilters}
+            disabled={isLoading}
+            sx={{
+              flex: 1,
+              bgcolor: 'rgba(255, 255, 255, 0.9)',
+              color: 'primary.main',
+              '&:hover': { bgcolor: 'white' },
+            }}
+          >
+            検索
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<ClearIcon />}
+            onClick={onResetFilters}
+            disabled={isLoading}
+            sx={{
+              color: 'white',
+              borderColor: 'rgba(255, 255, 255, 0.5)',
+              '&:hover': {
+                borderColor: 'white',
+                bgcolor: 'rgba(255, 255, 255, 0.1)',
+              },
+            }}
+          >
+            リセット
+          </Button>
+        </Box>
       </Box>
     </Box>
   );

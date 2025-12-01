@@ -63,6 +63,11 @@ export default function MapSystem() {
   });
   const [drawingMode, setDrawingMode] = useState(null);
 
+  // 棒グラフ選択状態
+  const [selectedRentRanges, setSelectedRentRanges] = useState([]);
+  const [selectedAreaRanges, setSelectedAreaRanges] = useState([]);
+  const [selectedAgeRanges, setSelectedAgeRanges] = useState([]);
+
   // レスポンシブ設定
   const isMdUp = useMediaQuery(muiTheme.breakpoints.up('md'));
   const isSmUp = useMediaQuery(muiTheme.breakpoints.up('sm'));
@@ -185,7 +190,10 @@ export default function MapSystem() {
   const fetchAdvancedSearch = async (
     filters = advancedSearchFilters,
     geo = geoFilter,
-    baseConditions = searchConditions
+    baseConditions = searchConditions,
+    rentRanges = selectedRentRanges,
+    areaRanges = selectedAreaRanges,
+    ageRanges = selectedAgeRanges
   ) => {
     setIsAdvancedSearchLoading(true);
     try {
@@ -215,6 +223,11 @@ export default function MapSystem() {
       if (filters.areaRange[1] < 200) params.append('area_max', filters.areaRange[1]);
       if (filters.ageRange[0] > 0) params.append('age_min', filters.ageRange[0]);
       if (filters.ageRange[1] < 40) params.append('age_max', filters.ageRange[1]);
+
+      // 棒グラフ選択範囲パラメータ
+      if (rentRanges.length > 0) params.append('rent_ranges', rentRanges.join(','));
+      if (areaRanges.length > 0) params.append('area_ranges', areaRanges.join(','));
+      if (ageRanges.length > 0) params.append('age_ranges', ageRanges.join(','));
 
       // GISパラメータ
       if (geo.type === 'circle' && geo.circle) {
@@ -272,7 +285,36 @@ export default function MapSystem() {
     setAdvancedSearchFilters(defaultFilters);
     setGeoFilter({ type: null, circle: null, polygon: null });
     setDrawingMode(null);
-    fetchAdvancedSearch(defaultFilters, { type: null, circle: null, polygon: null });
+    // 棒グラフ選択もリセット
+    setSelectedRentRanges([]);
+    setSelectedAreaRanges([]);
+    setSelectedAgeRanges([]);
+    fetchAdvancedSearch(defaultFilters, { type: null, circle: null, polygon: null }, searchConditions, [], [], []);
+  };
+
+  // 棒グラフ範囲選択のトグルハンドラー
+  const handleRentRangeToggle = (range) => {
+    const newRanges = selectedRentRanges.includes(range)
+      ? selectedRentRanges.filter(r => r !== range)
+      : [...selectedRentRanges, range];
+    setSelectedRentRanges(newRanges);
+    fetchAdvancedSearch(advancedSearchFilters, geoFilter, searchConditions, newRanges, selectedAreaRanges, selectedAgeRanges);
+  };
+
+  const handleAreaRangeToggle = (range) => {
+    const newRanges = selectedAreaRanges.includes(range)
+      ? selectedAreaRanges.filter(r => r !== range)
+      : [...selectedAreaRanges, range];
+    setSelectedAreaRanges(newRanges);
+    fetchAdvancedSearch(advancedSearchFilters, geoFilter, searchConditions, selectedRentRanges, newRanges, selectedAgeRanges);
+  };
+
+  const handleAgeRangeToggle = (range) => {
+    const newRanges = selectedAgeRanges.includes(range)
+      ? selectedAgeRanges.filter(r => r !== range)
+      : [...selectedAgeRanges, range];
+    setSelectedAgeRanges(newRanges);
+    fetchAdvancedSearch(advancedSearchFilters, geoFilter, searchConditions, selectedRentRanges, selectedAreaRanges, newRanges);
   };
 
   // GeoFilterのクリア
@@ -515,6 +557,13 @@ export default function MapSystem() {
               onTabChange={handleTabChange}
               // サマリー用のprops
               summary={summary}
+              // 棒グラフ選択状態
+              selectedRentRanges={selectedRentRanges}
+              selectedAreaRanges={selectedAreaRanges}
+              selectedAgeRanges={selectedAgeRanges}
+              onRentRangeToggle={handleRentRangeToggle}
+              onAreaRangeToggle={handleAreaRangeToggle}
+              onAgeRangeToggle={handleAgeRangeToggle}
             />
             {/* 上部エリア（地図 + 右ペイン） */}
             <Box
@@ -522,7 +571,7 @@ export default function MapSystem() {
                 display: 'flex',
                 flex: 1,
                 overflow: 'hidden',
-                marginLeft: leftPanelPinned ? '323px' : '0px',
+                marginLeft: leftPanelPinned ? '363px' : '0px',
                 transition: 'margin-left 0.3s ease',
               }}
             >
@@ -815,7 +864,7 @@ export default function MapSystem() {
                     overflow: 'hidden',
                     zIndex: 1200,
                     position: 'relative',
-                    marginLeft: leftPanelPinned ? '324px' : '0px',
+                    marginLeft: leftPanelPinned ? '364px' : '0px',
                     marginRight: '1px',
                     transition: 'margin-left 0.3s ease',
                     borderTopLeftRadius: 8,
@@ -904,7 +953,7 @@ export default function MapSystem() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                paddingLeft: isMobile ? '20px' : (leftPanelPinned || leftPanelHovered ? '320px' : '60px'),
+                paddingLeft: isMobile ? '20px' : (leftPanelPinned || leftPanelHovered ? '360px' : '60px'),
                 paddingRight: isMobile ? '20px' : '0px',
                 transition: 'padding-left 0.3s ease',
                 zIndex: 1000,

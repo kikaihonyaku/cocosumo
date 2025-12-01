@@ -124,6 +124,69 @@ class Api::V1::PropertyAnalysisController < ApplicationController
       end
     end
 
+    # === 棒グラフ選択による範囲フィルタ ===
+
+    # 賃料範囲フィルタ（複数選択対応）
+    # rent_ranges=0-50000,100000-150000 形式
+    if params[:rent_ranges].present?
+      ranges = params[:rent_ranges].split(',')
+      all_rooms = all_rooms.select do |r|
+        ranges.any? do |range|
+          rent = r.rent.to_f
+          if range.end_with?('+')
+            # "200000+" のような形式
+            min = range.gsub('+', '').to_f
+            rent >= min
+          else
+            min, max = range.split('-').map(&:to_f)
+            rent >= min && rent < max
+          end
+        end
+      end
+    end
+
+    # 面積範囲フィルタ（複数選択対応）
+    # area_ranges=0-20,40-60 形式
+    if params[:area_ranges].present?
+      ranges = params[:area_ranges].split(',')
+      all_rooms = all_rooms.select do |r|
+        ranges.any? do |range|
+          area = r.area.to_f
+          if range.end_with?('+')
+            # "80+" のような形式
+            min = range.gsub('+', '').to_f
+            area >= min
+          else
+            min, max = range.split('-').map(&:to_f)
+            area >= min && area < max
+          end
+        end
+      end
+    end
+
+    # 築年数範囲フィルタ（複数選択対応）
+    # age_ranges=0-5,10-20 形式
+    if params[:age_ranges].present?
+      current_year = Date.today.year
+      ranges = params[:age_ranges].split(',')
+      all_rooms = all_rooms.select do |r|
+        building = r.building
+        next true unless building.built_date.present? # 築年数不明の場合は含める
+
+        age = current_year - building.built_date.year
+        ranges.any? do |range|
+          if range.end_with?('+')
+            # "30+" のような形式
+            min = range.gsub('+', '').to_i
+            age >= min
+          else
+            min, max = range.split('-').map(&:to_i)
+            age >= min && age < max
+          end
+        end
+      end
+    end
+
     # フィルタ後の部屋が属する物件を特定
     filtered_building_ids = all_rooms.map(&:building_id).uniq
     filtered_buildings = buildings.select { |b| filtered_building_ids.include?(b.id) }

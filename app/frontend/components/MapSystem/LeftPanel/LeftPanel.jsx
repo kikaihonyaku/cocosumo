@@ -47,6 +47,13 @@ export default function LeftPanel({
   onTabChange = null,
   // サマリー用のprops
   summary = null,
+  // 棒グラフ選択状態
+  selectedRentRanges = [],
+  selectedAreaRanges = [],
+  selectedAgeRanges = [],
+  onRentRangeToggle = null,
+  onAreaRangeToggle = null,
+  onAgeRangeToggle = null,
 }) {
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [expanded, setExpanded] = useState({
@@ -130,16 +137,16 @@ export default function LeftPanel({
           <Paper
             elevation={2}
             sx={{
-              width: isPinned ? 320 : (isHovered ? 320 : 60),
+              width: isPinned ? 360 : (isHovered ? 360 : 60),
               boxSizing: 'border-box',
               bgcolor: 'primary.main',
               color: 'white',
-              overflow: isPinned || isHovered ? 'auto' : 'visible',
+              overflow: 'hidden',
               transition: 'width 0.3s ease, left 0.3s ease, top 0.3s ease',
               position: 'absolute',
               top: isPinned || isHovered ? '2px' : '80px',
               left: isPinned ? '2px' : (isHovered ? 0 : '16px'),
-              height: isPinned ? '100vh' : (isHovered ? '100vh' : '220px'),
+              height: isPinned ? 'calc(100vh - 4px)' : (isHovered ? 'calc(100vh - 4px)' : '220px'),
               zIndex: isPinned ? 1100 : (isHovered ? 1350 : 1300),
               flexShrink: isPinned ? 0 : undefined,
               display: 'flex',
@@ -148,9 +155,10 @@ export default function LeftPanel({
           >
             <Box
               sx={{
-                width: isPinned || isHovered ? 320 : 60,
+                width: '100%',
                 height: '100%',
                 p: isExpanded ? 2 : (!isMdUp ? 1 : 0),
+                boxSizing: 'border-box',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: isExpanded ? 2 : 0,
@@ -169,7 +177,7 @@ export default function LeftPanel({
                 // 展開時のコンテンツ
                 <>
                   {/* ヘッダー（タブとピン留めボタンを横並び） */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexShrink: 0 }}>
                     {/* タブUI */}
                     {onTabChange && (
                       <Tabs
@@ -315,18 +323,27 @@ export default function LeftPanel({
 
               {/* 検索タブのコンテンツ */}
               {isExpanded && activeTab === 0 && advancedSearchFilters && (
-                <AdvancedSearchTab
-                  filters={advancedSearchFilters}
-                  onFiltersChange={onAdvancedSearchFiltersChange}
-                  aggregations={advancedSearchAggregations}
-                  isLoading={isAdvancedSearchLoading}
-                  onApplyFilters={onApplyAdvancedSearch}
-                  onResetFilters={onResetAdvancedSearch}
-                  geoFilter={geoFilter}
-                  onOpenSearchModal={() => setIsSearchModalOpen(true)}
-                  searchConditions={searchConditions}
-                  summary={summary}
-                />
+                <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                  <AdvancedSearchTab
+                    filters={advancedSearchFilters}
+                    onFiltersChange={onAdvancedSearchFiltersChange}
+                    aggregations={advancedSearchAggregations}
+                    isLoading={isAdvancedSearchLoading}
+                    onApplyFilters={onApplyAdvancedSearch}
+                    onResetFilters={onResetAdvancedSearch}
+                    geoFilter={geoFilter}
+                    onOpenSearchModal={() => setIsSearchModalOpen(true)}
+                    searchConditions={searchConditions}
+                    summary={summary}
+                    // 棒グラフ選択状態
+                    selectedRentRanges={selectedRentRanges}
+                    selectedAreaRanges={selectedAreaRanges}
+                    selectedAgeRanges={selectedAgeRanges}
+                    onRentRangeToggle={onRentRangeToggle}
+                    onAreaRangeToggle={onAreaRangeToggle}
+                    onAgeRangeToggle={onAgeRangeToggle}
+                  />
+                </Box>
               )}
 
               {/* レイヤタブのコンテンツ */}
