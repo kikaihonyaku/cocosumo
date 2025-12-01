@@ -138,6 +138,26 @@ class Building < ApplicationRecord
     vacant_rooms_count
   end
 
+  # 外観写真の枚数を返す
+  # includes(:building_photos)でeager loadされている場合はメモリ上でカウント
+  def exterior_photo_count
+    if building_photos.loaded?
+      building_photos.count { |p| p.photo_type == 'exterior' }
+    else
+      building_photos.where(photo_type: 'exterior').count
+    end
+  end
+
+  # サムネイル画像のURL（外観写真の1枚目）を返す
+  def thumbnail_url
+    if building_photos.loaded?
+      exterior_photo = building_photos.find { |p| p.photo_type == 'exterior' }
+    else
+      exterior_photo = building_photos.where(photo_type: 'exterior').first
+    end
+    exterior_photo&.photo_url
+  end
+
   private
 
   def update_location_from_coords

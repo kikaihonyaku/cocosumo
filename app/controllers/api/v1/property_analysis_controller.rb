@@ -5,7 +5,7 @@ class Api::V1::PropertyAnalysisController < ApplicationController
   # GET /api/v1/property_analysis
   def show
     # 物件とその部屋を取得
-    buildings = current_tenant.buildings.kept.includes(:rooms)
+    buildings = current_tenant.buildings.kept.includes(:rooms, :building_photos)
 
     # === ベース検索条件（検索条件を設定で指定された条件） ===
 
@@ -202,7 +202,7 @@ class Api::V1::PropertyAnalysisController < ApplicationController
       # フィルタ後の部屋のみを取得
       filtered_rooms_for_building = building.rooms.select { |r| filtered_room_ids.include?(r.id) }
 
-      building_data = building.as_json(methods: [:room_cnt, :free_cnt, :latitude, :longitude])
+      building_data = building.as_json(methods: [:room_cnt, :free_cnt, :latitude, :longitude, :exterior_photo_count, :thumbnail_url])
       # room_cntとfree_cntをフィルタ後の値に上書き
       building_data['room_cnt'] = filtered_rooms_for_building.count
       building_data['free_cnt'] = filtered_rooms_for_building.count { |r| r.status == 'vacant' }

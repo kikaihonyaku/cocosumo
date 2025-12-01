@@ -5,7 +5,7 @@ class Api::V1::BuildingsController < ApplicationController
 
   # GET /api/v1/buildings
   def index
-    @buildings = current_tenant.buildings.kept.includes(:rooms)
+    @buildings = current_tenant.buildings.kept.includes(:rooms, :building_photos)
 
     # 検索条件によるフィルタリング
     @buildings = @buildings.where("name LIKE ?", "%#{params[:name]}%") if params[:name].present?
@@ -76,7 +76,7 @@ class Api::V1::BuildingsController < ApplicationController
 
     # 空室数・空室率・部屋情報を含めて返す
     render json: @buildings.as_json(
-      methods: [:room_cnt, :free_cnt, :latitude, :longitude],
+      methods: [:room_cnt, :free_cnt, :latitude, :longitude, :exterior_photo_count, :thumbnail_url],
       include: {
         rooms: {
           only: [:id, :rent, :area, :room_type, :status, :floor, :room_number]

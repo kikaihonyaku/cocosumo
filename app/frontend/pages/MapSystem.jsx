@@ -462,18 +462,6 @@ export default function MapSystem() {
     }
   };
 
-  const getBuildingTypeLabel = (type) => {
-    const typeMap = {
-      mansion: 'マンション',
-      apartment: 'アパート',
-      house: '一戸建て',
-      office: 'オフィス',
-      store: '店舗',
-      other: 'その他'
-    };
-    return typeMap[type] || type;
-  };
-
   // 新規物件登録成功時のハンドラー
   const handleBuildingRegistered = (newBuilding) => {
     // 物件詳細画面を別タブで開く
@@ -771,76 +759,113 @@ export default function MapSystem() {
                         <Box>
                           {selectedObject.type === 'property' && (
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <Paper variant="outlined" sx={{ p: 2 }}>
-                                <Box sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mb: 0.5 }}>
-                                  物件名
-                                </Box>
-                                <Box sx={{ fontSize: '1rem', color: 'text.primary' }}>
-                                  {selectedObject.data.name}
-                                </Box>
-                              </Paper>
-
-                              <Paper variant="outlined" sx={{ p: 2 }}>
-                                <Box sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mb: 0.5 }}>
-                                  住所
-                                </Box>
-                                <Box sx={{ fontSize: '1rem', color: 'text.primary' }}>
-                                  {selectedObject.data.address}
-                                </Box>
-                              </Paper>
-
-                              <Paper variant="outlined" sx={{ p: 2 }}>
-                                <Box sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mb: 0.5 }}>
-                                  建物種別
-                                </Box>
-                                <Box sx={{ fontSize: '1rem', color: 'text.primary' }}>
-                                  {getBuildingTypeLabel(selectedObject.data.building_type)}
-                                </Box>
-                              </Paper>
-
-                              <Box sx={{ display: 'flex', gap: 1 }}>
-                                <Paper variant="outlined" sx={{ p: 2, flex: 1 }}>
-                                  <Box sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mb: 0.5 }}>
-                                    総戸数
-                                  </Box>
-                                  <Box sx={{ fontSize: '1rem', color: 'text.primary' }}>
-                                    {selectedObject.data.room_cnt || 0}戸
-                                  </Box>
-                                </Paper>
-
-                                <Paper variant="outlined" sx={{ p: 2, flex: 1 }}>
-                                  <Box sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mb: 0.5 }}>
-                                    空室数
-                                  </Box>
-                                  <Box sx={{ fontSize: '1rem', color: 'text.primary' }}>
-                                    {selectedObject.data.free_cnt || 0}戸
-                                  </Box>
-                                </Paper>
-                              </Box>
-
-                              <Paper variant="outlined" sx={{ p: 2 }}>
-                                <Box sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary', mb: 0.5 }}>
-                                  空室率
-                                </Box>
-                                <Box sx={{ fontSize: '1rem', color: 'text.primary' }}>
-                                  {selectedObject.data.room_cnt > 0
-                                    ? ((selectedObject.data.free_cnt / selectedObject.data.room_cnt) * 100).toFixed(1)
-                                    : '0.0'}%
-                                </Box>
-                              </Paper>
-
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
-                                <Button
-                                  variant="contained"
-                                  fullWidth
-                                  onClick={() => window.open(`/building/${selectedObject.data.id}`, '_blank')}
+                              {/* サムネイル画像 */}
+                              {selectedObject.data.thumbnail_url ? (
+                                <Box
                                   sx={{
-                                    minHeight: isMobile ? '48px' : 'auto',
-                                    fontSize: isMobile ? '1rem' : '0.875rem'
+                                    width: '100%',
+                                    height: 160,
+                                    borderRadius: 1,
+                                    overflow: 'hidden',
+                                    bgcolor: 'grey.100',
+                                    cursor: 'pointer',
+                                  }}
+                                  onClick={() => window.open(`/building/${selectedObject.data.id}`, '_blank')}
+                                >
+                                  <Box
+                                    component="img"
+                                    src={selectedObject.data.thumbnail_url}
+                                    alt={selectedObject.data.name}
+                                    sx={{
+                                      width: '100%',
+                                      height: '100%',
+                                      objectFit: 'cover',
+                                    }}
+                                  />
+                                </Box>
+                              ) : (
+                                <Box
+                                  sx={{
+                                    width: '100%',
+                                    height: 100,
+                                    borderRadius: 1,
+                                    bgcolor: 'grey.200',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'text.secondary',
+                                    fontSize: '0.875rem',
                                   }}
                                 >
-                                  詳細ページを開く
-                                </Button>
+                                  写真なし
+                                </Box>
+                              )}
+
+                              {/* 建物名 */}
+                              <Box
+                                sx={{
+                                  fontSize: '1.1rem',
+                                  fontWeight: 600,
+                                  color: 'text.primary',
+                                  cursor: 'pointer',
+                                  '&:hover': {
+                                    color: 'primary.main',
+                                    textDecoration: 'underline',
+                                  }
+                                }}
+                                onClick={() => window.open(`/building/${selectedObject.data.id}`, '_blank')}
+                              >
+                                {selectedObject.data.name}
+                              </Box>
+
+                              {/* 外観写真枚数 */}
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary', fontSize: '0.875rem' }}>
+                                <span>外観写真: {selectedObject.data.exterior_photo_count || 0}枚</span>
+                              </Box>
+
+                              {/* 部屋リスト */}
+                              <Box>
+                                <Box sx={{ fontWeight: 600, fontSize: '0.875rem', color: 'text.secondary', mb: 1 }}>
+                                  部屋一覧 ({selectedObject.data.rooms?.length || 0}件)
+                                </Box>
+                                {selectedObject.data.rooms && selectedObject.data.rooms.length > 0 ? (
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                    {selectedObject.data.rooms.map((room) => (
+                                      <Paper
+                                        key={room.id}
+                                        variant="outlined"
+                                        sx={{
+                                          p: 1.5,
+                                          cursor: 'pointer',
+                                          transition: 'all 0.2s',
+                                          '&:hover': {
+                                            bgcolor: 'action.hover',
+                                            borderColor: 'primary.main',
+                                          }
+                                        }}
+                                        onClick={() => window.open(`/building/${selectedObject.data.id}/room/${room.id}`, '_blank')}
+                                      >
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                            <Box sx={{ fontWeight: 600, fontSize: '0.9rem', minWidth: '50px' }}>
+                                              {room.room_number || '-'}
+                                            </Box>
+                                            <Box sx={{ fontSize: '0.85rem', color: 'text.secondary', minWidth: '50px' }}>
+                                              {room.room_type || '-'}
+                                            </Box>
+                                          </Box>
+                                          <Box sx={{ fontWeight: 600, fontSize: '0.9rem', color: 'primary.main' }}>
+                                            {room.rent ? `${(room.rent / 10000).toFixed(1)}万円` : '-'}
+                                          </Box>
+                                        </Box>
+                                      </Paper>
+                                    ))}
+                                  </Box>
+                                ) : (
+                                  <Box sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
+                                    部屋情報がありません
+                                  </Box>
+                                )}
                               </Box>
                             </Box>
                           )}
