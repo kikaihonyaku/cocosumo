@@ -1,4 +1,83 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
+
+function BlogSection() {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get('/api/v1/blog_posts/recent');
+        setPosts(response.data);
+      } catch (error) {
+        console.error('Failed to fetch blog posts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPosts();
+  }, []);
+
+  if (loading || posts.length === 0) return null;
+
+  return (
+    <section className="container mx-auto px-4 py-16">
+      <h2 className="text-3xl font-bold text-center text-gray-900 mb-4">
+        開発者ブログ
+      </h2>
+      <p className="text-center text-gray-600 mb-12">
+        CoCoスモの最新機能や更新情報をお届けします
+      </p>
+
+      <div className="grid md:grid-cols-3 gap-8">
+        {posts.map((post) => (
+          <Link
+            key={post.public_id}
+            to={`/blog/${post.public_id}`}
+            className="block"
+          >
+            <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow overflow-hidden">
+              {post.thumbnail_url ? (
+                <img
+                  src={post.thumbnail_url}
+                  alt={post.title}
+                  className="w-full h-48 object-cover"
+                />
+              ) : (
+                <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                  <span className="text-5xl">&#128221;</span>
+                </div>
+              )}
+              <div className="p-6">
+                <p className="text-sm text-gray-500 mb-2">
+                  {new Date(post.published_at).toLocaleDateString('ja-JP')}
+                </p>
+                <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+                  {post.title}
+                </h3>
+                <p className="text-gray-600 text-sm line-clamp-3">
+                  {post.summary}
+                </p>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      <div className="text-center mt-10">
+        <Link
+          to="/blog"
+          className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
+        >
+          すべての記事を見る
+          <span className="ml-2">&rarr;</span>
+        </Link>
+      </div>
+    </section>
+  );
+}
 
 export default function Landing() {
   const handleOpenHome = () => {
@@ -99,6 +178,9 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* ブログセクション */}
+      <BlogSection />
 
       {/* お問い合わせセクション */}
       <section className="container mx-auto px-4 py-16">

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_30_010005) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_01_165138) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -58,6 +58,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_30_010005) do
     t.datetime "updated_at", null: false
     t.index ["room_id"], name: "index_ai_generated_images_on_room_id"
     t.index ["room_photo_id"], name: "index_ai_generated_images_on_room_photo_id"
+  end
+
+  create_table "blog_posts", force: :cascade do |t|
+    t.string "public_id", null: false
+    t.string "title", null: false
+    t.text "summary"
+    t.text "content", null: false
+    t.string "thumbnail_url"
+    t.string "commit_hash"
+    t.integer "status", default: 0, null: false
+    t.datetime "published_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["public_id"], name: "index_blog_posts_on_public_id", unique: true
+    t.index ["status", "published_at"], name: "index_blog_posts_on_status_and_published_at"
   end
 
   create_table "building_photos", force: :cascade do |t|

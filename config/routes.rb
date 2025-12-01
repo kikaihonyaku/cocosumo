@@ -165,6 +165,14 @@ Rails.application.routes.draw do
       resources :property_publications, only: [], param: :publication_id do
         resources :inquiries, only: [:create, :index], controller: 'property_inquiries'
       end
+
+      # ブログ記事API（認証不要）
+      resources :blog_posts, only: [:index] do
+        collection do
+          get :recent
+        end
+      end
+      get 'blog_posts/:public_id/public', to: 'blog_posts#show_public', as: :public_blog_post
     end
   end
 

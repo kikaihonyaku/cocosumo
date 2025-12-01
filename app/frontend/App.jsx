@@ -27,6 +27,8 @@ import PropertyPublicationEditor from "./pages/PropertyPublicationEditor";
 import PublicPropertyDetail from "./pages/PublicPropertyDetail";
 import LayerManagement from "./pages/admin/LayerManagement";
 import SuumoImport from "./pages/admin/SuumoImport";
+import BlogList from "./pages/BlogList";
+import BlogDetail from "./pages/BlogDetail";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -110,6 +112,9 @@ export default function App() {
           <Route path="/virtual-staging/:publicId" element={<PublicVirtualStaging />} />
           {/* 物件公開ページ（publication_idで識別） */}
           <Route path="/property/:publicationId" element={<PublicPropertyDetail />} />
+          {/* ブログページ */}
+          <Route path="/blog" element={<BlogList />} />
+          <Route path="/blog/:publicId" element={<BlogDetail />} />
 
           {/* 認証が必要なページ */}
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
