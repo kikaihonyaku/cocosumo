@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Box,
   Fab,
@@ -10,6 +10,9 @@ import {
   Paper,
   Zoom,
   CircularProgress,
+  ToggleButtonGroup,
+  ToggleButton,
+  IconButton,
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -19,6 +22,9 @@ import {
   Visibility as StreetViewIcon,
   Info as InfoIcon,
   Add as AddIcon,
+  RadioButtonUnchecked as CircleIcon,
+  Gesture as PolygonIcon,
+  Clear as ClearIcon,
 } from '@mui/icons-material';
 import { useGoogleMaps } from '../../hooks/useGoogleMaps';
 
@@ -31,11 +37,24 @@ export default function MapContainer({
   selectedObject,
   properties = [],
   isLoading = false,
-  onNewBuildingClick
+  onNewBuildingClick,
+  // 描画ツール関連のprops
+  drawingMode = null,
+  onDrawingModeChange = null,
+  geoFilter = null,
+  onGeoFilterChange = null,
+  onClearGeoFilter = null,
+  onApplyFilters = null,
+  showDrawingTools = false,
 }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mapType, setMapType] = useState('roadmap');
   const [layerLoadingStates, setLayerLoadingStates] = useState({});
+
+  // 描画関連のref
+  const circleRef = useRef(null);
+  const polygonRef = useRef(null);
+  const drawingManagerRef = useRef(null);
 
   const {
     map,
@@ -155,6 +174,216 @@ export default function MapContainer({
       }
     }
   };
+
+  // Google Maps PathをWKT形式に変換
+  const pathToWKT = (path) => {
+    const coordinates = [];
+    for (let i = 0; i < path.getLength(); i++) {
+      const point = path.getAt(i);
+      coordinates.push(`${point.lng()} ${point.lat()}`);
+    }
+    // ポリゴンを閉じる
+    if (coordinates.length > 0) {
+      coordinates.push(coordinates[0]);
+    }
+    return `POLYGON((${coordinates.join(', ')}))`;
+  };
+
+  // 描画をクリア
+  const clearDrawings = useCallback(() => {
+    if (circleRef.current) {
+      circleRef.current.setMap(null);
+      circleRef.current = null;
+    }
+    if (polygonRef.current) {
+      polygonRef.current.setMap(null);
+      polygonRef.current = null;
+    }
+  }, []);
+
+  // 描画クリアハンドラ
+  const handleClearDrawing = useCallback(() => {
+    clearDrawings();
+    if (onClearGeoFilter) {
+      onClearGeoFilter();
+    }
+    if (onDrawingModeChange) {
+      onDrawingModeChange(null);
+    }
+    if (onApplyFilters) {
+      onApplyFilters();
+    }
+  }, [clearDrawings, onClearGeoFilter, onDrawingModeChange, onApplyFilters]);
+
+  // Drawing Managerの初期化
+  useEffect(() => {
+    if (!map || !window.google || !showDrawingTools) return;
+
+    // DrawingManagerを作成
+    const drawingManager = new window.google.maps.drawing.DrawingManager({
+      drawingMode: null,
+      drawingControl: false, // カスタムUIを使用
+      circleOptions: {
+        fillColor: '#0168B7',
+        fillOpacity: 0.2,
+        strokeWeight: 2,
+        strokeColor: '#0168B7',
+        clickable: true,
+        editable: true,
+        draggable: true,
+      },
+      polygonOptions: {
+        fillColor: '#0168B7',
+        fillOpacity: 0.2,
+        strokeWeight: 2,
+        strokeColor: '#0168B7',
+        clickable: true,
+        editable: true,
+        draggable: true,
+      },
+    });
+
+    drawingManager.setMap(map);
+    drawingManagerRef.current = drawingManager;
+
+    // 円が描画完了した時のイベント
+    window.google.maps.event.addListener(drawingManager, 'circlecomplete', (circle) => {
+      // 既存の図形を削除
+      clearDrawings();
+
+      circleRef.current = circle;
+      const center = circle.getCenter();
+      const radius = circle.getRadius();
+
+      // フィルタを更新
+      if (onGeoFilterChange) {
+        onGeoFilterChange({
+          type: 'circle',
+          circle: {
+            center: { lat: center.lat(), lng: center.lng() },
+            radius: radius,
+          },
+          polygon: null,
+        });
+      }
+
+      // 描画モードを解除
+      if (onDrawingModeChange) {
+        onDrawingModeChange(null);
+      }
+      drawingManager.setDrawingMode(null);
+
+      // 円の変更イベントをリッスン
+      window.google.maps.event.addListener(circle, 'center_changed', () => {
+        const newCenter = circle.getCenter();
+        if (onGeoFilterChange) {
+          onGeoFilterChange({
+            type: 'circle',
+            circle: {
+              center: { lat: newCenter.lat(), lng: newCenter.lng() },
+              radius: circle.getRadius(),
+            },
+            polygon: null,
+          });
+        }
+      });
+
+      window.google.maps.event.addListener(circle, 'radius_changed', () => {
+        const center = circle.getCenter();
+        if (onGeoFilterChange) {
+          onGeoFilterChange({
+            type: 'circle',
+            circle: {
+              center: { lat: center.lat(), lng: center.lng() },
+              radius: circle.getRadius(),
+            },
+            polygon: null,
+          });
+        }
+      });
+
+      // フィルタ適用
+      if (onApplyFilters) {
+        setTimeout(() => onApplyFilters(), 100);
+      }
+    });
+
+    // ポリゴンが描画完了した時のイベント
+    window.google.maps.event.addListener(drawingManager, 'polygoncomplete', (polygon) => {
+      // 既存の図形を削除
+      clearDrawings();
+
+      polygonRef.current = polygon;
+      const path = polygon.getPath();
+      const wkt = pathToWKT(path);
+
+      // フィルタを更新
+      if (onGeoFilterChange) {
+        onGeoFilterChange({
+          type: 'polygon',
+          circle: null,
+          polygon: wkt,
+        });
+      }
+
+      // 描画モードを解除
+      if (onDrawingModeChange) {
+        onDrawingModeChange(null);
+      }
+      drawingManager.setDrawingMode(null);
+
+      // ポリゴンの変更イベントをリッスン
+      window.google.maps.event.addListener(path, 'set_at', () => {
+        const newWkt = pathToWKT(polygon.getPath());
+        if (onGeoFilterChange) {
+          onGeoFilterChange({
+            type: 'polygon',
+            circle: null,
+            polygon: newWkt,
+          });
+        }
+        if (onApplyFilters) {
+          setTimeout(() => onApplyFilters(), 100);
+        }
+      });
+
+      window.google.maps.event.addListener(path, 'insert_at', () => {
+        const newWkt = pathToWKT(polygon.getPath());
+        if (onGeoFilterChange) {
+          onGeoFilterChange({
+            type: 'polygon',
+            circle: null,
+            polygon: newWkt,
+          });
+        }
+        if (onApplyFilters) {
+          setTimeout(() => onApplyFilters(), 100);
+        }
+      });
+
+      // フィルタ適用
+      if (onApplyFilters) {
+        setTimeout(() => onApplyFilters(), 100);
+      }
+    });
+
+    return () => {
+      drawingManager.setMap(null);
+    };
+  }, [map, showDrawingTools, onGeoFilterChange, onDrawingModeChange, onApplyFilters, clearDrawings]);
+
+  // 描画モードの変更
+  useEffect(() => {
+    if (!drawingManagerRef.current || !showDrawingTools) return;
+
+    if (drawingMode === 'circle') {
+      drawingManagerRef.current.setDrawingMode(window.google.maps.drawing.OverlayType.CIRCLE);
+    } else if (drawingMode === 'polygon') {
+      drawingManagerRef.current.setDrawingMode(window.google.maps.drawing.OverlayType.POLYGON);
+    } else {
+      drawingManagerRef.current.setDrawingMode(null);
+    }
+  }, [drawingMode, showDrawingTools]);
 
 
   // 学区ポリゴンの状態管理（useRefを使用して無限ループを防ぐ）
@@ -560,6 +789,69 @@ export default function MapContainer({
             </CardContent>
           </Card>
         </Box>
+      )}
+
+      {/* 描画ツールバー */}
+      {showDrawingTools && (
+        <Paper
+          elevation={2}
+          sx={{
+            position: 'absolute',
+            top: 16,
+            right: 60,
+            p: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            zIndex: 100,
+          }}
+        >
+          <Typography variant="caption" sx={{ px: 1 }}>
+            範囲指定
+          </Typography>
+          <ToggleButtonGroup
+            value={drawingMode}
+            exclusive
+            onChange={(e, newMode) => onDrawingModeChange && onDrawingModeChange(newMode)}
+            size="small"
+          >
+            <ToggleButton value="circle" aria-label="円で指定">
+              <Tooltip title="円で範囲を指定">
+                <CircleIcon fontSize="small" />
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton value="polygon" aria-label="フリーハンドで指定">
+              <Tooltip title="フリーハンドで範囲を指定">
+                <PolygonIcon fontSize="small" />
+              </Tooltip>
+            </ToggleButton>
+          </ToggleButtonGroup>
+          {geoFilter && geoFilter.type && (
+            <Tooltip title="範囲をクリア">
+              <IconButton size="small" onClick={handleClearDrawing} color="error">
+                <ClearIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Paper>
+      )}
+
+      {/* 範囲情報表示 */}
+      {showDrawingTools && geoFilter && geoFilter.type === 'circle' && geoFilter.circle && (
+        <Paper
+          elevation={2}
+          sx={{
+            position: 'absolute',
+            top: 70,
+            right: 60,
+            p: 1.5,
+            zIndex: 100,
+          }}
+        >
+          <Typography variant="caption" color="text.secondary">
+            半径: {(geoFilter.circle.radius / 1000).toFixed(2)} km
+          </Typography>
+        </Paper>
       )}
 
       {/* 地図上の操作ボタン群 */}

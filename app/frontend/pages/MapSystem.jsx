@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   ThemeProvider,
   CssBaseline,
@@ -45,6 +45,23 @@ export default function MapSystem() {
   });
   const [mapControllers, setMapControllers] = useState(null);
   const [availableLayers, setAvailableLayers] = useState([]);
+
+  // 詳細検索関連のステート
+  const [leftPanelActiveTab, setLeftPanelActiveTab] = useState(0);
+  const [advancedSearchFilters, setAdvancedSearchFilters] = useState({
+    rentRange: [0, 300000],
+    roomTypes: [],
+    areaRange: [0, 200],
+    ageRange: [0, 40],
+  });
+  const [advancedSearchAggregations, setAdvancedSearchAggregations] = useState(null);
+  const [isAdvancedSearchLoading, setIsAdvancedSearchLoading] = useState(false);
+  const [geoFilter, setGeoFilter] = useState({
+    type: null,  // 'circle' | 'polygon' | null
+    circle: null,
+    polygon: null,
+  });
+  const [drawingMode, setDrawingMode] = useState(null);
 
   // レスポンシブ設定
   const isMdUp = useMediaQuery(muiTheme.breakpoints.up('md'));
@@ -164,6 +181,165 @@ export default function MapSystem() {
     }
   };
 
+  // 詳細検索APIの呼び出し（searchConditionsも含める）
+  const fetchAdvancedSearch = async (
+    filters = advancedSearchFilters,
+    geo = geoFilter,
+    baseConditions = searchConditions
+  ) => {
+    setIsAdvancedSearchLoading(true);
+    try {
+      const params = new URLSearchParams();
+
+      // ベース検索条件（検索条件を設定で指定された条件）
+      if (baseConditions.propertyName) params.append('name', baseConditions.propertyName);
+      if (baseConditions.address) params.append('address', baseConditions.address);
+      if (baseConditions.buildingType) params.append('building_type', baseConditions.buildingType);
+      if (baseConditions.hasVacancy === 'true') params.append('has_vacancy', 'true');
+      if (baseConditions.hasVacancy === 'false') params.append('has_vacancy', 'false');
+      if (baseConditions.minRooms) params.append('min_rooms', baseConditions.minRooms);
+      if (baseConditions.maxRooms) params.append('max_rooms', baseConditions.maxRooms);
+      if (baseConditions.maxVacancyRate) params.append('max_vacancy_rate', baseConditions.maxVacancyRate);
+      if (baseConditions.externalImport !== undefined) {
+        params.append('external_import', baseConditions.externalImport);
+      }
+      if (baseConditions.ownRegistration !== undefined) {
+        params.append('own_registration', baseConditions.ownRegistration);
+      }
+
+      // フィルタパラメータ（スライダーで指定された条件）
+      if (filters.rentRange[0] > 0) params.append('rent_min', filters.rentRange[0]);
+      if (filters.rentRange[1] < 300000) params.append('rent_max', filters.rentRange[1]);
+      if (filters.roomTypes.length > 0) params.append('room_types', filters.roomTypes.join(','));
+      if (filters.areaRange[0] > 0) params.append('area_min', filters.areaRange[0]);
+      if (filters.areaRange[1] < 200) params.append('area_max', filters.areaRange[1]);
+      if (filters.ageRange[0] > 0) params.append('age_min', filters.ageRange[0]);
+      if (filters.ageRange[1] < 40) params.append('age_max', filters.ageRange[1]);
+
+      // GISパラメータ
+      if (geo.type === 'circle' && geo.circle) {
+        params.append('lat', geo.circle.center.lat);
+        params.append('lng', geo.circle.center.lng);
+        params.append('radius', geo.circle.radius);
+      }
+      if (geo.type === 'polygon' && geo.polygon) {
+        params.append('polygon', geo.polygon);
+      }
+
+      const queryString = params.toString();
+      const url = queryString ? `/api/v1/property_analysis?${queryString}` : '/api/v1/property_analysis';
+
+      const response = await fetch(url, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAdvancedSearchAggregations(data.aggregations || null);
+        // 検索結果の物件リストも更新（サマリーや地図マーカーに反映）
+        if (data.properties) {
+          setProperties(data.properties);
+        }
+      } else if (response.status === 401) {
+        window.location.href = '/login';
+        return;
+      } else {
+        console.error('詳細検索エラー:', response.status);
+      }
+    } catch (err) {
+      console.error('詳細検索エラー:', err);
+    } finally {
+      setIsAdvancedSearchLoading(false);
+    }
+  };
+
+  // 詳細検索の適用
+  const handleApplyAdvancedSearch = () => {
+    fetchAdvancedSearch(advancedSearchFilters, geoFilter);
+  };
+
+  // 詳細検索のリセット
+  const handleResetAdvancedSearch = () => {
+    const defaultFilters = {
+      rentRange: [0, 300000],
+      roomTypes: [],
+      areaRange: [0, 200],
+      ageRange: [0, 40],
+    };
+    setAdvancedSearchFilters(defaultFilters);
+    setGeoFilter({ type: null, circle: null, polygon: null });
+    setDrawingMode(null);
+    fetchAdvancedSearch(defaultFilters, { type: null, circle: null, polygon: null });
+  };
+
+  // GeoFilterのクリア
+  const handleClearGeoFilter = () => {
+    setGeoFilter({ type: null, circle: null, polygon: null });
+  };
+
+  // タブ変更時に検索タブに切り替えた場合は初回データ取得
+  const handleTabChange = (newTab) => {
+    setLeftPanelActiveTab(newTab);
+    if (newTab === 1 && !advancedSearchAggregations) {
+      fetchAdvancedSearch();
+    }
+  };
+
+  // サマリーデータを計算
+  const summary = useMemo(() => {
+    if (!properties || properties.length === 0) {
+      return {
+        buildingCount: 0,
+        roomCount: 0,
+        avgRent: null,
+        avgAge: null,
+      };
+    }
+
+    const buildingCount = properties.length;
+    let roomCount = 0;
+    let totalRent = 0;
+    let rentCount = 0;
+    let totalAge = 0;
+    let ageCount = 0;
+    const currentYear = new Date().getFullYear();
+
+    properties.forEach(property => {
+      // 部屋数
+      roomCount += property.room_cnt || 0;
+
+      // 平均賃料（部屋の賃料から計算）
+      if (property.rooms && Array.isArray(property.rooms)) {
+        property.rooms.forEach(room => {
+          if (room.rent && room.rent > 0) {
+            totalRent += room.rent;
+            rentCount++;
+          }
+        });
+      }
+
+      // 平均築年数
+      if (property.built_date) {
+        const builtYear = new Date(property.built_date).getFullYear();
+        const age = currentYear - builtYear;
+        if (age >= 0) {
+          totalAge += age;
+          ageCount++;
+        }
+      }
+    });
+
+    return {
+      buildingCount,
+      roomCount,
+      avgRent: rentCount > 0 ? totalRent / rentCount : null,
+      avgAge: ageCount > 0 ? totalAge / ageCount : null,
+    };
+  }, [properties]);
+
   const handleMarkerSelect = (type, data) => {
     setSelectedObject({ type, data });
     setRightPanelVisible(true);
@@ -180,6 +356,9 @@ export default function MapSystem() {
     try {
       setSearchConditions(conditions);
       await fetchBuildings(conditions);
+      // 検索条件を設定した後、詳細検索も再実行して該当物件数を更新
+      // 現在のadvancedSearchFiltersとgeoFilterを維持しつつ、新しい検索条件で再検索
+      await fetchAdvancedSearch(advancedSearchFilters, geoFilter, conditions);
     } catch (error) {
       console.error('Search error:', error);
     }
@@ -324,6 +503,18 @@ export default function MapSystem() {
               isLoading={isLoading}
               error={error}
               forceClose={leftPanelForceClose}
+              // 検索タブ用のprops
+              advancedSearchFilters={advancedSearchFilters}
+              onAdvancedSearchFiltersChange={setAdvancedSearchFilters}
+              advancedSearchAggregations={advancedSearchAggregations}
+              isAdvancedSearchLoading={isAdvancedSearchLoading}
+              onApplyAdvancedSearch={handleApplyAdvancedSearch}
+              onResetAdvancedSearch={handleResetAdvancedSearch}
+              geoFilter={geoFilter}
+              activeTab={leftPanelActiveTab}
+              onTabChange={handleTabChange}
+              // サマリー用のprops
+              summary={summary}
             />
             {/* 上部エリア（地図 + 右ペイン） */}
             <Box
@@ -430,6 +621,14 @@ export default function MapSystem() {
                     onNewBuildingClick={() => setBuildingFormModalOpen(true)}
                     selectedLayers={selectedLayers}
                     availableLayers={availableLayers}
+                    // 描画ツール関連のprops（検索タブ時のみ表示）
+                    showDrawingTools={leftPanelActiveTab === 0}
+                    drawingMode={drawingMode}
+                    onDrawingModeChange={setDrawingMode}
+                    geoFilter={geoFilter}
+                    onGeoFilterChange={setGeoFilter}
+                    onClearGeoFilter={handleClearGeoFilter}
+                    onApplyFilters={handleApplyAdvancedSearch}
                   />
                 )}
               </Box>

@@ -151,6 +151,9 @@ Rails.application.routes.draw do
       # 公開物件詳細表示用（認証不要、publication_idで取得）
       get 'property_publications/:publication_id/public', to: 'property_publications#show_public'
 
+      # 物件分析API
+      get 'property_analysis', to: 'property_analysis#show'
+
       # 問い合わせAPI（認証不要）
       resources :property_publications, only: [], param: :publication_id do
         resources :inquiries, only: [:create, :index], controller: 'property_inquiries'

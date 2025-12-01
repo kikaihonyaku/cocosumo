@@ -1,33 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Typography,
-  Button,
   IconButton,
   FormControlLabel,
   Checkbox,
-  Chip,
   Paper,
   Tooltip,
   Fade,
   useMediaQuery,
-  CircularProgress,
   Fab,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
-  ExpandMore as ExpandMoreIcon,
   PushPin as PushPinIcon,
   PushPinOutlined as PushPinOutlinedIcon,
   Search as SearchIcon,
-  Clear as ClearIcon,
   Layers as LayersIcon,
   FilterList as FilterListIcon,
-  Warning as WarningIcon,
 } from '@mui/icons-material';
 import SearchModal from './SearchModal';
+import AdvancedSearchTab from './AdvancedSearchTab';
 import muiTheme from '../../../theme/muiTheme';
 
 export default function LeftPanel({
@@ -40,8 +34,19 @@ export default function LeftPanel({
   availableLayers = [],
   onHoverChange,
   isLoading = false,
-  error = null,
-  forceClose = false
+  forceClose = false,
+  // 検索タブ用のprops
+  advancedSearchFilters = null,
+  onAdvancedSearchFiltersChange = null,
+  advancedSearchAggregations = null,
+  isAdvancedSearchLoading = false,
+  onApplyAdvancedSearch = null,
+  onResetAdvancedSearch = null,
+  geoFilter = null,
+  activeTab = 0,
+  onTabChange = null,
+  // サマリー用のprops
+  summary = null,
 }) {
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [expanded, setExpanded] = useState({
@@ -68,74 +73,6 @@ export default function LeftPanel({
 
   // 表示状態を判定（ピン留めされているか、ホバーされているか）
   const isExpanded = isPinned || isHovered;
-
-  // 検索条件をChip形式で取得
-  const getConditionChips = () => {
-    const chips = [];
-
-    if (searchConditions.propertyName) {
-      chips.push({ key: 'propertyName', label: `物件名: ${searchConditions.propertyName}` });
-    }
-    if (searchConditions.address) {
-      chips.push({ key: 'address', label: `住所: ${searchConditions.address}` });
-    }
-    if (searchConditions.buildingType) {
-      const typeMap = {
-        mansion: 'マンション',
-        apartment: 'アパート',
-        house: '一戸建て',
-        office: 'オフィス',
-        store: '店舗',
-        other: 'その他'
-      };
-      chips.push({ key: 'buildingType', label: `種別: ${typeMap[searchConditions.buildingType]}` });
-    }
-    if (searchConditions.hasVacancy === 'true') {
-      chips.push({ key: 'hasVacancy', label: '空室あり' });
-    } else if (searchConditions.hasVacancy === 'false') {
-      chips.push({ key: 'hasVacancy', label: '満室' });
-    }
-    if (searchConditions.minRooms || searchConditions.maxRooms) {
-      const min = searchConditions.minRooms || '制限なし';
-      const max = searchConditions.maxRooms || '制限なし';
-      chips.push({ key: 'rooms', label: `戸数: ${min}〜${max}戸` });
-    }
-    if (searchConditions.maxVacancyRate) {
-      chips.push({ key: 'maxVacancyRate', label: `空室率: ${searchConditions.maxVacancyRate}%以下` });
-    }
-
-    return chips;
-  };
-
-  const handleChipDelete = (chipKey) => {
-    const newConditions = { ...searchConditions };
-
-    switch (chipKey) {
-      case 'propertyName':
-        delete newConditions.propertyName;
-        break;
-      case 'address':
-        delete newConditions.address;
-        break;
-      case 'buildingType':
-        delete newConditions.buildingType;
-        break;
-      case 'hasVacancy':
-        delete newConditions.hasVacancy;
-        break;
-      case 'rooms':
-        delete newConditions.minRooms;
-        delete newConditions.maxRooms;
-        break;
-      case 'maxVacancyRate':
-        delete newConditions.maxVacancyRate;
-        break;
-    }
-
-    onSearch(newConditions);
-  };
-
-  const conditionChips = getConditionChips();
 
   return (
     <>
@@ -231,20 +168,44 @@ export default function LeftPanel({
               {isExpanded ? (
                 // 展開時のコンテンツ
                 <>
-                  {/* 検索セクション */}
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                      variant="contained"
-                      startIcon={<SearchIcon />}
-                      onClick={() => setIsSearchModalOpen(true)}
-                      sx={{
-                        flex: 1,
-                        bgcolor: 'rgba(255, 255, 255, 0.2)',
-                        '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' },
-                      }}
-                    >
-                      検索条件
-                    </Button>
+                  {/* ヘッダー（タブとピン留めボタンを横並び） */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    {/* タブUI */}
+                    {onTabChange && (
+                      <Tabs
+                        value={activeTab}
+                        onChange={(e, newValue) => onTabChange(newValue)}
+                        centered
+                        sx={{
+                          flex: 1,
+                          minHeight: 36,
+                          bgcolor: 'rgba(255, 255, 255, 0.1)',
+                          borderRadius: 1,
+                          '& .MuiTab-root': {
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            minHeight: 36,
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            flex: 1,
+                            px: 1.5,
+                            '&.Mui-selected': {
+                              color: 'white',
+                            },
+                          },
+                          '& .MuiTabs-flexContainer': {
+                            justifyContent: 'center',
+                          },
+                          '& .MuiTabs-indicator': {
+                            bgcolor: 'white',
+                          },
+                        }}
+                      >
+                        <Tab icon={<SearchIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="検索メニュー" />
+                        <Tab icon={<LayersIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="レイヤー" />
+                      </Tabs>
+                    )}
+
+                    {/* ピン留めボタン */}
                     <IconButton
                       onClick={onTogglePin}
                       size="small"
@@ -253,11 +214,13 @@ export default function LeftPanel({
                         color: 'white',
                         bgcolor: 'rgba(255, 255, 255, 0.2)',
                         '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' },
+                        flexShrink: 0,
                       }}
                     >
                       {isPinned ? <PushPinIcon /> : <PushPinOutlinedIcon />}
                     </IconButton>
                   </Box>
+
                 </>
               ) : (
                 // 折りたたみ時のアイコンのみ
@@ -350,193 +313,59 @@ export default function LeftPanel({
                 </Box>
               )}
 
-              {isExpanded && (
-                <>
-                  {/* 現在の検索条件 */}
-                  <Accordion
-                    expanded={expanded.conditions}
-                    onChange={handleAccordionChange('conditions')}
-                    disableGutters
-                  >
-                    <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'white' }} />}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                        現在の検索条件
-                      </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        {/* ローディング状態表示 */}
-                        {isLoading && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}>
-                            <CircularProgress size={16} sx={{ color: 'white' }} />
-                            <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                              検索中...
-                            </Typography>
-                          </Box>
-                        )}
+              {/* 検索タブのコンテンツ */}
+              {isExpanded && activeTab === 0 && advancedSearchFilters && (
+                <AdvancedSearchTab
+                  filters={advancedSearchFilters}
+                  onFiltersChange={onAdvancedSearchFiltersChange}
+                  aggregations={advancedSearchAggregations}
+                  isLoading={isAdvancedSearchLoading}
+                  onApplyFilters={onApplyAdvancedSearch}
+                  onResetFilters={onResetAdvancedSearch}
+                  geoFilter={geoFilter}
+                  onOpenSearchModal={() => setIsSearchModalOpen(true)}
+                  searchConditions={searchConditions}
+                  summary={summary}
+                />
+              )}
 
-                        {/* エラー状態表示 */}
-                        {error && (
-                          <Box sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            py: 1,
-                            px: 2,
-                            bgcolor: 'rgba(244, 67, 54, 0.1)',
-                            borderRadius: 1,
-                            border: '1px solid rgba(244, 67, 54, 0.3)'
-                          }}>
-                            <WarningIcon size={16} sx={{ color: '#f44336' }} />
-                            <Typography variant="body2" sx={{ color: '#f44336', fontSize: '0.75rem' }}>
-                              {error}
-                            </Typography>
-                          </Box>
-                        )}
-
-                        {conditionChips.length > 0 ? (
-                          <>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                              {conditionChips.map((chip) => (
-                                <Chip
-                                  key={chip.key}
-                                  label={chip.label}
-                                  size="small"
-                                  onDelete={() => handleChipDelete(chip.key)}
-                                  deleteIcon={<ClearIcon sx={{ color: 'white !important' }} />}
-                                  sx={{
-                                    bgcolor: 'rgba(255, 255, 255, 0.2)',
-                                    color: 'white',
-                                    fontSize: '0.75rem',
-                                    '& .MuiChip-deleteIcon': { color: 'white' },
-                                  }}
-                                />
-                              ))}
-                            </Box>
-                            <Button
-                              size="small"
-                              startIcon={<ClearIcon />}
-                              onClick={() => onSearch({})}
-                              sx={{
-                                alignSelf: 'flex-start',
-                                bgcolor: 'rgba(244, 67, 54, 0.8)',
-                                color: 'white',
-                                '&:hover': { bgcolor: 'rgba(244, 67, 54, 1)' },
-                                mt: 1,
-                              }}
-                            >
-                              条件をクリア
-                            </Button>
-                          </>
-                        ) : !isLoading && !error && (
-                          <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                            条件なし
+              {/* レイヤタブのコンテンツ */}
+              {isExpanded && activeTab === 1 && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                    レイヤ選択
+                  </Typography>
+                  {availableLayers.map(layer => (
+                    <FormControlLabel
+                      key={layer.id}
+                      control={
+                        <Checkbox
+                          checked={selectedLayers.includes(layer.id)}
+                          onChange={(e) => onLayerToggle(layer.id, e.target.checked)}
+                          size="small"
+                          sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.2 }}>
+                            {layer.label}
                           </Typography>
-                        )}
-                      </Box>
-                    </AccordionDetails>
-                  </Accordion>
-
-                  {/* レイヤー選択 */}
-                  <Accordion
-                    expanded={expanded.layers}
-                    onChange={handleAccordionChange('layers')}
-                    disableGutters
-                  >
-                    <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'white' }} />}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                        レイヤー選択
-                      </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        {availableLayers.map(layer => (
-                          <FormControlLabel
-                            key={layer.id}
-                            control={
-                              <Checkbox
-                                checked={selectedLayers.includes(layer.id)}
-                                onChange={(e) => onLayerToggle(layer.id, e.target.checked)}
-                                size="small"
-                                sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
-                              />
-                            }
-                            label={
-                              <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.2 }}>
-                                  {layer.label}
-                                </Typography>
-                                <Typography variant="caption" sx={{ opacity: 0.7, lineHeight: 1.3 }}>
-                                  {layer.description}
-                                </Typography>
-                              </Box>
-                            }
-                            sx={{
-                              alignItems: 'flex-start',
-                              ml: 0,
-                              p: 1,
-                              borderRadius: 1,
-                              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
-                            }}
-                          />
-                        ))}
-                      </Box>
-                    </AccordionDetails>
-                  </Accordion>
-
-                  {/* クイックアクション */}
-                  <Accordion
-                    expanded={expanded.quickActions}
-                    onChange={handleAccordionChange('quickActions')}
-                    disableGutters
-                  >
-                    <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'white' }} />}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                        クイックアクション
-                      </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Button
-                          size="small"
-                          onClick={() => onSearch({ hasVacancy: 'true' })}
-                          sx={{
-                            justifyContent: 'flex-start',
-                            bgcolor: 'rgba(255, 255, 255, 0.15)',
-                            color: 'white',
-                            '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.25)' },
-                          }}
-                        >
-                          空室あり物件
-                        </Button>
-                        <Button
-                          size="small"
-                          onClick={() => onSearch({ buildingType: 'mansion' })}
-                          sx={{
-                            justifyContent: 'flex-start',
-                            bgcolor: 'rgba(255, 255, 255, 0.15)',
-                            color: 'white',
-                            '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.25)' },
-                          }}
-                        >
-                          マンションのみ
-                        </Button>
-                        <Button
-                          size="small"
-                          onClick={() => onSearch({ minRooms: '20' })}
-                          sx={{
-                            justifyContent: 'flex-start',
-                            bgcolor: 'rgba(255, 255, 255, 0.15)',
-                            color: 'white',
-                            '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.25)' },
-                          }}
-                        >
-                          20戸以上
-                        </Button>
-                      </Box>
-                    </AccordionDetails>
-                  </Accordion>
-                </>
+                          <Typography variant="caption" sx={{ opacity: 0.7, lineHeight: 1.3 }}>
+                            {layer.description}
+                          </Typography>
+                        </Box>
+                      }
+                      sx={{
+                        alignItems: 'flex-start',
+                        ml: 0,
+                        p: 1,
+                        borderRadius: 1,
+                        '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
+                      }}
+                    />
+                  ))}
+                </Box>
               )}
             </Box>
           </Paper>

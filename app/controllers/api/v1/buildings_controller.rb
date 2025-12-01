@@ -74,8 +74,15 @@ class Api::V1::BuildingsController < ApplicationController
       @buildings = @buildings.order(created_at: :desc)
     end
 
-    # 空室数・空室率を含めて返す
-    render json: @buildings.as_json(methods: [:room_cnt, :free_cnt, :latitude, :longitude])
+    # 空室数・空室率・部屋情報を含めて返す
+    render json: @buildings.as_json(
+      methods: [:room_cnt, :free_cnt, :latitude, :longitude],
+      include: {
+        rooms: {
+          only: [:id, :rent, :area, :room_type, :status, :floor, :room_number]
+        }
+      }
+    )
   end
 
   # GET /api/v1/buildings/nearest

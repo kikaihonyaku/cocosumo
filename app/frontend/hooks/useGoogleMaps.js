@@ -43,7 +43,7 @@ export function useGoogleMaps(mapElementId, options = {}) {
           apiKey: GOOGLE_MAPS_API_KEY,
           version: 'weekly',
           language: 'ja',
-          libraries: ['visualization']
+          libraries: ['visualization', 'drawing']
         });
 
         console.log('Loading Google Maps API...');
