@@ -153,10 +153,10 @@ export default function MapSystem() {
     }
   };
 
-  // レイヤー情報の取得
+  // レイヤー情報の取得（一般ユーザー用API使用）
   const fetchMapLayers = async () => {
     try {
-      const response = await fetch('/api/v1/admin/map_layers', {
+      const response = await fetch('/api/v1/map_layers', {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -175,7 +175,7 @@ export default function MapSystem() {
           is_active: layer.is_active,
           layer_type: layer.layer_type,
           attribution: layer.attribution,
-        })).filter(layer => layer.is_active); // 有効なレイヤーのみ表示
+        }));
 
         setAvailableLayers(layers);
       } else if (response.status === 403 || response.status === 401) {

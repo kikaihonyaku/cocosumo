@@ -331,41 +331,38 @@ export default function MapContainer({
   }, [drawingMode, showDrawingTools]);
 
 
-  // 学区ポリゴンの状態管理（useRefを使用して無限ループを防ぐ）
-  // 小学校区と中学校区のポリゴンを別々に管理
-  const elementarySchoolPolygonsRef = React.useRef([]);
-  const juniorHighSchoolPolygonsRef = React.useRef([]);
+  // レイヤーポリゴンの状態管理（useRefを使用して無限ループを防ぐ）
+  // 各レイヤーのポリゴンを動的に管理（レイヤーIDをキーとした配列）
+  const layerPolygonsRef = React.useRef({});
 
-  // 学区ポリゴンを地図に表示（汎用化：色とrefを引数で指定）
-  const displaySchoolDistricts = useCallback((geojson, polygonsRef, color, schoolType, attribution) => {
+  // ポリゴンを地図に表示（汎用化）
+  const displayLayerPolygons = useCallback((geojson, layerId, color, opacity, attribution) => {
     if (!map || !geojson || !geojson.features) {
       return;
     }
 
     // 既存のポリゴンをクリア
-    polygonsRef.current.forEach(polygon => {
-      polygon.setMap(null);
-    });
+    if (layerPolygonsRef.current[layerId]) {
+      layerPolygonsRef.current[layerId].forEach(polygon => {
+        polygon.setMap(null);
+      });
+    }
 
     const newPolygons = [];
+    const fillOpacity = opacity || 0.15;
 
     geojson.features.forEach((feature, index) => {
       const geometry = feature.geometry;
       const properties = feature.properties;
 
-      if (geometry.type === 'Polygon') {
-        // Polygon の場合
-        const paths = geometry.coordinates.map(ring =>
-          ring.map(coord => ({ lat: coord[1], lng: coord[0] }))
-        );
-
+      const createPolygonFromPaths = (paths) => {
         const polygon = new google.maps.Polygon({
           paths: paths,
           strokeColor: color,
           strokeOpacity: 0.8,
           strokeWeight: 2,
           fillColor: color,
-          fillOpacity: 0.15,
+          fillOpacity: fillOpacity,
           map: map,
         });
 
@@ -373,27 +370,33 @@ export default function MapContainer({
         polygon.addListener('mouseover', () => {
           polygon.setOptions({
             strokeWeight: 4,
-            fillOpacity: 0.35,
+            fillOpacity: fillOpacity + 0.2,
           });
         });
 
         polygon.addListener('mouseout', () => {
           polygon.setOptions({
             strokeWeight: 2,
-            fillOpacity: 0.15,
+            fillOpacity: fillOpacity,
           });
         });
 
         // クリックイベントを追加
         polygon.addListener('click', (event) => {
           const formattedAttribution = attribution ? attribution.replace(/\n/g, '<br>') : '';
+          // プロパティから表示するフィールドを動的に構築
+          const displayName = properties.school_name || properties.name || '不明';
+          const displayDetails = [
+            properties.name && properties.school_name ? properties.name : null,
+            properties.city,
+            properties.school_type,
+          ].filter(Boolean);
+
           const infoWindow = new google.maps.InfoWindow({
             content: `
               <div style="padding: 8px; font-family: 'Segoe UI', sans-serif;">
-                <h4 style="margin: 0 0 8px 0; font-size: 1rem; color: #333;">${properties.school_name}</h4>
-                <p style="margin: 4px 0; font-size: 0.875rem; color: #666;">${properties.name}</p>
-                <p style="margin: 4px 0; font-size: 0.875rem; color: #666;">${properties.city}</p>
-                <p style="margin: 4px 0; font-size: 0.875rem; color: #666;">${properties.school_type}</p>
+                <h4 style="margin: 0 0 8px 0; font-size: 1rem; color: #333;">${displayName}</h4>
+                ${displayDetails.map(d => `<p style="margin: 4px 0; font-size: 0.875rem; color: #666;">${d}</p>`).join('')}
                 ${formattedAttribution ? `<p style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 0.75rem; color: #999;">${formattedAttribution}</p>` : ''}
               </div>
             `,
@@ -402,72 +405,34 @@ export default function MapContainer({
           infoWindow.open(map);
         });
 
-        newPolygons.push(polygon);
+        return polygon;
+      };
+
+      if (geometry.type === 'Polygon') {
+        const paths = geometry.coordinates.map(ring =>
+          ring.map(coord => ({ lat: coord[1], lng: coord[0] }))
+        );
+        newPolygons.push(createPolygonFromPaths(paths));
       } else if (geometry.type === 'MultiPolygon') {
-        // MultiPolygon の場合
         geometry.coordinates.forEach(polygonCoords => {
           const paths = polygonCoords.map(ring =>
             ring.map(coord => ({ lat: coord[1], lng: coord[0] }))
           );
-
-          const polygon = new google.maps.Polygon({
-            paths: paths,
-            strokeColor: color,
-            strokeOpacity: 0.8,
-            strokeWeight: 2,
-            fillColor: color,
-            fillOpacity: 0.15,
-            map: map,
-          });
-
-          // マウスホバー時のハイライト効果
-          polygon.addListener('mouseover', () => {
-            polygon.setOptions({
-              strokeWeight: 4,
-              fillOpacity: 0.35,
-            });
-          });
-
-          polygon.addListener('mouseout', () => {
-            polygon.setOptions({
-              strokeWeight: 2,
-              fillOpacity: 0.15,
-            });
-          });
-
-          // クリックイベントを追加
-          polygon.addListener('click', (event) => {
-            const formattedAttribution = attribution ? attribution.replace(/\n/g, '<br>') : '';
-            const infoWindow = new google.maps.InfoWindow({
-              content: `
-                <div style="padding: 8px; font-family: 'Segoe UI', sans-serif;">
-                  <h4 style="margin: 0 0 8px 0; font-size: 1rem; color: #333;">${properties.school_name}</h4>
-                  <p style="margin: 4px 0; font-size: 0.875rem; color: #666;">${properties.name}</p>
-                  <p style="margin: 4px 0; font-size: 0.875rem; color: #666;">${properties.city}</p>
-                  <p style="margin: 4px 0; font-size: 0.875rem; color: #666;">${properties.school_type}</p>
-                  ${formattedAttribution ? `<p style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 0.75rem; color: #999;">${formattedAttribution}</p>` : ''}
-                </div>
-              `,
-              position: event.latLng,
-            });
-            infoWindow.open(map);
-          });
-
-          newPolygons.push(polygon);
+          newPolygons.push(createPolygonFromPaths(paths));
         });
       }
     });
 
-    polygonsRef.current = newPolygons;
+    layerPolygonsRef.current[layerId] = newPolygons;
   }, [map]);
 
-  // 学区データを取得（汎用化：school_typeパラメータ追加）
-  const fetchSchoolDistricts = useCallback(async (schoolTypeParam, polygonsRef, color, schoolType, attribution, layerKey) => {
+  // レイヤーのGeoJSONデータを取得
+  const fetchLayerGeoJson = useCallback(async (layerId, color, opacity, attribution) => {
     try {
       // ローディング開始
-      setLayerLoadingStates(prev => ({ ...prev, [layerKey]: true }));
+      setLayerLoadingStates(prev => ({ ...prev, [layerId]: true }));
 
-      const response = await fetch(`/api/v1/school_districts?school_type=${schoolTypeParam}`, {
+      const response = await fetch(`/api/v1/map_layers/${layerId}/geojson`, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -476,83 +441,63 @@ export default function MapContainer({
 
       if (response.ok) {
         const geojson = await response.json();
-        displaySchoolDistricts(geojson, polygonsRef, color, schoolType, attribution);
+        displayLayerPolygons(geojson, layerId, color, opacity, attribution);
       } else if (response.status === 401) {
         window.location.href = '/login';
       }
     } catch (error) {
-      console.error(`Error fetching school districts (${schoolType}):`, error);
+      console.error(`Error fetching layer (${layerId}):`, error);
     } finally {
       // ローディング終了
-      setLayerLoadingStates(prev => ({ ...prev, [layerKey]: false }));
+      setLayerLoadingStates(prev => ({ ...prev, [layerId]: false }));
     }
-  }, [displaySchoolDistricts]);
+  }, [displayLayerPolygons]);
 
-  // 小学校区レイヤーの表示/非表示を切り替え
+  // レイヤーの非表示
+  const hideLayer = useCallback((layerId) => {
+    if (layerPolygonsRef.current[layerId]) {
+      layerPolygonsRef.current[layerId].forEach(polygon => {
+        polygon.setMap(null);
+      });
+      delete layerPolygonsRef.current[layerId];
+    }
+  }, []);
+
+  // 動的レイヤーの表示/非表示を切り替え
   useEffect(() => {
     if (!isLoaded || !map) return;
 
-    const isElementarySchoolLayerVisible = selectedLayers.includes('elementary-school-district');
+    // 利用可能なレイヤーごとに表示/非表示を処理
+    availableLayers.forEach(layer => {
+      const layerId = layer.id;
+      const isSelected = selectedLayers.includes(layerId);
 
-    if (isElementarySchoolLayerVisible) {
-      // availableLayersから色とattributionを取得
-      const layerConfig = availableLayers.find(layer => layer.id === 'elementary-school-district');
-      const color = layerConfig?.color || '#FF6B00'; // デフォルト色
-      const attribution = layerConfig?.attribution || '';
+      if (isSelected) {
+        // レイヤーが選択されている場合
+        const existingPolygons = layerPolygonsRef.current[layerId];
+        const needsRedraw = existingPolygons && existingPolygons.length > 0 &&
+                           existingPolygons[0]?.strokeColor !== layer.color;
 
-      // 色が変わった場合は再描画
-      const needsRedraw = elementarySchoolPolygonsRef.current.length > 0 &&
-                         elementarySchoolPolygonsRef.current[0]?.strokeColor !== color;
-
-      if (elementarySchoolPolygonsRef.current.length === 0 || needsRedraw) {
-        if (needsRedraw) {
-          // 既存のポリゴンを削除
-          elementarySchoolPolygonsRef.current.forEach(polygon => polygon.setMap(null));
-          elementarySchoolPolygonsRef.current = [];
+        if (!existingPolygons || existingPolygons.length === 0 || needsRedraw) {
+          if (needsRedraw) {
+            hideLayer(layerId);
+          }
+          fetchLayerGeoJson(layerId, layer.color, layer.opacity, layer.attribution);
         }
-        fetchSchoolDistricts('elementary', elementarySchoolPolygonsRef, color, '小学校区', attribution, 'elementary-school-district');
+      } else {
+        // レイヤーが選択されていない場合は非表示
+        hideLayer(layerId);
       }
-    } else {
-      // 小学校区ポリゴンを非表示
-      elementarySchoolPolygonsRef.current.forEach(polygon => {
-        polygon.setMap(null);
-      });
-      elementarySchoolPolygonsRef.current = [];
-    }
-  }, [selectedLayers, availableLayers, isLoaded, map, fetchSchoolDistricts]);
+    });
 
-  // 中学校区レイヤーの表示/非表示を切り替え
-  useEffect(() => {
-    if (!isLoaded || !map) return;
-
-    const isJuniorHighSchoolLayerVisible = selectedLayers.includes('junior-high-school-district');
-
-    if (isJuniorHighSchoolLayerVisible) {
-      // availableLayersから色とattributionを取得
-      const layerConfig = availableLayers.find(layer => layer.id === 'junior-high-school-district');
-      const color = layerConfig?.color || '#2196F3'; // デフォルト色
-      const attribution = layerConfig?.attribution || '';
-
-      // 色が変わった場合は再描画
-      const needsRedraw = juniorHighSchoolPolygonsRef.current.length > 0 &&
-                         juniorHighSchoolPolygonsRef.current[0]?.strokeColor !== color;
-
-      if (juniorHighSchoolPolygonsRef.current.length === 0 || needsRedraw) {
-        if (needsRedraw) {
-          // 既存のポリゴンを削除
-          juniorHighSchoolPolygonsRef.current.forEach(polygon => polygon.setMap(null));
-          juniorHighSchoolPolygonsRef.current = [];
-        }
-        fetchSchoolDistricts('junior_high', juniorHighSchoolPolygonsRef, color, '中学校区', attribution, 'junior-high-school-district');
+    // availableLayersに存在しないが表示されているレイヤーをクリア
+    Object.keys(layerPolygonsRef.current).forEach(layerId => {
+      const exists = availableLayers.some(l => l.id === layerId);
+      if (!exists) {
+        hideLayer(layerId);
       }
-    } else {
-      // 中学校区ポリゴンを非表示
-      juniorHighSchoolPolygonsRef.current.forEach(polygon => {
-        polygon.setMap(null);
-      });
-      juniorHighSchoolPolygonsRef.current = [];
-    }
-  }, [selectedLayers, availableLayers, isLoaded, map, fetchSchoolDistricts]);
+    });
+  }, [selectedLayers, availableLayers, isLoaded, map, fetchLayerGeoJson, hideLayer]);
 
   // 地図が読み込まれたら物件マーカーを配置
   useEffect(() => {

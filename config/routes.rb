@@ -63,6 +63,13 @@ Rails.application.routes.draw do
         end
       end
 
+      # レイヤーデータ（一般ユーザー向け）
+      resources :map_layers, only: [:index, :show] do
+        member do
+          get :geojson  # GeoJSONデータ取得
+        end
+      end
+
       # 管理者用API
       namespace :admin do
         resources :map_layers do

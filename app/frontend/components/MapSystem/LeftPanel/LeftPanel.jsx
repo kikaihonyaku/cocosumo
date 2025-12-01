@@ -348,40 +348,93 @@ export default function LeftPanel({
 
               {/* レイヤタブのコンテンツ */}
               {isExpanded && activeTab === 1 && (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, overflow: 'auto' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, flexShrink: 0 }}>
                     レイヤ選択
                   </Typography>
-                  {availableLayers.map(layer => (
-                    <FormControlLabel
-                      key={layer.id}
-                      control={
-                        <Checkbox
-                          checked={selectedLayers.includes(layer.id)}
-                          onChange={(e) => onLayerToggle(layer.id, e.target.checked)}
-                          size="small"
-                          sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
-                        />
-                      }
-                      label={
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.2 }}>
-                            {layer.label}
-                          </Typography>
-                          <Typography variant="caption" sx={{ opacity: 0.7, lineHeight: 1.3 }}>
-                            {layer.description}
-                          </Typography>
-                        </Box>
-                      }
-                      sx={{
-                        alignItems: 'flex-start',
-                        ml: 0,
-                        p: 1,
-                        borderRadius: 1,
-                        '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
-                      }}
-                    />
-                  ))}
+                  {availableLayers.length === 0 ? (
+                    <Box sx={{
+                      p: 2,
+                      bgcolor: 'rgba(255, 255, 255, 0.1)',
+                      borderRadius: 1,
+                      textAlign: 'center'
+                    }}>
+                      <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                        表示可能なレイヤーがありません
+                      </Typography>
+                      <Typography variant="caption" sx={{ opacity: 0.5, display: 'block', mt: 1 }}>
+                        管理画面からレイヤーを追加してください
+                      </Typography>
+                    </Box>
+                  ) : (
+                    availableLayers.map(layer => (
+                      <FormControlLabel
+                        key={layer.id}
+                        control={
+                          <Checkbox
+                            checked={selectedLayers.includes(layer.id)}
+                            onChange={(e) => onLayerToggle(layer.id, e.target.checked)}
+                            size="small"
+                            sx={{
+                              color: 'rgba(255, 255, 255, 0.7)',
+                              '&.Mui-checked': {
+                                color: layer.color || 'rgba(255, 255, 255, 0.9)',
+                              },
+                            }}
+                          />
+                        }
+                        label={
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                            <Box
+                              sx={{
+                                width: 16,
+                                height: 16,
+                                borderRadius: '4px',
+                                bgcolor: layer.color || '#888',
+                                opacity: layer.opacity || 0.5,
+                                border: '1px solid rgba(255, 255, 255, 0.3)',
+                                flexShrink: 0,
+                                mt: 0.25,
+                              }}
+                            />
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.2 }}>
+                                {layer.label}
+                              </Typography>
+                              <Typography variant="caption" sx={{ opacity: 0.7, lineHeight: 1.3, display: 'block' }}>
+                                {layer.description}
+                              </Typography>
+                              {layer.attribution && (
+                                <Tooltip title={layer.attribution} placement="bottom">
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      opacity: 0.5,
+                                      lineHeight: 1.2,
+                                      display: 'block',
+                                      mt: 0.5,
+                                      cursor: 'help',
+                                      textDecoration: 'underline',
+                                      textDecorationStyle: 'dotted',
+                                    }}
+                                  >
+                                    出典情報あり
+                                  </Typography>
+                                </Tooltip>
+                              )}
+                            </Box>
+                          </Box>
+                        }
+                        sx={{
+                          alignItems: 'flex-start',
+                          ml: 0,
+                          p: 1,
+                          borderRadius: 1,
+                          '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
+                        }}
+                      />
+                    ))
+                  )}
                 </Box>
               )}
             </Box>
