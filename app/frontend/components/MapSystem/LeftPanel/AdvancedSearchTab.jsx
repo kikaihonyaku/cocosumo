@@ -11,7 +11,6 @@ import {
 } from '@mui/material';
 import {
   Clear as ClearIcon,
-  Search as SearchIcon,
   FilterList as FilterListIcon,
 } from '@mui/icons-material';
 import DistributionBarChart from './DistributionBarChart';
@@ -67,8 +66,7 @@ export default function AdvancedSearchTab({
   filters,
   onFiltersChange,
   aggregations,
-  isLoading,
-  onApplyFilters,
+  isLoading = false,
   onResetFilters,
   geoFilter,
   onOpenSearchModal,
@@ -94,7 +92,7 @@ export default function AdvancedSearchTab({
     setLocalAgeRange(filters.ageRange);
   }, [filters]);
 
-  // 間取りチップの選択（選択後に自動検索）
+  // 間取りチップの選択（フロントエンドフィルタにより即座に反映）
   const handleRoomTypeToggle = useCallback((roomType) => {
     const currentTypes = filters.roomTypes || [];
     const newTypes = currentTypes.includes(roomType)
@@ -102,31 +100,23 @@ export default function AdvancedSearchTab({
       : [...currentTypes, roomType];
     const newFilters = { ...filters, roomTypes: newTypes };
     onFiltersChange(newFilters);
-    // 自動検索（新しいフィルター値を直接渡す）
-    onApplyFilters && onApplyFilters(newFilters);
-  }, [filters, onFiltersChange, onApplyFilters]);
+  }, [filters, onFiltersChange]);
 
-  // スライダー変更完了時にフィルター更新して自動検索
+  // スライダー変更完了時にフィルター更新（フロントエンドフィルタにより即座に反映）
   const handleRentChangeCommitted = useCallback((event, newValue) => {
     const newFilters = { ...filters, rentRange: newValue };
     onFiltersChange(newFilters);
-    // 自動検索（新しいフィルター値を直接渡す）
-    onApplyFilters && onApplyFilters(newFilters);
-  }, [filters, onFiltersChange, onApplyFilters]);
+  }, [filters, onFiltersChange]);
 
   const handleAreaChangeCommitted = useCallback((event, newValue) => {
     const newFilters = { ...filters, areaRange: newValue };
     onFiltersChange(newFilters);
-    // 自動検索（新しいフィルター値を直接渡す）
-    onApplyFilters && onApplyFilters(newFilters);
-  }, [filters, onFiltersChange, onApplyFilters]);
+  }, [filters, onFiltersChange]);
 
   const handleAgeChangeCommitted = useCallback((event, newValue) => {
     const newFilters = { ...filters, ageRange: newValue };
     onFiltersChange(newFilters);
-    // 自動検索（新しいフィルター値を直接渡す）
-    onApplyFilters && onApplyFilters(newFilters);
-  }, [filters, onFiltersChange, onApplyFilters]);
+  }, [filters, onFiltersChange]);
 
   // 賃料のフォーマット
   const formatRent = (value, isMax = false) => {
@@ -511,38 +501,23 @@ export default function AdvancedSearchTab({
         pt: 1.5,
         borderTop: '1px solid rgba(255, 255, 255, 0.2)',
       }}>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="contained"
-            startIcon={<SearchIcon />}
-            onClick={onApplyFilters}
-            disabled={isLoading}
-            sx={{
-              flex: 1,
-              bgcolor: 'rgba(255, 255, 255, 0.9)',
-              color: 'primary.main',
-              '&:hover': { bgcolor: 'white' },
-            }}
-          >
-            検索
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<ClearIcon />}
-            onClick={onResetFilters}
-            disabled={isLoading}
-            sx={{
-              color: 'white',
-              borderColor: 'rgba(255, 255, 255, 0.5)',
-              '&:hover': {
-                borderColor: 'white',
-                bgcolor: 'rgba(255, 255, 255, 0.1)',
-              },
-            }}
-          >
-            リセット
-          </Button>
-        </Box>
+        <Button
+          variant="outlined"
+          startIcon={<ClearIcon />}
+          onClick={onResetFilters}
+          disabled={isLoading}
+          fullWidth
+          sx={{
+            color: 'white',
+            borderColor: 'rgba(255, 255, 255, 0.5)',
+            '&:hover': {
+              borderColor: 'white',
+              bgcolor: 'rgba(255, 255, 255, 0.1)',
+            },
+          }}
+        >
+          条件をリセット
+        </Button>
       </Box>
     </Box>
   );

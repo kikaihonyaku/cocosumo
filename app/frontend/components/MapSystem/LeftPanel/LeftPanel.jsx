@@ -39,8 +39,6 @@ export default function LeftPanel({
   advancedSearchFilters = null,
   onAdvancedSearchFiltersChange = null,
   advancedSearchAggregations = null,
-  isAdvancedSearchLoading = false,
-  onApplyAdvancedSearch = null,
   onResetAdvancedSearch = null,
   geoFilter = null,
   activeTab = 0,
@@ -328,8 +326,7 @@ export default function LeftPanel({
                     filters={advancedSearchFilters}
                     onFiltersChange={onAdvancedSearchFiltersChange}
                     aggregations={advancedSearchAggregations}
-                    isLoading={isAdvancedSearchLoading}
-                    onApplyFilters={onApplyAdvancedSearch}
+                    isLoading={isLoading}
                     onResetFilters={onResetAdvancedSearch}
                     geoFilter={geoFilter}
                     onOpenSearchModal={() => setIsSearchModalOpen(true)}

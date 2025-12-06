@@ -80,141 +80,26 @@ class Api::V1::PropertyAnalysisController < ApplicationController
       buildings = buildings.within_polygon(params[:polygon])
     end
 
-    # 部屋のフィルタリング
+    # 全部屋データを取得（フィルタはフロントエンドで行う）
     all_rooms = buildings.flat_map(&:rooms)
 
-    # 賃料フィルタ（30万円以上は上限なしとして扱う）
-    rent_max_threshold = 300000
-    if params[:rent_min].present?
-      all_rooms = all_rooms.select { |r| r.rent.to_f >= params[:rent_min].to_f }
-    end
-    if params[:rent_max].present? && params[:rent_max].to_f < rent_max_threshold
-      all_rooms = all_rooms.select { |r| r.rent.to_f <= params[:rent_max].to_f }
-    end
-
-    # 間取りフィルタ
-    if params[:room_types].present?
-      room_types = params[:room_types].split(',')
-      all_rooms = all_rooms.select { |r| room_types.include?(r.room_type) }
-    end
-
-    # 面積フィルタ
-    if params[:area_min].present?
-      all_rooms = all_rooms.select { |r| r.area.to_f >= params[:area_min].to_f }
-    end
-    if params[:area_max].present?
-      all_rooms = all_rooms.select { |r| r.area.to_f <= params[:area_max].to_f }
-    end
-
-    # 築年数フィルタ（物件の築年数でフィルタ、40年以上は上限なしとして扱う）
-    age_max_threshold = 40
-    if params[:age_min].present? || (params[:age_max].present? && params[:age_max].to_i < age_max_threshold)
-      current_year = Date.today.year
-      age_min = params[:age_min].to_i
-      age_max = (params[:age_max].present? && params[:age_max].to_i < age_max_threshold) ? params[:age_max].to_i : 999
-
-      all_rooms = all_rooms.select do |room|
-        building = room.building
-        if building.built_date.present?
-          age = current_year - building.built_date.year
-          age >= age_min && age <= age_max
-        else
-          true # 築年数不明の場合は含める
-        end
-      end
-    end
-
-    # === 棒グラフ選択による範囲フィルタ ===
-
-    # 賃料範囲フィルタ（複数選択対応）
-    # rent_ranges=0-50000,100000-150000 形式
-    if params[:rent_ranges].present?
-      ranges = params[:rent_ranges].split(',')
-      all_rooms = all_rooms.select do |r|
-        ranges.any? do |range|
-          rent = r.rent.to_f
-          if range.end_with?('+')
-            # "200000+" のような形式
-            min = range.gsub('+', '').to_f
-            rent >= min
-          else
-            min, max = range.split('-').map(&:to_f)
-            rent >= min && rent < max
-          end
-        end
-      end
-    end
-
-    # 面積範囲フィルタ（複数選択対応）
-    # area_ranges=0-20,40-60 形式
-    if params[:area_ranges].present?
-      ranges = params[:area_ranges].split(',')
-      all_rooms = all_rooms.select do |r|
-        ranges.any? do |range|
-          area = r.area.to_f
-          if range.end_with?('+')
-            # "80+" のような形式
-            min = range.gsub('+', '').to_f
-            area >= min
-          else
-            min, max = range.split('-').map(&:to_f)
-            area >= min && area < max
-          end
-        end
-      end
-    end
-
-    # 築年数範囲フィルタ（複数選択対応）
-    # age_ranges=0-5,10-20 形式
-    if params[:age_ranges].present?
-      current_year = Date.today.year
-      ranges = params[:age_ranges].split(',')
-      all_rooms = all_rooms.select do |r|
-        building = r.building
-        next true unless building.built_date.present? # 築年数不明の場合は含める
-
-        age = current_year - building.built_date.year
-        ranges.any? do |range|
-          if range.end_with?('+')
-            # "30+" のような形式
-            min = range.gsub('+', '').to_i
-            age >= min
-          else
-            min, max = range.split('-').map(&:to_i)
-            age >= min && age < max
-          end
-        end
-      end
-    end
-
-    # フィルタ後の部屋が属する物件を特定
-    filtered_building_ids = all_rooms.map(&:building_id).uniq
-    filtered_buildings = buildings.select { |b| filtered_building_ids.include?(b.id) }
-
-    # フィルタ後の部屋IDのセットを作成
-    filtered_room_ids = all_rooms.map(&:id).to_set
-
-    # 最終結果用の集計を計算（棒グラフ選択フィルタ適用後）
-    aggregations = calculate_aggregations(all_rooms, buildings)
-
-    # レスポンス用に物件データを整形（フィルタ後の部屋のみ含める）
-    properties_json = filtered_buildings.map do |building|
-      # フィルタ後の部屋のみを取得
-      filtered_rooms_for_building = building.rooms.select { |r| filtered_room_ids.include?(r.id) }
-
+    # レスポンス用に物件データを整形（全部屋を含める）
+    properties_json = buildings.map do |building|
       building_data = building.as_json(methods: [:room_cnt, :free_cnt, :latitude, :longitude, :exterior_photo_count, :thumbnail_url])
-      # room_cntとfree_cntをフィルタ後の値に上書き
-      building_data['room_cnt'] = filtered_rooms_for_building.count
-      building_data['free_cnt'] = filtered_rooms_for_building.count { |r| r.status == 'vacant' }
-      building_data['rooms'] = filtered_rooms_for_building.map do |room|
+      building_data['rooms'] = building.rooms.map do |room|
         room.as_json(only: [:id, :rent, :area, :room_type, :status, :floor, :room_number])
       end
       building_data
     end
 
+    # 集計は参考情報として返す（フロントエンドでも計算するが、初期表示用）
+    aggregations = calculate_aggregations(all_rooms, buildings)
+
     render json: {
       properties: properties_json,
-      aggregations: aggregations
+      aggregations: aggregations,
+      total_buildings: buildings.count,
+      total_rooms: all_rooms.count
     }
   end
 

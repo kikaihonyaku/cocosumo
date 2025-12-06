@@ -22,6 +22,7 @@ import MapContainer from "../components/MapSystem/MapContainer";
 import LeftPanel from "../components/MapSystem/LeftPanel/LeftPanel";
 import PropertyTable from "../components/MapSystem/BottomPanel/PropertyTable";
 import BuildingFormModal from "../components/MapSystem/BuildingFormModal";
+import { usePropertyFilter } from "../hooks/usePropertyFilter";
 
 export default function MapSystem() {
   const [leftPanelPinned, setLeftPanelPinned] = useState(true);
@@ -36,7 +37,9 @@ export default function MapSystem() {
   const [buildingFormModalOpen, setBuildingFormModalOpen] = useState(false);
 
   // データ管理用のステート
-  const [properties, setProperties] = useState([]);
+  // allProperties: API取得データ（フィルタ前）
+  // filteredProperties, aggregations: usePropertyFilterフックから取得（フィルタ後）
+  const [allProperties, setAllProperties] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchConditions, setSearchConditions] = useState({
@@ -54,8 +57,6 @@ export default function MapSystem() {
     areaRange: [0, 200],
     ageRange: [0, 40],
   });
-  const [advancedSearchAggregations, setAdvancedSearchAggregations] = useState(null);
-  const [isAdvancedSearchLoading, setIsAdvancedSearchLoading] = useState(false);
   const [geoFilter, setGeoFilter] = useState({
     type: null,  // 'circle' | 'polygon' | null
     circle: null,
@@ -67,6 +68,18 @@ export default function MapSystem() {
   const [selectedRentRanges, setSelectedRentRanges] = useState([]);
   const [selectedAreaRanges, setSelectedAreaRanges] = useState([]);
   const [selectedAgeRanges, setSelectedAgeRanges] = useState([]);
+
+  // フロントエンドフィルタリング（usePropertyFilterフック）
+  // allPropertiesに対してフィルタ・集計を行い、filteredProperties, aggregationsを取得
+  const { filteredProperties, aggregations } = usePropertyFilter(
+    allProperties,
+    advancedSearchFilters,
+    {
+      selectedRentRanges,
+      selectedAreaRanges,
+      selectedAgeRanges,
+    }
+  );
 
   // レスポンシブ設定
   const isMdUp = useMediaQuery(muiTheme.breakpoints.up('md'));
@@ -82,10 +95,8 @@ export default function MapSystem() {
 
   // 初回データ取得
   useEffect(() => {
-    fetchBuildings();
+    fetchBasePropertyData();
     fetchMapLayers();
-    // 初期ロード時に詳細検索も実行（左パネルの集計データ取得）
-    fetchAdvancedSearch();
   }, []);
 
   // ウィンドウがフォーカスされたときにレイヤー情報を再取得
@@ -101,13 +112,15 @@ export default function MapSystem() {
     };
   }, []);
 
-  // 物件データの取得
-  const fetchBuildings = async (conditions = {}) => {
+  // ベース物件データの取得（検索条件・GISフィルタのみ適用、賃料等のフィルタはフロントエンドで処理）
+  const fetchBasePropertyData = async (conditions = searchConditions, geo = geoFilter) => {
     setIsLoading(true);
     setError(null);
     try {
-      // クエリパラメータを構築
+      // クエリパラメータを構築（ベース検索条件 + GISのみ）
       const params = new URLSearchParams();
+
+      // ベース検索条件
       if (conditions.propertyName) params.append('name', conditions.propertyName);
       if (conditions.address) params.append('address', conditions.address);
       if (conditions.buildingType) params.append('building_type', conditions.buildingType);
@@ -116,8 +129,6 @@ export default function MapSystem() {
       if (conditions.minRooms) params.append('min_rooms', conditions.minRooms);
       if (conditions.maxRooms) params.append('max_rooms', conditions.maxRooms);
       if (conditions.maxVacancyRate) params.append('max_vacancy_rate', conditions.maxVacancyRate);
-
-      // 登録元フィルタ
       if (conditions.externalImport !== undefined) {
         params.append('external_import', conditions.externalImport);
       }
@@ -125,8 +136,18 @@ export default function MapSystem() {
         params.append('own_registration', conditions.ownRegistration);
       }
 
+      // GISパラメータ
+      if (geo.type === 'circle' && geo.circle) {
+        params.append('lat', geo.circle.center.lat);
+        params.append('lng', geo.circle.center.lng);
+        params.append('radius', geo.circle.radius);
+      }
+      if (geo.type === 'polygon' && geo.polygon) {
+        params.append('polygon', geo.polygon);
+      }
+
       const queryString = params.toString();
-      const url = queryString ? `/api/v1/buildings?${queryString}` : '/api/v1/buildings';
+      const url = queryString ? `/api/v1/property_analysis?${queryString}` : '/api/v1/property_analysis';
 
       const response = await fetch(url, {
         credentials: 'include',
@@ -137,9 +158,9 @@ export default function MapSystem() {
 
       if (response.ok) {
         const data = await response.json();
-        setProperties(data);
+        // 全物件データをstateに保存（フィルタはフロントエンドで行う）
+        setAllProperties(data.properties || []);
       } else if (response.status === 401) {
-        // 認証エラーの場合、ログインページにリダイレクト
         window.location.href = '/login';
         return;
       } else {
@@ -188,97 +209,7 @@ export default function MapSystem() {
     }
   };
 
-  // 詳細検索APIの呼び出し（searchConditionsも含める）
-  const fetchAdvancedSearch = async (
-    filters = advancedSearchFilters,
-    geo = geoFilter,
-    baseConditions = searchConditions,
-    rentRanges = selectedRentRanges,
-    areaRanges = selectedAreaRanges,
-    ageRanges = selectedAgeRanges
-  ) => {
-    setIsAdvancedSearchLoading(true);
-    try {
-      const params = new URLSearchParams();
-
-      // ベース検索条件（検索条件を設定で指定された条件）
-      if (baseConditions.propertyName) params.append('name', baseConditions.propertyName);
-      if (baseConditions.address) params.append('address', baseConditions.address);
-      if (baseConditions.buildingType) params.append('building_type', baseConditions.buildingType);
-      if (baseConditions.hasVacancy === 'true') params.append('has_vacancy', 'true');
-      if (baseConditions.hasVacancy === 'false') params.append('has_vacancy', 'false');
-      if (baseConditions.minRooms) params.append('min_rooms', baseConditions.minRooms);
-      if (baseConditions.maxRooms) params.append('max_rooms', baseConditions.maxRooms);
-      if (baseConditions.maxVacancyRate) params.append('max_vacancy_rate', baseConditions.maxVacancyRate);
-      if (baseConditions.externalImport !== undefined) {
-        params.append('external_import', baseConditions.externalImport);
-      }
-      if (baseConditions.ownRegistration !== undefined) {
-        params.append('own_registration', baseConditions.ownRegistration);
-      }
-
-      // フィルタパラメータ（スライダーで指定された条件）
-      if (filters.rentRange[0] > 0) params.append('rent_min', filters.rentRange[0]);
-      if (filters.rentRange[1] < 300000) params.append('rent_max', filters.rentRange[1]);
-      if (filters.roomTypes.length > 0) params.append('room_types', filters.roomTypes.join(','));
-      if (filters.areaRange[0] > 0) params.append('area_min', filters.areaRange[0]);
-      if (filters.areaRange[1] < 200) params.append('area_max', filters.areaRange[1]);
-      if (filters.ageRange[0] > 0) params.append('age_min', filters.ageRange[0]);
-      if (filters.ageRange[1] < 40) params.append('age_max', filters.ageRange[1]);
-
-      // 棒グラフ選択範囲パラメータ
-      if (rentRanges.length > 0) params.append('rent_ranges', rentRanges.join(','));
-      if (areaRanges.length > 0) params.append('area_ranges', areaRanges.join(','));
-      if (ageRanges.length > 0) params.append('age_ranges', ageRanges.join(','));
-
-      // GISパラメータ
-      if (geo.type === 'circle' && geo.circle) {
-        params.append('lat', geo.circle.center.lat);
-        params.append('lng', geo.circle.center.lng);
-        params.append('radius', geo.circle.radius);
-      }
-      if (geo.type === 'polygon' && geo.polygon) {
-        params.append('polygon', geo.polygon);
-      }
-
-      const queryString = params.toString();
-      const url = queryString ? `/api/v1/property_analysis?${queryString}` : '/api/v1/property_analysis';
-
-      const response = await fetch(url, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setAdvancedSearchAggregations(data.aggregations || null);
-        // 検索結果の物件リストも更新（サマリーや地図マーカーに反映）
-        if (data.properties) {
-          setProperties(data.properties);
-        }
-      } else if (response.status === 401) {
-        window.location.href = '/login';
-        return;
-      } else {
-        console.error('詳細検索エラー:', response.status);
-      }
-    } catch (err) {
-      console.error('詳細検索エラー:', err);
-    } finally {
-      setIsAdvancedSearchLoading(false);
-    }
-  };
-
-  // 詳細検索の適用（引数で新しいフィルター値やgeoFilterを受け取れるようにする）
-  const handleApplyAdvancedSearch = (newFilters = null, newGeoFilter = null) => {
-    const filtersToUse = newFilters || advancedSearchFilters;
-    const geoToUse = newGeoFilter !== null ? newGeoFilter : geoFilter;
-    fetchAdvancedSearch(filtersToUse, geoToUse);
-  };
-
-  // 詳細検索のリセット
+  // 詳細検索のリセット（フィルタ条件をデフォルトに戻す）
   const handleResetAdvancedSearch = () => {
     const defaultFilters = {
       rentRange: [0, 300000],
@@ -293,32 +224,27 @@ export default function MapSystem() {
     setSelectedRentRanges([]);
     setSelectedAreaRanges([]);
     setSelectedAgeRanges([]);
-    fetchAdvancedSearch(defaultFilters, { type: null, circle: null, polygon: null }, searchConditions, [], [], []);
+    // GISフィルタがクリアされたので、ベースデータを再取得
+    fetchBasePropertyData(searchConditions, { type: null, circle: null, polygon: null });
   };
 
-  // 棒グラフ範囲選択のトグルハンドラー
+  // 棒グラフ範囲選択のトグルハンドラー（API呼び出しなし、stateのみ更新）
   const handleRentRangeToggle = (range) => {
-    const newRanges = selectedRentRanges.includes(range)
-      ? selectedRentRanges.filter(r => r !== range)
-      : [...selectedRentRanges, range];
-    setSelectedRentRanges(newRanges);
-    fetchAdvancedSearch(advancedSearchFilters, geoFilter, searchConditions, newRanges, selectedAreaRanges, selectedAgeRanges);
+    setSelectedRentRanges(prev =>
+      prev.includes(range) ? prev.filter(r => r !== range) : [...prev, range]
+    );
   };
 
   const handleAreaRangeToggle = (range) => {
-    const newRanges = selectedAreaRanges.includes(range)
-      ? selectedAreaRanges.filter(r => r !== range)
-      : [...selectedAreaRanges, range];
-    setSelectedAreaRanges(newRanges);
-    fetchAdvancedSearch(advancedSearchFilters, geoFilter, searchConditions, selectedRentRanges, newRanges, selectedAgeRanges);
+    setSelectedAreaRanges(prev =>
+      prev.includes(range) ? prev.filter(r => r !== range) : [...prev, range]
+    );
   };
 
   const handleAgeRangeToggle = (range) => {
-    const newRanges = selectedAgeRanges.includes(range)
-      ? selectedAgeRanges.filter(r => r !== range)
-      : [...selectedAgeRanges, range];
-    setSelectedAgeRanges(newRanges);
-    fetchAdvancedSearch(advancedSearchFilters, geoFilter, searchConditions, selectedRentRanges, selectedAreaRanges, newRanges);
+    setSelectedAgeRanges(prev =>
+      prev.includes(range) ? prev.filter(r => r !== range) : [...prev, range]
+    );
   };
 
   // GeoFilterのクリア
@@ -326,25 +252,22 @@ export default function MapSystem() {
     setGeoFilter({ type: null, circle: null, polygon: null });
   };
 
-  // geoFilterが変更されたら自動的に検索を実行
+  // geoFilterが変更されたら自動的にベースデータを再取得
   useEffect(() => {
-    // geoFilterが設定されている場合のみ自動検索
+    // geoFilterが設定されている場合のみ再取得
     if (geoFilter && geoFilter.type) {
-      fetchAdvancedSearch(advancedSearchFilters, geoFilter, searchConditions, selectedRentRanges, selectedAreaRanges, selectedAgeRanges);
+      fetchBasePropertyData(searchConditions, geoFilter);
     }
   }, [geoFilter]);
 
-  // タブ変更時に検索タブに切り替えた場合は初回データ取得
+  // タブ変更ハンドラー
   const handleTabChange = (newTab) => {
     setLeftPanelActiveTab(newTab);
-    if (newTab === 1 && !advancedSearchAggregations) {
-      fetchAdvancedSearch();
-    }
   };
 
-  // サマリーデータを計算
+  // サマリーデータを計算（フィルタ後のデータを使用）
   const summary = useMemo(() => {
-    if (!properties || properties.length === 0) {
+    if (!filteredProperties || filteredProperties.length === 0) {
       return {
         buildingCount: 0,
         roomCount: 0,
@@ -353,7 +276,7 @@ export default function MapSystem() {
       };
     }
 
-    const buildingCount = properties.length;
+    const buildingCount = filteredProperties.length;
     let roomCount = 0;
     let totalRent = 0;
     let rentCount = 0;
@@ -361,7 +284,7 @@ export default function MapSystem() {
     let ageCount = 0;
     const currentYear = new Date().getFullYear();
 
-    properties.forEach(property => {
+    filteredProperties.forEach(property => {
       // 部屋数
       roomCount += property.room_cnt || 0;
 
@@ -392,7 +315,7 @@ export default function MapSystem() {
       avgRent: rentCount > 0 ? totalRent / rentCount : null,
       avgAge: ageCount > 0 ? totalAge / ageCount : null,
     };
-  }, [properties]);
+  }, [filteredProperties]);
 
   const handleMarkerSelect = (type, data) => {
     setSelectedObject({ type, data });
@@ -409,10 +332,8 @@ export default function MapSystem() {
   const handleSearch = async (conditions) => {
     try {
       setSearchConditions(conditions);
-      await fetchBuildings(conditions);
-      // 検索条件を設定した後、詳細検索も再実行して該当物件数を更新
-      // 現在のadvancedSearchFiltersとgeoFilterを維持しつつ、新しい検索条件で再検索
-      await fetchAdvancedSearch(advancedSearchFilters, geoFilter, conditions);
+      // 検索条件変更時はベースデータを再取得（フィルタはフロントエンドで自動適用）
+      await fetchBasePropertyData(conditions, geoFilter);
     } catch (error) {
       console.error('Search error:', error);
     }
@@ -467,7 +388,7 @@ export default function MapSystem() {
     // 物件詳細画面を別タブで開く
     window.open(`/building/${newBuilding.id}`, '_blank');
     // 物件一覧を再取得
-    fetchBuildings(searchConditions);
+    fetchBasePropertyData(searchConditions, geoFilter);
   };
 
   return (
@@ -548,9 +469,7 @@ export default function MapSystem() {
               // 検索タブ用のprops
               advancedSearchFilters={advancedSearchFilters}
               onAdvancedSearchFiltersChange={setAdvancedSearchFilters}
-              advancedSearchAggregations={advancedSearchAggregations}
-              isAdvancedSearchLoading={isAdvancedSearchLoading}
-              onApplyAdvancedSearch={handleApplyAdvancedSearch}
+              advancedSearchAggregations={aggregations}
               onResetAdvancedSearch={handleResetAdvancedSearch}
               geoFilter={geoFilter}
               activeTab={leftPanelActiveTab}
@@ -642,7 +561,7 @@ export default function MapSystem() {
                       </Box>
                       <Box sx={{ flex: 1, overflow: 'auto' }}>
                         <PropertyTable
-                          properties={properties}
+                          properties={filteredProperties}
                           onPropertySelect={(property) => {
                             setSelectedObject({ type: 'property', data: property });
                             setRightPanelVisible(true);
@@ -665,7 +584,7 @@ export default function MapSystem() {
                     rightPanelVisible={rightPanelVisible}
                     onToggleRightPanel={() => setRightPanelVisible(true)}
                     selectedObject={selectedObject}
-                    properties={properties}
+                    properties={filteredProperties}
                     isLoading={isLoading}
                     onNewBuildingClick={() => setBuildingFormModalOpen(true)}
                     selectedLayers={selectedLayers}
@@ -677,7 +596,6 @@ export default function MapSystem() {
                     geoFilter={geoFilter}
                     onGeoFilterChange={setGeoFilter}
                     onClearGeoFilter={handleClearGeoFilter}
-                    onApplyFilters={handleApplyAdvancedSearch}
                   />
                 )}
               </Box>
@@ -953,7 +871,7 @@ export default function MapSystem() {
                   </Box>
                   <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                     <PropertyTable
-                      properties={properties}
+                      properties={filteredProperties}
                       onPropertySelect={(property) => {
                         setSelectedObject({ type: 'property', data: property });
                         setRightPanelVisible(true);
