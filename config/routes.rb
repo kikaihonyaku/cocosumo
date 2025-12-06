@@ -160,7 +160,7 @@ Rails.application.routes.draw do
 
       # 物件分析API
       get 'property_analysis', to: 'property_analysis#show'
-      get 'property_analysis/geo_filter', to: 'property_analysis#geo_filter'
+      post 'property_analysis/geo_filter', to: 'property_analysis#geo_filter'
 
       # 問い合わせAPI（認証不要）
       resources :property_publications, only: [], param: :publication_id do

@@ -170,6 +170,7 @@ export default function MapSystem() {
   };
 
   // GISフィルタAPIを呼び出し、範囲内の物件IDを取得（軽量API）
+  // POSTリクエストを使用（ポリゴン座標が大きくなるため）
   const fetchGeoFilteredIds = async (geo, conditions = searchConditions) => {
     if (!geo || !geo.type) {
       // GISフィルタがない場合はnullをセット
@@ -178,38 +179,37 @@ export default function MapSystem() {
     }
 
     try {
-      const params = new URLSearchParams();
+      // リクエストボディを構築
+      const requestBody = {
+        // ベース検索条件
+        name: conditions.propertyName || null,
+        address: conditions.address || null,
+        building_type: conditions.buildingType || null,
+        has_vacancy: conditions.hasVacancy || null,
+        min_rooms: conditions.minRooms || null,
+        max_rooms: conditions.maxRooms || null,
+        external_import: conditions.externalImport,
+        own_registration: conditions.ownRegistration,
+        // GISパラメータ
+        geo_type: geo.type,
+      };
 
-      // ベース検索条件（GISフィルタと同じ条件で絞り込むため）
-      if (conditions.propertyName) params.append('name', conditions.propertyName);
-      if (conditions.address) params.append('address', conditions.address);
-      if (conditions.buildingType) params.append('building_type', conditions.buildingType);
-      if (conditions.hasVacancy === 'true') params.append('has_vacancy', 'true');
-      if (conditions.hasVacancy === 'false') params.append('has_vacancy', 'false');
-      if (conditions.minRooms) params.append('min_rooms', conditions.minRooms);
-      if (conditions.maxRooms) params.append('max_rooms', conditions.maxRooms);
-      if (conditions.externalImport !== undefined) {
-        params.append('external_import', conditions.externalImport);
-      }
-      if (conditions.ownRegistration !== undefined) {
-        params.append('own_registration', conditions.ownRegistration);
-      }
-
-      // GISパラメータ
       if (geo.type === 'circle' && geo.circle) {
-        params.append('lat', geo.circle.center.lat);
-        params.append('lng', geo.circle.center.lng);
-        params.append('radius', geo.circle.radius);
+        requestBody.lat = geo.circle.center.lat;
+        requestBody.lng = geo.circle.center.lng;
+        requestBody.radius = geo.circle.radius;
       }
       if (geo.type === 'polygon' && geo.polygon) {
-        params.append('polygon', geo.polygon);
+        requestBody.polygon = geo.polygon;
       }
 
-      const response = await fetch(`/api/v1/property_analysis/geo_filter?${params.toString()}`, {
+      const response = await fetch('/api/v1/property_analysis/geo_filter', {
+        method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok) {
@@ -648,6 +648,8 @@ export default function MapSystem() {
                     geoFilter={geoFilter}
                     onGeoFilterChange={setGeoFilter}
                     onClearGeoFilter={handleClearGeoFilter}
+                    // レイヤーポリゴンクリック時のGISフィルタ適用
+                    onApplyFilters={fetchGeoFilteredIds}
                     // GISフィルタが有効かどうか
                     hasGeoFilter={geoFilteredIds !== null}
                   />

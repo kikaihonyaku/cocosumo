@@ -33,7 +33,7 @@ class Api::V1::PropertyAnalysisController < ApplicationController
     }
   end
 
-  # GET /api/v1/property_analysis/geo_filter
+  # POST /api/v1/property_analysis/geo_filter
   # GISフィルタを適用し、該当する物件IDのみを返す（軽量API）
   def geo_filter
     buildings = current_tenant.buildings.kept
@@ -91,8 +91,9 @@ class Api::V1::PropertyAnalysisController < ApplicationController
     own_registration = params[:own_registration]
 
     if external_import.present? || own_registration.present?
-      external_import_bool = external_import == 'true'
-      own_registration_bool = own_registration == 'true'
+      # boolean または string 'true' のどちらでも対応
+      external_import_bool = external_import == true || external_import == 'true'
+      own_registration_bool = own_registration == true || own_registration == 'true'
 
       if external_import_bool && !own_registration_bool
         buildings = buildings.where.not(suumo_imported_at: nil)
@@ -108,8 +109,12 @@ class Api::V1::PropertyAnalysisController < ApplicationController
 
   # GISフィルタを適用
   def apply_geo_filters(buildings)
+    Rails.logger.info "[apply_geo_filters] params[:lat]=#{params[:lat].inspect}, params[:lng]=#{params[:lng].inspect}, params[:radius]=#{params[:radius].inspect}"
+    Rails.logger.info "[apply_geo_filters] params[:polygon] present?=#{params[:polygon].present?}, length=#{params[:polygon]&.length}"
+
     # 半径検索 (lat, lng, radius in meters)
     if params[:lat].present? && params[:lng].present? && params[:radius].present?
+      Rails.logger.info "[apply_geo_filters] Applying radius filter"
       buildings = buildings.within_radius(
         params[:lat].to_f,
         params[:lng].to_f,
@@ -119,9 +124,13 @@ class Api::V1::PropertyAnalysisController < ApplicationController
 
     # ポリゴン検索 (polygon: WKT形式)
     if params[:polygon].present?
+      Rails.logger.info "[apply_geo_filters] Applying polygon filter: #{params[:polygon][0..100]}..."
       buildings = buildings.within_polygon(params[:polygon])
+    else
+      Rails.logger.info "[apply_geo_filters] No polygon filter applied"
     end
 
+    Rails.logger.info "[apply_geo_filters] Resulting query: #{buildings.to_sql[0..500]}"
     buildings
   end
 

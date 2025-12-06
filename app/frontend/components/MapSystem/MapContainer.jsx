@@ -57,6 +57,8 @@ export default function MapContainer({
   const circleRef = useRef(null);
   const polygonRef = useRef(null);
   const drawingManagerRef = useRef(null);
+  // レイヤーポリゴンのInfoWindow参照（1つだけ表示）
+  const layerInfoWindowRef = useRef(null);
 
   const {
     map,
@@ -362,7 +364,27 @@ export default function MapContainer({
       const geometry = feature.geometry;
       const properties = feature.properties;
 
-      const createPolygonFromPaths = (paths) => {
+      // GeoJSON座標からWKT形式のPOLYGONを生成するヘルパー関数
+      const geometryToWKT = (geom) => {
+        if (geom.type === 'Polygon') {
+          const rings = geom.coordinates.map(ring => {
+            const coords = ring.map(coord => `${coord[0]} ${coord[1]}`).join(', ');
+            return `(${coords})`;
+          });
+          return `POLYGON(${rings.join(', ')})`;
+        } else if (geom.type === 'MultiPolygon') {
+          // MultiPolygonの場合は最初のポリゴンのみ使用
+          const firstPolygon = geom.coordinates[0];
+          const rings = firstPolygon.map(ring => {
+            const coords = ring.map(coord => `${coord[0]} ${coord[1]}`).join(', ');
+            return `(${coords})`;
+          });
+          return `POLYGON(${rings.join(', ')})`;
+        }
+        return null;
+      };
+
+      const createPolygonFromPaths = (paths, originalGeometry) => {
         const polygon = new google.maps.Polygon({
           paths: paths,
           strokeColor: color,
@@ -399,18 +421,14 @@ export default function MapContainer({
             properties.school_type,
           ].filter(Boolean);
 
-          // クリックされたポリゴンをWKT形式に変換してgeoFilterに設定
-          const path = polygon.getPath();
-          const coordinates = [];
-          for (let i = 0; i < path.getLength(); i++) {
-            const point = path.getAt(i);
-            coordinates.push(`${point.lng()} ${point.lat()}`);
+          // 元のGeoJSON座標からWKT形式を生成（クロージャで保持）
+          const wkt = geometryToWKT(originalGeometry);
+
+          if (!wkt) {
+            console.warn('Invalid geometry: could not convert to WKT');
+            return;
           }
-          // ポリゴンを閉じる
-          if (coordinates.length > 0) {
-            coordinates.push(coordinates[0]);
-          }
-          const wkt = `POLYGON((${coordinates.join(', ')}))`;
+
           const newGeoFilter = {
             type: 'polygon',
             circle: null,
@@ -421,8 +439,14 @@ export default function MapContainer({
           if (onGeoFilterChange) {
             onGeoFilterChange(newGeoFilter);
           }
+          // GISフィルタAPIを呼び出して物件IDを取得
           if (onApplyFilters) {
-            onApplyFilters(null, newGeoFilter);
+            onApplyFilters(newGeoFilter);
+          }
+
+          // 既存のInfoWindowを閉じる
+          if (layerInfoWindowRef.current) {
+            layerInfoWindowRef.current.close();
           }
 
           // InfoWindowを表示（範囲指定したことを示す）
@@ -438,6 +462,9 @@ export default function MapContainer({
             position: event.latLng,
           });
           infoWindow.open(map);
+
+          // 新しいInfoWindowを参照に保存
+          layerInfoWindowRef.current = infoWindow;
         });
 
         return polygon;
@@ -447,13 +474,18 @@ export default function MapContainer({
         const paths = geometry.coordinates.map(ring =>
           ring.map(coord => ({ lat: coord[1], lng: coord[0] }))
         );
-        newPolygons.push(createPolygonFromPaths(paths));
+        newPolygons.push(createPolygonFromPaths(paths, geometry));
       } else if (geometry.type === 'MultiPolygon') {
-        geometry.coordinates.forEach(polygonCoords => {
+        geometry.coordinates.forEach((polygonCoords, idx) => {
           const paths = polygonCoords.map(ring =>
             ring.map(coord => ({ lat: coord[1], lng: coord[0] }))
           );
-          newPolygons.push(createPolygonFromPaths(paths));
+          // MultiPolygonの各パーツに対応するgeometryを作成
+          const partGeometry = {
+            type: 'Polygon',
+            coordinates: polygonCoords
+          };
+          newPolygons.push(createPolygonFromPaths(paths, partGeometry));
         });
       }
     });

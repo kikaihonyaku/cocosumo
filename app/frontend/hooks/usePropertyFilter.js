@@ -31,9 +31,13 @@ export function usePropertyFilter(allProperties, filters, rangeSelections, geoFi
 
   // GISフィルタ適用済みの部屋（geoFilteredIdsがある場合のみフィルタ）
   const geoFilteredRooms = useMemo(() => {
-    if (!geoFilteredIds || geoFilteredIds.length === 0) {
-      // GISフィルタがない場合は全部屋を返す
+    if (geoFilteredIds === null) {
+      // GISフィルタがない場合（null）は全部屋を返す
       return allRooms;
+    }
+    // geoFilteredIds が空配列の場合は0件（フィルタ適用済みだが該当なし）
+    if (geoFilteredIds.length === 0) {
+      return [];
     }
     const geoIdSet = new Set(geoFilteredIds);
     return allRooms.filter(room => geoIdSet.has(room.building_id));
