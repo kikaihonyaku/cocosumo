@@ -69,16 +69,21 @@ export default function MapSystem() {
   const [selectedAreaRanges, setSelectedAreaRanges] = useState([]);
   const [selectedAgeRanges, setSelectedAgeRanges] = useState([]);
 
+  // GISフィルタで絞り込まれた物件ID（PostGIS精度を維持）
+  const [geoFilteredIds, setGeoFilteredIds] = useState(null);
+
   // フロントエンドフィルタリング（usePropertyFilterフック）
   // allPropertiesに対してフィルタ・集計を行い、filteredProperties, aggregationsを取得
-  const { filteredProperties, aggregations } = usePropertyFilter(
+  // geoFilteredIdsを渡すことで、GISフィルタも適用
+  const { filteredProperties, aggregations, propertiesForMapPins } = usePropertyFilter(
     allProperties,
     advancedSearchFilters,
     {
       selectedRentRanges,
       selectedAreaRanges,
       selectedAgeRanges,
-    }
+    },
+    geoFilteredIds
   );
 
   // レスポンシブ設定
@@ -112,12 +117,12 @@ export default function MapSystem() {
     };
   }, []);
 
-  // ベース物件データの取得（検索条件・GISフィルタのみ適用、賃料等のフィルタはフロントエンドで処理）
-  const fetchBasePropertyData = async (conditions = searchConditions, geo = geoFilter) => {
+  // ベース物件データの取得（検索条件のみ適用、GISフィルタは別APIで処理）
+  const fetchBasePropertyData = async (conditions = searchConditions) => {
     setIsLoading(true);
     setError(null);
     try {
-      // クエリパラメータを構築（ベース検索条件 + GISのみ）
+      // クエリパラメータを構築（ベース検索条件のみ、GISは含まない）
       const params = new URLSearchParams();
 
       // ベース検索条件
@@ -134,16 +139,6 @@ export default function MapSystem() {
       }
       if (conditions.ownRegistration !== undefined) {
         params.append('own_registration', conditions.ownRegistration);
-      }
-
-      // GISパラメータ
-      if (geo.type === 'circle' && geo.circle) {
-        params.append('lat', geo.circle.center.lat);
-        params.append('lng', geo.circle.center.lng);
-        params.append('radius', geo.circle.radius);
-      }
-      if (geo.type === 'polygon' && geo.polygon) {
-        params.append('polygon', geo.polygon);
       }
 
       const queryString = params.toString();
@@ -171,6 +166,62 @@ export default function MapSystem() {
       setError(err.message || 'ネットワークエラーが発生しました');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // GISフィルタAPIを呼び出し、範囲内の物件IDを取得（軽量API）
+  const fetchGeoFilteredIds = async (geo, conditions = searchConditions) => {
+    if (!geo || !geo.type) {
+      // GISフィルタがない場合はnullをセット
+      setGeoFilteredIds(null);
+      return;
+    }
+
+    try {
+      const params = new URLSearchParams();
+
+      // ベース検索条件（GISフィルタと同じ条件で絞り込むため）
+      if (conditions.propertyName) params.append('name', conditions.propertyName);
+      if (conditions.address) params.append('address', conditions.address);
+      if (conditions.buildingType) params.append('building_type', conditions.buildingType);
+      if (conditions.hasVacancy === 'true') params.append('has_vacancy', 'true');
+      if (conditions.hasVacancy === 'false') params.append('has_vacancy', 'false');
+      if (conditions.minRooms) params.append('min_rooms', conditions.minRooms);
+      if (conditions.maxRooms) params.append('max_rooms', conditions.maxRooms);
+      if (conditions.externalImport !== undefined) {
+        params.append('external_import', conditions.externalImport);
+      }
+      if (conditions.ownRegistration !== undefined) {
+        params.append('own_registration', conditions.ownRegistration);
+      }
+
+      // GISパラメータ
+      if (geo.type === 'circle' && geo.circle) {
+        params.append('lat', geo.circle.center.lat);
+        params.append('lng', geo.circle.center.lng);
+        params.append('radius', geo.circle.radius);
+      }
+      if (geo.type === 'polygon' && geo.polygon) {
+        params.append('polygon', geo.polygon);
+      }
+
+      const response = await fetch(`/api/v1/property_analysis/geo_filter?${params.toString()}`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setGeoFilteredIds(data.building_ids || []);
+      } else if (response.status === 401) {
+        window.location.href = '/login';
+      }
+    } catch (err) {
+      console.error('GISフィルタ取得エラー:', err);
+      // エラー時はGISフィルタなしとして扱う
+      setGeoFilteredIds(null);
     }
   };
 
@@ -224,8 +275,8 @@ export default function MapSystem() {
     setSelectedRentRanges([]);
     setSelectedAreaRanges([]);
     setSelectedAgeRanges([]);
-    // GISフィルタがクリアされたので、ベースデータを再取得
-    fetchBasePropertyData(searchConditions, { type: null, circle: null, polygon: null });
+    // GISフィルタをクリア（useEffectで自動的にfetchGeoFilteredIdsが呼ばれる）
+    setGeoFilteredIds(null);
   };
 
   // 棒グラフ範囲選択のトグルハンドラー（API呼び出しなし、stateのみ更新）
@@ -252,12 +303,9 @@ export default function MapSystem() {
     setGeoFilter({ type: null, circle: null, polygon: null });
   };
 
-  // geoFilterが変更されたら自動的にベースデータを再取得
+  // geoFilterが変更されたらGISフィルタAPIを呼び出し
   useEffect(() => {
-    // geoFilterが設定されている場合のみ再取得
-    if (geoFilter && geoFilter.type) {
-      fetchBasePropertyData(searchConditions, geoFilter);
-    }
+    fetchGeoFilteredIds(geoFilter, searchConditions);
   }, [geoFilter]);
 
   // タブ変更ハンドラー
@@ -333,7 +381,11 @@ export default function MapSystem() {
     try {
       setSearchConditions(conditions);
       // 検索条件変更時はベースデータを再取得（フィルタはフロントエンドで自動適用）
-      await fetchBasePropertyData(conditions, geoFilter);
+      await fetchBasePropertyData(conditions);
+      // GISフィルタがある場合は再取得
+      if (geoFilter && geoFilter.type) {
+        await fetchGeoFilteredIds(geoFilter, conditions);
+      }
     } catch (error) {
       console.error('Search error:', error);
     }
@@ -388,7 +440,7 @@ export default function MapSystem() {
     // 物件詳細画面を別タブで開く
     window.open(`/building/${newBuilding.id}`, '_blank');
     // 物件一覧を再取得
-    fetchBasePropertyData(searchConditions, geoFilter);
+    fetchBasePropertyData(searchConditions);
   };
 
   return (
@@ -584,7 +636,7 @@ export default function MapSystem() {
                     rightPanelVisible={rightPanelVisible}
                     onToggleRightPanel={() => setRightPanelVisible(true)}
                     selectedObject={selectedObject}
-                    properties={filteredProperties}
+                    properties={propertiesForMapPins}
                     isLoading={isLoading}
                     onNewBuildingClick={() => setBuildingFormModalOpen(true)}
                     selectedLayers={selectedLayers}
@@ -596,6 +648,8 @@ export default function MapSystem() {
                     geoFilter={geoFilter}
                     onGeoFilterChange={setGeoFilter}
                     onClearGeoFilter={handleClearGeoFilter}
+                    // GISフィルタが有効かどうか
+                    hasGeoFilter={geoFilteredIds !== null}
                   />
                 )}
               </Box>

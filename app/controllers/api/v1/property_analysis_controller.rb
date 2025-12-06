@@ -3,82 +3,12 @@ class Api::V1::PropertyAnalysisController < ApplicationController
   before_action :require_login
 
   # GET /api/v1/property_analysis
+  # 全物件データを返す（GISフィルタは適用しない - ピン表示用）
   def show
-    # 物件とその部屋を取得
     buildings = current_tenant.buildings.kept.includes(:rooms, :building_photos)
 
-    # === ベース検索条件（検索条件を設定で指定された条件） ===
-
-    # 物件名フィルタ
-    if params[:name].present?
-      buildings = buildings.where('buildings.name ILIKE ?', "%#{params[:name]}%")
-    end
-
-    # 住所フィルタ
-    if params[:address].present?
-      buildings = buildings.where('buildings.address ILIKE ?', "%#{params[:address]}%")
-    end
-
-    # 物件種別フィルタ
-    if params[:building_type].present?
-      buildings = buildings.where(building_type: params[:building_type])
-    end
-
-    # 空室ありフィルタ
-    if params[:has_vacancy] == 'true'
-      # 空室がある物件のみ（free_cnt > 0）
-      buildings = buildings.where('buildings.id IN (SELECT building_id FROM rooms WHERE status = ? GROUP BY building_id)', 'vacant')
-    elsif params[:has_vacancy] == 'false'
-      # 満室の物件のみ（free_cnt = 0）
-      buildings = buildings.where('buildings.id NOT IN (SELECT building_id FROM rooms WHERE status = ?)', 'vacant')
-    end
-
-    # 戸数フィルタ
-    if params[:min_rooms].present?
-      min_rooms = params[:min_rooms].to_i
-      buildings = buildings.where('buildings.id IN (SELECT building_id FROM rooms GROUP BY building_id HAVING COUNT(*) >= ?)', min_rooms)
-    end
-    if params[:max_rooms].present?
-      max_rooms = params[:max_rooms].to_i
-      buildings = buildings.where('buildings.id IN (SELECT building_id FROM rooms GROUP BY building_id HAVING COUNT(*) <= ?)', max_rooms)
-    end
-
-    # 登録元フィルタ
-    external_import = params[:external_import]
-    own_registration = params[:own_registration]
-
-    if external_import.present? || own_registration.present?
-      external_import_bool = external_import == 'true'
-      own_registration_bool = own_registration == 'true'
-
-      if external_import_bool && !own_registration_bool
-        # 外部取込みのみ
-        buildings = buildings.where.not(suumo_imported_at: nil)
-      elsif !external_import_bool && own_registration_bool
-        # 自社登録のみ
-        buildings = buildings.where(suumo_imported_at: nil)
-      elsif !external_import_bool && !own_registration_bool
-        # 両方チェックなしの場合は結果なし
-        buildings = buildings.none
-      end
-      # 両方trueの場合はフィルタなし
-    end
-
-    # === GIS検索 ===
-
-    # 半径検索 (lat, lng, radius in meters)
-    if params[:lat].present? && params[:lng].present? && params[:radius].present?
-      buildings = buildings.within_radius(
-        params[:lat].to_f,
-        params[:lng].to_f,
-        params[:radius].to_i
-      )
-    end
-
-    # ポリゴン検索 (polygon: WKT形式)
-    if params[:polygon].present?
-      buildings = buildings.within_polygon(params[:polygon])
-    end
+    # ベース検索条件のみ適用（GISは含まない）
+    buildings = apply_base_filters(buildings)
 
     # 全部屋データを取得（フィルタはフロントエンドで行う）
     all_rooms = buildings.flat_map(&:rooms)
@@ -103,13 +33,101 @@ class Api::V1::PropertyAnalysisController < ApplicationController
     }
   end
 
+  # GET /api/v1/property_analysis/geo_filter
+  # GISフィルタを適用し、該当する物件IDのみを返す（軽量API）
+  def geo_filter
+    buildings = current_tenant.buildings.kept
+
+    # ベース検索条件を適用
+    buildings = apply_base_filters(buildings)
+
+    # GISフィルタを適用
+    buildings = apply_geo_filters(buildings)
+
+    # 該当物件のIDのみを返す
+    render json: {
+      building_ids: buildings.pluck(:id)
+    }
+  end
+
   private
 
+  # ベース検索条件を適用（GISは含まない）
+  def apply_base_filters(buildings)
+    # 物件名フィルタ
+    if params[:name].present?
+      buildings = buildings.where('buildings.name ILIKE ?', "%#{params[:name]}%")
+    end
+
+    # 住所フィルタ
+    if params[:address].present?
+      buildings = buildings.where('buildings.address ILIKE ?', "%#{params[:address]}%")
+    end
+
+    # 物件種別フィルタ
+    if params[:building_type].present?
+      buildings = buildings.where(building_type: params[:building_type])
+    end
+
+    # 空室ありフィルタ
+    if params[:has_vacancy] == 'true'
+      buildings = buildings.where('buildings.id IN (SELECT building_id FROM rooms WHERE status = ? GROUP BY building_id)', 'vacant')
+    elsif params[:has_vacancy] == 'false'
+      buildings = buildings.where('buildings.id NOT IN (SELECT building_id FROM rooms WHERE status = ?)', 'vacant')
+    end
+
+    # 戸数フィルタ
+    if params[:min_rooms].present?
+      min_rooms = params[:min_rooms].to_i
+      buildings = buildings.where('buildings.id IN (SELECT building_id FROM rooms GROUP BY building_id HAVING COUNT(*) >= ?)', min_rooms)
+    end
+    if params[:max_rooms].present?
+      max_rooms = params[:max_rooms].to_i
+      buildings = buildings.where('buildings.id IN (SELECT building_id FROM rooms GROUP BY building_id HAVING COUNT(*) <= ?)', max_rooms)
+    end
+
+    # 登録元フィルタ
+    external_import = params[:external_import]
+    own_registration = params[:own_registration]
+
+    if external_import.present? || own_registration.present?
+      external_import_bool = external_import == 'true'
+      own_registration_bool = own_registration == 'true'
+
+      if external_import_bool && !own_registration_bool
+        buildings = buildings.where.not(suumo_imported_at: nil)
+      elsif !external_import_bool && own_registration_bool
+        buildings = buildings.where(suumo_imported_at: nil)
+      elsif !external_import_bool && !own_registration_bool
+        buildings = buildings.none
+      end
+    end
+
+    buildings
+  end
+
+  # GISフィルタを適用
+  def apply_geo_filters(buildings)
+    # 半径検索 (lat, lng, radius in meters)
+    if params[:lat].present? && params[:lng].present? && params[:radius].present?
+      buildings = buildings.within_radius(
+        params[:lat].to_f,
+        params[:lng].to_f,
+        params[:radius].to_i
+      )
+    end
+
+    # ポリゴン検索 (polygon: WKT形式)
+    if params[:polygon].present?
+      buildings = buildings.within_polygon(params[:polygon])
+    end
+
+    buildings
+  end
+
   def calculate_aggregations(rooms, all_buildings)
-    # 全体の部屋数
     total = rooms.count
 
-    # 賃料帯別集計
     by_rent = [
       { range: "0-50000", label: "〜5万円", count: rooms.count { |r| r.rent.to_f < 50000 } },
       { range: "50000-100000", label: "5〜10万円", count: rooms.count { |r| r.rent.to_f >= 50000 && r.rent.to_f < 100000 } },
@@ -118,7 +136,6 @@ class Api::V1::PropertyAnalysisController < ApplicationController
       { range: "200000+", label: "20万円〜", count: rooms.count { |r| r.rent.to_f >= 200000 } }
     ]
 
-    # 間取り別集計
     by_room_type = {}
     room_type_labels = {
       'studio' => 'ワンルーム',
@@ -137,7 +154,6 @@ class Api::V1::PropertyAnalysisController < ApplicationController
       by_room_type[key] = rooms.count { |r| r.room_type == key }
     end
 
-    # 面積帯別集計
     by_area = [
       { range: "0-20", label: "〜20㎡", count: rooms.count { |r| r.area.to_f < 20 } },
       { range: "20-40", label: "20〜40㎡", count: rooms.count { |r| r.area.to_f >= 20 && r.area.to_f < 40 } },
@@ -146,7 +162,6 @@ class Api::V1::PropertyAnalysisController < ApplicationController
       { range: "80+", label: "80㎡〜", count: rooms.count { |r| r.area.to_f >= 80 } }
     ]
 
-    # 築年数別集計
     current_year = Date.today.year
     by_building_age = [
       { range: "0-5", label: "築5年以内", count: 0 },
@@ -156,7 +171,6 @@ class Api::V1::PropertyAnalysisController < ApplicationController
       { range: "30+", label: "築30年以上", count: 0 }
     ]
 
-    # 物件ごとの築年数を計算して部屋数をカウント
     rooms.each do |room|
       building = room.building
       next unless building.built_date.present?

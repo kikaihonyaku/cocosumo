@@ -46,6 +46,8 @@ export default function MapContainer({
   onClearGeoFilter = null,
   onApplyFilters = null,
   showDrawingTools = false,
+  // GISフィルタが有効かどうか
+  hasGeoFilter = false,
 }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mapType, setMapType] = useState('roadmap');
@@ -73,6 +75,11 @@ export default function MapContainer({
 
   // 物件タイプに応じたアイコンを取得
   const getPropertyIcon = (property) => {
+    // GISフィルタが有効で、範囲外の物件は紫で表示
+    if (hasGeoFilter && property.isInGeoFilter === false) {
+      return 'http://maps.google.com/mapfiles/ms/icons/purple-dot.png'; // 範囲外 - 紫
+    }
+
     // 空室率に応じてアイコンの色を決定（Google Maps標準アイコンを使用）
     const vacancyRate = property.room_cnt > 0 ? property.free_cnt / property.room_cnt : 0;
 
@@ -567,8 +574,9 @@ export default function MapContainer({
         }
       });
 
-      // 全ての物件が見えるように地図をフィット
-      if (properties.length > 0) {
+      // 全ての物件が見えるように地図をフィット（GISフィルタがない場合のみ）
+      // GISフィルタがある場合は、ユーザーが範囲を指定しているのでリサイズしない
+      if (!hasGeoFilter && properties.length > 0) {
         const positions = properties
           .filter(p => p.latitude && p.longitude)
           .map(p => ({
@@ -589,7 +597,7 @@ export default function MapContainer({
         delete window.selectProperty;
       }
     };
-  }, [isLoaded, map, properties]);
+  }, [isLoaded, map, properties, hasGeoFilter]);
 
   return (
     <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>

@@ -20,19 +20,31 @@ import {
  * @param {Array} rangeSelections.selectedRentRanges - 賃料範囲選択
  * @param {Array} rangeSelections.selectedAreaRanges - 面積範囲選択
  * @param {Array} rangeSelections.selectedAgeRanges - 築年数範囲選択
+ * @param {Array|null} geoFilteredIds - GISフィルタで絞り込まれた物件ID配列（nullの場合はGISフィルタなし）
  * @returns {Object}
  */
-export function usePropertyFilter(allProperties, filters, rangeSelections) {
+export function usePropertyFilter(allProperties, filters, rangeSelections, geoFilteredIds = null) {
   // 全部屋をフラット化（allPropertiesが変更された時のみ再計算）
   const allRooms = useMemo(() => {
     return flattenRooms(allProperties);
   }, [allProperties]);
 
+  // GISフィルタ適用済みの部屋（geoFilteredIdsがある場合のみフィルタ）
+  const geoFilteredRooms = useMemo(() => {
+    if (!geoFilteredIds || geoFilteredIds.length === 0) {
+      // GISフィルタがない場合は全部屋を返す
+      return allRooms;
+    }
+    const geoIdSet = new Set(geoFilteredIds);
+    return allRooms.filter(room => geoIdSet.has(room.building_id));
+  }, [allRooms, geoFilteredIds]);
+
   // フィルタ適用（フィルタ条件または元データが変更された時のみ再計算）
+  // GISフィルタ済みの部屋に対して、賃料・間取り等のフィルタを適用
   const filteredRooms = useMemo(() => {
-    return filterRooms(allRooms, filters, rangeSelections);
+    return filterRooms(geoFilteredRooms, filters, rangeSelections);
   }, [
-    allRooms,
+    geoFilteredRooms,
     filters?.rentRange,
     filters?.roomTypes,
     filters?.areaRange,
@@ -42,7 +54,7 @@ export function usePropertyFilter(allProperties, filters, rangeSelections) {
     rangeSelections?.selectedAgeRanges,
   ]);
 
-  // フィルタ後の物件リスト再構築
+  // フィルタ後の物件リスト再構築（一覧表示・集計用）
   const filteredProperties = useMemo(() => {
     return buildFilteredProperties(allProperties, filteredRooms);
   }, [allProperties, filteredRooms]);
@@ -52,10 +64,26 @@ export function usePropertyFilter(allProperties, filters, rangeSelections) {
     return calculateAggregations(filteredRooms);
   }, [filteredRooms]);
 
+  // 地図ピン表示用: GISフィルタのみ適用したプロパティ
+  // （賃料・間取り等のフィルタは適用しない - 全ピン表示用）
+  const propertiesForMapPins = useMemo(() => {
+    if (geoFilteredIds === null) {
+      // GISフィルタがない場合は全物件
+      return allProperties;
+    }
+    // GISフィルタがある場合は、範囲内/外の情報を付与
+    const geoIdSet = new Set(geoFilteredIds);
+    return allProperties.map(property => ({
+      ...property,
+      isInGeoFilter: geoIdSet.has(property.id),
+    }));
+  }, [allProperties, geoFilteredIds]);
+
   return {
     allRooms,
     filteredRooms,
     filteredProperties,
     aggregations,
+    propertiesForMapPins,
   };
 }
