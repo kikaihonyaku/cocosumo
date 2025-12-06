@@ -399,10 +399,38 @@ export default function MapContainer({
             properties.school_type,
           ].filter(Boolean);
 
+          // クリックされたポリゴンをWKT形式に変換してgeoFilterに設定
+          const path = polygon.getPath();
+          const coordinates = [];
+          for (let i = 0; i < path.getLength(); i++) {
+            const point = path.getAt(i);
+            coordinates.push(`${point.lng()} ${point.lat()}`);
+          }
+          // ポリゴンを閉じる
+          if (coordinates.length > 0) {
+            coordinates.push(coordinates[0]);
+          }
+          const wkt = `POLYGON((${coordinates.join(', ')}))`;
+          const newGeoFilter = {
+            type: 'polygon',
+            circle: null,
+            polygon: wkt,
+          };
+
+          // geoFilterを更新して検索を実行
+          if (onGeoFilterChange) {
+            onGeoFilterChange(newGeoFilter);
+          }
+          if (onApplyFilters) {
+            onApplyFilters(null, newGeoFilter);
+          }
+
+          // InfoWindowを表示（範囲指定したことを示す）
           const infoWindow = new google.maps.InfoWindow({
             content: `
               <div style="padding: 8px; font-family: 'Segoe UI', sans-serif;">
-                <h4 style="margin: 0 0 8px 0; font-size: 1rem; color: #333;">${displayName}</h4>
+                <h4 style="margin: 0 0 8px 0; font-size: 1rem; color: #0168B7;">${displayName}</h4>
+                <p style="margin: 4px 0; font-size: 0.875rem; color: #333; font-weight: 600;">この範囲で絞り込みました</p>
                 ${displayDetails.map(d => `<p style="margin: 4px 0; font-size: 0.875rem; color: #666;">${d}</p>`).join('')}
                 ${formattedAttribution ? `<p style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 0.75rem; color: #999;">${formattedAttribution}</p>` : ''}
               </div>
@@ -431,7 +459,7 @@ export default function MapContainer({
     });
 
     layerPolygonsRef.current[layerId] = newPolygons;
-  }, [map]);
+  }, [map, onGeoFilterChange, onApplyFilters]);
 
   // レイヤーのGeoJSONデータを取得
   const fetchLayerGeoJson = useCallback(async (layerId, color, opacity, attribution) => {
