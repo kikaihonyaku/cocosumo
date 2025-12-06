@@ -225,7 +225,7 @@ export default function AdvancedSearchTab({
               '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' },
             }}
           >
-            検索条件を設定
+            検索前提条件を設定
           </Button>
           {/* 現在の検索条件表示 */}
           {getConditionChips.length > 0 && (
