@@ -1,0 +1,42 @@
+# syntax=docker/dockerfile:1
+# CoCoスモ 開発環境用 Dockerfile
+
+FROM ruby:3.3.9-slim
+
+# 必要なパッケージをインストール
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    curl \
+    git \
+    libpq-dev \
+    libgeos-dev \
+    libproj-dev \
+    pkg-config \
+    nodejs \
+    npm && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+# Node.js 20.x をインストール
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /rails
+
+# Gemfile をコピーして bundle install
+COPY Gemfile Gemfile.lock ./
+RUN bundle install
+
+# package.json をコピーして npm install
+COPY package.json package-lock.json* ./
+RUN npm install
+
+# アプリケーションコードをコピー
+COPY . .
+
+# ポートを公開
+EXPOSE 3000 5173
+
+# デフォルトコマンド
+CMD ["bin/rails", "server", "-b", "0.0.0.0", "-p", "3000"]

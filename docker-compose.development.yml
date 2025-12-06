@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # PostgreSQL + PostGIS
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: cocosumo_db
+    environment:
+      POSTGRES_USER: cocosumo
+      POSTGRES_PASSWORD: cocosumo_dev
+      POSTGRES_DB: cocosumo_development
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cocosumo -d cocosumo_development"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Rails アプリケーション
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.development
+    container_name: cocosumo_web
+    command: bash -c "rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0 -p 3000"
+    volumes:
+      - .:/rails
+      - bundle_cache:/usr/local/bundle
+      - node_modules:/rails/node_modules
+    ports:
+      - "3000:3000"
+      - "5173:5173"
+    environment:
+      - RAILS_ENV=development
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=cocosumo
+      - DB_PASSWORD=cocosumo_dev
+      - DB_NAME=cocosumo_development
+      - VITE_RUBY_HOST=0.0.0.0
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_data:
+  bundle_cache:
+  node_modules:
