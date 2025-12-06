@@ -98,34 +98,13 @@ export default function MapContainer({
     }
   };
 
-  // InfoWindow用のHTMLコンテンツを生成（MUI風のスタイル）
+  // InfoWindow用のHTMLコンテンツを生成（シンプル版）
   const createInfoWindowContent = (property) => {
-    const vacancyRate = property.room_cnt > 0 ? ((property.free_cnt / property.room_cnt) * 100).toFixed(1) : '0.0';
-
     return `
-      <div style="padding: 16px; min-width: 280px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-        <h3 style="margin: 0 0 12px 0; color: #333; font-size: 1.25rem; font-weight: 600;">${property.name}</h3>
-        <p style="margin: 8px 0; color: #666; font-size: 0.875rem;">${property.address}</p>
-        <div style="margin: 16px 0; display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; justify-content: space-between; padding: 8px; background: #f5f5f5; border-radius: 4px;">
-            <span style="font-weight: 500; color: #666;">総戸数</span>
-            <span style="font-weight: 600; color: #333;">${property.room_cnt || 0}戸</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; padding: 8px; background: #f5f5f5; border-radius: 4px;">
-            <span style="font-weight: 500; color: #666;">空室数</span>
-            <span style="font-weight: 600; color: #333;">${property.free_cnt || 0}戸</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; padding: 8px; background: #f5f5f5; border-radius: 4px;">
-            <span style="font-weight: 500; color: #666;">空室率</span>
-            <span style="font-weight: 600; color: ${vacancyRate == 0 ? '#4caf50' : vacancyRate <= 10 ? '#2196f3' : vacancyRate <= 30 ? '#ff9800' : '#f44336'};">${vacancyRate}%</span>
-          </div>
-        </div>
-        <div style="margin-top: 16px; display: flex; gap: 8px;">
-          <button onclick="window.openBuildingDetail(${property.id})"
-                  style="background-color: #0168B7; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; flex: 1;">
-            詳細ページを開く
-          </button>
-        </div>
+      <div style="padding: 12px; min-width: 200px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+        <h3 style="margin: 0 0 8px 0; color: #0168B7; font-size: 1rem; font-weight: 600; cursor: pointer; text-decoration: underline;"
+            onclick="window.openBuildingDetail(${property.id})">${property.name}</h3>
+        <p style="margin: 0; color: #666; font-size: 0.875rem;">${property.address}</p>
       </div>
     `;
   };
