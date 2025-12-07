@@ -18,6 +18,7 @@ import {
   PushPinOutlined as PushPinOutlinedIcon,
   Search as SearchIcon,
   Layers as LayersIcon,
+  FilterList as FilterListIcon,
 } from '@mui/icons-material';
 import SearchModal from './SearchModal';
 import AdvancedSearchTab from './AdvancedSearchTab';
@@ -131,7 +132,7 @@ export default function LeftPanel({
               position: 'absolute',
               top: isPinned || isHovered ? '2px' : '80px',
               left: isPinned ? '2px' : (isHovered ? 0 : '16px'),
-              height: isPinned ? 'calc(100vh - 4px)' : (isHovered ? 'calc(100vh - 4px)' : '220px'),
+              height: isPinned ? 'calc(100vh - 4px)' : (isHovered ? 'calc(100vh - 4px)' : 'auto'),
               zIndex: isPinned ? 1100 : (isHovered ? 1350 : 1300),
               flexShrink: isPinned ? 0 : undefined,
               display: 'flex',
@@ -216,48 +217,106 @@ export default function LeftPanel({
 
                 </>
               ) : (
-                // 折りたたみ時のアイコンのみ（検索パネルを開くボタン）
+                // 折りたたみ時のアイコン
                 <Box
                   sx={{
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: 1,
-                    pt: 2,
+                    py: 1.5,
                     width: 60,
                   }}
                 >
-                  <Tooltip title="検索パネルを開く" placement="right">
-                    <IconButton
-                      onClick={() => {
-                        setIsHovered(true);
-                        onHoverChange && onHoverChange(true);
-                      }}
-                      size="small"
-                      sx={{
-                        color: 'white',
-                        bgcolor: 'rgba(255, 255, 255, 0.2)',
-                        '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' },
-                        mb: 1,
-                      }}
-                    >
-                      <SearchIcon />
-                    </IconButton>
-                  </Tooltip>
+                  {/* スマホモード: 虫眼鏡のみ */}
+                  {!isMdUp ? (
+                    <Tooltip title="検索パネルを開く" placement="right">
+                      <IconButton
+                        onClick={() => {
+                          setIsHovered(true);
+                          onHoverChange && onHoverChange(true);
+                        }}
+                        size="small"
+                        sx={{
+                          color: 'white',
+                          bgcolor: 'rgba(255, 255, 255, 0.2)',
+                          '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' },
+                        }}
+                      >
+                        <SearchIcon />
+                      </IconButton>
+                    </Tooltip>
+                  ) : (
+                    /* PCモード: 4つのアイコン */
+                    <>
+                      {/* 虫眼鏡（検索条件ダイアログを開く） */}
+                      <Tooltip title="検索条件" placement="right">
+                        <IconButton
+                          onClick={() => setIsSearchModalOpen(true)}
+                          size="small"
+                          sx={{
+                            color: 'white',
+                            bgcolor: 'rgba(255, 255, 255, 0.2)',
+                            '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' },
+                          }}
+                        >
+                          <SearchIcon />
+                        </IconButton>
+                      </Tooltip>
 
-                  <Tooltip title={isPinned ? "固定解除" : "固定"} placement="right">
-                    <IconButton
-                      onClick={onTogglePin}
-                      size="small"
-                      sx={{
-                        color: 'white',
-                        bgcolor: 'rgba(255, 255, 255, 0.2)',
-                        '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' },
-                      }}
-                    >
-                      {isPinned ? <PushPinIcon /> : <PushPinOutlinedIcon />}
-                    </IconButton>
-                  </Tooltip>
+                      {/* フィルタ（検索パネルを開く） */}
+                      <Tooltip title="検索パネルを開く" placement="right">
+                        <IconButton
+                          onClick={() => {
+                            setIsHovered(true);
+                            onHoverChange && onHoverChange(true);
+                          }}
+                          size="small"
+                          sx={{
+                            color: 'white',
+                            bgcolor: 'rgba(255, 255, 255, 0.2)',
+                            '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' },
+                          }}
+                        >
+                          <FilterListIcon />
+                        </IconButton>
+                      </Tooltip>
+
+                      {/* レイヤー（レイヤータブを開く） */}
+                      <Tooltip title="レイヤー" placement="right">
+                        <IconButton
+                          onClick={() => {
+                            setIsHovered(true);
+                            onHoverChange && onHoverChange(true);
+                            onTabChange && onTabChange(1);
+                          }}
+                          size="small"
+                          sx={{
+                            color: 'white',
+                            bgcolor: 'rgba(255, 255, 255, 0.2)',
+                            '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' },
+                          }}
+                        >
+                          <LayersIcon />
+                        </IconButton>
+                      </Tooltip>
+
+                      {/* ピン止め */}
+                      <Tooltip title={isPinned ? "固定解除" : "固定"} placement="right">
+                        <IconButton
+                          onClick={onTogglePin}
+                          size="small"
+                          sx={{
+                            color: 'white',
+                            bgcolor: 'rgba(255, 255, 255, 0.2)',
+                            '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' },
+                          }}
+                        >
+                          {isPinned ? <PushPinIcon /> : <PushPinOutlinedIcon />}
+                        </IconButton>
+                      </Tooltip>
+                    </>
+                  )}
                 </Box>
               )}
 
