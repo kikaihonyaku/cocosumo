@@ -69,6 +69,11 @@ class Api::V1::PropertyAnalysisController < ApplicationController
       buildings = buildings.where(building_type: params[:building_type])
     end
 
+    # 店舗フィルタ
+    if params[:store_id].present?
+      buildings = buildings.where(store_id: params[:store_id])
+    end
+
     # 空室ありフィルタ
     if params[:has_vacancy] == 'true'
       buildings = buildings.where('buildings.id IN (SELECT building_id FROM rooms WHERE status = ? GROUP BY building_id)', 'vacant')

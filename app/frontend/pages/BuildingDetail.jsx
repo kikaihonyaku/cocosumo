@@ -41,6 +41,7 @@ export default function BuildingDetail() {
   // 状態管理
   const [property, setProperty] = useState(null);
   const [rooms, setRooms] = useState([]);
+  const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -65,7 +66,24 @@ export default function BuildingDetail() {
   // データ取得
   useEffect(() => {
     fetchPropertyData();
+    fetchStores();
   }, [id]);
+
+  // 店舗一覧の取得
+  const fetchStores = async () => {
+    try {
+      const response = await fetch('/api/v1/stores', {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStores(data);
+      }
+    } catch (err) {
+      console.error('店舗取得エラー:', err);
+    }
+  };
 
   // geocoding失敗アラートの表示
   useEffect(() => {
@@ -425,6 +443,7 @@ export default function BuildingDetail() {
                   loading={saving}
                   isMobile={true}
                   onFormChange={handleFormChange}
+                  stores={stores}
                 />
               </Box>
 
@@ -524,6 +543,7 @@ export default function BuildingDetail() {
                   onSave={handleSave}
                   loading={saving}
                   onFormChange={handleFormChange}
+                  stores={stores}
                 />
               </Paper>
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_01_165138) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_06_210351) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -110,8 +110,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_01_165138) do
     t.string "external_key"
     t.datetime "suumo_imported_at"
     t.st_point "location", geographic: true
+    t.bigint "store_id"
     t.index ["discarded_at"], name: "index_buildings_on_discarded_at"
     t.index ["location"], name: "index_buildings_on_location", using: :gist
+    t.index ["store_id"], name: "index_buildings_on_store_id"
     t.index ["tenant_id", "external_key"], name: "index_buildings_on_tenant_id_and_external_key", unique: true, where: "(external_key IS NOT NULL)"
     t.index ["tenant_id"], name: "index_buildings_on_tenant_id"
   end
@@ -287,6 +289,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_01_165138) do
     t.index ["school_code"], name: "index_school_districts_on_school_code"
   end
 
+  create_table "stores", force: :cascade do |t|
+    t.bigint "tenant_id", null: false
+    t.string "name", null: false
+    t.string "address"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "latitude", precision: 10, scale: 7
+    t.decimal "longitude", precision: 10, scale: 7
+    t.st_point "location", geographic: true
+    t.index ["location"], name: "index_stores_on_location", using: :gist
+    t.index ["tenant_id"], name: "index_stores_on_tenant_id"
+  end
+
   create_table "suumo_import_histories", force: :cascade do |t|
     t.integer "tenant_id", null: false
     t.string "url", null: false
@@ -387,6 +402,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_01_165138) do
   add_foreign_key "ai_generated_images", "room_photos"
   add_foreign_key "ai_generated_images", "rooms"
   add_foreign_key "building_photos", "buildings"
+  add_foreign_key "buildings", "stores"
   add_foreign_key "buildings", "tenants"
   add_foreign_key "map_layers", "tenants"
   add_foreign_key "owners", "buildings"
@@ -402,6 +418,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_01_165138) do
   add_foreign_key "room_photos", "rooms"
   add_foreign_key "rooms", "buildings"
   add_foreign_key "school_districts", "map_layers"
+  add_foreign_key "stores", "tenants"
   add_foreign_key "suumo_import_histories", "tenants"
   add_foreign_key "users", "tenants"
   add_foreign_key "virtual_stagings", "room_photos", column: "after_photo_id"

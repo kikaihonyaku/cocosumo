@@ -5,7 +5,7 @@ class Api::V1::BuildingsController < ApplicationController
 
   # GET /api/v1/buildings
   def index
-    @buildings = current_tenant.buildings.kept.includes(:rooms, :building_photos)
+    @buildings = current_tenant.buildings.kept.includes(:rooms, :building_photos, :store)
 
     # 検索条件によるフィルタリング
     @buildings = @buildings.where("name LIKE ?", "%#{params[:name]}%") if params[:name].present?
@@ -13,6 +13,9 @@ class Api::V1::BuildingsController < ApplicationController
     @buildings = @buildings.where(building_type: params[:building_type]) if params[:building_type].present?
     @buildings = @buildings.where("total_units >= ?", params[:min_rooms]) if params[:min_rooms].present?
     @buildings = @buildings.where("total_units <= ?", params[:max_rooms]) if params[:max_rooms].present?
+
+    # 店舗フィルタ
+    @buildings = @buildings.where(store_id: params[:store_id]) if params[:store_id].present?
 
     # === GIS検索 ===
 
@@ -74,12 +77,15 @@ class Api::V1::BuildingsController < ApplicationController
       @buildings = @buildings.order(created_at: :desc)
     end
 
-    # 空室数・空室率・部屋情報を含めて返す
+    # 空室数・空室率・部屋情報・店舗情報を含めて返す
     render json: @buildings.as_json(
       methods: [:room_cnt, :free_cnt, :latitude, :longitude, :exterior_photo_count, :thumbnail_url],
       include: {
         rooms: {
           only: [:id, :rent, :area, :room_type, :status, :floor, :room_number]
+        },
+        store: {
+          only: [:id, :name]
         }
       }
     )
@@ -262,7 +268,8 @@ class Api::V1::BuildingsController < ApplicationController
       :has_elevator,
       :has_bicycle_parking,
       :has_parking,
-      :parking_spaces
+      :parking_spaces,
+      :store_id
     )
   end
 

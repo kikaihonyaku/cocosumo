@@ -11,12 +11,17 @@ import {
   Box,
   Chip,
   CircularProgress,
-  Alert
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from "@mui/material";
 import {
   Add as AddIcon,
   LocationOn as LocationIcon,
-  Business as BusinessIcon
+  Business as BusinessIcon,
+  Store as StoreIcon
 } from "@mui/icons-material";
 
 export default function Buildings() {
@@ -24,14 +29,41 @@ export default function Buildings() {
   const [buildings, setBuildings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [stores, setStores] = useState([]);
+  const [selectedStoreId, setSelectedStoreId] = useState("");
+
+  useEffect(() => {
+    fetchStores();
+  }, []);
 
   useEffect(() => {
     fetchBuildings();
-  }, []);
+  }, [selectedStoreId]);
+
+  const fetchStores = async () => {
+    try {
+      const response = await fetch('/api/v1/stores', {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStores(data);
+      }
+    } catch (err) {
+      console.error('店舗取得エラー:', err);
+    }
+  };
 
   const fetchBuildings = async () => {
     try {
-      const response = await fetch('/api/v1/buildings', {
+      const params = new URLSearchParams();
+      if (selectedStoreId) {
+        params.append('store_id', selectedStoreId);
+      }
+      const url = `/api/v1/buildings${params.toString() ? `?${params.toString()}` : ''}`;
+
+      const response = await fetch(url, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -74,7 +106,7 @@ export default function Buildings() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h3" component="h1">
           物件一覧
         </Typography>
@@ -86,6 +118,28 @@ export default function Buildings() {
           新規物件登録
         </Button>
       </Box>
+
+      {/* 店舗フィルタ */}
+      {stores.length > 0 && (
+        <Box sx={{ mb: 3 }}>
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel>店舗で絞り込み</InputLabel>
+            <Select
+              value={selectedStoreId}
+              onChange={(e) => setSelectedStoreId(e.target.value)}
+              label="店舗で絞り込み"
+              startAdornment={<StoreIcon sx={{ mr: 1, color: 'action.active' }} />}
+            >
+              <MenuItem value="">すべての店舗</MenuItem>
+              {stores.map((store) => (
+                <MenuItem key={store.id} value={store.id}>
+                  {store.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+      )}
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -127,7 +181,7 @@ export default function Buildings() {
                     </Typography>
                   </Box>
 
-                  <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                  <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
                     <Chip
                       label={getBuildingTypeLabel(building.building_type)}
                       size="small"
@@ -138,6 +192,15 @@ export default function Buildings() {
                       label={`${building.total_units || 0}戸`}
                       size="small"
                     />
+                    {building.store && (
+                      <Chip
+                        icon={<StoreIcon sx={{ fontSize: 14 }} />}
+                        label={building.store.name}
+                        size="small"
+                        color="secondary"
+                        variant="outlined"
+                      />
+                    )}
                   </Box>
 
                   {building.description && (

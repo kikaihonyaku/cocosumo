@@ -23,11 +23,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
 
-export default function SearchModal({ isOpen, onClose, onSearch, currentConditions = {}, isLoading = false }) {
+export default function SearchModal({ isOpen, onClose, onSearch, currentConditions = {}, isLoading = false, stores = [] }) {
   const [searchForm, setSearchForm] = useState({
     propertyName: '',
     address: '',
     buildingType: '',
+    storeId: '',
     minRooms: '',
     maxRooms: '',
     maxVacancyRate: '',
@@ -43,6 +44,7 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
         propertyName: currentConditions.propertyName || '',
         address: currentConditions.address || '',
         buildingType: currentConditions.buildingType || '',
+        storeId: currentConditions.storeId || '',
         minRooms: currentConditions.minRooms || '',
         maxRooms: currentConditions.maxRooms || '',
         maxVacancyRate: currentConditions.maxVacancyRate || '',
@@ -71,6 +73,7 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
       propertyName: '',
       address: '',
       buildingType: '',
+      storeId: '',
       minRooms: '',
       maxRooms: '',
       maxVacancyRate: '',
@@ -209,6 +212,21 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
                     <MenuItem value="">選択してください</MenuItem>
                     <MenuItem value="true">空室あり</MenuItem>
                     <MenuItem value="false">満室</MenuItem>
+                  </Select>
+                </FormControl>
+                <FormControl fullWidth size="small">
+                  <InputLabel>店舗</InputLabel>
+                  <Select
+                    value={searchForm.storeId}
+                    onChange={(e) => handleInputChange('storeId', e.target.value)}
+                    label="店舗"
+                  >
+                    <MenuItem value="">すべての店舗</MenuItem>
+                    {stores.map((store) => (
+                      <MenuItem key={store.id} value={store.id}>
+                        {store.name}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Box>

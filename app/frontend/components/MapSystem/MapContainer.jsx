@@ -36,6 +36,7 @@ export default function MapContainer({
   onToggleRightPanel,
   selectedObject,
   properties = [],
+  stores = [],
   isLoading = false,
   onNewBuildingClick,
   // 描画ツール関連のprops
@@ -59,6 +60,8 @@ export default function MapContainer({
   const drawingManagerRef = useRef(null);
   // レイヤーポリゴンのInfoWindow参照（1つだけ表示）
   const layerInfoWindowRef = useRef(null);
+  // 店舗マーカーのref
+  const storeMarkersRef = useRef([]);
 
   const {
     map,
@@ -637,6 +640,68 @@ export default function MapContainer({
       }
     };
   }, [isLoaded, map, properties, hasGeoFilter]);
+
+  // 店舗マーカー表示用のuseEffect
+  useEffect(() => {
+    if (!isLoaded || !map || !window.google) return;
+
+    // 既存の店舗マーカーをクリア
+    storeMarkersRef.current.forEach(marker => {
+      marker.setMap(null);
+    });
+    storeMarkersRef.current = [];
+
+    // 座標を持つ店舗のマーカーを配置
+    const storesWithLocation = stores.filter(store => store.latitude && store.longitude);
+
+    storesWithLocation.forEach(store => {
+      const marker = new google.maps.Marker({
+        position: {
+          lat: parseFloat(store.latitude),
+          lng: parseFloat(store.longitude)
+        },
+        map: map,
+        title: store.name,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          fillColor: '#1976d2',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 3,
+          scale: 12,
+        },
+        zIndex: 1000, // 物件マーカーより上に表示
+      });
+
+      // 店舗のInfoWindow
+      const infoWindow = new google.maps.InfoWindow({
+        content: `
+          <div style="padding: 8px; min-width: 150px;">
+            <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px; color: #1976d2;">
+              ${store.name}
+            </div>
+            ${store.address ? `<div style="font-size: 12px; color: #666;">${store.address}</div>` : ''}
+            <div style="font-size: 11px; color: #999; margin-top: 4px;">
+              紐付き物件: ${store.buildings_count || 0}件
+            </div>
+          </div>
+        `,
+      });
+
+      marker.addListener('click', () => {
+        infoWindow.open(map, marker);
+      });
+
+      storeMarkersRef.current.push(marker);
+    });
+
+    return () => {
+      storeMarkersRef.current.forEach(marker => {
+        marker.setMap(null);
+      });
+      storeMarkersRef.current = [];
+    };
+  }, [isLoaded, map, stores]);
 
   return (
     <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>

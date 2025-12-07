@@ -27,7 +27,8 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   CloudDownload as CloudDownloadIcon,
-  Layers as LayersIcon
+  Layers as LayersIcon,
+  Store as StoreIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -72,6 +73,7 @@ export default function Header() {
   };
 
   const adminMenuItems = [
+    { to: "/admin/stores", label: "店舗管理", icon: <StoreIcon fontSize="small" /> },
     { to: "/admin/suumo-import", label: "SUUMOインポート", icon: <CloudDownloadIcon fontSize="small" /> },
     { to: "/admin/layers", label: "レイヤー管理", icon: <LayersIcon fontSize="small" /> },
   ];

@@ -27,6 +27,7 @@ import PropertyPublicationEditor from "./pages/PropertyPublicationEditor";
 import PublicPropertyDetail from "./pages/PublicPropertyDetail";
 import LayerManagement from "./pages/admin/LayerManagement";
 import SuumoImport from "./pages/admin/SuumoImport";
+import StoreManagement from "./pages/admin/StoreManagement";
 import BlogList from "./pages/BlogList";
 import BlogDetail from "./pages/BlogDetail";
 
@@ -122,6 +123,7 @@ export default function App() {
             <Route path="/map" element={<MapSystem />} />
             <Route path="/vr-tours" element={<VrTours />} />
             <Route path="/virtual-stagings" element={<VirtualStagings />} />
+            <Route path="/admin/stores" element={<StoreManagement />} />
             <Route path="/admin/layers" element={<LayerManagement />} />
             <Route path="/admin/suumo-import" element={<SuumoImport />} />
             <Route path="/buildings" element={<Buildings />} />

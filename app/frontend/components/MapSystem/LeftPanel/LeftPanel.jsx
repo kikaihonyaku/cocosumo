@@ -52,6 +52,10 @@ export default function LeftPanel({
   onRentRangeToggle = null,
   onAreaRangeToggle = null,
   onAgeRangeToggle = null,
+  // 店舗一覧
+  stores = [],
+  // 検索実行状態
+  hasSearched = false,
 }) {
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [expanded, setExpanded] = useState({
@@ -339,6 +343,8 @@ export default function LeftPanel({
                     onRentRangeToggle={onRentRangeToggle}
                     onAreaRangeToggle={onAreaRangeToggle}
                     onAgeRangeToggle={onAgeRangeToggle}
+                    // 検索実行状態
+                    hasSearched={hasSearched}
                   />
                 </Box>
               )}
@@ -445,6 +451,7 @@ export default function LeftPanel({
         onSearch={onSearch}
         currentConditions={searchConditions}
         isLoading={isLoading}
+        stores={stores}
       />
     </>
   );

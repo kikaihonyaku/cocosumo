@@ -48,6 +48,7 @@ export default function MapSystem() {
   });
   const [mapControllers, setMapControllers] = useState(null);
   const [availableLayers, setAvailableLayers] = useState([]);
+  const [stores, setStores] = useState([]);
 
   // 詳細検索関連のステート
   const [leftPanelActiveTab, setLeftPanelActiveTab] = useState(0);
@@ -98,11 +99,30 @@ export default function MapSystem() {
     }
   }, [isMobile]);
 
-  // 初回データ取得
+  // 検索が一度も実行されていないかどうか
+  const [hasSearched, setHasSearched] = useState(false);
+
+  // 初回データ取得（店舗とレイヤーのみ、物件は検索実行後に取得）
   useEffect(() => {
-    fetchBasePropertyData();
     fetchMapLayers();
+    fetchStores();
   }, []);
+
+  // 店舗一覧の取得
+  const fetchStores = async () => {
+    try {
+      const response = await fetch('/api/v1/stores', {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStores(data);
+      }
+    } catch (err) {
+      console.error('店舗取得エラー:', err);
+    }
+  };
 
   // ウィンドウがフォーカスされたときにレイヤー情報を再取得
   // (レイヤー管理画面で変更した後、このページに戻ったときに反映される)
@@ -139,6 +159,9 @@ export default function MapSystem() {
       }
       if (conditions.ownRegistration !== undefined) {
         params.append('own_registration', conditions.ownRegistration);
+      }
+      if (conditions.storeId) {
+        params.append('store_id', conditions.storeId);
       }
 
       const queryString = params.toString();
@@ -380,6 +403,7 @@ export default function MapSystem() {
   const handleSearch = async (conditions) => {
     try {
       setSearchConditions(conditions);
+      setHasSearched(true);  // 検索実行フラグを立てる
       // 検索条件変更時はベースデータを再取得（フィルタはフロントエンドで自動適用）
       await fetchBasePropertyData(conditions);
       // GISフィルタがある場合は再取得
@@ -535,6 +559,10 @@ export default function MapSystem() {
               onRentRangeToggle={handleRentRangeToggle}
               onAreaRangeToggle={handleAreaRangeToggle}
               onAgeRangeToggle={handleAgeRangeToggle}
+              // 店舗一覧
+              stores={stores}
+              // 検索実行状態
+              hasSearched={hasSearched}
             />
             {/* 上部エリア（地図 + 右ペイン） */}
             <Box
@@ -637,6 +665,7 @@ export default function MapSystem() {
                     onToggleRightPanel={() => setRightPanelVisible(true)}
                     selectedObject={selectedObject}
                     properties={propertiesForMapPins}
+                    stores={stores}
                     isLoading={isLoading}
                     onNewBuildingClick={() => setBuildingFormModalOpen(true)}
                     selectedLayers={selectedLayers}

@@ -79,6 +79,8 @@ export default function AdvancedSearchTab({
   onRentRangeToggle,
   onAreaRangeToggle,
   onAgeRangeToggle,
+  // 検索実行状態
+  hasSearched = false,
 }) {
   // ローカルステートでスライダー値を管理（ドラッグ中のパフォーマンス向上のため）
   const [localRentRange, setLocalRentRange] = useState(filters.rentRange);
@@ -221,11 +223,30 @@ export default function AdvancedSearchTab({
             onClick={onOpenSearchModal}
             fullWidth
             sx={{
-              bgcolor: 'rgba(255, 255, 255, 0.2)',
-              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' },
+              bgcolor: hasSearched ? 'rgba(255, 255, 255, 0.2)' : '#ff9800',
+              color: hasSearched ? 'white' : 'rgba(0, 0, 0, 0.87)',
+              fontWeight: hasSearched ? 400 : 700,
+              '&:hover': {
+                bgcolor: hasSearched ? 'rgba(255, 255, 255, 0.3)' : '#f57c00',
+              },
+              // 検索未実行時はパルスアニメーション
+              ...(!hasSearched && {
+                animation: 'pulse 2s infinite',
+                '@keyframes pulse': {
+                  '0%': {
+                    boxShadow: '0 0 0 0 rgba(255, 152, 0, 0.7)',
+                  },
+                  '70%': {
+                    boxShadow: '0 0 0 10px rgba(255, 152, 0, 0)',
+                  },
+                  '100%': {
+                    boxShadow: '0 0 0 0 rgba(255, 152, 0, 0)',
+                  },
+                },
+              }),
             }}
           >
-            検索前提条件を設定
+            {hasSearched ? '検索前提条件を設定' : '検索を実行してください'}
           </Button>
           {/* 現在の検索条件表示 */}
           {getConditionChips.length > 0 && (

@@ -24,6 +24,7 @@ export default function BuildingForm() {
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [stores, setStores] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -34,14 +35,31 @@ export default function BuildingForm() {
     has_elevator: false,
     has_bicycle_parking: false,
     has_parking: false,
-    parking_spaces: ""
+    parking_spaces: "",
+    store_id: ""
   });
 
   useEffect(() => {
+    fetchStores();
     if (isEdit) {
       fetchBuilding();
     }
   }, [id]);
+
+  const fetchStores = async () => {
+    try {
+      const response = await fetch('/api/v1/stores', {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStores(data);
+      }
+    } catch (err) {
+      console.error('店舗取得エラー:', err);
+    }
+  };
 
   const fetchBuilding = async () => {
     try {
@@ -64,7 +82,8 @@ export default function BuildingForm() {
           has_elevator: data.has_elevator || false,
           has_bicycle_parking: data.has_bicycle_parking || false,
           has_parking: data.has_parking || false,
-          parking_spaces: data.parking_spaces || ""
+          parking_spaces: data.parking_spaces || "",
+          store_id: data.store_id || ""
         });
       } else {
         setError('物件情報の取得に失敗しました');
@@ -206,6 +225,28 @@ export default function BuildingForm() {
                 onChange={handleChange}
                 disabled={submitting}
               />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                select
+                fullWidth
+                label="店舗"
+                name="store_id"
+                value={formData.store_id}
+                onChange={handleChange}
+                disabled={submitting}
+                helperText="この物件を担当する店舗を選択"
+              >
+                <MenuItem value="">
+                  <em>未選択</em>
+                </MenuItem>
+                {stores.map((store) => (
+                  <MenuItem key={store.id} value={store.id}>
+                    {store.name}
+                  </MenuItem>
+                ))}
+              </TextField>
             </Grid>
 
             <Grid item xs={12} sm={6}>

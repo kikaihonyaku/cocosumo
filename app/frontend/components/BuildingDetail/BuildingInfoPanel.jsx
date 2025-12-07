@@ -29,7 +29,7 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 
-export default function BuildingInfoPanel({ property, onSave, loading, isMobile = false, onFormChange }) {
+export default function BuildingInfoPanel({ property, onSave, loading, isMobile = false, onFormChange, stores = [] }) {
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -44,6 +44,7 @@ export default function BuildingInfoPanel({ property, onSave, loading, isMobile 
     has_bicycle_parking: false,
     has_parking: false,
     parking_spaces: '',
+    store_id: '',
     ...property
   });
 
@@ -69,6 +70,7 @@ export default function BuildingInfoPanel({ property, onSave, loading, isMobile 
         has_bicycle_parking: property.has_bicycle_parking || false,
         has_parking: property.has_parking || false,
         parking_spaces: property.parking_spaces || '',
+        store_id: property.store_id || '',
         ...property
       });
     }
@@ -236,6 +238,25 @@ export default function BuildingInfoPanel({ property, onSave, loading, isMobile 
                 {buildingTypes.map((type) => (
                   <MenuItem key={type.id} value={type.id}>
                     {type.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth size="small">
+              <InputLabel>担当店舗</InputLabel>
+              <Select
+                value={formData.store_id || ''}
+                label="担当店舗"
+                onChange={handleChange('store_id')}
+                variant="outlined"
+              >
+                <MenuItem value="">
+                  <em>未選択</em>
+                </MenuItem>
+                {stores.map((store) => (
+                  <MenuItem key={store.id} value={store.id}>
+                    {store.name}
                   </MenuItem>
                 ))}
               </Select>

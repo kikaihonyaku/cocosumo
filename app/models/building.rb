@@ -3,6 +3,7 @@ class Building < ApplicationRecord
 
   # Associations
   belongs_to :tenant
+  belongs_to :store, optional: true
   has_many :rooms, dependent: :destroy
   has_many :owners, dependent: :destroy
   has_many :building_photos, dependent: :destroy

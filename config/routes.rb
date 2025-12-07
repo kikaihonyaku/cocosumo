@@ -26,6 +26,13 @@ Rails.application.routes.draw do
       # Imagen AI (image editing)
       post 'imagen/edit_image', to: 'imagen#edit_image'
 
+      # 店舗管理
+      resources :stores, only: [:index, :create, :show, :update] do
+        collection do
+          post :geocode
+        end
+      end
+
       # 物件管理
       resources :buildings do
         resources :photos, only: [:index, :create, :destroy, :show, :update], controller: 'building_photos' do
