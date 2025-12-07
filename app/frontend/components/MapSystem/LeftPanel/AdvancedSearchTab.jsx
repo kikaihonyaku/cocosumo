@@ -223,30 +223,15 @@ export default function AdvancedSearchTab({
             onClick={onOpenSearchModal}
             fullWidth
             sx={{
-              bgcolor: hasSearched ? 'rgba(255, 255, 255, 0.2)' : '#ff9800',
-              color: hasSearched ? 'white' : 'rgba(0, 0, 0, 0.87)',
+              bgcolor: hasSearched ? 'rgba(255, 255, 255, 0.2)' : 'white',
+              color: hasSearched ? 'white' : '#1976d2',
               fontWeight: hasSearched ? 400 : 700,
               '&:hover': {
-                bgcolor: hasSearched ? 'rgba(255, 255, 255, 0.3)' : '#f57c00',
+                bgcolor: hasSearched ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.9)',
               },
-              // 検索未実行時はパルスアニメーション
-              ...(!hasSearched && {
-                animation: 'pulse 2s infinite',
-                '@keyframes pulse': {
-                  '0%': {
-                    boxShadow: '0 0 0 0 rgba(255, 152, 0, 0.7)',
-                  },
-                  '70%': {
-                    boxShadow: '0 0 0 10px rgba(255, 152, 0, 0)',
-                  },
-                  '100%': {
-                    boxShadow: '0 0 0 0 rgba(255, 152, 0, 0)',
-                  },
-                },
-              }),
             }}
           >
-            {hasSearched ? '検索前提条件を設定' : '検索を実行してください'}
+            {hasSearched ? '検索前提条件を設定' : '検索条件を指定してください'}
           </Button>
           {/* 現在の検索条件表示 */}
           {getConditionChips.length > 0 && (

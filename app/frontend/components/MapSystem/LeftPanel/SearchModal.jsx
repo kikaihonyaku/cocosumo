@@ -110,6 +110,9 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
       onClose={onClose}
       maxWidth="md"
       fullWidth
+      sx={{
+        zIndex: 1400, // LeftPanelのz-index(1350)より上に表示
+      }}
       PaperProps={{
         sx: {
           borderRadius: 3,

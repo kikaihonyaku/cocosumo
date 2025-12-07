@@ -616,17 +616,24 @@ export default function MapContainer({
         }
       });
 
-      // 全ての物件が見えるように地図をフィット（GISフィルタがない場合のみ）
+      // 全ての物件と店舗が見えるように地図をフィット（GISフィルタがない場合のみ）
       // GISフィルタがある場合は、ユーザーが範囲を指定しているのでリサイズしない
-      if (!hasGeoFilter && properties.length > 0) {
-        const positions = properties
+      if (!hasGeoFilter) {
+        const propertyPositions = properties
           .filter(p => p.latitude && p.longitude)
           .map(p => ({
             lat: parseFloat(p.latitude),
             lng: parseFloat(p.longitude)
           }));
-        if (positions.length > 0) {
-          fitBounds(positions);
+        const storePositions = stores
+          .filter(s => s.latitude && s.longitude)
+          .map(s => ({
+            lat: parseFloat(s.latitude),
+            lng: parseFloat(s.longitude)
+          }));
+        const allPositions = [...propertyPositions, ...storePositions];
+        if (allPositions.length > 0) {
+          fitBounds(allPositions);
         }
       }
     }
@@ -639,7 +646,7 @@ export default function MapContainer({
         delete window.selectProperty;
       }
     };
-  }, [isLoaded, map, properties, hasGeoFilter]);
+  }, [isLoaded, map, properties, stores, hasGeoFilter]);
 
   // 店舗マーカー表示用のuseEffect
   useEffect(() => {
@@ -655,6 +662,25 @@ export default function MapContainer({
     const storesWithLocation = stores.filter(store => store.latitude && store.longitude);
 
     storesWithLocation.forEach(store => {
+      // 店舗アイコン（ビル/オフィスの形をしたピン）
+      const storeIconSvg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
+          <!-- ピンの形（下向きの針） -->
+          <path d="M18 44 L10 30 L26 30 Z" fill="#1565c0"/>
+          <!-- 円形の背景 -->
+          <circle cx="18" cy="15" r="14" fill="#1976d2" stroke="#ffffff" stroke-width="2"/>
+          <!-- ビルアイコン -->
+          <path d="M10 7 L10 23 L16 23 L16 19 L20 19 L20 23 L26 23 L26 7 Z" fill="#ffffff"/>
+          <!-- 窓 -->
+          <rect x="12" y="9" width="2.5" height="2.5" fill="#1976d2"/>
+          <rect x="16.75" y="9" width="2.5" height="2.5" fill="#1976d2"/>
+          <rect x="21.5" y="9" width="2.5" height="2.5" fill="#1976d2"/>
+          <rect x="12" y="13.5" width="2.5" height="2.5" fill="#1976d2"/>
+          <rect x="16.75" y="13.5" width="2.5" height="2.5" fill="#1976d2"/>
+          <rect x="21.5" y="13.5" width="2.5" height="2.5" fill="#1976d2"/>
+        </svg>
+      `;
+
       const marker = new google.maps.Marker({
         position: {
           lat: parseFloat(store.latitude),
@@ -663,12 +689,9 @@ export default function MapContainer({
         map: map,
         title: store.name,
         icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          fillColor: '#1976d2',
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeWeight: 3,
-          scale: 12,
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(storeIconSvg),
+          scaledSize: new google.maps.Size(36, 44),
+          anchor: new google.maps.Point(18, 44),
         },
         zIndex: 1000, // 物件マーカーより上に表示
       });
