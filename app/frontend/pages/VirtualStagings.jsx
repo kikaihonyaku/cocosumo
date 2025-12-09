@@ -125,8 +125,8 @@ export default function VirtualStagings() {
     handleMenuClose();
   };
 
-  const copyPublicUrl = (stagingId) => {
-    const url = `${window.location.origin}/virtual-staging/${stagingId}`;
+  const copyPublicUrl = (publicId) => {
+    const url = `${window.location.origin}/virtual-staging/${publicId}`;
     navigator.clipboard.writeText(url).then(() => {
       setSnackbarMessage('公開URLをコピーしました');
     });
@@ -344,7 +344,7 @@ export default function VirtualStagings() {
           </MenuItem>
         )}
         {selectedStaging?.status === 'published' && (
-          <MenuItem onClick={() => copyPublicUrl(selectedStaging.id)}>
+          <MenuItem onClick={() => copyPublicUrl(selectedStaging.public_id)}>
             <CopyIcon sx={{ mr: 1, fontSize: 20 }} />
             公開URLをコピー
           </MenuItem>

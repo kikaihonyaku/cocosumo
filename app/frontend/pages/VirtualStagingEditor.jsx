@@ -200,7 +200,7 @@ const VirtualStagingEditor = () => {
   };
 
   const handleCopyUrl = () => {
-    const publicUrl = `${window.location.origin}/virtual-staging/${id}`;
+    const publicUrl = `${window.location.origin}/virtual-staging/${virtualStaging.public_id}`;
     navigator.clipboard.writeText(publicUrl);
     showSnackbar('URLをコピーしました', 'success');
   };
@@ -532,7 +532,7 @@ const VirtualStagingEditor = () => {
             このバーチャルステージングを公開しますか？
           </Typography>
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            公開URL: {window.location.origin}/virtual-staging/{id}
+            公開URL: {window.location.origin}/virtual-staging/{virtualStaging.public_id}
           </Typography>
           <Box sx={{ mt: 2 }}>
             <Typography variant="subtitle2">タイトル:</Typography>
