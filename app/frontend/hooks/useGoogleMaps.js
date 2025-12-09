@@ -124,9 +124,20 @@ export function useGoogleMaps(mapElementId, options = {}) {
   };
 
   // InfoWindowを表示する関数
-  const showInfoWindow = (content, marker, position) => {
+  const showInfoWindow = (content, marker, position, options = {}) => {
     if (infoWindowRef.current) {
-      infoWindowRef.current.setContent(content);
+      // 既存のInfoWindowを閉じて新しく作成（headerContentを更新するため）
+      infoWindowRef.current.close();
+
+      const infoWindowOptions = { content };
+
+      // ヘッダーコンテンツが指定されている場合
+      if (options.headerContent) {
+        infoWindowOptions.headerContent = options.headerContent;
+      }
+
+      infoWindowRef.current = new google.maps.InfoWindow(infoWindowOptions);
+
       if (marker) {
         // マーカーが指定されている場合はマーカーに表示
         infoWindowRef.current.open(map, marker);

@@ -101,12 +101,19 @@ export default function MapContainer({
     }
   };
 
+  // InfoWindowヘッダー用のDOM要素を生成
+  const createInfoWindowHeader = (property) => {
+    const header = document.createElement('div');
+    header.style.cssText = 'cursor: pointer; color: #0168B7; font-weight: 600;';
+    header.textContent = property.name;
+    header.onclick = () => window.openBuildingDetail(property.id);
+    return header;
+  };
+
   // InfoWindow用のHTMLコンテンツを生成（シンプル版）
   const createInfoWindowContent = (property) => {
     return `
-      <div style="padding: 12px; min-width: 200px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-        <h3 style="margin: 0 0 8px 0; color: #0168B7; font-size: 1rem; font-weight: 600; cursor: pointer; text-decoration: underline;"
-            onclick="window.openBuildingDetail(${property.id})">${property.name}</h3>
+      <div style="padding: 8px 12px 12px; min-width: 200px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
         <p style="margin: 0; color: #666; font-size: 0.875rem;">${property.address}</p>
       </div>
     `;
@@ -562,11 +569,12 @@ export default function MapContainer({
         if (property && property.latitude && property.longitude) {
           // InfoWindowを表示
           const content = createInfoWindowContent(property);
+          const headerContent = createInfoWindowHeader(property);
           // マーカーを取得してInfoWindowを表示（マーカーが存在する場合）
           showInfoWindow(content, null, {
             lat: parseFloat(property.latitude),
             lng: parseFloat(property.longitude)
-          });
+          }, { headerContent });
 
           // 地図の中心を移動
           panToLocation({
@@ -599,7 +607,8 @@ export default function MapContainer({
             icon: iconUrl,
             onClick: (marker, id) => {
               const content = createInfoWindowContent(property);
-              showInfoWindow(content, marker);
+              const headerContent = createInfoWindowHeader(property);
+              showInfoWindow(content, marker, null, { headerContent });
 
               // 地図の中心を移動
               panToLocation({

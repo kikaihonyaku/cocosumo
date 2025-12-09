@@ -613,12 +613,6 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
           物件位置
         </Typography>
 
-        {!isMobile && property?.address && (
-          <Typography variant="body2" color="text.secondary" sx={{ mx: 2, flex: 1 }}>
-            {property.address}
-          </Typography>
-        )}
-
         {/* 位置編集・住所検索・ストリートビューボタン（モバイル時は非表示） */}
         {!isMobile && (
           <Box sx={{ display: 'flex', gap: 1 }}>

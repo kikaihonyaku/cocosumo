@@ -52,7 +52,7 @@ export default function BuildingDetail() {
   const [selectedPlace, setSelectedPlace] = useState(null); // AI応答から選択された場所
   const [widgetContextToken, setWidgetContextToken] = useState(null); // Google Maps Grounding Widget Context Token
   const [leftPaneWidth, setLeftPaneWidth] = useState(280); // 左ペインの横幅
-  const [rightPaneWidth, setRightPaneWidth] = useState(480); // 右ペインの横幅
+  const [rightPaneWidth, setRightPaneWidth] = useState(280); // 右ペインの横幅
   const [rightPaneTopHeight, setRightPaneTopHeight] = useState(50); // 右ペイン上部の高さ（パーセンテージ）
   const [isResizingLeft, setIsResizingLeft] = useState(false); // 左側リサイズ中かどうか
   const [isResizingRight, setIsResizingRight] = useState(false); // 右側リサイズ中かどうか
