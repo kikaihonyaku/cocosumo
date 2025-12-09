@@ -27,68 +27,28 @@ const BeforeAfterSlider = ({
     }}>
       <ReactCompareSlider
         itemOne={
-          <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
-            <ReactCompareSliderImage
-              src={beforeImageUrl}
-              alt={beforeLabel}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                display: 'block',
-              }}
-            />
-            {showLabels && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 16,
-                  left: 16,
-                  bgcolor: 'rgba(0, 0, 0, 0.6)',
-                  color: 'white',
-                  px: 2,
-                  py: 1,
-                  borderRadius: 1,
-                }}
-              >
-                <Typography variant="body2" fontWeight="bold">
-                  {beforeLabel}
-                </Typography>
-              </Box>
-            )}
-          </Box>
+          <ReactCompareSliderImage
+            src={beforeImageUrl}
+            alt={beforeLabel}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              display: 'block',
+            }}
+          />
         }
         itemTwo={
-          <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
-            <ReactCompareSliderImage
-              src={afterImageUrl}
-              alt={afterLabel}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                display: 'block',
-              }}
-            />
-            {showLabels && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 16,
-                  right: 16,
-                  bgcolor: 'rgba(0, 0, 0, 0.6)',
-                  color: 'white',
-                  px: 2,
-                  py: 1,
-                  borderRadius: 1,
-                }}
-              >
-                <Typography variant="body2" fontWeight="bold">
-                  {afterLabel}
-                </Typography>
-              </Box>
-            )}
-          </Box>
+          <ReactCompareSliderImage
+            src={afterImageUrl}
+            alt={afterLabel}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              display: 'block',
+            }}
+          />
         }
         position={50}
         style={{
@@ -98,6 +58,47 @@ const BeforeAfterSlider = ({
           overflow: 'hidden',
         }}
       />
+      {/* ラベルをスライダーの外側に配置して常に表示 */}
+      {showLabels && (
+        <>
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 16,
+              left: 16,
+              bgcolor: 'rgba(0, 0, 0, 0.6)',
+              color: 'white',
+              px: 2,
+              py: 1,
+              borderRadius: 1,
+              pointerEvents: 'none',
+              zIndex: 5,
+            }}
+          >
+            <Typography variant="body2" fontWeight="bold">
+              {beforeLabel}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              bgcolor: 'rgba(0, 0, 0, 0.6)',
+              color: 'white',
+              px: 2,
+              py: 1,
+              borderRadius: 1,
+              pointerEvents: 'none',
+              zIndex: 5,
+            }}
+          >
+            <Typography variant="body2" fontWeight="bold">
+              {afterLabel}
+            </Typography>
+          </Box>
+        </>
+      )}
     </Box>
   );
 };
