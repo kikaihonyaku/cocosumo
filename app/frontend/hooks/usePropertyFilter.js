@@ -68,20 +68,46 @@ export function usePropertyFilter(allProperties, filters, rangeSelections, geoFi
     return calculateAggregations(filteredRooms);
   }, [filteredRooms]);
 
-  // 地図ピン表示用: GISフィルタのみ適用したプロパティ
-  // （賃料・間取り等のフィルタは適用しない - 全ピン表示用）
+  // 地図ピン表示用のプロパティ
+  // 賃料・間取り等のフィルタを適用し、GISフィルタは範囲内/外の情報として付与
+  // （GIS範囲外は紫色で表示するため除外しない）
   const propertiesForMapPins = useMemo(() => {
+    // まず、賃料・間取り等のフィルタ条件にマッチする物件IDを取得
+    const filteredPropertyIds = new Set(filteredProperties.map(p => p.id));
+
     if (geoFilteredIds === null) {
-      // GISフィルタがない場合は全物件
-      return allProperties;
+      // GISフィルタがない場合は、賃料・間取り等のフィルタのみ適用
+      return allProperties.filter(property => filteredPropertyIds.has(property.id));
     }
-    // GISフィルタがある場合は、範囲内/外の情報を付与
+
+    // GISフィルタがある場合は、賃料・間取り等のフィルタを適用しつつ、
+    // GIS範囲外の物件も含め、範囲内/外の情報を付与
     const geoIdSet = new Set(geoFilteredIds);
-    return allProperties.map(property => ({
-      ...property,
-      isInGeoFilter: geoIdSet.has(property.id),
-    }));
-  }, [allProperties, geoFilteredIds]);
+
+    // 賃料・間取り等のフィルタ条件にマッチする物件のみ（GISフィルタ前の全物件から）
+    // ※GIS範囲外の物件も含めるため、allRoomsベースでフィルタし直す
+    const allFilteredRooms = filterRooms(allRooms, filters, rangeSelections);
+    const allFilteredPropertyIds = new Set(allFilteredRooms.map(r => r.building_id));
+
+    return allProperties
+      .filter(property => allFilteredPropertyIds.has(property.id))
+      .map(property => ({
+        ...property,
+        isInGeoFilter: geoIdSet.has(property.id),
+      }));
+  }, [
+    allProperties,
+    filteredProperties,
+    geoFilteredIds,
+    allRooms,
+    filters?.rentRange,
+    filters?.roomTypes,
+    filters?.areaRange,
+    filters?.ageRange,
+    rangeSelections?.selectedRentRanges,
+    rangeSelections?.selectedAreaRanges,
+    rangeSelections?.selectedAgeRanges,
+  ]);
 
   return {
     allRooms,
