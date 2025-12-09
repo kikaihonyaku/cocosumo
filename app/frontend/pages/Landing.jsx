@@ -248,30 +248,27 @@ export default function Landing() {
         </div>
       </header>
 
+      {/* DXバナーセクション */}
+      <section className="pt-24 pb-4 bg-gradient-to-b from-gray-50 to-white">
+        <div className="container mx-auto px-4">
+          <div className="inline-flex items-center gap-2 bg-[#c9a227]/10 text-[#c9a227] px-4 py-2 rounded-full text-sm font-medium">
+            <span className="w-2 h-2 bg-[#c9a227] rounded-full animate-pulse"></span>
+            不動産業務をDXで変革
+          </div>
+        </div>
+      </section>
+
       {/* ヒーローセクション */}
-      <section className="pt-32 pb-20 bg-gradient-to-b from-gray-50 to-white">
+      <section className="pb-8 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-[#c9a227]/10 text-[#c9a227] px-4 py-2 rounded-full text-sm font-medium mb-6">
-                <span className="w-2 h-2 bg-[#c9a227] rounded-full animate-pulse"></span>
-                不動産業務をDXで変革
-              </div>
-              <h1 className="text-4xl lg:text-5xl font-bold text-[#1e3a5f] leading-tight mb-6">
-                不動産管理の
-                <br />
-                <span className="text-[#c9a227]">すべて</span>を、
-                <br />
-                ひとつに。
-              </h1>
-              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                AI画像生成、VRツアー作成、物件管理を
-                <br className="hidden sm:block" />
-                一つのプラットフォームで。
-                <br className="hidden sm:block" />
-                不動産会社の業務効率を劇的に向上させます。
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <img
+                src="/cocosumo_logo_top.png"
+                alt="不動産管理のすべてを、ひとつに。"
+                className="max-w-full h-auto mb-6"
+              />
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
                   onClick={handleOpenHome}
                   className="bg-[#1e3a5f] hover:bg-[#2d5a8a] text-white px-8 py-4 rounded-lg text-lg font-medium transition-all shadow-lg hover:shadow-xl"
@@ -309,6 +306,17 @@ export default function Landing() {
               <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-[#1e3a5f]/20 rounded-full blur-2xl"></div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* キャッチコピーセクション */}
+      <section className="py-12 bg-white">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto">
+            AI画像生成、VRツアー作成、物件管理を一つのプラットフォームで。
+            <br />
+            不動産会社の業務効率を劇的に向上させます。
+          </p>
         </div>
       </section>
 
