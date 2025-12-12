@@ -43,9 +43,21 @@ export default function HotspotEditor({
     type: 'scene_link',
     text: '',
     target_scene_id: '',
+    arrow_direction: 'right',
     yaw: 0,
     pitch: 0
   });
+
+  const ARROW_DIRECTIONS = [
+    { value: 'right', label: '→ 右' },
+    { value: 'down-right', label: '↘ 右下' },
+    { value: 'down', label: '↓ 下' },
+    { value: 'down-left', label: '↙ 左下' },
+    { value: 'left', label: '← 左' },
+    { value: 'up-left', label: '↖ 左上' },
+    { value: 'up', label: '↑ 上' },
+    { value: 'up-right', label: '↗ 右上' },
+  ];
 
   // Update form when pendingPosition changes
   React.useEffect(() => {
@@ -76,6 +88,7 @@ export default function HotspotEditor({
       type: 'scene_link',
       text: '',
       target_scene_id: '',
+      arrow_direction: 'right',
       yaw: pendingPosition?.yaw || 0,
       pitch: pendingPosition?.pitch || 0
     });
@@ -89,6 +102,7 @@ export default function HotspotEditor({
       type: hotspot.data?.type || 'scene_link',
       text: hotspot.text || '',
       target_scene_id: hotspot.data?.target_scene_id ? String(hotspot.data.target_scene_id) : '',
+      arrow_direction: hotspot.data?.arrow_direction || 'right',
       yaw: hotspot.yaw || 0,
       pitch: hotspot.pitch || 0
     });
@@ -125,7 +139,8 @@ export default function HotspotEditor({
           pitch: hotspotForm.pitch,
           data: {
             type: hotspotForm.type,
-            target_scene_id: hotspotForm.target_scene_id
+            target_scene_id: hotspotForm.target_scene_id,
+            arrow_direction: hotspotForm.arrow_direction
           }
         } : h
       );
@@ -138,7 +153,8 @@ export default function HotspotEditor({
         pitch: hotspotForm.pitch,
         data: {
           type: hotspotForm.type,
-          target_scene_id: hotspotForm.target_scene_id
+          target_scene_id: hotspotForm.target_scene_id,
+          arrow_direction: hotspotForm.arrow_direction
         }
       };
       newHotspots = [...hotspots, newHotspot];
@@ -282,22 +298,39 @@ export default function HotspotEditor({
             />
 
             {hotspotForm.type === 'scene_link' && (
-              <FormControl fullWidth required>
-                <InputLabel>リンク先シーン</InputLabel>
-                <Select
-                  value={hotspotForm.target_scene_id}
-                  onChange={(e) => setHotspotForm({ ...hotspotForm, target_scene_id: e.target.value })}
-                  label="リンク先シーン"
-                >
-                  {scenes
-                    .filter(s => s.id !== currentSceneId)
-                    .map((scene) => (
-                      <MenuItem key={scene.id} value={String(scene.id)}>
-                        {scene.title}
+              <>
+                <FormControl fullWidth required>
+                  <InputLabel>リンク先シーン</InputLabel>
+                  <Select
+                    value={hotspotForm.target_scene_id}
+                    onChange={(e) => setHotspotForm({ ...hotspotForm, target_scene_id: e.target.value })}
+                    label="リンク先シーン"
+                  >
+                    {scenes
+                      .filter(s => s.id !== currentSceneId)
+                      .map((scene) => (
+                        <MenuItem key={scene.id} value={String(scene.id)}>
+                          {scene.title}
+                        </MenuItem>
+                      ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth>
+                  <InputLabel>矢印の向き</InputLabel>
+                  <Select
+                    value={hotspotForm.arrow_direction}
+                    onChange={(e) => setHotspotForm({ ...hotspotForm, arrow_direction: e.target.value })}
+                    label="矢印の向き"
+                  >
+                    {ARROW_DIRECTIONS.map((dir) => (
+                      <MenuItem key={dir.value} value={dir.value}>
+                        {dir.label}
                       </MenuItem>
                     ))}
-                </Select>
-              </FormControl>
+                  </Select>
+                </FormControl>
+              </>
             )}
 
             <Box sx={{ display: 'flex', gap: 2 }}>

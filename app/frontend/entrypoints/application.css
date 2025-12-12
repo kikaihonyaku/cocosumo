@@ -1,3 +1,353 @@
 @import "tailwindcss";
 
 @source "../**/*.{js,jsx,ts,tsx}";
+
+/* VRツアー ホットスポット（シーンリンク）スタイル */
+
+/* 共通アニメーション */
+@keyframes hotspot-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(255, 255, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+@keyframes hotspot-ripple {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+@keyframes hotspot-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes hotspot-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ====================================
+   スタイル1: モダンピル型（現在のスタイル）
+   ==================================== */
+.hotspot-modern {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 24px;
+  padding: 8px 16px 8px 10px;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.hotspot-modern:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.2) 100%);
+  transform: scale(1.05);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+
+.hotspot-modern .hotspot-icon {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: hotspot-pulse 2s infinite;
+  flex-shrink: 0;
+}
+
+.hotspot-modern .hotspot-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: white;
+}
+
+.hotspot-label {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+
+/* ====================================
+   スタイル2: THETAスタイル（シンプル円形）
+   ==================================== */
+.hotspot-theta {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.hotspot-theta .hotspot-ring {
+  position: absolute;
+  inset: 0;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: all 0.3s ease;
+}
+
+.hotspot-theta .hotspot-ripple {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  animation: hotspot-ripple 2s infinite;
+}
+
+.hotspot-theta .hotspot-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hotspot-theta .hotspot-center svg {
+  width: 20px;
+  height: 20px;
+  fill: white;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.hotspot-theta:hover .hotspot-ring {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.hotspot-theta .hotspot-tooltip {
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.hotspot-theta:hover .hotspot-tooltip {
+  opacity: 1;
+}
+
+/* 情報リンク用スタイル */
+.hotspot-theta.hotspot-info .hotspot-ring {
+  border-color: rgba(100, 181, 246, 0.9);
+  background: rgba(33, 150, 243, 0.3);
+}
+
+.hotspot-theta.hotspot-info .hotspot-ripple {
+  border-color: rgba(100, 181, 246, 0.5);
+}
+
+.hotspot-theta.hotspot-info .hotspot-center svg {
+  fill: #64B5F6;
+}
+
+/* 矢印の向き */
+.hotspot-theta .hotspot-center.arrow-right svg {
+  transform: rotate(0deg);
+}
+
+.hotspot-theta .hotspot-center.arrow-down-right svg {
+  transform: rotate(45deg);
+}
+
+.hotspot-theta .hotspot-center.arrow-down svg {
+  transform: rotate(90deg);
+}
+
+.hotspot-theta .hotspot-center.arrow-down-left svg {
+  transform: rotate(135deg);
+}
+
+.hotspot-theta .hotspot-center.arrow-left svg {
+  transform: rotate(180deg);
+}
+
+.hotspot-theta .hotspot-center.arrow-up-left svg {
+  transform: rotate(225deg);
+}
+
+.hotspot-theta .hotspot-center.arrow-up svg {
+  transform: rotate(270deg);
+}
+
+.hotspot-theta .hotspot-center.arrow-up-right svg {
+  transform: rotate(315deg);
+}
+
+/* ====================================
+   スタイル3: フローティングアロー
+   ==================================== */
+.hotspot-arrow {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  animation: hotspot-float 2s ease-in-out infinite;
+}
+
+.hotspot-arrow .arrow-body {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 240, 240, 0.9) 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+}
+
+.hotspot-arrow .arrow-body svg {
+  width: 24px;
+  height: 24px;
+  fill: #333;
+}
+
+.hotspot-arrow:hover .arrow-body {
+  transform: scale(1.15);
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.5);
+}
+
+.hotspot-arrow .arrow-label {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 5px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+/* ====================================
+   スタイル4: ネオン円形
+   ==================================== */
+.hotspot-neon {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.hotspot-neon .neon-outer {
+  position: absolute;
+  inset: 0;
+  border: 2px solid #00ffff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00ffff, 0 0 20px rgba(0, 255, 255, 0.5), inset 0 0 10px rgba(0, 255, 255, 0.3);
+  animation: hotspot-pulse 1.5s infinite;
+}
+
+.hotspot-neon .neon-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hotspot-neon .neon-inner svg {
+  width: 14px;
+  height: 14px;
+  fill: #00ffff;
+  filter: drop-shadow(0 0 3px #00ffff);
+}
+
+.hotspot-neon:hover .neon-outer {
+  box-shadow: 0 0 15px #00ffff, 0 0 30px rgba(0, 255, 255, 0.7), inset 0 0 15px rgba(0, 255, 255, 0.5);
+}
+
+.hotspot-neon .neon-label {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #00ffff;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-shadow: 0 0 5px #00ffff;
+}
+
+/* ====================================
+   スタイル5: ミニマル矢印（床に配置向け）
+   ==================================== */
+.hotspot-floor {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  transform: perspective(100px) rotateX(45deg);
+}
+
+.hotspot-floor .floor-circle {
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.6) 50%, transparent 70%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: hotspot-pulse 2s infinite;
+}
+
+.hotspot-floor .floor-circle svg {
+  width: 28px;
+  height: 28px;
+  fill: #333;
+  transform: rotateX(-45deg);
+}

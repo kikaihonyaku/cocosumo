@@ -5,6 +5,21 @@ import "@photo-sphere-viewer/core/index.css";
 import "@photo-sphere-viewer/markers-plugin/index.css";
 import { Box, CircularProgress, Alert } from "@mui/material";
 
+// マーカーのHTMLを生成
+const generateMarkerHtml = (marker) => {
+  const type = marker.data?.type || 'scene_link';
+  const text = marker.text || 'リンク';
+  const arrowDirection = marker.data?.arrow_direction || 'right';
+
+  if (type === 'info') {
+    // 情報リンク: 情報アイコン
+    return `<div class="hotspot-theta hotspot-info"><div class="hotspot-ripple"></div><div class="hotspot-ring"></div><div class="hotspot-center"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></div><div class="hotspot-tooltip">${text}</div></div>`;
+  } else {
+    // シーンリンク: 矢印アイコン（向き付き）
+    return `<div class="hotspot-theta"><div class="hotspot-ripple"></div><div class="hotspot-ring"></div><div class="hotspot-center arrow-${arrowDirection}"><svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></div><div class="hotspot-tooltip">${text}</div></div>`;
+  }
+};
+
 export default function PanoramaViewer({
   imageUrl,
   initialView = { yaw: 0, pitch: 0 },
@@ -101,7 +116,7 @@ export default function PanoramaViewer({
               markers: markers.map(marker => ({
                 id: marker.id,
                 position: { yaw: marker.yaw, pitch: marker.pitch },
-                html: marker.html || `<div class="hotspot-marker" style="background: rgba(33, 150, 243, 0.9); color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.5); cursor: pointer; user-select: none;">${marker.text || 'ホットスポット'}</div>`,
+                html: marker.html || generateMarkerHtml(marker),
                 tooltip: marker.tooltip,
                 data: marker.data
               }))
@@ -178,7 +193,7 @@ export default function PanoramaViewer({
           const markerConfig = {
             id: marker.id,
             position: { yaw: marker.yaw || 0, pitch: marker.pitch || 0 },
-            html: marker.html || `<div class="hotspot-marker" style="background: rgba(33, 150, 243, 0.9); color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.5); cursor: pointer; user-select: none;">${marker.text || 'ホットスポット'}</div>`,
+            html: marker.html || generateMarkerHtml(marker),
             tooltip: marker.tooltip,
             data: marker.data
           };

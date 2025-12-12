@@ -525,45 +525,62 @@ export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDele
                         ))}
                       </Box>
 
-                      {/* 写真グリッド */}
-                      <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
-                        <Grid container spacing={1.5}>
-                          {roomPhotos
-                            .filter(photo =>
-                              selectedPhotoCategory === 'all' || photo.photo_type === selectedPhotoCategory
-                            )
-                            .map((photo) => (
-                              <Grid item xs={4} sm={3} md={2} key={photo.id}>
-                                <Card
-                                  sx={{
-                                    cursor: 'pointer',
-                                    border: newScene.room_photo_id === photo.id ? 2 : 1,
-                                    borderColor: newScene.room_photo_id === photo.id ? 'primary.main' : 'divider',
-                                    transition: 'all 0.2s',
-                                    '&:hover': {
-                                      boxShadow: 3,
-                                      transform: 'translateY(-2px)',
-                                    },
-                                  }}
-                                  onClick={() => setNewScene({ ...newScene, room_photo_id: photo.id })}
-                                >
-                                  <CardMedia
-                                    component="img"
-                                    height="80"
-                                    image={photo.photo_url}
-                                    alt={getPhotoDisplayName(photo)}
-                                    sx={{ objectFit: 'cover' }}
-                                  />
-                                  <CardContent sx={{ p: 0.75 }}>
-                                    <Typography variant="caption" noWrap sx={{ display: 'block', fontSize: '0.7rem' }}>
-                                      {photo.caption || `写真${photo.id}`}
-                                    </Typography>
-                                  </CardContent>
-                                </Card>
-                              </Grid>
-                            ))}
-                        </Grid>
+                      {/* 写真グリッド - サムネイル表示で一覧性を高める */}
+                      <Box sx={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 1,
+                        maxHeight: 350,
+                        overflowY: 'auto',
+                        p: 1,
+                        bgcolor: 'grey.50',
+                        borderRadius: 1
+                      }}>
+                        {roomPhotos
+                          .filter(photo =>
+                            selectedPhotoCategory === 'all' || photo.photo_type === selectedPhotoCategory
+                          )
+                          .map((photo) => (
+                            <Box
+                              key={photo.id}
+                              onClick={() => setNewScene({ ...newScene, room_photo_id: photo.id })}
+                              sx={{
+                                width: 72,
+                                height: 72,
+                                flexShrink: 0,
+                                cursor: 'pointer',
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                border: newScene.room_photo_id === photo.id ? '3px solid' : '2px solid',
+                                borderColor: newScene.room_photo_id === photo.id ? 'primary.main' : 'transparent',
+                                boxShadow: newScene.room_photo_id === photo.id ? 3 : 1,
+                                transition: 'all 0.15s',
+                                '&:hover': {
+                                  borderColor: newScene.room_photo_id === photo.id ? 'primary.main' : 'grey.400',
+                                  transform: 'scale(1.05)',
+                                },
+                              }}
+                            >
+                              <img
+                                src={photo.photo_url}
+                                alt={getPhotoDisplayName(photo)}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                }}
+                              />
+                            </Box>
+                          ))}
                       </Box>
+                      {/* 選択中の写真情報 */}
+                      {newScene.room_photo_id && (
+                        <Box sx={{ mt: 1, p: 1, bgcolor: 'primary.50', borderRadius: 1, border: '1px solid', borderColor: 'primary.200' }}>
+                          <Typography variant="body2" color="primary.main">
+                            選択中: {roomPhotos.find(p => p.id === newScene.room_photo_id)?.caption || `写真${newScene.room_photo_id}`}
+                          </Typography>
+                        </Box>
+                      )}
                     </>
                   )}
                 </>
