@@ -846,7 +846,7 @@ export default function MapSystem() {
                                             borderColor: 'primary.main',
                                           }
                                         }}
-                                        onClick={() => window.open(`/building/${selectedObject.data.id}/room/${room.id}`, '_blank')}
+                                        onClick={() => window.open(`/room/${room.id}`, '_blank')}
                                       >
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>

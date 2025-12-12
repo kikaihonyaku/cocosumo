@@ -705,13 +705,16 @@ export default function MapContainer({
         zIndex: 1000, // 物件マーカーより上に表示
       });
 
+      // 店舗のInfoWindow用ヘッダーを作成
+      const headerContent = document.createElement('div');
+      headerContent.style.cssText = 'font-weight: 600; color: #1976d2;';
+      headerContent.textContent = store.name;
+
       // 店舗のInfoWindow
       const infoWindow = new google.maps.InfoWindow({
+        headerContent: headerContent,
         content: `
-          <div style="padding: 8px; min-width: 150px;">
-            <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px; color: #1976d2;">
-              ${store.name}
-            </div>
+          <div style="padding: 8px 12px 12px; min-width: 150px;">
             ${store.address ? `<div style="font-size: 12px; color: #666;">${store.address}</div>` : ''}
             <div style="font-size: 11px; color: #999; margin-top: 4px;">
               紐付き物件: ${store.buildings_count || 0}件
@@ -1014,8 +1017,34 @@ export default function MapContainer({
         </Tooltip>
       </Box>
 
+      {/* 物件検索中インジケーター */}
+      {isLoading && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            bgcolor: 'rgba(255, 255, 255, 0.95)',
+            borderRadius: 2,
+            boxShadow: 3,
+            padding: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            zIndex: 100,
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <CircularProgress size={20} thickness={4} />
+          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+            物件を検索中...
+          </Typography>
+        </Box>
+      )}
+
       {/* レイヤー読み込み中インジケーター */}
-      {Object.entries(layerLoadingStates).some(([_, isLoading]) => isLoading) && (
+      {!isLoading && Object.entries(layerLoadingStates).some(([_, isLayerLoading]) => isLayerLoading) && (
         <Box
           sx={{
             position: 'absolute',

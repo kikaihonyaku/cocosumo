@@ -82,7 +82,6 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
       ownRegistration: true
     };
     setSearchForm(defaultForm);
-    onSearch(defaultForm);
   };
 
   // ESCキーでモーダルを閉じる
@@ -195,6 +194,9 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
                     value={searchForm.buildingType}
                     onChange={(e) => handleInputChange('buildingType', e.target.value)}
                     label="建物種別"
+                    MenuProps={{
+                      sx: { zIndex: 1500 }
+                    }}
                   >
                     <MenuItem value="">選択してください</MenuItem>
                     <MenuItem value="mansion">マンション</MenuItem>
@@ -211,6 +213,9 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
                     value={searchForm.hasVacancy}
                     onChange={(e) => handleInputChange('hasVacancy', e.target.value)}
                     label="空室有無"
+                    MenuProps={{
+                      sx: { zIndex: 1500 }
+                    }}
                   >
                     <MenuItem value="">選択してください</MenuItem>
                     <MenuItem value="true">空室あり</MenuItem>
@@ -223,6 +228,9 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
                     value={searchForm.storeId}
                     onChange={(e) => handleInputChange('storeId', e.target.value)}
                     label="店舗"
+                    MenuProps={{
+                      sx: { zIndex: 1500 }
+                    }}
                   >
                     <MenuItem value="">すべての店舗</MenuItem>
                     {stores.map((store) => (
