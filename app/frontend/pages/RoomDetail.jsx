@@ -219,7 +219,7 @@ export default function RoomDetail() {
           borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
           borderRadius: '12px 12px 0 0',
         }}>
-          <Toolbar variant="dense" sx={{ minHeight: 44 }}>
+          <Toolbar variant="dense" sx={{ minHeight: 50 }}>
             <IconButton
               edge="start"
               onClick={() => navigate(`/building/${room.building_id}`)}
