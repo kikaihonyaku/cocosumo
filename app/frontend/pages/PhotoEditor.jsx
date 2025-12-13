@@ -1133,25 +1133,26 @@ export default function PhotoEditor() {
         {/* ヘッダー */}
         <AppBar position="static" elevation={0} sx={{
           bgcolor: 'primary.main',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
           borderRadius: '12px 12px 0 0'
         }}>
-          <Toolbar>
+          <Toolbar variant="dense" sx={{ minHeight: 52 }}>
             <IconButton
               edge="start"
               color="inherit"
               onClick={() => navigate(-1)}
-              sx={{ mr: 2 }}
+              sx={{ mr: 1 }}
             >
               <ArrowBackIcon />
             </IconButton>
-            <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
+            <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
                 {isBuilding ? '建物写真編集' : '部屋写真編集'}
               </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
+              <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.85rem' }}>
                 {isBuilding
-                  ? `${photo.building_name || ''}${photo.photo_type ? ` ${getPhotoTypeLabel(photo.photo_type)}` : ''} ID: ${photo.id}`
-                  : `${photo.building_name || ''}${photo.room_name ? ` ${photo.room_name}` : ''}${photo.photo_type ? ` ${getPhotoTypeLabel(photo.photo_type)}` : ''} ID: ${photo.id}`
+                  ? `${photo.building_name || ''}${photo.photo_type ? ` ${getPhotoTypeLabel(photo.photo_type)}` : ''}`
+                  : `${photo.building_name || ''}${photo.room_name ? ` ${photo.room_name}` : ''}${photo.photo_type ? ` ${getPhotoTypeLabel(photo.photo_type)}` : ''}`
                 }
               </Typography>
             </Box>
