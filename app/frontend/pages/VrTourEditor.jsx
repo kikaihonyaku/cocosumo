@@ -751,7 +751,6 @@ export default function VrTourEditor() {
                 {/* 中央：シーンプレビュー */}
                 <Paper sx={{
                   flex: 1,
-                  p: { xs: 1, md: 2 },
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
@@ -762,12 +761,11 @@ export default function VrTourEditor() {
                 <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                   <Box sx={{
                     px: 2,
-                    py: 1,
+                    py: 1.5,
                     borderBottom: '1px solid #e0e0e0',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 1.5,
-                    minHeight: 44
+                    gap: 1.5
                   }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                       {selectedScene.title}
@@ -881,7 +879,7 @@ export default function VrTourEditor() {
                   </Box>
                 </Box>
               ) : (
-                <Box sx={{ textAlign: 'center', py: 8 }}>
+                <Box sx={{ textAlign: 'center', py: 8, px: 2 }}>
                   <Typography variant="body1" color="text.secondary">
                     左側のリストからシーンを選択してください
                   </Typography>
