@@ -9,12 +9,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  Grid,
-  Card,
-  CardMedia,
-  CardContent,
-  Chip
+  DialogActions
 } from "@mui/material";
 import {
   CloudUpload as UploadIcon,
@@ -496,43 +491,49 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
               部屋に登録されている写真がありません。先に部屋詳細ページで写真を登録してください。
             </Alert>
           ) : (
-            <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Box sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 1,
+              mt: 2,
+              p: 1,
+              bgcolor: 'grey.50',
+              borderRadius: 1,
+              maxHeight: 400,
+              overflowY: 'auto'
+            }}>
               {roomPhotos.map((photo) => (
-                <Grid item xs={12} sm={6} md={4} key={photo.id}>
-                  <Card
-                    sx={{
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s, box-shadow 0.2s',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: 4,
-                      }
+                <Box
+                  key={photo.id}
+                  onClick={() => handleSelectPhoto(photo)}
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    flexShrink: 0,
+                    cursor: 'pointer',
+                    borderRadius: 1,
+                    overflow: 'hidden',
+                    border: '2px solid transparent',
+                    boxShadow: 1,
+                    transition: 'all 0.15s',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      transform: 'scale(1.05)',
+                    },
+                  }}
+                >
+                  <img
+                    src={photo.photo_url}
+                    alt={getPhotoDisplayName(photo)}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
                     }}
-                    onClick={() => handleSelectPhoto(photo)}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="140"
-                      image={photo.photo_url}
-                      alt={getPhotoDisplayName(photo)}
-                      sx={{ objectFit: 'cover' }}
-                    />
-                    <CardContent sx={{ p: 1.5 }}>
-                      <Typography variant="body2" noWrap>
-                        {getPhotoDisplayName(photo)}
-                      </Typography>
-                      {photo.photo_type && (
-                        <Chip
-                          label={PHOTO_CATEGORIES[photo.photo_type] || photo.photo_type}
-                          size="small"
-                          sx={{ mt: 0.5 }}
-                        />
-                      )}
-                    </CardContent>
-                  </Card>
-                </Grid>
+                  />
+                </Box>
               ))}
-            </Grid>
+            </Box>
           )}
         </DialogContent>
         <DialogActions>
