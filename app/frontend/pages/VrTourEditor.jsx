@@ -762,16 +762,10 @@ export default function VrTourEditor() {
                   <Box sx={{
                     px: 2,
                     py: 1.5,
-                    borderBottom: '1px solid #e0e0e0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5
+                    borderBottom: '1px solid #e0e0e0'
                   }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                       {selectedScene.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      順序: {selectedScene.display_order || 0}
                     </Typography>
                   </Box>
                   <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>
