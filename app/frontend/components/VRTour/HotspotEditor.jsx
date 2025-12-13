@@ -183,26 +183,30 @@ export default function HotspotEditor({
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid #e0e0e0' }}>
-        <Typography variant="subtitle1" sx={{ mb: 0 }}>
+      <Box sx={{
+        px: 2,
+        py: 1.5,
+        borderBottom: '1px solid #e0e0e0',
+        display: 'flex',
+        alignItems: 'center'
+      }}>
+        <Typography variant="subtitle1" sx={{ flexGrow: 1, fontWeight: 600 }}>
           ホットスポット
         </Typography>
-      </Box>
-      <Box sx={{ p: 2 }}>
-        <Alert severity="info" sx={{ mb: 2, py: 0.5 }}>
-          <Typography variant="caption">
-            変更は自動的に保存されます
-          </Typography>
-        </Alert>
         <Button
-          fullWidth
-          variant="outlined"
+          variant="contained"
+          size="small"
           startIcon={<AddIcon />}
           onClick={handleAddHotspot}
         >
-          ホットスポットを追加
+          追加
         </Button>
       </Box>
+      <Alert severity="info" sx={{ mx: 2, mt: 2, py: 0.5 }}>
+        <Typography variant="caption">
+          変更は自動的に保存されます
+        </Typography>
+      </Alert>
 
       <List sx={{ flex: 1, overflow: 'auto' }}>
         {hotspots.length === 0 ? (
