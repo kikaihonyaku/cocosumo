@@ -475,7 +475,7 @@ export default function VrTourEditor() {
   };
 
   const copyPublicUrl = () => {
-    const url = `${window.location.origin}/vr/${id}`;
+    const url = `${window.location.origin}/vr/${vrTour.public_id}`;
     navigator.clipboard.writeText(url).then(() => {
       setSnackbarMessage('公開URLをコピーしました');
       setSnackbarOpen(true);
@@ -989,7 +989,7 @@ export default function VrTourEditor() {
           </DialogContentText>
           <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
             <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
-              {`${window.location.origin}/vr/${id}`}
+              {`${window.location.origin}/vr/${vrTour.public_id || id}`}
             </Typography>
           </Box>
           <DialogContentText sx={{ mt: 2 }}>
