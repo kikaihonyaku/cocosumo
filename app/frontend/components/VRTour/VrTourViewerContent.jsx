@@ -96,7 +96,7 @@ export default function VrTourViewerContent({
           zIndex: 10,
         }}
       >
-        <Toolbar>
+        <Toolbar variant="dense" sx={{ minHeight: 48 }}>
           {(onClose || roomId) && (
             <IconButton
               edge="start"
