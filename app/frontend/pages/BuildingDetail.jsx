@@ -362,7 +362,7 @@ export default function BuildingDetail() {
           borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
           borderRadius: '12px 12px 0 0',
         }}>
-          <Toolbar variant="dense" sx={{ minHeight: 50 }}>
+          <Toolbar variant="dense" sx={{ minHeight: 52 }}>
             <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
                 {property.name}

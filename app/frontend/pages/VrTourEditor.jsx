@@ -499,7 +499,7 @@ export default function VrTourEditor() {
           borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
           borderRadius: '12px 12px 0 0',
         }}>
-          <Toolbar variant="dense" sx={{ minHeight: 50 }}>
+          <Toolbar variant="dense" sx={{ minHeight: 52 }}>
             <IconButton
               edge="start"
               onClick={() => navigate(`/room/${roomId}`)}
