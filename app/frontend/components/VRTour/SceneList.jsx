@@ -418,10 +418,19 @@ export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDele
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+      <Box sx={{
+        px: 2,
+        py: 1.5,
+        borderBottom: '1px solid #e0e0e0',
+        display: 'flex',
+        alignItems: 'center'
+      }}>
+        <Typography variant="subtitle1" sx={{ flexGrow: 1, fontWeight: 600 }}>
+          シーン一覧
+        </Typography>
         <Button
-          fullWidth
           variant="contained"
+          size="small"
           startIcon={<AddIcon />}
           onClick={() => {
             setAddDialogOpen(true);
@@ -429,7 +438,7 @@ export default function SceneList({ vrTourId, roomId, onSceneSelect, onSceneDele
             setPhotoSourceTab(0);
           }}
         >
-          シーンを追加
+          追加
         </Button>
       </Box>
 
