@@ -499,20 +499,20 @@ export default function VrTourEditor() {
           borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
           borderRadius: '12px 12px 0 0',
         }}>
-          <Toolbar variant="dense" sx={{ minHeight: '52px', py: 1 }}>
+          <Toolbar variant="dense" sx={{ minHeight: 44 }}>
             <IconButton
               edge="start"
               onClick={() => navigate(`/room/${roomId}`)}
-              sx={{ mr: 2, color: 'white' }}
+              sx={{ mr: 1, color: 'white' }}
             >
               <ArrowBackIcon />
             </IconButton>
-            <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
+            <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
                 {isNew ? '新規VRツアー作成' : (vrTour.title || 'VRツアー編集')}
               </Typography>
               {!isNew && vrTour.room && (
-                <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
+                <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.85rem' }}>
                   {vrTour.room.building?.name} - {vrTour.room.room_number}号室
                 </Typography>
               )}

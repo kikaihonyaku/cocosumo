@@ -219,23 +219,20 @@ export default function RoomDetail() {
           borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
           borderRadius: '12px 12px 0 0',
         }}>
-          <Toolbar variant="dense" sx={{ minHeight: '52px', py: 1 }}>
+          <Toolbar variant="dense" sx={{ minHeight: 44 }}>
             <IconButton
               edge="start"
               onClick={() => navigate(`/building/${room.building_id}`)}
               sx={{
-                mr: 2,
+                mr: 1,
                 color: 'white',
               }}
             >
               <ArrowBackIcon />
             </IconButton>
-            <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
-                {room.room_number}号室
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
-                {room.building?.name}
+            <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+                {room.building?.name} - {room.room_number}号室
               </Typography>
             </Box>
             <Button
