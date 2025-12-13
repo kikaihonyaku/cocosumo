@@ -12,6 +12,7 @@ RUN apt-get update -qq && \
     libpq-dev \
     libgeos-dev \
     libproj-dev \
+    libyaml-dev \
     pkg-config \
     nodejs \
     npm && \
