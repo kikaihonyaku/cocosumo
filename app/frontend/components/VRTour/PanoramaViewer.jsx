@@ -5,18 +5,17 @@ import "@photo-sphere-viewer/core/index.css";
 import "@photo-sphere-viewer/markers-plugin/index.css";
 import { Box, CircularProgress, Alert } from "@mui/material";
 
-// マーカーのHTMLを生成
-const generateMarkerHtml = (marker) => {
+// マーカーのHTMLを生成（editableモードではdata-marker-id属性を追加）
+const generateMarkerHtml = (marker, editable = false) => {
   const type = marker.data?.type || 'scene_link';
   const text = marker.text || 'リンク';
   const arrowDirection = marker.data?.arrow_direction || 'right';
+  const dataAttr = editable ? ` data-marker-id="${marker.id}"` : '';
 
   if (type === 'info') {
-    // 情報リンク: 情報アイコン
-    return `<div class="hotspot-theta hotspot-info"><div class="hotspot-ripple"></div><div class="hotspot-ring"></div><div class="hotspot-center"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></div><div class="hotspot-tooltip">${text}</div></div>`;
+    return `<div class="hotspot-theta hotspot-info"${dataAttr}><div class="hotspot-ripple"></div><div class="hotspot-ring"></div><div class="hotspot-center"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></div><div class="hotspot-tooltip">${text}</div></div>`;
   } else {
-    // シーンリンク: 矢印アイコン（向き付き）
-    return `<div class="hotspot-theta"><div class="hotspot-ripple"></div><div class="hotspot-ring"></div><div class="hotspot-center arrow-${arrowDirection}"><svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></div><div class="hotspot-tooltip">${text}</div></div>`;
+    return `<div class="hotspot-theta"${dataAttr}><div class="hotspot-ripple"></div><div class="hotspot-ring"></div><div class="hotspot-center arrow-${arrowDirection}"><svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></div><div class="hotspot-tooltip">${text}</div></div>`;
   }
 };
 
@@ -28,12 +27,23 @@ export default function PanoramaViewer({
   onViewChange,
   editable = false,
   onViewerReady,
-  fullscreenContainerId = null
+  fullscreenContainerId = null,
+  onMarkerDragEnd
 }) {
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // editableの最新値を保持するref（クロージャ問題を回避）
+  const editableRef = useRef(editable);
+  editableRef.current = editable;
+
+  // ドラッグ状態管理
+  const draggingMarkerIdRef = useRef(null);
+  const isDraggingRef = useRef(false);
+  const dragStartPosRef = useRef(null);
+  const lastDragPositionRef = useRef(null); // 最後にドラッグした座標を保持
 
   useEffect(() => {
     if (!containerRef.current || !imageUrl) {
@@ -116,7 +126,7 @@ export default function PanoramaViewer({
               markers: markers.map(marker => ({
                 id: marker.id,
                 position: { yaw: marker.yaw, pitch: marker.pitch },
-                html: marker.html || generateMarkerHtml(marker),
+                html: marker.html || generateMarkerHtml(marker, editableRef.current),
                 tooltip: marker.tooltip,
                 data: marker.data
               }))
@@ -126,10 +136,105 @@ export default function PanoramaViewer({
 
         viewerRef.current = viewer;
 
+        // ドラッグ用イベントハンドラー
+        const handleMouseMove = (e) => {
+          if (!draggingMarkerIdRef.current || !viewerRef.current) return;
+
+          // ドラッグ開始判定（5px以上移動でドラッグ開始）
+          if (!isDraggingRef.current && dragStartPosRef.current) {
+            const dx = e.clientX - dragStartPosRef.current.x;
+            const dy = e.clientY - dragStartPosRef.current.y;
+            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+              isDraggingRef.current = true;
+            }
+          }
+
+          if (!isDraggingRef.current) return;
+
+          e.preventDefault();
+
+          try {
+            // containerRefを使用（viewerRef.current.containerはページ全体のサイズになる場合がある）
+            const rect = containerRef.current.getBoundingClientRect();
+            const viewerX = e.clientX - rect.left;
+            const viewerY = e.clientY - rect.top;
+
+            const sphericalCoords = viewerRef.current.dataHelper.viewerCoordsToSphericalCoords({
+              x: viewerX,
+              y: viewerY
+            });
+
+            if (sphericalCoords) {
+              // 最後の座標を保持
+              lastDragPositionRef.current = {
+                yaw: sphericalCoords.yaw,
+                pitch: sphericalCoords.pitch
+              };
+
+              const markersPlugin = viewerRef.current.getPlugin(MarkersPlugin);
+              markersPlugin.updateMarker({
+                id: draggingMarkerIdRef.current,
+                position: { yaw: sphericalCoords.yaw, pitch: sphericalCoords.pitch }
+              });
+            }
+          } catch (err) {
+            console.error('Marker drag error:', err);
+          }
+        };
+
+        const handleMouseUp = () => {
+          if (draggingMarkerIdRef.current) {
+            const markerId = draggingMarkerIdRef.current;
+            const markerElement = document.querySelector(`[data-marker-id="${markerId}"]`);
+            if (markerElement) {
+              markerElement.classList.remove('dragging');
+            }
+
+            if (isDraggingRef.current && onMarkerDragEnd && lastDragPositionRef.current) {
+              onMarkerDragEnd(markerId, lastDragPositionRef.current);
+            }
+
+            draggingMarkerIdRef.current = null;
+            isDraggingRef.current = false;
+            dragStartPosRef.current = null;
+            lastDragPositionRef.current = null;
+          }
+        };
+
+        // マーカー要素にドラッグリスナーを追加
+        const attachDragListeners = () => {
+          const markerElements = document.querySelectorAll('[data-marker-id]');
+          markerElements.forEach(markerElement => {
+            if (markerElement._dragHandler) return;
+
+            const handler = (e) => {
+              const markerId = markerElement.getAttribute('data-marker-id');
+              draggingMarkerIdRef.current = markerId;
+              dragStartPosRef.current = { x: e.clientX, y: e.clientY };
+              markerElement.classList.add('dragging');
+
+              e.stopPropagation();
+              e.stopImmediatePropagation();
+              e.preventDefault();
+
+              if (viewerRef.current) {
+                viewerRef.current.stopAll();
+              }
+            };
+
+            markerElement._dragHandler = handler;
+            markerElement.addEventListener('mousedown', handler, { capture: true });
+          });
+        };
+
         // イベントリスナー
         viewer.addEventListener('ready', () => {
           setLoading(false);
           onViewerReady && onViewerReady(viewer);
+
+          if (editableRef.current) {
+            setTimeout(attachDragListeners, 100);
+          }
         });
 
         viewer.addEventListener('error', (err) => {
@@ -150,13 +255,16 @@ export default function PanoramaViewer({
 
         if (onMarkerClick) {
           markersPlugin.addEventListener('select-marker', (e) => {
+            // ドラッグ中はクリックイベントを無視
+            if (isDraggingRef.current) return;
             onMarkerClick(e.marker);
           });
         }
 
         // エディタブルモードの場合、クリックでマーカー追加
-        if (editable) {
+        if (editableRef.current) {
           viewer.addEventListener('click', (e) => {
+            if (isDraggingRef.current) return;
             if (e.data) {
               onMarkerClick && onMarkerClick({
                 type: 'add',
@@ -164,7 +272,13 @@ export default function PanoramaViewer({
               });
             }
           });
+
+          window.addEventListener('mousemove', handleMouseMove);
+          window.addEventListener('mouseup', handleMouseUp);
         }
+
+        // クリーンアップ用に保存
+        viewer._dragHandlers = { handleMouseMove, handleMouseUp, attachDragListeners };
 
       } catch (err) {
         console.error('PanoramaViewer initialization error:', err);
@@ -176,6 +290,11 @@ export default function PanoramaViewer({
     // クリーンアップ
     return () => {
       if (viewerRef.current) {
+        if (viewerRef.current._dragHandlers) {
+          const { handleMouseMove, handleMouseUp } = viewerRef.current._dragHandlers;
+          window.removeEventListener('mousemove', handleMouseMove);
+          window.removeEventListener('mouseup', handleMouseUp);
+        }
         viewerRef.current.destroy();
         viewerRef.current = null;
       }
@@ -193,12 +312,17 @@ export default function PanoramaViewer({
           const markerConfig = {
             id: marker.id,
             position: { yaw: marker.yaw || 0, pitch: marker.pitch || 0 },
-            html: marker.html || generateMarkerHtml(marker),
+            html: marker.html || generateMarkerHtml(marker, editableRef.current),
             tooltip: marker.tooltip,
             data: marker.data
           };
           markersPlugin.addMarker(markerConfig);
         });
+
+        // マーカー更新後にドラッグリスナーを再追加
+        if (editableRef.current && viewerRef.current._dragHandlers?.attachDragListeners) {
+          setTimeout(viewerRef.current._dragHandlers.attachDragListeners, 50);
+        }
       } catch (err) {
         console.error('Marker update error:', err);
       }

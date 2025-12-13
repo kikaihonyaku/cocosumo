@@ -172,6 +172,27 @@
   opacity: 1;
 }
 
+/* ドラッグ可能なマーカー */
+.hotspot-theta[data-marker-id] {
+  cursor: grab;
+  touch-action: none;
+}
+
+.hotspot-theta[data-marker-id].dragging {
+  cursor: grabbing;
+  opacity: 0.8;
+  transform: scale(1.1);
+}
+
+.hotspot-theta[data-marker-id].dragging .hotspot-ring {
+  border-color: rgba(255, 193, 7, 0.9);
+  background: rgba(255, 193, 7, 0.3);
+}
+
+.hotspot-theta[data-marker-id].dragging .hotspot-ripple {
+  animation: none;
+}
+
 /* 情報リンク用スタイル */
 .hotspot-theta.hotspot-info .hotspot-ring {
   border-color: rgba(100, 181, 246, 0.9);

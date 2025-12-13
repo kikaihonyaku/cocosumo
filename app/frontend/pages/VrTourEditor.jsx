@@ -305,6 +305,20 @@ export default function VrTourEditor() {
     }
   };
 
+  // ホットスポットのドラッグ完了ハンドラー
+  const handleMarkerDragEnd = async (markerId, newPosition) => {
+    if (!selectedScene) return;
+
+    const updatedHotspots = (selectedScene.hotspots || []).map(h =>
+      h.id === markerId
+        ? { ...h, yaw: newPosition.yaw, pitch: newPosition.pitch }
+        : h
+    );
+
+    // 通常のホットスポット変更として処理（再マウントされる）
+    await handleHotspotsChange(updatedHotspots);
+  };
+
   const handleUpdateScenePosition = async (sceneId, updates, skipSceneUpdate = false) => {
     try {
       const response = await fetch(`/api/v1/vr_tours/${id}/vr_scenes/${sceneId}`, {
@@ -687,11 +701,14 @@ export default function VrTourEditor() {
                           afterImageUrl={selectedScene.after_photo_url}
                           initialView={selectedScene.initial_view || { yaw: 0, pitch: 0 }}
                           markers={selectedScene.hotspots || []}
-                          editable={addingHotspot}
+                          editable={true}
                           onMarkerClick={(marker) => {
                             if (marker.type === 'add') {
-                              setPendingPosition(marker.position);
-                              setAddingHotspot(false);
+                              // ホットスポット追加モードの時のみ、クリックで追加
+                              if (addingHotspot) {
+                                setPendingPosition(marker.position);
+                                setAddingHotspot(false);
+                              }
                             } else {
                               // 既存のホットスポットをクリックしたら編集ダイアログを開く
                               if (editHotspotCallback) {
@@ -699,6 +716,7 @@ export default function VrTourEditor() {
                               }
                             }
                           }}
+                          onMarkerDragEnd={handleMarkerDragEnd}
                         />
                       </>
                     ) : selectedScene.photo_url ? (
@@ -729,11 +747,14 @@ export default function VrTourEditor() {
                           imageUrl={selectedScene.photo_url}
                           initialView={selectedScene.initial_view || { yaw: 0, pitch: 0 }}
                           markers={selectedScene.hotspots || []}
-                          editable={addingHotspot}
+                          editable={true}
                           onMarkerClick={(marker) => {
                             if (marker.type === 'add') {
-                              setPendingPosition(marker.position);
-                              setAddingHotspot(false);
+                              // ホットスポット追加モードの時のみ、クリックで追加
+                              if (addingHotspot) {
+                                setPendingPosition(marker.position);
+                                setAddingHotspot(false);
+                              }
                             } else {
                               // 既存のホットスポットをクリックしたら編集ダイアログを開く
                               if (editHotspotCallback) {
@@ -741,6 +762,7 @@ export default function VrTourEditor() {
                               }
                             }
                           }}
+                          onMarkerDragEnd={handleMarkerDragEnd}
                           onViewChange={(view) => {
                             // View change tracking if needed
                           }}
