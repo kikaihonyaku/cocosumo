@@ -394,69 +394,65 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Typography variant="h6" gutterBottom>
+      <Box sx={{
+        px: 2,
+        py: 1.5,
+        borderBottom: '1px solid #e0e0e0',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        flexWrap: 'wrap'
+      }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 'auto' }}>
           ミニマップ設定
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-          <Button
-            variant="contained"
-            component="label"
-            startIcon={<UploadIcon />}
+        <Button
+          variant="contained"
+          component="label"
+          startIcon={<UploadIcon />}
+          size="small"
+        >
+          アップロード
+          <input
+            type="file"
+            hidden
+            accept="image/*"
+            onChange={handleFileChange}
+          />
+        </Button>
+
+        <Button
+          variant="outlined"
+          startIcon={<PhotoLibraryIcon />}
+          size="small"
+          onClick={() => setSelectPhotoDialogOpen(true)}
+        >
+          画像から選択
+        </Button>
+
+        {minimapImage && (
+          <IconButton
             size="small"
+            onClick={handleDeleteImage}
+            color="error"
           >
-            平面図をアップロード
-            <input
-              type="file"
-              hidden
-              accept="image/*"
-              onChange={handleFileChange}
-            />
-          </Button>
-
-          <Button
-            variant="outlined"
-            startIcon={<PhotoLibraryIcon />}
-            size="small"
-            onClick={() => setSelectPhotoDialogOpen(true)}
-          >
-            部屋の画像から選択
-          </Button>
-
-          {minimapImage && (
-            <IconButton
-              size="small"
-              onClick={handleDeleteImage}
-              color="error"
-            >
-              <DeleteIcon />
-            </IconButton>
-          )}
-
-          {hasChanges && (
-            <Button
-              variant="contained"
-              startIcon={<SaveIcon />}
-              onClick={handleSave}
-              size="small"
-              sx={{ ml: 'auto' }}
-              disabled={isSaving}
-            >
-              {isSaving ? '保存中...' : '位置を保存'}
-            </Button>
-          )}
-        </Box>
-
-        {!minimapImage && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            平面図画像をアップロードしてください。画像がない場合はグリッド背景が表示されます。
-          </Alert>
+            <DeleteIcon />
+          </IconButton>
         )}
 
-        <Alert severity="info">
-          シーンマーカーをドラッグして位置を調整できます。
-        </Alert>
+        {hasChanges && (
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<SaveIcon />}
+            onClick={handleSave}
+            size="small"
+            disabled={isSaving}
+          >
+            {isSaving ? '保存中...' : '位置を保存'}
+          </Button>
+        )}
       </Box>
 
       <Box sx={{ flex: 1, overflow: 'auto', p: 2, bgcolor: '#f5f5f5' }}>
