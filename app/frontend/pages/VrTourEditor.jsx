@@ -75,6 +75,12 @@ export default function VrTourEditor() {
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
 
+  // ペイン幅の管理
+  const [leftPaneWidth, setLeftPaneWidth] = useState(280);
+  const [rightPaneWidth, setRightPaneWidth] = useState(320);
+  const [isResizingLeft, setIsResizingLeft] = useState(false);
+  const [isResizingRight, setIsResizingRight] = useState(false);
+
   // 未保存変更の検出
   const hasUnsavedChanges =
     vrTour.title !== originalVrTour.title ||
@@ -86,6 +92,55 @@ export default function VrTourEditor() {
       fetchScenes();
     }
   }, [roomId, id, isNew]);
+
+  // スプリッタバーのリサイズ処理
+  const handleLeftMouseDown = (e) => {
+    setIsResizingLeft(true);
+    e.preventDefault();
+  };
+
+  const handleRightMouseDown = (e) => {
+    setIsResizingRight(true);
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      const containerRect = document.querySelector('.vr-editor-layout')?.getBoundingClientRect();
+      if (!containerRect) return;
+
+      if (isResizingLeft) {
+        const newWidth = e.clientX - containerRect.left - 8;
+        const clampedWidth = Math.max(200, Math.min(500, newWidth));
+        setLeftPaneWidth(clampedWidth);
+      }
+
+      if (isResizingRight) {
+        const newWidth = containerRect.right - e.clientX - 8;
+        const clampedWidth = Math.max(250, Math.min(500, newWidth));
+        setRightPaneWidth(clampedWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingLeft(false);
+      setIsResizingRight(false);
+    };
+
+    if (isResizingLeft || isResizingRight) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+  }, [isResizingLeft, isResizingRight]);
 
   const fetchVrTour = async () => {
     try {
@@ -566,7 +621,19 @@ export default function VrTourEditor() {
 
         <>
           {!isNew && (
-            <Tabs value={currentTab} onChange={(e, v) => setCurrentTab(v)} sx={{ px: 2, pt: 1 }}>
+            <Tabs
+              value={currentTab}
+              onChange={(e, v) => setCurrentTab(v)}
+              sx={{
+                px: 1,
+                minHeight: 36,
+                '& .MuiTab-root': {
+                  minHeight: 36,
+                  py: 0.5,
+                  fontSize: '0.85rem',
+                }
+              }}
+            >
               <Tab label="基本情報" />
               <Tab label="シーン編集" />
               <Tab label="ミニマップ" />
@@ -628,17 +695,19 @@ export default function VrTourEditor() {
             )}
 
             {!isNew && currentTab === 1 && (
-              <Box sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
-                gap: 1,
-                flex: 1,
-                p: 1,
-                overflow: 'hidden'
-              }}>
+              <Box
+                className="vr-editor-layout"
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', md: 'row' },
+                  flex: 1,
+                  p: 1,
+                  overflow: 'hidden'
+                }}
+              >
                 {/* 左：シーン一覧 */}
                 <Paper sx={{
-                  width: { xs: '100%', md: 280 },
+                  width: { xs: '100%', md: leftPaneWidth },
                   height: { xs: '200px', md: 'auto' },
                   flexShrink: 0,
                   overflow: 'auto'
@@ -652,6 +721,33 @@ export default function VrTourEditor() {
                   />
                 </Paper>
 
+                {/* 左スプリッタ */}
+                {isMdUp && (
+                  <Box
+                    onMouseDown={handleLeftMouseDown}
+                    sx={{
+                      width: 6,
+                      cursor: 'col-resize',
+                      bgcolor: isResizingLeft ? 'primary.main' : 'transparent',
+                      '&:hover': { bgcolor: 'primary.light' },
+                      transition: 'background-color 0.2s',
+                      flexShrink: 0,
+                      position: 'relative',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: 2,
+                        height: 40,
+                        bgcolor: isResizingLeft ? 'primary.main' : 'grey.400',
+                        borderRadius: 1,
+                      },
+                    }}
+                  />
+                )}
+
                 {/* 中央：シーンプレビュー */}
                 <Paper sx={{
                   flex: 1,
@@ -659,15 +755,24 @@ export default function VrTourEditor() {
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
-                  minHeight: { xs: '300px', md: 'auto' }
+                  minHeight: { xs: '300px', md: 'auto' },
+                  minWidth: 0,
                 }}>
               {selectedScene ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="h6" gutterBottom>
+                  <Box sx={{
+                    px: 2,
+                    py: 1,
+                    borderBottom: '1px solid #e0e0e0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    minHeight: 44
+                  }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                       {selectedScene.title}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                    <Typography variant="body2" color="text.secondary">
                       順序: {selectedScene.display_order || 0}
                     </Typography>
                   </Box>
@@ -784,9 +889,36 @@ export default function VrTourEditor() {
               )}
             </Paper>
 
+                {/* 右スプリッタ */}
+                {isMdUp && (
+                  <Box
+                    onMouseDown={handleRightMouseDown}
+                    sx={{
+                      width: 6,
+                      cursor: 'col-resize',
+                      bgcolor: isResizingRight ? 'primary.main' : 'transparent',
+                      '&:hover': { bgcolor: 'primary.light' },
+                      transition: 'background-color 0.2s',
+                      flexShrink: 0,
+                      position: 'relative',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: 2,
+                        height: 40,
+                        bgcolor: isResizingRight ? 'primary.main' : 'grey.400',
+                        borderRadius: 1,
+                      },
+                    }}
+                  />
+                )}
+
             {/* 右：ホットスポットエディタ */}
             <Paper sx={{
-              width: { xs: '100%', md: 320 },
+              width: { xs: '100%', md: rightPaneWidth },
               height: { xs: '300px', md: 'auto' },
               flexShrink: 0,
               overflow: 'auto'

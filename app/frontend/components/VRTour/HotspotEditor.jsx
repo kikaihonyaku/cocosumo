@@ -183,10 +183,12 @@ export default function HotspotEditor({
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Typography variant="subtitle1" gutterBottom>
+      <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid #e0e0e0' }}>
+        <Typography variant="subtitle1" sx={{ mb: 0 }}>
           ホットスポット
         </Typography>
+      </Box>
+      <Box sx={{ p: 2 }}>
         <Alert severity="info" sx={{ mb: 2, py: 0.5 }}>
           <Typography variant="caption">
             変更は自動的に保存されます

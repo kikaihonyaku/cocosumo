@@ -130,7 +130,7 @@ function SortableSceneItem({ scene, isSelected, onSceneClick, onEditScene, onDel
         </Box>
         <ListItemText
           primary={scene.title}
-          secondary={`順序: ${(scene.display_order || 0) + 1}`}
+          secondary={`順序: ${scene.display_order || 0}`}
         />
       </ListItemButton>
     </ListItem>
