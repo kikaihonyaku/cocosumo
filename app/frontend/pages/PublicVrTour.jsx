@@ -6,12 +6,8 @@ import {
   CircularProgress,
   Alert,
   AppBar,
-  Toolbar,
-  Paper
+  Toolbar
 } from "@mui/material";
-import {
-  LocationOn as LocationIcon
-} from "@mui/icons-material";
 import VrTourViewerContent from "../components/VRTour/VrTourViewerContent";
 
 export default function PublicVrTour() {
@@ -87,46 +83,6 @@ export default function PublicVrTour() {
         scenes={scenes}
         isPreview={false}
       />
-
-      {/* 物件情報 - VrTourViewerContentの上に重ねて表示 */}
-      {vrTour?.room && (
-        <Paper
-          sx={{
-            position: 'absolute',
-            top: 80, // ヘッダーの下
-            left: 16,
-            bgcolor: 'rgba(255, 255, 255, 0.95)',
-            px: 2,
-            py: 1.5,
-            borderRadius: 1,
-            zIndex: 11, // ヘッダーより上
-            maxWidth: 300
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-            <LocationIcon fontSize="small" color="primary" sx={{ mt: 0.5 }} />
-            <Box>
-              {vrTour.room.building && (
-                <>
-                  <Typography variant="body2" fontWeight="600">
-                    {vrTour.room.building.name}
-                  </Typography>
-                  {vrTour.room.room_number && (
-                    <Typography variant="body2" color="text.secondary">
-                      {vrTour.room.room_number}号室
-                    </Typography>
-                  )}
-                  {vrTour.room.building.address && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                      {vrTour.room.building.address}
-                    </Typography>
-                  )}
-                </>
-              )}
-            </Box>
-          </Box>
-        </Paper>
-      )}
     </Box>
   );
 }
