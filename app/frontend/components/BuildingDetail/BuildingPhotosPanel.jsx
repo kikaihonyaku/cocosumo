@@ -704,7 +704,7 @@ export default function BuildingPhotosPanel({ propertyId, buildingName, rooms = 
           py: 1,
           px: 2,
         }}>
-          <Typography variant="h6">写真プレビュー</Typography>
+          <Typography component="span" variant="h6">写真プレビュー</Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             {selectedPhoto && (
               <Tooltip title="画像を編集">

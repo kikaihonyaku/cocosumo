@@ -24,6 +24,7 @@ import {
   PhotoLibrary as PhotoLibraryIcon,
   Person as PersonIcon,
   Close as CloseIcon,
+  Route as RouteIcon,
 } from '@mui/icons-material';
 import muiTheme from '../theme/muiTheme';
 
@@ -286,6 +287,10 @@ export default function BuildingDetail() {
       });
       // 経路を選択状態にする
       selectRoute(route);
+      // モバイル時は地図タブに自動切り替え
+      if (isMobile) {
+        setMobileActiveTab(1); // 地図タブ
+      }
     } catch (error) {
       console.error('Failed to start slideshow:', error);
       showSnackbar('スライドショーの開始に失敗しました', 'error');
@@ -515,7 +520,9 @@ export default function BuildingDetail() {
               <Tabs
                 value={mobileActiveTab}
                 onChange={handleMobileTabChange}
-                variant="fullWidth"
+                variant="scrollable"
+                scrollButtons="auto"
+                allowScrollButtonsMobile
                 indicatorColor="primary"
                 textColor="primary"
                 sx={{ borderBottom: '1px solid #ddd' }}
@@ -535,26 +542,33 @@ export default function BuildingDetail() {
                   sx={{ minHeight: 64 }}
                 />
                 <Tab
-                  icon={<PhotoLibraryIcon />}
-                  label="外観"
+                  icon={<RouteIcon />}
+                  label="経路"
                   id="mobile-tab-2"
                   aria-controls="mobile-tabpanel-2"
                   sx={{ minHeight: 64 }}
                 />
                 <Tab
-                  icon={<HomeIcon />}
-                  label="部屋"
+                  icon={<PhotoLibraryIcon />}
+                  label="外観"
                   id="mobile-tab-3"
                   aria-controls="mobile-tabpanel-3"
+                  sx={{ minHeight: 64 }}
+                />
+                <Tab
+                  icon={<HomeIcon />}
+                  label="部屋"
+                  id="mobile-tab-4"
+                  aria-controls="mobile-tabpanel-4"
                   sx={{ minHeight: 64 }}
                 />
               </Tabs>
             </Paper>
 
             {/* タブコンテンツ - 常にマウントし、display で表示切り替え */}
-            <Box sx={{ flex: 1, overflow: 'auto' }}>
+            <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
               {/* 物件情報タブ */}
-              <Box sx={{ display: mobileActiveTab === 0 ? 'block' : 'none' }}>
+              <Box sx={{ display: mobileActiveTab === 0 ? 'block' : 'none', flex: 1, overflow: 'auto' }}>
                 <BuildingInfoPanel
                   property={property}
                   onSave={handleSave}
@@ -563,29 +577,16 @@ export default function BuildingDetail() {
                   onFormChange={handleFormChange}
                   stores={stores}
                 />
-                {/* 経路パネル */}
-                <RoutePanel
-                  buildingId={property?.id}
-                  buildingLocation={property ? { lat: property.latitude, lng: property.longitude } : null}
-                  routes={routes}
-                  loading={routesLoading}
-                  activeRoute={activeRoute}
-                  onRouteSelect={selectRoute}
-                  onRouteCreate={createRoute}
-                  onRouteUpdate={updateRoute}
-                  onRouteDelete={deleteRoute}
-                  onRouteRecalculate={recalculateRoute}
-                  onSlideshowStart={handleInlineSlideshowStart}
-                  isAdmin={true}
-                />
               </Box>
 
               {/* 地図タブ */}
               <Box sx={{
                 display: mobileActiveTab === 1 ? 'block' : 'none',
-                height: '100vh',
+                flex: 1,
                 width: '100%',
-                position: 'relative'
+                height: '100%',
+                position: 'relative',
+                overflow: 'hidden',
               }}>
                 <PropertyMapPanel
                   property={property}
@@ -614,11 +615,38 @@ export default function BuildingDetail() {
                 />
               </Box>
 
-              {/* 外観タブ */}
+              {/* 経路タブ */}
               <Box sx={{
                 display: mobileActiveTab === 2 ? 'block' : 'none',
-                height: '100vh',
-                width: '100%'
+                flex: 1,
+                width: '100%',
+                height: '100%',
+                overflow: 'auto',
+              }}>
+                <RoutePanel
+                  buildingId={property?.id}
+                  buildingLocation={property ? { lat: property.latitude, lng: property.longitude } : null}
+                  routes={routes}
+                  loading={routesLoading}
+                  activeRoute={activeRoute}
+                  onRouteSelect={selectRoute}
+                  onRouteCreate={createRoute}
+                  onRouteUpdate={updateRoute}
+                  onRouteDelete={deleteRoute}
+                  onRouteRecalculate={recalculateRoute}
+                  onSlideshowStart={handleInlineSlideshowStart}
+                  isAdmin={true}
+                  isMobile={true}
+                />
+              </Box>
+
+              {/* 外観タブ */}
+              <Box sx={{
+                display: mobileActiveTab === 3 ? 'block' : 'none',
+                flex: 1,
+                width: '100%',
+                height: '100%',
+                overflow: 'hidden',
               }}>
                 <BuildingPhotosPanel
                   propertyId={id}
@@ -633,19 +661,17 @@ export default function BuildingDetail() {
 
               {/* 部屋タブ */}
               <Box sx={{
-                display: mobileActiveTab === 3 ? 'block' : 'none',
-                height: '100%'
+                display: mobileActiveTab === 4 ? 'block' : 'none',
+                flex: 1,
+                width: '100%',
+                height: '100%',
+                overflow: 'auto',
               }}>
-                <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  {/* 部屋一覧 */}
-                  <Box sx={{ flex: 1 }}>
-                    <RoomsPanel
-                      propertyId={id}
-                      rooms={rooms}
-                      onRoomsUpdate={handleRoomUpdate}
-                    />
-                  </Box>
-                </Box>
+                <RoomsPanel
+                  propertyId={id}
+                  rooms={rooms}
+                  onRoomsUpdate={handleRoomUpdate}
+                />
               </Box>
             </Box>
           </Box>

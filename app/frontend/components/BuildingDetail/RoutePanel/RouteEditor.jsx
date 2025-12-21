@@ -50,6 +50,7 @@ export default function RouteEditor({
   buildingLocation,
   onSave,
   loading = false,
+  isMobile = false,
 }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -441,7 +442,7 @@ export default function RouteEditor({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6">{isEdit ? '経路を編集' : '経路を追加'}</Typography>
+        <Typography component="span" variant="h6">{isEdit ? '経路を編集' : '経路を追加'}</Typography>
         <IconButton onClick={onClose} size="small">
           <CloseIcon />
         </IconButton>
@@ -515,29 +516,33 @@ export default function RouteEditor({
                 <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
                   開始位置
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <TextField
-                    inputRef={originInputRef}
-                    value={originSearchQuery}
-                    onChange={(e) => setOriginSearchQuery(e.target.value)}
-                    size="small"
-                    fullWidth
-                    placeholder="住所や施設名を入力..."
-                    onKeyPress={(e) => e.key === 'Enter' && handleOriginSearch()}
-                  />
-                  <IconButton onClick={handleOriginSearch} disabled={originSearching} title="検索">
-                    {originSearching ? <CircularProgress size={20} /> : <SearchIcon />}
-                  </IconButton>
-                  <IconButton
-                    onClick={() => {
-                      setShowOriginMap(!showOriginMap);
-                      setShowDestinationMap(false);
-                    }}
-                    color={showOriginMap ? 'primary' : 'default'}
-                    title="地図で選択"
-                  >
-                    {showOriginMap ? <ExpandLessIcon /> : <MapIcon />}
-                  </IconButton>
+                <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 1 }}>
+                  <Box sx={{ display: 'flex', gap: 1, flex: 1 }}>
+                    <TextField
+                      inputRef={originInputRef}
+                      value={originSearchQuery}
+                      onChange={(e) => setOriginSearchQuery(e.target.value)}
+                      size="small"
+                      fullWidth
+                      placeholder="住所や施設名を入力..."
+                      onKeyPress={(e) => e.key === 'Enter' && handleOriginSearch()}
+                    />
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 0.5, justifyContent: isMobile ? 'flex-end' : 'flex-start' }}>
+                    <IconButton onClick={handleOriginSearch} disabled={originSearching} title="検索">
+                      {originSearching ? <CircularProgress size={20} /> : <SearchIcon />}
+                    </IconButton>
+                    <IconButton
+                      onClick={() => {
+                        setShowOriginMap(!showOriginMap);
+                        setShowDestinationMap(false);
+                      }}
+                      color={showOriginMap ? 'primary' : 'default'}
+                      title="地図で選択"
+                    >
+                      {showOriginMap ? <ExpandLessIcon /> : <MapIcon />}
+                    </IconButton>
+                  </Box>
                 </Box>
 
                 {/* 開始位置の地図選択エリア */}
@@ -546,7 +551,7 @@ export default function RouteEditor({
                     <Box
                       ref={originMapRef}
                       sx={{
-                        height: 250,
+                        height: isMobile ? '35vh' : 250,
                         width: '100%',
                         bgcolor: 'grey.200',
                         borderRadius: 1,
@@ -585,29 +590,33 @@ export default function RouteEditor({
             <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
               目的地
             </Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <TextField
-                inputRef={inputRef}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                size="small"
-                fullWidth
-                placeholder="住所や施設名を入力..."
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              />
-              <IconButton onClick={handleSearch} disabled={searching} title="検索">
-                {searching ? <CircularProgress size={20} /> : <SearchIcon />}
-              </IconButton>
-              <IconButton
-                onClick={() => {
-                  setShowDestinationMap(!showDestinationMap);
-                  setShowOriginMap(false);
-                }}
-                color={showDestinationMap ? 'primary' : 'default'}
-                title="地図で選択"
-              >
-                {showDestinationMap ? <ExpandLessIcon /> : <MapIcon />}
-              </IconButton>
+            <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 1 }}>
+              <Box sx={{ display: 'flex', gap: 1, flex: 1 }}>
+                <TextField
+                  inputRef={inputRef}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  size="small"
+                  fullWidth
+                  placeholder="住所や施設名を入力..."
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 0.5, justifyContent: isMobile ? 'flex-end' : 'flex-start' }}>
+                <IconButton onClick={handleSearch} disabled={searching} title="検索">
+                  {searching ? <CircularProgress size={20} /> : <SearchIcon />}
+                </IconButton>
+                <IconButton
+                  onClick={() => {
+                    setShowDestinationMap(!showDestinationMap);
+                    setShowOriginMap(false);
+                  }}
+                  color={showDestinationMap ? 'primary' : 'default'}
+                  title="地図で選択"
+                >
+                  {showDestinationMap ? <ExpandLessIcon /> : <MapIcon />}
+                </IconButton>
+              </Box>
             </Box>
 
             {/* 目的地の地図選択エリア */}
@@ -616,7 +625,7 @@ export default function RouteEditor({
                 <Box
                   ref={destMapRef}
                   sx={{
-                    height: 250,
+                    height: isMobile ? '35vh' : 250,
                     width: '100%',
                     bgcolor: 'grey.200',
                     borderRadius: 1,

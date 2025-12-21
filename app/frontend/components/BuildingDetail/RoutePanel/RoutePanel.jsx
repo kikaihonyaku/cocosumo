@@ -58,6 +58,7 @@ export default function RoutePanel({
   onRouteRecalculate,
   onSlideshowStart,
   isAdmin = true,
+  isMobile = false,
 }) {
   const [expanded, setExpanded] = useState(true);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -205,14 +206,16 @@ export default function RoutePanel({
                   disablePadding
                   secondaryAction={
                     isLoading ? (
-                      <CircularProgress size={20} />
-                    ) : (
-                      <Box sx={{ display: 'flex' }}>
+                      <CircularProgress size={isMobile ? 24 : 20} />
+                    ) : !isMobile ? (
+                      // デスクトップ: 従来のレイアウト
+                      <Box sx={{ display: 'flex', gap: 0 }}>
                         {route.calculated && (
                           <Tooltip title="スライドショー">
                             <IconButton
                               size="small"
                               onClick={(e) => handleStartSlideshow(route, e)}
+                              color="primary"
                             >
                               <PlayIcon fontSize="small" />
                             </IconButton>
@@ -229,7 +232,10 @@ export default function RoutePanel({
                               </IconButton>
                             </Tooltip>
                             <Tooltip title="編集">
-                              <IconButton size="small" onClick={(e) => handleEditRoute(route, e)}>
+                              <IconButton
+                                size="small"
+                                onClick={(e) => handleEditRoute(route, e)}
+                              >
                                 <EditIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
@@ -244,28 +250,83 @@ export default function RoutePanel({
                           </>
                         )}
                       </Box>
+                    ) : (
+                      // モバイル: 管理ボタンのみ（再生ボタンは別途表示）
+                      isAdmin && (
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => handleRecalculate(route, e)}
+                          >
+                            <RefreshIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => handleEditRoute(route, e)}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => handleDeleteRoute(route, e)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      )
                     )
                   }
-                  sx={{ borderBottom: '1px solid #f5f5f5' }}
+                  sx={{ borderBottom: '1px solid #f0f0f0' }}
                 >
                   <ListItemButton
                     selected={isActive}
                     onClick={() => onRouteSelect(route)}
                     sx={{
-                      py: 0.5,
+                      py: isMobile ? 1 : 0.5,
                       '&.Mui-selected': {
                         bgcolor: 'primary.light',
                         '&:hover': { bgcolor: 'primary.light' },
                       },
                     }}
                   >
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <TypeIcon fontSize="small" color={typeConfig.color} />
-                    </ListItemIcon>
+                    {/* モバイル: 再生ボタンを左側に大きく配置 */}
+                    {isMobile && route.calculated && (
+                      <IconButton
+                        onClick={(e) => handleStartSlideshow(route, e)}
+                        color="primary"
+                        sx={{
+                          mr: 1,
+                          bgcolor: 'primary.main',
+                          color: 'white',
+                          width: 44,
+                          height: 44,
+                          '&:hover': { bgcolor: 'primary.dark' },
+                        }}
+                      >
+                        <PlayIcon />
+                      </IconButton>
+                    )}
+                    {/* モバイル: 未計算の場合はアイコンのみ */}
+                    {isMobile && !route.calculated && (
+                      <ListItemIcon sx={{ minWidth: 44, mr: 1 }}>
+                        <TypeIcon color={typeConfig.color} />
+                      </ListItemIcon>
+                    )}
+                    {/* デスクトップ: 従来のアイコン */}
+                    {!isMobile && (
+                      <ListItemIcon sx={{ minWidth: 36 }}>
+                        <TypeIcon fontSize="small" color={typeConfig.color} />
+                      </ListItemIcon>
+                    )}
                     <ListItemText
                       primary={
                         <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Typography component="span" variant="body2" fontWeight={500} noWrap>
+                          <Typography
+                            component="span"
+                            variant={isMobile ? 'body1' : 'body2'}
+                            fontWeight={500}
+                            noWrap
+                          >
                             {route.name}
                           </Typography>
                           {!route.calculated && (
@@ -280,18 +341,18 @@ export default function RoutePanel({
                       }
                       secondary={
                         <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
-                          <TravelIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                          <TravelIcon sx={{ fontSize: isMobile ? 16 : 14, color: 'text.secondary' }} />
                           {route.formatted_distance && (
-                            <Typography component="span" variant="caption" color="text.secondary">
+                            <Typography component="span" variant={isMobile ? 'body2' : 'caption'} color="text.secondary">
                               {route.formatted_distance}
                             </Typography>
                           )}
                           {route.formatted_duration && (
                             <>
-                              <Typography component="span" variant="caption" color="text.secondary">
+                              <Typography component="span" variant={isMobile ? 'body2' : 'caption'} color="text.secondary">
                                 ・
                               </Typography>
-                              <Typography component="span" variant="caption" color="text.secondary">
+                              <Typography component="span" variant={isMobile ? 'body2' : 'caption'} color="text.secondary">
                                 {route.formatted_duration}
                               </Typography>
                             </>
@@ -315,6 +376,7 @@ export default function RoutePanel({
         buildingLocation={buildingLocation}
         onSave={handleSaveRoute}
         loading={actionLoading === 'save'}
+        isMobile={isMobile}
       />
     </Box>
   );

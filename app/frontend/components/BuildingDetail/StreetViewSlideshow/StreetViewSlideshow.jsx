@@ -10,6 +10,8 @@ import {
   Tooltip,
   Paper,
   Fade,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,
@@ -31,6 +33,9 @@ export default function StreetViewSlideshow({
   onPositionChange, // ペグマン同期用コールバック
   defaultInterval = 2000, // 自動再生間隔（ミリ秒）
 }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const [points, setPoints] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -255,7 +260,8 @@ export default function StreetViewSlideshow({
   useEffect(() => {
     if (thumbnailContainerRef.current && displayThumbnails.length > 0) {
       const container = thumbnailContainerRef.current;
-      const thumbnailWidth = 98; // サムネイル幅(90) + gap(8)
+      // モバイル: 60 + 4 = 64, デスクトップ: 90 + 8 = 98
+      const thumbnailWidth = isMobile ? 64 : 98;
 
       // 現在のインデックスに最も近いサムネイルを見つける
       let closestThumbnailIdx = 0;
@@ -271,7 +277,7 @@ export default function StreetViewSlideshow({
       const scrollPosition = closestThumbnailIdx * thumbnailWidth - container.clientWidth / 2 + thumbnailWidth / 2;
       container.scrollTo({ left: scrollPosition, behavior: 'smooth' });
     }
-  }, [currentIndex, displayThumbnails]);
+  }, [currentIndex, displayThumbnails, isMobile]);
 
   // コントロールの自動非表示（再生中のみ）
   const handleMouseMove = useCallback(() => {
@@ -294,11 +300,12 @@ export default function StreetViewSlideshow({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="lg"
-      fullWidth
+      fullScreen={isMobile}
+      maxWidth={isMobile ? false : "lg"}
+      fullWidth={!isMobile}
       PaperProps={{
         ref: dialogRef,
-        sx: { height: '85vh', bgcolor: 'grey.900' },
+        sx: { height: isMobile ? '100%' : '85vh', bgcolor: 'grey.900' },
       }}
     >
       <DialogContent
@@ -369,24 +376,24 @@ export default function StreetViewSlideshow({
             elevation={8}
             sx={{
               position: 'absolute',
-              bottom: showThumbnails ? 130 : 16,
+              bottom: showThumbnails ? (isMobile ? 100 : 130) : 16,
               left: '50%',
               transform: 'translateX(-50%)',
-              width: 'calc(100% - 32px)',
-              maxWidth: 600,
+              width: isMobile ? 'calc(100% - 16px)' : 'calc(100% - 32px)',
+              maxWidth: isMobile ? 'none' : 600,
               borderRadius: 2,
               bgcolor: 'rgba(255,255,255,0.95)',
               backdropFilter: 'blur(10px)',
               transition: 'bottom 0.3s ease',
             }}
           >
-            <Box sx={{ p: 2 }}>
+            <Box sx={{ p: isMobile ? 1.5 : 2 }}>
               {/* 進捗情報 */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant={isMobile ? 'caption' : 'body2'} color="text.secondary">
                   {currentIndex + 1} / {points.length} ポイント
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant={isMobile ? 'caption' : 'body2'} color="text.secondary">
                   進捗 {progress}%
                 </Typography>
               </Box>
@@ -402,10 +409,10 @@ export default function StreetViewSlideshow({
               />
 
               {/* 再生コントロール */}
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: isMobile ? 0.5 : 1 }}>
                 <Tooltip title="前へ (←)">
                   <span>
-                    <IconButton onClick={handlePrev} disabled={currentIndex === 0}>
+                    <IconButton onClick={handlePrev} disabled={currentIndex === 0} size={isMobile ? 'medium' : 'large'}>
                       <PrevIcon />
                     </IconButton>
                   </span>
@@ -419,28 +426,30 @@ export default function StreetViewSlideshow({
 
                 <Tooltip title="次へ (→)">
                   <span>
-                    <IconButton onClick={handleNext} disabled={currentIndex >= points.length - 1}>
+                    <IconButton onClick={handleNext} disabled={currentIndex >= points.length - 1} size={isMobile ? 'medium' : 'large'}>
                       <NextIcon />
                     </IconButton>
                   </span>
                 </Tooltip>
 
-                {/* 再生速度 */}
-                <Box sx={{ display: 'flex', alignItems: 'center', ml: 3, minWidth: 120 }}>
-                  <Tooltip title="再生速度">
-                    <SpeedIcon sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} />
-                  </Tooltip>
-                  <Slider
-                    value={playbackSpeed}
-                    onChange={handleSpeedChange}
-                    min={0.5}
-                    max={3}
-                    step={0.5}
-                    valueLabelDisplay="auto"
-                    valueLabelFormat={(v) => `${v}x`}
-                    sx={{ width: 80 }}
-                  />
-                </Box>
+                {/* 再生速度（モバイルでは非表示） */}
+                {!isMobile && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', ml: 3, minWidth: 120 }}>
+                    <Tooltip title="再生速度">
+                      <SpeedIcon sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} />
+                    </Tooltip>
+                    <Slider
+                      value={playbackSpeed}
+                      onChange={handleSpeedChange}
+                      min={0.5}
+                      max={3}
+                      step={0.5}
+                      valueLabelDisplay="auto"
+                      valueLabelFormat={(v) => `${v}x`}
+                      sx={{ width: 80 }}
+                    />
+                  </Box>
+                )}
               </Box>
             </Box>
           </Paper>
@@ -454,23 +463,23 @@ export default function StreetViewSlideshow({
               bottom: 0,
               left: 0,
               right: 0,
-              height: 110,
+              height: isMobile ? 80 : 110,
               background: 'linear-gradient(transparent, rgba(0,0,0,0.85))',
               zIndex: 10,
-              pt: 2,
+              pt: isMobile ? 1 : 2,
             }}
           >
             <Box
               ref={thumbnailContainerRef}
               sx={{
                 display: 'flex',
-                gap: 1,
+                gap: isMobile ? 0.5 : 1,
                 overflowX: 'auto',
-                px: 2,
+                px: isMobile ? 1 : 2,
                 pb: 1,
                 scrollBehavior: 'smooth',
                 '&::-webkit-scrollbar': {
-                  height: 6,
+                  height: isMobile ? 4 : 6,
                 },
                 '&::-webkit-scrollbar-track': {
                   bgcolor: 'rgba(255,255,255,0.1)',
@@ -499,8 +508,8 @@ export default function StreetViewSlideshow({
                       onClick={() => handleThumbnailClick(point.originalIndex)}
                       sx={{
                         flexShrink: 0,
-                        width: 90,
-                        height: 60,
+                        width: isMobile ? 60 : 90,
+                        height: isMobile ? 40 : 60,
                         borderRadius: 1,
                         overflow: 'hidden',
                         cursor: 'pointer',
@@ -567,26 +576,28 @@ export default function StreetViewSlideshow({
           </Box>
         </Fade>
 
-        {/* 現在位置情報 */}
-        <Fade in={controlsVisible}>
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: showThumbnails ? 220 : 100,
-              left: 16,
-              bgcolor: 'rgba(0,0,0,0.7)',
-              color: 'white',
-              px: 1.5,
-              py: 0.5,
-              borderRadius: 1,
-              fontSize: '0.75rem',
-              transition: 'bottom 0.3s ease',
-            }}
-          >
-            {currentPoint?.lat.toFixed(6)}, {currentPoint?.lng.toFixed(6)} ・ 方位:{' '}
-            {currentPoint?.heading?.toFixed(0)}°
-          </Box>
-        </Fade>
+        {/* 現在位置情報（モバイルでは非表示） */}
+        {!isMobile && (
+          <Fade in={controlsVisible}>
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: showThumbnails ? 220 : 100,
+                left: 16,
+                bgcolor: 'rgba(0,0,0,0.7)',
+                color: 'white',
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 1,
+                fontSize: '0.75rem',
+                transition: 'bottom 0.3s ease',
+              }}
+            >
+              {currentPoint?.lat.toFixed(6)}, {currentPoint?.lng.toFixed(6)} ・ 方位:{' '}
+              {currentPoint?.heading?.toFixed(0)}°
+            </Box>
+          </Fade>
+        )}
       </DialogContent>
     </Dialog>
   );

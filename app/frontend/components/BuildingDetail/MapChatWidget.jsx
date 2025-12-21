@@ -340,7 +340,7 @@ export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenCha
         bottom: 16,
         left: '50%',
         transform: 'translateX(-50%)',
-        width: 'calc(100% - 160px)',
+        width: 'calc(100% - 32px)',
         maxWidth: 1200,
         zIndex: 10,
       }}

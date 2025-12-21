@@ -16,6 +16,7 @@ import {
   Slider,
   Select,
   MenuItem,
+  Fab,
 } from '@mui/material';
 import {
   MyLocation as MyLocationIcon,
@@ -599,6 +600,12 @@ export default function PropertyMapPanel({
     }
   }, [currentPointIndex, slideshowActive, slideshowPoints]);
 
+  // スライドショーを閉じる（ストリートビューも閉じる）
+  const handleCloseSlideshow = useCallback(() => {
+    onSlideshowEnd?.();
+    setStreetViewVisible(false);
+  }, [onSlideshowEnd]);
+
   // キーボードショートカット
   useEffect(() => {
     if (!slideshowActive) return;
@@ -619,14 +626,14 @@ export default function PropertyMapPanel({
           break;
         case 'Escape':
           e.preventDefault();
-          onSlideshowEnd?.();
+          handleCloseSlideshow();
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [slideshowActive, slideshowPoints.length, onSlideshowEnd]);
+  }, [slideshowActive, slideshowPoints.length, handleCloseSlideshow]);
 
   // コントロールの自動非表示
   const handleMouseMove = useCallback(() => {
@@ -972,7 +979,7 @@ export default function PropertyMapPanel({
   }, [tempDestination, onRouteAdd, handleCancelRouteAddMode]);
 
   return (
-    <Box sx={{ height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: '100%', width: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
       {/* 地図ヘッダー */}
       <Box sx={{
         px: 2,
@@ -1031,14 +1038,41 @@ export default function PropertyMapPanel({
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* 地図コンテナ（ストリートビュー表示時は上半分、非表示時は全体） */}
         <Box
-          ref={mapRef}
           sx={{
+            position: 'relative',
             height: streetViewVisible ? 'calc(50% - 2px)' : '100%',
             width: '100%',
-            bgcolor: 'grey.100',
             transition: 'height 0.3s ease',
           }}
-        />
+        >
+          <Box
+            ref={mapRef}
+            sx={{
+              height: '100%',
+              width: '100%',
+              bgcolor: 'grey.100',
+            }}
+          />
+          {/* ストリートビュー切り替えFAB */}
+          {mapLoaded && !slideshowActive && (
+            <Tooltip title={streetViewVisible ? "地図に戻る" : "ストリートビュー"} placement="left">
+              <Fab
+                size="medium"
+                color={streetViewVisible ? "default" : "primary"}
+                onClick={toggleStreetView}
+                sx={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  zIndex: 5,
+                  boxShadow: 3,
+                }}
+              >
+                {streetViewVisible ? <MapIcon /> : <StreetviewIcon />}
+              </Fab>
+            </Tooltip>
+          )}
+        </Box>
 
         {/* ストリートビュー上部の区切り線 */}
         {streetViewVisible && (
@@ -1188,7 +1222,7 @@ export default function PropertyMapPanel({
                   <Tooltip title="スライドショーを終了">
                     <IconButton
                       size="small"
-                      onClick={() => onSlideshowEnd?.()}
+                      onClick={handleCloseSlideshow}
                       sx={{ color: 'white' }}
                     >
                       <CloseIcon fontSize="small" />
