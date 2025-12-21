@@ -47,7 +47,7 @@ class DirectionsService
   end
 
   # 経路上のストリートビューポイントを取得
-  def streetview_points(interval_meters: 50)
+  def streetview_points(interval_meters: 25)
     return @route.streetview_points if @route.streetview_points.present?
 
     return [] unless @route.encoded_polyline.present?
@@ -161,7 +161,7 @@ class DirectionsService
   end
 
   # 経路上を一定間隔でサンプリングしてストリートビュー用ポイントを生成
-  def generate_streetview_points(coordinates, interval_meters: 50)
+  def generate_streetview_points(coordinates, interval_meters: 25)
     return [] if coordinates.empty?
 
     points = []
