@@ -1,0 +1,321 @@
+import React, { useState } from 'react';
+import {
+  Box,
+  Typography,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Button,
+  Chip,
+  Collapse,
+  CircularProgress,
+  Tooltip,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  DirectionsWalk as WalkIcon,
+  DirectionsCar as CarIcon,
+  Train as TrainIcon,
+  School as SchoolIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  PlayArrow as PlayIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  Refresh as RefreshIcon,
+  Route as RouteIcon,
+} from '@mui/icons-material';
+import RouteEditor from './RouteEditor';
+
+// 経路タイプの設定
+const ROUTE_TYPE_CONFIG = {
+  station: { label: '駅まで', icon: TrainIcon, color: 'primary' },
+  school: { label: '学校まで', icon: SchoolIcon, color: 'secondary' },
+  custom: { label: 'カスタム', icon: RouteIcon, color: 'default' },
+};
+
+// 移動手段のアイコン
+const TRAVEL_MODE_ICONS = {
+  walking: WalkIcon,
+  driving: CarIcon,
+  transit: TrainIcon,
+  bicycling: WalkIcon, // 自転車アイコンがないのでWalkIconで代用
+};
+
+export default function RoutePanel({
+  buildingId,
+  buildingLocation,
+  routes = [],
+  loading = false,
+  activeRoute,
+  onRouteSelect,
+  onRouteCreate,
+  onRouteUpdate,
+  onRouteDelete,
+  onRouteRecalculate,
+  onSlideshowStart,
+  isAdmin = true,
+}) {
+  const [expanded, setExpanded] = useState(true);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingRoute, setEditingRoute] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
+
+  const handleAddRoute = () => {
+    setEditingRoute(null);
+    setEditorOpen(true);
+  };
+
+  const handleEditRoute = (route, e) => {
+    e.stopPropagation();
+    setEditingRoute(route);
+    setEditorOpen(true);
+  };
+
+  const handleDeleteRoute = async (route, e) => {
+    e.stopPropagation();
+    if (!window.confirm(`「${route.name}」を削除しますか？`)) return;
+
+    setActionLoading(route.id);
+    try {
+      await onRouteDelete(route.id);
+    } catch (err) {
+      alert('経路の削除に失敗しました');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRecalculate = async (route, e) => {
+    e.stopPropagation();
+    setActionLoading(route.id);
+    try {
+      await onRouteRecalculate(route.id);
+    } catch (err) {
+      alert('経路の再計算に失敗しました');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSaveRoute = async (routeData) => {
+    setActionLoading('save');
+    try {
+      if (editingRoute) {
+        await onRouteUpdate(editingRoute.id, routeData);
+      } else {
+        await onRouteCreate(routeData);
+      }
+      setEditorOpen(false);
+    } catch (err) {
+      alert(err.message || '経路の保存に失敗しました');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleStartSlideshow = (route, e) => {
+    e.stopPropagation();
+    if (route.calculated) {
+      onSlideshowStart?.(route);
+    } else {
+      alert('経路が計算されていません。再計算してください。');
+    }
+  };
+
+  return (
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* ヘッダー */}
+      <Box
+        sx={{
+          px: 2,
+          py: 1,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          cursor: 'pointer',
+          borderBottom: '1px solid #e0e0e0',
+          '&:hover': { bgcolor: 'action.hover' },
+          flexShrink: 0,
+        }}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <RouteIcon color="action" />
+          <Typography variant="subtitle2" fontWeight={600}>
+            経路情報
+          </Typography>
+          <Chip label={routes.length} size="small" sx={{ height: 20, fontSize: '0.75rem' }} />
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {isAdmin && (
+            <Tooltip title="経路を追加">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddRoute();
+                }}
+              >
+                <AddIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        </Box>
+      </Box>
+
+      {/* 経路リスト */}
+      <Collapse in={expanded} sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {loading ? (
+          <Box sx={{ p: 2, textAlign: 'center' }}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : routes.length === 0 ? (
+          <Box sx={{ p: 2, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              登録された経路はありません
+            </Typography>
+            {isAdmin && (
+              <Button
+                size="small"
+                startIcon={<AddIcon />}
+                onClick={handleAddRoute}
+                sx={{ mt: 1 }}
+              >
+                経路を追加
+              </Button>
+            )}
+          </Box>
+        ) : (
+          <List dense disablePadding sx={{ flex: 1, overflow: 'auto' }}>
+            {routes.map((route) => {
+              const typeConfig = ROUTE_TYPE_CONFIG[route.route_type] || ROUTE_TYPE_CONFIG.custom;
+              const TypeIcon = typeConfig.icon;
+              const TravelIcon = TRAVEL_MODE_ICONS[route.travel_mode] || WalkIcon;
+              const isActive = activeRoute?.id === route.id;
+              const isLoading = actionLoading === route.id;
+
+              return (
+                <ListItem
+                  key={route.id}
+                  disablePadding
+                  secondaryAction={
+                    isLoading ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <Box sx={{ display: 'flex' }}>
+                        {route.calculated && (
+                          <Tooltip title="スライドショー">
+                            <IconButton
+                              size="small"
+                              onClick={(e) => handleStartSlideshow(route, e)}
+                            >
+                              <PlayIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {isAdmin && (
+                          <>
+                            <Tooltip title="再計算">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => handleRecalculate(route, e)}
+                              >
+                                <RefreshIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="編集">
+                              <IconButton size="small" onClick={(e) => handleEditRoute(route, e)}>
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="削除">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => handleDeleteRoute(route, e)}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </>
+                        )}
+                      </Box>
+                    )
+                  }
+                  sx={{ borderBottom: '1px solid #f5f5f5' }}
+                >
+                  <ListItemButton
+                    selected={isActive}
+                    onClick={() => onRouteSelect(route)}
+                    sx={{
+                      py: 0.5,
+                      '&.Mui-selected': {
+                        bgcolor: 'primary.light',
+                        '&:hover': { bgcolor: 'primary.light' },
+                      },
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <TypeIcon fontSize="small" color={typeConfig.color} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Typography component="span" variant="body2" fontWeight={500} noWrap>
+                            {route.name}
+                          </Typography>
+                          {!route.calculated && (
+                            <Chip
+                              label="未計算"
+                              size="small"
+                              color="warning"
+                              sx={{ height: 18, fontSize: '0.65rem' }}
+                            />
+                          )}
+                        </Box>
+                      }
+                      secondary={
+                        <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                          <TravelIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                          {route.formatted_distance && (
+                            <Typography component="span" variant="caption" color="text.secondary">
+                              {route.formatted_distance}
+                            </Typography>
+                          )}
+                          {route.formatted_duration && (
+                            <>
+                              <Typography component="span" variant="caption" color="text.secondary">
+                                ・
+                              </Typography>
+                              <Typography component="span" variant="caption" color="text.secondary">
+                                {route.formatted_duration}
+                              </Typography>
+                            </>
+                          )}
+                        </Box>
+                      }
+                    />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
+          </List>
+        )}
+      </Collapse>
+
+      {/* 経路エディタダイアログ */}
+      <RouteEditor
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        route={editingRoute}
+        buildingLocation={buildingLocation}
+        onSave={handleSaveRoute}
+        loading={actionLoading === 'save'}
+      />
+    </Box>
+  );
+}

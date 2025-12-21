@@ -10,8 +10,8 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_06_210351) do
-  create_schema "topology", if_not_exists: true
+ActiveRecord::Schema[8.0].define(version: 2025_12_21_065317) do
+  create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
@@ -85,6 +85,34 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_06_210351) do
     t.string "source_url"
     t.index ["building_id", "source_url"], name: "index_building_photos_on_building_id_and_source_url", unique: true, where: "(source_url IS NOT NULL)"
     t.index ["building_id"], name: "index_building_photos_on_building_id"
+  end
+
+  create_table "building_routes", force: :cascade do |t|
+    t.bigint "building_id", null: false
+    t.bigint "tenant_id", null: false
+    t.string "route_type", default: "custom", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.st_point "origin", geographic: true
+    t.st_point "destination", geographic: true
+    t.string "destination_name"
+    t.string "destination_place_id"
+    t.st_line_string "route_geometry", geographic: true
+    t.jsonb "waypoints", default: []
+    t.text "encoded_polyline"
+    t.jsonb "directions_response"
+    t.jsonb "streetview_points", default: []
+    t.integer "distance_meters"
+    t.integer "duration_seconds"
+    t.string "travel_mode", default: "walking"
+    t.integer "display_order", default: 0
+    t.boolean "is_default", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["building_id", "route_type"], name: "index_building_routes_on_building_id_and_route_type"
+    t.index ["building_id"], name: "index_building_routes_on_building_id"
+    t.index ["route_geometry"], name: "index_building_routes_on_route_geometry", using: :gist
+    t.index ["tenant_id"], name: "index_building_routes_on_tenant_id"
   end
 
   create_table "buildings", force: :cascade do |t|
@@ -302,6 +330,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_06_210351) do
     t.index ["tenant_id"], name: "index_stores_on_tenant_id"
   end
 
+  create_table "streetview_caches", force: :cascade do |t|
+    t.st_point "location", null: false, geographic: true
+    t.decimal "heading", precision: 6, scale: 2
+    t.decimal "pitch", precision: 5, scale: 2, default: "0.0"
+    t.integer "fov", default: 90
+    t.string "pano_id"
+    t.date "capture_date"
+    t.datetime "expires_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_streetview_caches_on_expires_at"
+    t.index ["location"], name: "index_streetview_caches_on_location", using: :gist
+    t.index ["pano_id"], name: "index_streetview_caches_on_pano_id", unique: true
+  end
+
   create_table "suumo_import_histories", force: :cascade do |t|
     t.integer "tenant_id", null: false
     t.string "url", null: false
@@ -402,6 +445,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_06_210351) do
   add_foreign_key "ai_generated_images", "room_photos"
   add_foreign_key "ai_generated_images", "rooms"
   add_foreign_key "building_photos", "buildings"
+  add_foreign_key "building_routes", "buildings"
+  add_foreign_key "building_routes", "tenants"
   add_foreign_key "buildings", "stores"
   add_foreign_key "buildings", "tenants"
   add_foreign_key "map_layers", "tenants"

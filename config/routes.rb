@@ -46,6 +46,14 @@ Rails.application.routes.draw do
         resources :owners
         resources :rooms, only: [:index, :create]
 
+        # 経路管理
+        resources :routes, controller: 'building_routes' do
+          member do
+            post :calculate           # 経路再計算
+            get :streetview_points    # ストリートビューポイント取得
+          end
+        end
+
         # 物件個別アクション
         member do
           post :restore    # 論理削除からの復元
@@ -61,6 +69,9 @@ Rails.application.routes.draw do
 
       # 削除済み物件一覧
       get 'buildings_archived', to: 'buildings#archived'
+
+      # ストリートビューAPI
+      post 'streetview/metadata', to: 'streetview#metadata'
 
       # 学区情報
       resources :school_districts, only: [:index, :show] do

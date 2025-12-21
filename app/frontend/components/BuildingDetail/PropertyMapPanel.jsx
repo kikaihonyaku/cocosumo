@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -12,6 +12,10 @@ import {
   DialogActions,
   TextField,
   CircularProgress,
+  Fade,
+  Slider,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import {
   MyLocation as MyLocationIcon,
@@ -23,10 +27,37 @@ import {
   Close as CloseIcon,
   Map as MapIcon,
   Streetview as StreetviewIcon,
+  AddLocation as AddLocationIcon,
+  PlayArrow as PlayArrowIcon,
+  Pause as PauseIcon,
+  SkipPrevious as SkipPreviousIcon,
+  SkipNext as SkipNextIcon,
+  OpenInFull as OpenInFullIcon,
 } from '@mui/icons-material';
 import MapChatWidget from './MapChatWidget';
 
-export default function PropertyMapPanel({ property, onLocationUpdate, visible = true, onFormChange, onSave, selectedPlace, onPlaceClick, widgetContextToken, onWidgetTokenChange, isMobile = false }) {
+export default function PropertyMapPanel({
+  property,
+  onLocationUpdate,
+  visible = true,
+  onFormChange,
+  onSave,
+  selectedPlace,
+  onPlaceClick,
+  widgetContextToken,
+  onWidgetTokenChange,
+  isMobile = false,
+  activeRoute = null, // 現在選択されている経路
+  slideshowPosition = null, // スライドショーからの位置情報
+  routes = [], // 全経路（複数ポリライン描画用）
+  onRouteSelect, // 経路選択コールバック（ポリラインクリック用）
+  onRouteAdd, // 経路追加コールバック（目的地確定時）
+  // インラインスライドショー用props
+  slideshowActive = false, // スライドショーがアクティブか
+  slideshowPoints = [], // 経路上のストリートビューポイント
+  onSlideshowEnd, // スライドショー終了時のコールバック
+  onFullscreenSlideshow, // フルスクリーンスライドショーを開くコールバック
+}) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
@@ -35,6 +66,11 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
   const widgetElementRef = useRef(null); // Google Maps Grounding Widget要素
   const streetViewRef = useRef(null); // ストリートビューコンテナ
   const panoramaRef = useRef(null); // ストリートビューパノラマインスタンス
+  const routePolylineRef = useRef(null); // 経路ポリライン
+  const routeMarkerRef = useRef(null); // 経路上の現在位置マーカー
+  const routePolylinesRef = useRef([]); // 複数経路のポリライン配列
+  const tempDestMarkerRef = useRef(null); // 経路追加モードの目的地マーカー
+  const mapClickListenerRef = useRef(null); // マップクリックリスナー
   const [mapLoaded, setMapLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editingLocation, setEditingLocation] = useState(false);
@@ -45,6 +81,16 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
   const [streetViewVisible, setStreetViewVisible] = useState(false); // ストリートビュー表示状態
   const originalPositionRef = useRef(null);
   const [widgetVisible, setWidgetVisible] = useState(false); // ウィジェットの表示状態
+  const [routeAddMode, setRouteAddMode] = useState(false); // 経路追加モード
+  const [tempDestination, setTempDestination] = useState(null); // 仮の目的地
+
+  // インラインスライドショー用state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentPointIndex, setCurrentPointIndex] = useState(0);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const playIntervalRef = useRef(null);
+  const controlsTimeoutRef = useRef(null);
 
   // Google Maps初期化
   useEffect(() => {
@@ -115,6 +161,182 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
       }, 100);
     }
   }, [widgetContextToken, mapLoaded]);
+
+  // 複数経路のポリライン描画（クリック選択対応）
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.google?.maps) return;
+
+    // 既存のポリラインを削除
+    routePolylinesRef.current.forEach((p) => p.setMap(null));
+    routePolylinesRef.current = [];
+
+    // 単一アクティブ経路用のポリラインも削除
+    if (routePolylineRef.current) {
+      routePolylineRef.current.setMap(null);
+      routePolylineRef.current = null;
+    }
+
+    // 経路がない場合は終了
+    if (!routes?.length) return;
+
+    try {
+      routes.forEach((route) => {
+        if (!route.encoded_polyline) return;
+
+        const path = window.google.maps.geometry.encoding.decodePath(route.encoded_polyline);
+        const isActive = activeRoute?.id === route.id;
+
+        const polyline = new window.google.maps.Polyline({
+          path: path,
+          strokeColor: isActive ? '#4285F4' : '#9E9E9E',
+          strokeWeight: isActive ? 6 : 4,
+          strokeOpacity: isActive ? 0.9 : 0.5,
+          clickable: true,
+          map: mapInstanceRef.current,
+          zIndex: isActive ? 10 : 1,
+        });
+
+        // ホバー時のスタイル変更
+        polyline.addListener('mouseover', () => {
+          if (activeRoute?.id !== route.id) {
+            polyline.setOptions({
+              strokeColor: '#64B5F6',
+              strokeWeight: 5,
+              strokeOpacity: 0.7,
+            });
+          }
+        });
+
+        polyline.addListener('mouseout', () => {
+          if (activeRoute?.id !== route.id) {
+            polyline.setOptions({
+              strokeColor: '#9E9E9E',
+              strokeWeight: 4,
+              strokeOpacity: 0.5,
+            });
+          }
+        });
+
+        // クリック時に経路を選択
+        polyline.addListener('click', () => {
+          onRouteSelect?.(route);
+        });
+
+        routePolylinesRef.current.push(polyline);
+      });
+
+      // アクティブな経路がある場合、その経路が見えるようにboundsを調整
+      if (activeRoute?.encoded_polyline) {
+        const path = window.google.maps.geometry.encoding.decodePath(activeRoute.encoded_polyline);
+        const bounds = new window.google.maps.LatLngBounds();
+        path.forEach((point) => bounds.extend(point));
+        mapInstanceRef.current.fitBounds(bounds, { padding: 50 });
+      }
+    } catch (error) {
+      console.error('Failed to draw route polylines:', error);
+    }
+
+    return () => {
+      routePolylinesRef.current.forEach((p) => p.setMap(null));
+      routePolylinesRef.current = [];
+    };
+  }, [routes, activeRoute, onRouteSelect]);
+
+  // 経路追加モード：マップクリックイベント
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.google?.maps) return;
+
+    // 既存のリスナーを削除
+    if (mapClickListenerRef.current) {
+      window.google.maps.event.removeListener(mapClickListenerRef.current);
+      mapClickListenerRef.current = null;
+    }
+
+    if (!routeAddMode) {
+      // モード終了時に目的地マーカーを削除
+      if (tempDestMarkerRef.current) {
+        tempDestMarkerRef.current.setMap(null);
+        tempDestMarkerRef.current = null;
+      }
+      setTempDestination(null);
+      return;
+    }
+
+    // マップクリックリスナーを追加
+    mapClickListenerRef.current = mapInstanceRef.current.addListener('click', (e) => {
+      const lat = e.latLng.lat();
+      const lng = e.latLng.lng();
+      setTempDestination({ lat, lng });
+
+      // 目的地マーカーを表示/更新
+      if (tempDestMarkerRef.current) {
+        tempDestMarkerRef.current.setPosition({ lat, lng });
+      } else {
+        tempDestMarkerRef.current = new window.google.maps.Marker({
+          position: { lat, lng },
+          map: mapInstanceRef.current,
+          draggable: true,
+          icon: {
+            url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
+          },
+          zIndex: 100,
+        });
+
+        // ドラッグ終了時に位置を更新
+        tempDestMarkerRef.current.addListener('dragend', () => {
+          const pos = tempDestMarkerRef.current.getPosition();
+          setTempDestination({ lat: pos.lat(), lng: pos.lng() });
+        });
+      }
+    });
+
+    // カーソルをcrosshairに変更
+    mapInstanceRef.current.setOptions({ draggableCursor: 'crosshair' });
+
+    return () => {
+      if (mapClickListenerRef.current) {
+        window.google.maps.event.removeListener(mapClickListenerRef.current);
+      }
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.setOptions({ draggableCursor: null });
+      }
+    };
+  }, [routeAddMode]);
+
+  // スライドショー位置に応じてストリートビューを更新
+  useEffect(() => {
+    if (!slideshowPosition || !panoramaRef.current) return;
+
+    const { lat, lng, heading } = slideshowPosition;
+    panoramaRef.current.setPosition({ lat, lng });
+    panoramaRef.current.setPov({ heading: heading || 0, pitch: 0 });
+
+    // ストリートビューが表示されていなければ表示
+    if (!streetViewVisible) {
+      setStreetViewVisible(true);
+    }
+
+    // 経路上の現在位置マーカーを更新
+    if (mapInstanceRef.current && window.google?.maps) {
+      if (!routeMarkerRef.current) {
+        routeMarkerRef.current = new window.google.maps.Marker({
+          position: { lat, lng },
+          map: mapInstanceRef.current,
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: '#FF5722',
+            fillOpacity: 1,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 2,
+          },
+          zIndex: 100,
+        });
+      } else {
+        routeMarkerRef.current.setPosition({ lat, lng });
+      }
+    }
+  }, [slideshowPosition, streetViewVisible]);
 
   // AI応答から選択された場所を地図上に表示
   useEffect(() => {
@@ -288,6 +510,137 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
     }
   }, [streetViewVisible, property]);
 
+  // インラインスライドショーがアクティブになった時の処理
+  useEffect(() => {
+    if (slideshowActive && slideshowPoints.length > 0) {
+      // ストリートビューを表示（パノラマのsetVisibleを呼ぶ）
+      if (panoramaRef.current) {
+        // 最初のポイントを設定
+        const firstPoint = slideshowPoints[0];
+        if (firstPoint) {
+          panoramaRef.current.setPosition({ lat: firstPoint.lat, lng: firstPoint.lng });
+          panoramaRef.current.setPov({ heading: firstPoint.heading || 0, pitch: 0 });
+        }
+        panoramaRef.current.setVisible(true);
+      }
+      // 最初のポイントに移動
+      setCurrentPointIndex(0);
+      setIsPlaying(true);
+      setControlsVisible(true);
+    } else {
+      // スライドショー終了時にリセット
+      setIsPlaying(false);
+      if (playIntervalRef.current) {
+        clearInterval(playIntervalRef.current);
+        playIntervalRef.current = null;
+      }
+    }
+  }, [slideshowActive, slideshowPoints]);
+
+  // スライドショー再生ロジック
+  useEffect(() => {
+    if (playIntervalRef.current) {
+      clearInterval(playIntervalRef.current);
+      playIntervalRef.current = null;
+    }
+
+    if (isPlaying && slideshowActive && slideshowPoints.length > 0) {
+      const interval = 2000 / playbackSpeed; // 基本2秒間隔、速度で調整
+      playIntervalRef.current = setInterval(() => {
+        setCurrentPointIndex((prev) => {
+          const next = prev + 1;
+          if (next >= slideshowPoints.length) {
+            // 最後まで到達したら停止
+            setIsPlaying(false);
+            return prev;
+          }
+          return next;
+        });
+      }, interval);
+    }
+
+    return () => {
+      if (playIntervalRef.current) {
+        clearInterval(playIntervalRef.current);
+      }
+    };
+  }, [isPlaying, slideshowActive, slideshowPoints.length, playbackSpeed]);
+
+  // 現在のポイントでパノラマを更新
+  useEffect(() => {
+    if (!slideshowActive || !slideshowPoints.length || !panoramaRef.current) return;
+
+    const point = slideshowPoints[currentPointIndex];
+    if (!point) return;
+
+    const { lat, lng, heading } = point;
+    panoramaRef.current.setPosition({ lat, lng });
+    panoramaRef.current.setPov({ heading: heading || 0, pitch: 0 });
+
+    // 経路上の現在位置マーカーを更新
+    if (mapInstanceRef.current && window.google?.maps) {
+      if (!routeMarkerRef.current) {
+        routeMarkerRef.current = new window.google.maps.Marker({
+          position: { lat, lng },
+          map: mapInstanceRef.current,
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: '#FF5722',
+            fillOpacity: 1,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 2,
+          },
+          zIndex: 100,
+        });
+      } else {
+        routeMarkerRef.current.setPosition({ lat, lng });
+      }
+    }
+  }, [currentPointIndex, slideshowActive, slideshowPoints]);
+
+  // キーボードショートカット
+  useEffect(() => {
+    if (!slideshowActive) return;
+
+    const handleKeyDown = (e) => {
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault();
+          setIsPlaying((prev) => !prev);
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          setCurrentPointIndex((prev) => Math.max(0, prev - 1));
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          setCurrentPointIndex((prev) => Math.min(slideshowPoints.length - 1, prev + 1));
+          break;
+        case 'Escape':
+          e.preventDefault();
+          onSlideshowEnd?.();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [slideshowActive, slideshowPoints.length, onSlideshowEnd]);
+
+  // コントロールの自動非表示
+  const handleMouseMove = useCallback(() => {
+    setControlsVisible(true);
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    if (isPlaying) {
+      controlsTimeoutRef.current = setTimeout(() => {
+        setControlsVisible(false);
+      }, 3000);
+    }
+  }, [isPlaying]);
+
   const loadGoogleMaps = () => {
     // meta tagから取得（本番環境）、または環境変数から取得（開発環境）
     const metaTag = document.querySelector('meta[name="google-maps-api-key"]');
@@ -323,7 +676,7 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=weekly&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry&v=weekly&loading=async`;
     script.async = true;
     script.defer = true;
     script.onload = initializeMap;
@@ -594,6 +947,30 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
     }
   };
 
+  // 経路追加モードの開始
+  const handleStartRouteAddMode = useCallback(() => {
+    setRouteAddMode(true);
+    setTempDestination(null);
+  }, []);
+
+  // 経路追加モードのキャンセル
+  const handleCancelRouteAddMode = useCallback(() => {
+    setRouteAddMode(false);
+    if (tempDestMarkerRef.current) {
+      tempDestMarkerRef.current.setMap(null);
+      tempDestMarkerRef.current = null;
+    }
+    setTempDestination(null);
+  }, []);
+
+  // 目的地確定
+  const handleConfirmDestination = useCallback(() => {
+    if (!tempDestination || !onRouteAdd) return;
+
+    onRouteAdd(tempDestination);
+    handleCancelRouteAddMode();
+  }, [tempDestination, onRouteAdd, handleCancelRouteAddMode]);
+
   return (
     <Box sx={{ height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
       {/* 地図ヘッダー */}
@@ -652,29 +1029,176 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
 
       {/* 地図・ストリートビューコンテナ */}
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* ストリートビューコンテナ（上半分） - 常にレンダリング */}
+        {/* 地図コンテナ（ストリートビュー表示時は上半分、非表示時は全体） */}
         <Box
-          ref={streetViewRef}
+          ref={mapRef}
           sx={{
-            height: streetViewVisible ? '50%' : '0',
+            height: streetViewVisible ? 'calc(50% - 2px)' : '100%',
             width: '100%',
             bgcolor: 'grey.100',
-            borderBottom: streetViewVisible ? '2px solid #e0e0e0' : 'none',
-            overflow: 'hidden',
             transition: 'height 0.3s ease',
           }}
         />
 
-        {/* 地図コンテナ（ストリートビュー表示時は下半分、非表示時は全体） */}
+        {/* ストリートビュー上部の区切り線 */}
+        {streetViewVisible && (
+          <Box sx={{ height: 2, bgcolor: '#e0e0e0', flexShrink: 0 }} />
+        )}
+
+        {/* ストリートビューコンテナ（下半分） - 常にレンダリング */}
         <Box
-          ref={mapRef}
           sx={{
-            height: streetViewVisible ? '50%' : '100%',
+            position: 'relative',
+            height: streetViewVisible ? '50%' : '0',
             width: '100%',
-            bgcolor: 'grey.100',
+            overflow: 'hidden',
             transition: 'height 0.3s ease',
           }}
-        />
+          onMouseMove={slideshowActive ? handleMouseMove : undefined}
+          onMouseEnter={slideshowActive ? () => setControlsVisible(true) : undefined}
+        >
+          <Box
+            ref={streetViewRef}
+            sx={{
+              height: '100%',
+              width: '100%',
+              bgcolor: 'grey.100',
+            }}
+          />
+
+          {/* スライドショーコントロールオーバーレイ */}
+          {slideshowActive && streetViewVisible && slideshowPoints.length > 0 && (
+            <Fade in={controlsVisible}>
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+                  p: 2,
+                  pt: 4,
+                  zIndex: 10,
+                }}
+              >
+                {/* 進捗スライダー */}
+                <Slider
+                  value={currentPointIndex}
+                  onChange={(_, v) => {
+                    setCurrentPointIndex(v);
+                    setIsPlaying(false);
+                  }}
+                  min={0}
+                  max={slideshowPoints.length - 1}
+                  step={1}
+                  sx={{
+                    color: 'white',
+                    '& .MuiSlider-thumb': {
+                      width: 12,
+                      height: 12,
+                    },
+                    '& .MuiSlider-rail': {
+                      opacity: 0.4,
+                    },
+                  }}
+                />
+
+                {/* コントロールボタン */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                  {/* 前へ */}
+                  <IconButton
+                    size="small"
+                    onClick={() => setCurrentPointIndex((p) => Math.max(0, p - 1))}
+                    disabled={currentPointIndex === 0}
+                    sx={{ color: 'white', '&.Mui-disabled': { color: 'rgba(255,255,255,0.3)' } }}
+                  >
+                    <SkipPreviousIcon />
+                  </IconButton>
+
+                  {/* 再生/一時停止 */}
+                  <IconButton
+                    size="small"
+                    onClick={() => setIsPlaying(!isPlaying)}
+                    sx={{ color: 'white' }}
+                  >
+                    {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+                  </IconButton>
+
+                  {/* 次へ */}
+                  <IconButton
+                    size="small"
+                    onClick={() => setCurrentPointIndex((p) => Math.min(slideshowPoints.length - 1, p + 1))}
+                    disabled={currentPointIndex === slideshowPoints.length - 1}
+                    sx={{ color: 'white', '&.Mui-disabled': { color: 'rgba(255,255,255,0.3)' } }}
+                  >
+                    <SkipNextIcon />
+                  </IconButton>
+
+                  {/* 進捗表示 */}
+                  <Typography
+                    variant="body2"
+                    sx={{ color: 'white', mx: 1, minWidth: 60, textAlign: 'center' }}
+                  >
+                    {currentPointIndex + 1} / {slideshowPoints.length}
+                  </Typography>
+
+                  {/* スペーサー */}
+                  <Box sx={{ flex: 1 }} />
+
+                  {/* 速度調整 */}
+                  <Select
+                    value={playbackSpeed}
+                    onChange={(e) => setPlaybackSpeed(e.target.value)}
+                    size="small"
+                    sx={{
+                      color: 'white',
+                      height: 28,
+                      fontSize: '0.75rem',
+                      '& .MuiSelect-icon': { color: 'white' },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'rgba(255,255,255,0.5)',
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'white',
+                      },
+                    }}
+                  >
+                    <MenuItem value={0.5}>0.5x</MenuItem>
+                    <MenuItem value={1}>1x</MenuItem>
+                    <MenuItem value={2}>2x</MenuItem>
+                    <MenuItem value={3}>3x</MenuItem>
+                  </Select>
+
+                  {/* フルスクリーンボタン */}
+                  {onFullscreenSlideshow && (
+                    <Tooltip title="フルスクリーン">
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          onFullscreenSlideshow(slideshowPoints, currentPointIndex);
+                        }}
+                        sx={{ color: 'white' }}
+                      >
+                        <OpenInFullIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+
+                  {/* 閉じるボタン */}
+                  <Tooltip title="スライドショーを終了">
+                    <IconButton
+                      size="small"
+                      onClick={() => onSlideshowEnd?.()}
+                      sx={{ color: 'white' }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Box>
+            </Fade>
+          )}
+        </Box>
       </Box>
 
       {/* ローディング・エラー表示 */}
@@ -777,6 +1301,96 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
         </Box>
       )}
 
+      {/* 経路追加ボタン（地図左上） */}
+      {mapLoaded && !routeAddMode && onRouteAdd && (
+        <Tooltip title="地図上で目的地を選択して経路を追加">
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<AddLocationIcon />}
+            onClick={handleStartRouteAddMode}
+            sx={{
+              position: 'absolute',
+              top: 80,
+              left: 16,
+              zIndex: 1,
+              bgcolor: 'white',
+              color: 'primary.main',
+              boxShadow: 2,
+              '&:hover': {
+                bgcolor: 'grey.100',
+              },
+            }}
+          >
+            経路追加
+          </Button>
+        </Tooltip>
+      )}
+
+      {/* 経路追加モードオーバーレイ */}
+      <Fade in={routeAddMode}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 56,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: 'none',
+            zIndex: 3,
+          }}
+        >
+          {/* 上部ガイド */}
+          <Paper
+            elevation={4}
+            sx={{
+              position: 'absolute',
+              top: 16,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              px: 3,
+              py: 2,
+              borderRadius: 2,
+              bgcolor: 'rgba(255,255,255,0.95)',
+              backdropFilter: 'blur(4px)',
+              pointerEvents: 'auto',
+              textAlign: 'center',
+              maxWidth: 360,
+            }}
+          >
+            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+              目的地を選択してください
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              地図をクリックして目的地を設定します。
+              {tempDestination && 'マーカーをドラッグして微調整できます。'}
+            </Typography>
+            {tempDestination && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+                選択位置: {tempDestination.lat.toFixed(6)}, {tempDestination.lng.toFixed(6)}
+              </Typography>
+            )}
+            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleCancelRouteAddMode}
+              >
+                キャンセル
+              </Button>
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleConfirmDestination}
+                disabled={!tempDestination}
+              >
+                確定
+              </Button>
+            </Box>
+          </Paper>
+        </Box>
+      </Fade>
+
       {/* 住所検索ダイアログ */}
       <Dialog
         open={addressSearchOpen}
@@ -861,8 +1475,8 @@ export default function PropertyMapPanel({ property, onLocationUpdate, visible =
         </Box>
       )}
 
-      {/* AIチャットウィジェット */}
-      {mapLoaded && (
+      {/* AIチャットウィジェット（ストリートビュー表示時は非表示） */}
+      {mapLoaded && !streetViewVisible && (
         <MapChatWidget
           property={property}
           onPlaceClick={onPlaceClick}

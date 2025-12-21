@@ -189,9 +189,9 @@ export default function OwnersPanel({ propertyId, owners = [], onOwnersUpdate })
                       </Box>
                     }
                     secondary={
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box component="span" sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         {owner.address && (
-                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                          <Box component="span" sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
                             <HomeIcon fontSize="small" color="action" sx={{ mt: 0.5 }} />
                             <Typography variant="body2" color="text.secondary" component="span">
                               {owner.address}
@@ -199,7 +199,7 @@ export default function OwnersPanel({ propertyId, owners = [], onOwnersUpdate })
                           </Box>
                         )}
                         {owner.phone && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <PhoneIcon fontSize="small" color="action" />
                             <Typography variant="body2" color="text.secondary" component="span">
                               {owner.phone}
@@ -207,7 +207,7 @@ export default function OwnersPanel({ propertyId, owners = [], onOwnersUpdate })
                           </Box>
                         )}
                         {owner.email && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <EmailIcon fontSize="small" color="action" />
                             <Typography variant="body2" color="text.secondary" component="span">
                               {owner.email}

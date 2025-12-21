@@ -32,6 +32,9 @@ import BuildingInfoPanel from '../components/BuildingDetail/BuildingInfoPanel';
 import PropertyMapPanel from '../components/BuildingDetail/PropertyMapPanel';
 import RoomsPanel from '../components/BuildingDetail/RoomsPanel';
 import BuildingPhotosPanel from '../components/BuildingDetail/BuildingPhotosPanel';
+import RoutePanel from '../components/BuildingDetail/RoutePanel/RoutePanel';
+import StreetViewSlideshow from '../components/BuildingDetail/StreetViewSlideshow/StreetViewSlideshow';
+import { useRoutes } from '../hooks/useRoutes';
 
 export default function BuildingDetail() {
   const { id } = useParams();
@@ -53,10 +56,27 @@ export default function BuildingDetail() {
   const [widgetContextToken, setWidgetContextToken] = useState(null); // Google Maps Grounding Widget Context Token
   const [leftPaneWidth, setLeftPaneWidth] = useState(280); // 左ペインの横幅
   const [rightPaneWidth, setRightPaneWidth] = useState(280); // 右ペインの横幅
+  const [leftPaneTopHeight, setLeftPaneTopHeight] = useState(60); // 左ペイン上部の高さ（パーセンテージ）
   const [rightPaneTopHeight, setRightPaneTopHeight] = useState(50); // 右ペイン上部の高さ（パーセンテージ）
   const [isResizingLeft, setIsResizingLeft] = useState(false); // 左側リサイズ中かどうか
   const [isResizingRight, setIsResizingRight] = useState(false); // 右側リサイズ中かどうか
-  const [isResizingVertical, setIsResizingVertical] = useState(false); // 垂直方向リサイズ中かどうか
+  const [isResizingLeftVertical, setIsResizingLeftVertical] = useState(false); // 左ペイン垂直方向リサイズ中
+  const [isResizingVertical, setIsResizingVertical] = useState(false); // 右ペイン垂直方向リサイズ中かどうか
+  const [slideshowRoute, setSlideshowRoute] = useState(null); // スライドショー表示中の経路（フルスクリーンダイアログ用）
+  const [slideshowPosition, setSlideshowPosition] = useState(null); // スライドショーからの位置情報
+  const [inlineSlideshow, setInlineSlideshow] = useState(null); // インラインスライドショー { route, points }
+
+  // 経路管理フック
+  const {
+    routes,
+    loading: routesLoading,
+    activeRoute,
+    createRoute,
+    updateRoute,
+    deleteRoute,
+    recalculateRoute,
+    selectRoute,
+  } = useRoutes(id);
 
   // レスポンシブ設定
   const isMdUp = useMediaQuery(muiTheme.breakpoints.up('md'));
@@ -235,6 +255,84 @@ export default function BuildingDetail() {
     showSnackbar(`地図上で「${address}」を検索しています...`, 'info');
   };
 
+  // インラインスライドショーの開始
+  const handleInlineSlideshowStart = async (route) => {
+    if (!route.calculated || !route.id) {
+      showSnackbar('経路が計算されていません。再計算してください。', 'warning');
+      return;
+    }
+
+    try {
+      // ストリートビューポイントを取得
+      const response = await fetch(`/api/v1/buildings/${id}/routes/${route.id}/streetview_points`, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        throw new Error('ストリートビューポイントの取得に失敗しました');
+      }
+
+      const data = await response.json();
+      if (!data.points || data.points.length === 0) {
+        showSnackbar('この経路にはストリートビューポイントがありません', 'warning');
+        return;
+      }
+
+      // インラインスライドショーを開始
+      setInlineSlideshow({
+        route,
+        points: data.points,
+      });
+      // 経路を選択状態にする
+      selectRoute(route);
+    } catch (error) {
+      console.error('Failed to start slideshow:', error);
+      showSnackbar('スライドショーの開始に失敗しました', 'error');
+    }
+  };
+
+  // インラインスライドショーの終了
+  const handleInlineSlideshowEnd = () => {
+    setInlineSlideshow(null);
+  };
+
+  // フルスクリーンスライドショーに切り替え
+  const handleFullscreenSlideshow = (points, currentIndex) => {
+    if (inlineSlideshow) {
+      // インラインを終了してダイアログを開く（現在位置を引き継ぐ）
+      const route = {
+        ...inlineSlideshow.route,
+        streetview_points: points,
+        initialIndex: currentIndex,
+      };
+      setInlineSlideshow(null);
+      setSlideshowRoute(route);
+    }
+  };
+
+  // 地図上からの経路追加
+  const handleRouteAdd = async (destination) => {
+    if (!property?.latitude || !property?.longitude) {
+      showSnackbar('物件の位置情報が設定されていません', 'error');
+      return;
+    }
+
+    try {
+      await createRoute({
+        name: '新しい経路',
+        route_type: 'custom',
+        destination_lat: destination.lat,
+        destination_lng: destination.lng,
+        travel_mode: 'walking',
+      });
+      showSnackbar('経路を追加しました', 'success');
+    } catch (error) {
+      console.error('Failed to add route:', error);
+      showSnackbar('経路の追加に失敗しました', 'error');
+    }
+  };
+
   // スプリッタバーのリサイズ処理（左側）
   const handleLeftMouseDown = (e) => {
     setIsResizingLeft(true);
@@ -247,7 +345,13 @@ export default function BuildingDetail() {
     e.preventDefault();
   };
 
-  // スプリッタバーのリサイズ処理（垂直方向）
+  // スプリッタバーのリサイズ処理（左ペイン垂直方向）
+  const handleLeftVerticalMouseDown = (e) => {
+    setIsResizingLeftVertical(true);
+    e.preventDefault();
+  };
+
+  // スプリッタバーのリサイズ処理（右ペイン垂直方向）
   const handleVerticalMouseDown = (e) => {
     setIsResizingVertical(true);
     e.preventDefault();
@@ -274,8 +378,21 @@ export default function BuildingDetail() {
         setRightPaneWidth(clampedWidth);
       }
 
+      if (isResizingLeftVertical) {
+        // 左ペイン垂直方向のリサイズ
+        const leftPaneRect = document.querySelector('.left-pane-container')?.getBoundingClientRect();
+        if (!leftPaneRect) return;
+
+        const relativeY = e.clientY - leftPaneRect.top;
+        const percentage = (relativeY / leftPaneRect.height) * 100;
+
+        // 最小30%、最大80%
+        const clampedPercentage = Math.max(30, Math.min(80, percentage));
+        setLeftPaneTopHeight(clampedPercentage);
+      }
+
       if (isResizingVertical) {
-        // 垂直方向のリサイズ：右ペインコンテナの上端からマウス位置までの距離をパーセンテージで計算
+        // 右ペイン垂直方向のリサイズ：右ペインコンテナの上端からマウス位置までの距離をパーセンテージで計算
         const rightPaneRect = document.querySelector('.right-pane-container')?.getBoundingClientRect();
         if (!rightPaneRect) return;
 
@@ -291,15 +408,16 @@ export default function BuildingDetail() {
     const handleMouseUp = () => {
       setIsResizingLeft(false);
       setIsResizingRight(false);
+      setIsResizingLeftVertical(false);
       setIsResizingVertical(false);
     };
 
-    if (isResizingLeft || isResizingRight || isResizingVertical) {
+    if (isResizingLeft || isResizingRight || isResizingLeftVertical || isResizingVertical) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       // リサイズ中はユーザー選択を無効化
       document.body.style.userSelect = 'none';
-      document.body.style.cursor = isResizingVertical ? 'row-resize' : 'col-resize';
+      document.body.style.cursor = (isResizingVertical || isResizingLeftVertical) ? 'row-resize' : 'col-resize';
     }
 
     return () => {
@@ -308,7 +426,7 @@ export default function BuildingDetail() {
       document.body.style.userSelect = '';
       document.body.style.cursor = '';
     };
-  }, [isResizingLeft, isResizingRight, isResizingVertical]);
+  }, [isResizingLeft, isResizingRight, isResizingLeftVertical, isResizingVertical]);
 
   if (loading) {
     return (
@@ -445,6 +563,21 @@ export default function BuildingDetail() {
                   onFormChange={handleFormChange}
                   stores={stores}
                 />
+                {/* 経路パネル */}
+                <RoutePanel
+                  buildingId={property?.id}
+                  buildingLocation={property ? { lat: property.latitude, lng: property.longitude } : null}
+                  routes={routes}
+                  loading={routesLoading}
+                  activeRoute={activeRoute}
+                  onRouteSelect={selectRoute}
+                  onRouteCreate={createRoute}
+                  onRouteUpdate={updateRoute}
+                  onRouteDelete={deleteRoute}
+                  onRouteRecalculate={recalculateRoute}
+                  onSlideshowStart={handleInlineSlideshowStart}
+                  isAdmin={true}
+                />
               </Box>
 
               {/* 地図タブ */}
@@ -469,6 +602,15 @@ export default function BuildingDetail() {
                     setWidgetContextToken(token);
                   }}
                   isMobile={true}
+                  activeRoute={activeRoute}
+                  slideshowPosition={slideshowPosition}
+                  routes={routes}
+                  onRouteSelect={selectRoute}
+                  onRouteAdd={handleRouteAdd}
+                  slideshowActive={!!inlineSlideshow}
+                  slideshowPoints={inlineSlideshow?.points || []}
+                  onSlideshowEnd={handleInlineSlideshowEnd}
+                  onFullscreenSlideshow={handleFullscreenSlideshow}
                 />
               </Box>
 
@@ -525,27 +667,87 @@ export default function BuildingDetail() {
                 height: '100%',
               }}
             >
-              {/* 左カラム: 建物（土地）カード */}
-              <Paper
-                elevation={3}
+              {/* 左カラム: 建物（土地）カードと経路情報カード */}
+              <Box
+                className="left-pane-container"
                 sx={{
                   width: leftPaneWidth,
                   flexShrink: 0,
-                  borderRadius: 2,
-                  overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
                   height: '100%',
                 }}
               >
-                <BuildingInfoPanel
-                  property={property}
-                  onSave={handleSave}
-                  loading={saving}
-                  onFormChange={handleFormChange}
-                  stores={stores}
+                {/* 左上: 建物（土地）カード */}
+                <Paper
+                  elevation={3}
+                  sx={{
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: `${leftPaneTopHeight}%`,
+                    minHeight: 0,
+                  }}
+                >
+                  <BuildingInfoPanel
+                    property={property}
+                    onSave={handleSave}
+                    loading={saving}
+                    onFormChange={handleFormChange}
+                    stores={stores}
+                  />
+                </Paper>
+
+                {/* スプリッタバー（左ペイン垂直方向） */}
+                <Box
+                  onMouseDown={handleLeftVerticalMouseDown}
+                  sx={{
+                    height: 6,
+                    cursor: 'row-resize',
+                    bgcolor: isResizingLeftVertical ? 'primary.main' : 'transparent',
+                    '&:hover': {
+                      bgcolor: 'primary.light',
+                    },
+                    transition: 'background-color 0.2s',
+                    flexShrink: 0,
+                    position: 'relative',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      width: 40,
+                      height: 2,
+                      bgcolor: isResizingLeftVertical ? 'primary.main' : 'grey.400',
+                      borderRadius: 1,
+                    },
+                  }}
                 />
-              </Paper>
+
+                {/* 左下: 外観写真カード */}
+                <Paper
+                  elevation={3}
+                  sx={{
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: `${100 - leftPaneTopHeight}%`,
+                    minHeight: 0,
+                  }}
+                >
+                  <BuildingPhotosPanel
+                    propertyId={id}
+                    buildingName={property.name}
+                    rooms={rooms}
+                    onPhotosUpdate={() => {}}
+                    isMaximized={false}
+                    onToggleMaximize={() => {}}
+                  />
+                </Paper>
+              </Box>
 
               {/* スプリッタバー（左側） */}
               <Box
@@ -600,6 +802,15 @@ export default function BuildingDetail() {
                   onWidgetTokenChange={(token) => {
                     setWidgetContextToken(token);
                   }}
+                  activeRoute={activeRoute}
+                  slideshowPosition={slideshowPosition}
+                  routes={routes}
+                  onRouteSelect={selectRoute}
+                  onRouteAdd={handleRouteAdd}
+                  slideshowActive={!!inlineSlideshow}
+                  slideshowPoints={inlineSlideshow?.points || []}
+                  onSlideshowEnd={handleInlineSlideshowEnd}
+                  onFullscreenSlideshow={handleFullscreenSlideshow}
                 />
               </Paper>
 
@@ -687,7 +898,7 @@ export default function BuildingDetail() {
                   }}
                 />
 
-                {/* 右下: 外観写真カード */}
+                {/* 右下: 経路情報カード */}
                 <Paper
                   elevation={3}
                   sx={{
@@ -699,13 +910,19 @@ export default function BuildingDetail() {
                     minHeight: 0,
                   }}
                 >
-                  <BuildingPhotosPanel
-                    propertyId={id}
-                    buildingName={property.name}
-                    rooms={rooms}
-                    onPhotosUpdate={() => {}}
-                    isMaximized={false}
-                    onToggleMaximize={() => {}}
+                  <RoutePanel
+                    buildingId={property?.id}
+                    buildingLocation={property ? { lat: property.latitude, lng: property.longitude } : null}
+                    routes={routes}
+                    loading={routesLoading}
+                    activeRoute={activeRoute}
+                    onRouteSelect={selectRoute}
+                    onRouteCreate={createRoute}
+                    onRouteUpdate={updateRoute}
+                    onRouteDelete={deleteRoute}
+                    onRouteRecalculate={recalculateRoute}
+                    onSlideshowStart={handleInlineSlideshowStart}
+                    isAdmin={true}
                   />
                 </Paper>
               </Box>
@@ -728,6 +945,17 @@ export default function BuildingDetail() {
             {snackbar.message}
           </Alert>
         </Snackbar>
+
+        {/* ストリートビュースライドショー */}
+        <StreetViewSlideshow
+          open={!!slideshowRoute}
+          route={slideshowRoute}
+          onClose={() => {
+            setSlideshowRoute(null);
+            setSlideshowPosition(null);
+          }}
+          onPositionChange={setSlideshowPosition}
+        />
       </Box>
     </ThemeProvider>
   );

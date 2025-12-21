@@ -11,7 +11,6 @@ import {
   CircularProgress,
   Tooltip,
   Chip,
-  Fab,
   Tabs,
   Tab,
   Select,
@@ -400,7 +399,7 @@ export default function BuildingPhotosPanel({ propertyId, buildingName, rooms = 
             onClick={() => setUploadDialogOpen(true)}
             sx={{ mr: 1 }}
           >
-            写真追加
+            追加
           </Button>
 
           {!isMobile && isMaximized && (
@@ -952,21 +951,6 @@ export default function BuildingPhotosPanel({ propertyId, buildingName, rooms = 
         </DialogActions>
       </Dialog>
 
-      {/* フローティングアクションボタン（小画面用） */}
-      {photos.length > 0 && (
-        <Fab
-          color="primary"
-          size="small"
-          onClick={() => setUploadDialogOpen(true)}
-          sx={{
-            position: 'absolute',
-            bottom: 16,
-            right: 16,
-          }}
-        >
-          <AddIcon />
-        </Fab>
-      )}
     </Box>
   );
 }
