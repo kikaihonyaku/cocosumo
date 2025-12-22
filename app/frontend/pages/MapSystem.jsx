@@ -35,6 +35,9 @@ export default function MapSystem() {
   const [propertyListMaximized, setPropertyListMaximized] = useState(false);
   const [leftPanelForceClose, setLeftPanelForceClose] = useState(false);
   const [buildingFormModalOpen, setBuildingFormModalOpen] = useState(false);
+  // 地図から位置を選択するモード
+  const [mapPickMode, setMapPickMode] = useState(false);
+  const [pickedLocation, setPickedLocation] = useState(null);
 
   // データ管理用のステート
   // allProperties: API取得データ（フィルタ前）
@@ -681,6 +684,14 @@ export default function MapSystem() {
                     onApplyFilters={fetchGeoFilteredIds}
                     // GISフィルタが有効かどうか
                     hasGeoFilter={geoFilteredIds !== null}
+                    // 地図から位置を選択するモード
+                    mapPickMode={mapPickMode}
+                    onMapPick={(location) => {
+                      setPickedLocation(location);
+                      setMapPickMode(false);
+                      setBuildingFormModalOpen(true);
+                    }}
+                    onCancelMapPick={() => setMapPickMode(false)}
                   />
                 )}
               </Box>
@@ -1030,8 +1041,16 @@ export default function MapSystem() {
         {/* 物件新規登録モーダル */}
         <BuildingFormModal
           isOpen={buildingFormModalOpen}
-          onClose={() => setBuildingFormModalOpen(false)}
+          onClose={() => {
+            setBuildingFormModalOpen(false);
+            setPickedLocation(null);
+          }}
           onSuccess={handleBuildingRegistered}
+          onStartMapPick={() => {
+            setMapPickMode(true);
+            setBuildingFormModalOpen(false);
+          }}
+          initialLocation={pickedLocation}
         />
       </Box>
     </ThemeProvider>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -22,9 +22,16 @@ import {
 } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
+import PlaceIcon from '@mui/icons-material/Place';
 import muiTheme from '../../theme/muiTheme';
 
-export default function BuildingFormModal({ isOpen, onClose, onSuccess }) {
+export default function BuildingFormModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  onStartMapPick,
+  initialLocation = null, // { lat, lng } 地図から選択した座標
+}) {
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -58,6 +65,35 @@ export default function BuildingFormModal({ isOpen, onClose, onSuccess }) {
     latitude: null,
     longitude: null
   });
+
+  // 地図から選択された座標を処理
+  useEffect(() => {
+    if (initialLocation && initialLocation.lat && initialLocation.lng) {
+      const processLocation = async () => {
+        setGettingLocation(true);
+        try {
+          const address = await reverseGeocode(initialLocation.lat, initialLocation.lng);
+          setFormData(prev => ({
+            ...prev,
+            address,
+            latitude: initialLocation.lat,
+            longitude: initialLocation.lng,
+          }));
+        } catch (err) {
+          console.error('住所取得エラー:', err);
+          // 住所取得に失敗しても座標は設定
+          setFormData(prev => ({
+            ...prev,
+            latitude: initialLocation.lat,
+            longitude: initialLocation.lng,
+          }));
+        } finally {
+          setGettingLocation(false);
+        }
+      };
+      processLocation();
+    }
+  }, [initialLocation]);
 
   // Google Maps Geocoding APIを使用して住所から座標を取得
   const geocodeAddress = (address) => {
@@ -394,27 +430,51 @@ export default function BuildingFormModal({ isOpen, onClose, onSuccess }) {
                 onChange={handleChange}
                 disabled={submitting || gettingLocation}
                 size="small"
-                helperText={isMobile ? "現在地ボタンで位置情報から住所を取得できます" : "住所から自動的に地図上の位置を取得します"}
+                helperText={
+                  formData.latitude && formData.longitude
+                    ? `座標: ${formData.latitude.toFixed(6)}, ${formData.longitude.toFixed(6)}`
+                    : "住所入力または地図から選択してください"
+                }
                 InputProps={{
-                  endAdornment: isMobile && (
+                  endAdornment: (
                     <InputAdornment position="end">
-                      <Tooltip title="現在地から住所を取得">
-                        <span>
-                          <IconButton
-                            onClick={handleGetCurrentLocation}
-                            disabled={submitting || gettingLocation}
-                            edge="end"
-                            color="primary"
-                            size="small"
-                          >
-                            {gettingLocation ? (
-                              <CircularProgress size={20} />
-                            ) : (
-                              <MyLocationIcon />
-                            )}
-                          </IconButton>
-                        </span>
-                      </Tooltip>
+                      {isMobile && (
+                        <Tooltip title="現在地から住所を取得">
+                          <span>
+                            <IconButton
+                              onClick={handleGetCurrentLocation}
+                              disabled={submitting || gettingLocation}
+                              edge="end"
+                              color="primary"
+                              size="small"
+                            >
+                              {gettingLocation ? (
+                                <CircularProgress size={20} />
+                              ) : (
+                                <MyLocationIcon />
+                              )}
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      )}
+                      {onStartMapPick && (
+                        <Tooltip title="地図から選択">
+                          <span>
+                            <IconButton
+                              onClick={() => {
+                                onClose();
+                                onStartMapPick();
+                              }}
+                              disabled={submitting || gettingLocation}
+                              edge="end"
+                              color="secondary"
+                              size="small"
+                            >
+                              <PlaceIcon />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      )}
                     </InputAdornment>
                   ),
                 }}

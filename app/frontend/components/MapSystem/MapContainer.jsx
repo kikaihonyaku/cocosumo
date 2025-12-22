@@ -49,6 +49,10 @@ export default function MapContainer({
   showDrawingTools = false,
   // GISフィルタが有効かどうか
   hasGeoFilter = false,
+  // 地図から位置を選択するモード
+  mapPickMode = false,
+  onMapPick = null,
+  onCancelMapPick = null,
 }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mapType, setMapType] = useState('roadmap');
@@ -64,6 +68,10 @@ export default function MapContainer({
   const storeMarkersRef = useRef([]);
   // レイヤーポイントマーカーのref（住所ポイント等）
   const layerPointMarkersRef = useRef({});
+  // 地図選択モードのマーカーref
+  const pickMarkerRef = useRef(null);
+  // 地図選択モードのクリックリスナーref
+  const pickClickListenerRef = useRef(null);
 
   const {
     map,
@@ -651,6 +659,74 @@ export default function MapContainer({
     });
   }, [selectedLayers, availableLayers, isLoaded, map, fetchLayerGeoJson, hideLayer]);
 
+  // 地図から位置を選択するモードの処理
+  useEffect(() => {
+    if (!isLoaded || !map || !window.google) return;
+
+    // 既存のリスナーをクリア
+    if (pickClickListenerRef.current) {
+      google.maps.event.removeListener(pickClickListenerRef.current);
+      pickClickListenerRef.current = null;
+    }
+
+    // 既存のマーカーをクリア
+    if (pickMarkerRef.current) {
+      pickMarkerRef.current.setMap(null);
+      pickMarkerRef.current = null;
+    }
+
+    if (mapPickMode && onMapPick) {
+      // カーソルを変更
+      map.setOptions({ draggableCursor: 'crosshair' });
+
+      // クリックリスナーを追加
+      pickClickListenerRef.current = map.addListener('click', (event) => {
+        const lat = event.latLng.lat();
+        const lng = event.latLng.lng();
+
+        // 選択位置にマーカーを表示
+        if (pickMarkerRef.current) {
+          pickMarkerRef.current.setMap(null);
+        }
+
+        pickMarkerRef.current = new google.maps.Marker({
+          position: { lat, lng },
+          map: map,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 12,
+            fillColor: '#e91e63',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 3,
+          },
+          zIndex: 2000,
+          animation: google.maps.Animation.DROP,
+        });
+
+        // コールバックを呼び出し
+        onMapPick({ lat, lng });
+      });
+    } else {
+      // 通常モードに戻す
+      map.setOptions({ draggableCursor: null });
+    }
+
+    return () => {
+      if (pickClickListenerRef.current) {
+        google.maps.event.removeListener(pickClickListenerRef.current);
+        pickClickListenerRef.current = null;
+      }
+      if (pickMarkerRef.current) {
+        pickMarkerRef.current.setMap(null);
+        pickMarkerRef.current = null;
+      }
+      if (map) {
+        map.setOptions({ draggableCursor: null });
+      }
+    };
+  }, [isLoaded, map, mapPickMode, onMapPick]);
+
   // 地図が読み込まれたら物件マーカーを配置
   useEffect(() => {
     if (isLoaded && map) {
@@ -1163,6 +1239,46 @@ export default function MapContainer({
             レイヤーを読み込み中...
           </Typography>
         </Box>
+      )}
+
+      {/* 地図選択モードインジケーター */}
+      {mapPickMode && (
+        <Paper
+          elevation={4}
+          sx={{
+            position: 'absolute',
+            top: 16,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            p: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            zIndex: 200,
+            bgcolor: 'secondary.main',
+            color: 'white',
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="body1" sx={{ fontWeight: 600 }}>
+            📍 地図上をクリックして位置を選択してください
+          </Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={onCancelMapPick}
+            sx={{
+              color: 'white',
+              borderColor: 'rgba(255, 255, 255, 0.7)',
+              '&:hover': {
+                borderColor: 'white',
+                bgcolor: 'rgba(255, 255, 255, 0.1)',
+              },
+            }}
+          >
+            キャンセル
+          </Button>
+        </Paper>
       )}
 
     </Box>
