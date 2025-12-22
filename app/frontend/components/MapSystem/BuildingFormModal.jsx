@@ -15,13 +15,20 @@ import {
   IconButton,
   Divider,
   FormControlLabel,
-  Checkbox
+  Checkbox,
+  InputAdornment,
+  Tooltip,
+  useMediaQuery,
 } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+import muiTheme from '../../theme/muiTheme';
 
 export default function BuildingFormModal({ isOpen, onClose, onSuccess }) {
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [gettingLocation, setGettingLocation] = useState(false);
   const [formData, setFormData] = useState({
     // 基本情報
     name: "",
@@ -83,12 +90,89 @@ export default function BuildingFormModal({ isOpen, onClose, onSuccess }) {
     });
   };
 
+  // 座標から住所を取得（リバースジオコーディング）
+  const reverseGeocode = (lat, lng) => {
+    return new Promise((resolve, reject) => {
+      if (!window.google || !window.google.maps) {
+        reject(new Error('Google Maps API is not loaded'));
+        return;
+      }
+
+      const geocoder = new window.google.maps.Geocoder();
+      const latlng = { lat, lng };
+
+      geocoder.geocode({ location: latlng }, (results, status) => {
+        if (status === 'OK' && results[0]) {
+          // 日本の住所形式を取得
+          const address = results[0].formatted_address;
+          // "日本、" のプレフィックスを削除
+          const cleanedAddress = address.replace(/^日本、\s*/, '');
+          resolve(cleanedAddress);
+        } else {
+          reject(new Error('住所の取得に失敗しました'));
+        }
+      });
+    });
+  };
+
+  // 現在地から住所を取得
+  const handleGetCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      setError('お使いのブラウザは位置情報に対応していません');
+      return;
+    }
+
+    setGettingLocation(true);
+    setError('');
+
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+      const address = await reverseGeocode(latitude, longitude);
+
+      setFormData(prev => ({
+        ...prev,
+        address,
+        latitude,
+        longitude,
+      }));
+    } catch (err) {
+      console.error('位置情報取得エラー:', err);
+      if (err.code === 1) {
+        setError('位置情報へのアクセスが許可されていません。設定を確認してください。');
+      } else if (err.code === 2) {
+        setError('位置情報を取得できませんでした。電波状況を確認してください。');
+      } else if (err.code === 3) {
+        setError('位置情報の取得がタイムアウトしました。');
+      } else {
+        setError('位置情報の取得に失敗しました');
+      }
+    } finally {
+      setGettingLocation(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      };
+      // 住所を手動で変更した場合は位置情報をクリア（再ジオコーディングが必要）
+      if (name === 'address') {
+        newData.latitude = null;
+        newData.longitude = null;
+      }
+      return newData;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -97,8 +181,16 @@ export default function BuildingFormModal({ isOpen, onClose, onSuccess }) {
     setSubmitting(true);
 
     try {
-      // 住所から位置情報を取得
-      const { latitude, longitude } = await geocodeAddress(formData.address);
+      // 既に位置情報がある場合（現在地から取得した場合）はジオコーディングをスキップ
+      let latitude = formData.latitude;
+      let longitude = formData.longitude;
+
+      if (!latitude || !longitude) {
+        // 住所から位置情報を取得
+        const coords = await geocodeAddress(formData.address);
+        latitude = coords.latitude;
+        longitude = coords.longitude;
+      }
 
       const dataToSubmit = {
         ...formData,
@@ -300,9 +392,32 @@ export default function BuildingFormModal({ isOpen, onClose, onSuccess }) {
                 name="address"
                 value={formData.address}
                 onChange={handleChange}
-                disabled={submitting}
+                disabled={submitting || gettingLocation}
                 size="small"
-                helperText="住所から自動的に地図上の位置を取得します"
+                helperText={isMobile ? "現在地ボタンで位置情報から住所を取得できます" : "住所から自動的に地図上の位置を取得します"}
+                InputProps={{
+                  endAdornment: isMobile && (
+                    <InputAdornment position="end">
+                      <Tooltip title="現在地から住所を取得">
+                        <span>
+                          <IconButton
+                            onClick={handleGetCurrentLocation}
+                            disabled={submitting || gettingLocation}
+                            edge="end"
+                            color="primary"
+                            size="small"
+                          >
+                            {gettingLocation ? (
+                              <CircularProgress size={20} />
+                            ) : (
+                              <MyLocationIcon />
+                            )}
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Grid>
           </Grid>
