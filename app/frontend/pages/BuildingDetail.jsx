@@ -293,7 +293,7 @@ export default function BuildingDetail() {
       selectRoute(route);
       // モバイル時は地図タブに自動切り替え
       if (isMobile) {
-        setMobileActiveTab(1); // 地図タブ
+        setMobileActiveTab(2); // 地図タブ
       }
     } catch (error) {
       console.error('Failed to start slideshow:', error);
@@ -539,22 +539,22 @@ export default function BuildingDetail() {
                   sx={{ minHeight: 64 }}
                 />
                 <Tab
-                  icon={<MapIcon />}
-                  label="地図"
+                  icon={<PhotoLibraryIcon />}
+                  label="外観"
                   id="mobile-tab-1"
                   aria-controls="mobile-tabpanel-1"
                   sx={{ minHeight: 64 }}
                 />
                 <Tab
-                  icon={<RouteIcon />}
-                  label="経路"
+                  icon={<MapIcon />}
+                  label="地図"
                   id="mobile-tab-2"
                   aria-controls="mobile-tabpanel-2"
                   sx={{ minHeight: 64 }}
                 />
                 <Tab
-                  icon={<PhotoLibraryIcon />}
-                  label="外観"
+                  icon={<RouteIcon />}
+                  label="経路"
                   id="mobile-tab-3"
                   aria-controls="mobile-tabpanel-3"
                   sx={{ minHeight: 64 }}
@@ -583,9 +583,28 @@ export default function BuildingDetail() {
                 />
               </Box>
 
-              {/* 地図タブ */}
+              {/* 外観タブ */}
               <Box sx={{
                 display: mobileActiveTab === 1 ? 'block' : 'none',
+                flex: 1,
+                width: '100%',
+                height: '100%',
+                overflow: 'hidden',
+              }}>
+                <BuildingPhotosPanel
+                  propertyId={id}
+                  buildingName={property.name}
+                  rooms={rooms}
+                  onPhotosUpdate={() => {}}
+                  isMaximized={false}
+                  onToggleMaximize={() => {}}
+                  isMobile={true}
+                />
+              </Box>
+
+              {/* 地図タブ */}
+              <Box sx={{
+                display: mobileActiveTab === 2 ? 'block' : 'none',
                 flex: 1,
                 width: '100%',
                 height: '100%',
@@ -597,7 +616,7 @@ export default function BuildingDetail() {
                   onLocationUpdate={(lat, lng) => {
                     setProperty(prev => ({ ...prev, latitude: lat, longitude: lng }));
                   }}
-                  visible={mobileActiveTab === 1}
+                  visible={mobileActiveTab === 2}
                   onFormChange={handleFormChange}
                   onSave={handleSave}
                   selectedPlace={selectedPlace}
@@ -621,7 +640,7 @@ export default function BuildingDetail() {
 
               {/* 経路タブ */}
               <Box sx={{
-                display: mobileActiveTab === 2 ? 'block' : 'none',
+                display: mobileActiveTab === 3 ? 'block' : 'none',
                 flex: 1,
                 width: '100%',
                 height: '100%',
@@ -640,25 +659,6 @@ export default function BuildingDetail() {
                   onRouteRecalculate={recalculateRoute}
                   onSlideshowStart={handleInlineSlideshowStart}
                   isAdmin={true}
-                  isMobile={true}
-                />
-              </Box>
-
-              {/* 外観タブ */}
-              <Box sx={{
-                display: mobileActiveTab === 3 ? 'block' : 'none',
-                flex: 1,
-                width: '100%',
-                height: '100%',
-                overflow: 'hidden',
-              }}>
-                <BuildingPhotosPanel
-                  propertyId={id}
-                  buildingName={property.name}
-                  rooms={rooms}
-                  onPhotosUpdate={() => {}}
-                  isMaximized={false} // モバイルでは最大化無効
-                  onToggleMaximize={() => {}} // 無効化
                   isMobile={true}
                 />
               </Box>
