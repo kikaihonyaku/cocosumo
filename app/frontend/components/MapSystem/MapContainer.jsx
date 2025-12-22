@@ -62,6 +62,8 @@ export default function MapContainer({
   const layerInfoWindowRef = useRef(null);
   // 店舗マーカーのref
   const storeMarkersRef = useRef([]);
+  // レイヤーポイントマーカーのref（住所ポイント等）
+  const layerPointMarkersRef = useRef({});
 
   const {
     map,
@@ -482,8 +484,80 @@ export default function MapContainer({
     layerPolygonsRef.current[layerId] = newPolygons;
   }, [map, onGeoFilterChange, onApplyFilters]);
 
+  // ポイントを地図に表示（住所ポイント等）
+  const displayLayerPoints = useCallback((geojson, layerId, color, opacity, attribution) => {
+    if (!map || !geojson || !geojson.features || !window.google) {
+      return;
+    }
+
+    // 既存のマーカーをクリア
+    if (layerPointMarkersRef.current[layerId]) {
+      layerPointMarkersRef.current[layerId].forEach(marker => {
+        marker.setMap(null);
+      });
+    }
+
+    const newMarkers = [];
+
+    geojson.features.forEach((feature) => {
+      const geometry = feature.geometry;
+      const properties = feature.properties;
+
+      if (geometry.type !== 'Point') return;
+
+      const [lng, lat] = geometry.coordinates;
+
+      // カスタムSVGアイコン（小さい円形マーカー）
+      const markerSvg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12">
+          <circle cx="6" cy="6" r="5" fill="${color}" stroke="#ffffff" stroke-width="1" fill-opacity="${opacity || 0.8}"/>
+        </svg>
+      `;
+
+      const marker = new google.maps.Marker({
+        position: { lat, lng },
+        map: map,
+        title: properties.name || properties.full_address || '',
+        icon: {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(markerSvg),
+          scaledSize: new google.maps.Size(12, 12),
+          anchor: new google.maps.Point(6, 6),
+        },
+        zIndex: 500, // 物件マーカーより下、ポリゴンより上
+      });
+
+      // クリックイベント
+      marker.addListener('click', () => {
+        const formattedAttribution = attribution ? attribution.replace(/\n/g, '<br>') : '';
+        const displayName = properties.name || properties.full_address || '住所ポイント';
+
+        // 既存のInfoWindowを閉じる
+        if (layerInfoWindowRef.current) {
+          layerInfoWindowRef.current.close();
+        }
+
+        const infoWindow = new google.maps.InfoWindow({
+          content: `
+            <div style="padding: 8px; font-family: 'Segoe UI', sans-serif; min-width: 150px;">
+              <h4 style="margin: 0 0 4px 0; font-size: 0.9rem; color: ${color};">${displayName}</h4>
+              ${properties.prefecture ? `<p style="margin: 2px 0; font-size: 0.8rem; color: #666;">${properties.prefecture}${properties.city || ''}${properties.district || ''}${properties.block_number || ''}</p>` : ''}
+              ${properties.representative ? '<p style="margin: 2px 0; font-size: 0.75rem; color: #1976d2;">代表点</p>' : ''}
+              ${formattedAttribution ? `<p style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 0.7rem; color: #999;">${formattedAttribution}</p>` : ''}
+            </div>
+          `,
+        });
+        infoWindow.open(map, marker);
+        layerInfoWindowRef.current = infoWindow;
+      });
+
+      newMarkers.push(marker);
+    });
+
+    layerPointMarkersRef.current[layerId] = newMarkers;
+  }, [map]);
+
   // レイヤーのGeoJSONデータを取得
-  const fetchLayerGeoJson = useCallback(async (layerId, color, opacity, attribution) => {
+  const fetchLayerGeoJson = useCallback(async (layerId, color, opacity, attribution, layerType) => {
     try {
       // ローディング開始
       setLayerLoadingStates(prev => ({ ...prev, [layerId]: true }));
@@ -497,7 +571,14 @@ export default function MapContainer({
 
       if (response.ok) {
         const geojson = await response.json();
-        displayLayerPolygons(geojson, layerId, color, opacity, attribution);
+
+        // レイヤータイプまたはジオメトリタイプに応じて表示方法を切り替え
+        if (layerType === 'address_points' ||
+            (geojson.features && geojson.features.length > 0 && geojson.features[0].geometry?.type === 'Point')) {
+          displayLayerPoints(geojson, layerId, color, opacity, attribution);
+        } else {
+          displayLayerPolygons(geojson, layerId, color, opacity, attribution);
+        }
       } else if (response.status === 401) {
         window.location.href = '/login';
       }
@@ -507,15 +588,23 @@ export default function MapContainer({
       // ローディング終了
       setLayerLoadingStates(prev => ({ ...prev, [layerId]: false }));
     }
-  }, [displayLayerPolygons]);
+  }, [displayLayerPolygons, displayLayerPoints]);
 
   // レイヤーの非表示
   const hideLayer = useCallback((layerId) => {
+    // ポリゴンをクリア
     if (layerPolygonsRef.current[layerId]) {
       layerPolygonsRef.current[layerId].forEach(polygon => {
         polygon.setMap(null);
       });
       delete layerPolygonsRef.current[layerId];
+    }
+    // ポイントマーカーをクリア
+    if (layerPointMarkersRef.current[layerId]) {
+      layerPointMarkersRef.current[layerId].forEach(marker => {
+        marker.setMap(null);
+      });
+      delete layerPointMarkersRef.current[layerId];
     }
   }, []);
 
@@ -531,14 +620,17 @@ export default function MapContainer({
       if (isSelected) {
         // レイヤーが選択されている場合
         const existingPolygons = layerPolygonsRef.current[layerId];
+        const existingPoints = layerPointMarkersRef.current[layerId];
+        const hasExistingData = (existingPolygons && existingPolygons.length > 0) ||
+                               (existingPoints && existingPoints.length > 0);
         const needsRedraw = existingPolygons && existingPolygons.length > 0 &&
                            existingPolygons[0]?.strokeColor !== layer.color;
 
-        if (!existingPolygons || existingPolygons.length === 0 || needsRedraw) {
+        if (!hasExistingData || needsRedraw) {
           if (needsRedraw) {
             hideLayer(layerId);
           }
-          fetchLayerGeoJson(layerId, layer.color, layer.opacity, layer.attribution);
+          fetchLayerGeoJson(layerId, layer.color, layer.opacity, layer.attribution, layer.layer_type);
         }
       } else {
         // レイヤーが選択されていない場合は非表示
@@ -547,8 +639,12 @@ export default function MapContainer({
     });
 
     // availableLayersに存在しないが表示されているレイヤーをクリア
-    Object.keys(layerPolygonsRef.current).forEach(layerId => {
-      const exists = availableLayers.some(l => l.id === layerId);
+    const allLayerIds = new Set([
+      ...Object.keys(layerPolygonsRef.current),
+      ...Object.keys(layerPointMarkersRef.current)
+    ]);
+    allLayerIds.forEach(layerId => {
+      const exists = availableLayers.some(l => String(l.id) === String(layerId));
       if (!exists) {
         hideLayer(layerId);
       }

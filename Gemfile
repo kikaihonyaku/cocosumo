@@ -87,3 +87,6 @@ gem "rgeo-geojson", "~> 2.1"
 # Web scraping
 gem "nokogiri"
 gem "httparty"
+
+# ZIP file handling
+gem "rubyzip", "~> 2.3"

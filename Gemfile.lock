@@ -459,6 +459,7 @@ GEM
       rubocop-performance (>= 1.24)
       rubocop-rails (>= 2.30)
     ruby-progressbar (1.13.0)
+    rubyzip (2.4.1)
     securerandom (0.4.1)
     signet (0.21.0)
       addressable (~> 2.8)
@@ -579,6 +580,7 @@ DEPENDENCIES
   rgeo-geojson (~> 2.1)
   rqrcode (~> 3.1)
   rubocop-rails-omakase
+  rubyzip (~> 2.3)
   solid_cable
   solid_cache
   solid_queue
