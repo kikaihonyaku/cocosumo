@@ -11,7 +11,6 @@ import {
   CircularProgress,
   Tooltip,
   Chip,
-  Fab,
   Tabs,
   Tab,
   Select,
@@ -1002,26 +1001,6 @@ export default function RoomPhotosPanel({
           )}
         </DialogActions>
       </Dialog>
-
-      {/* フローティングアクションボタン（小画面用） */}
-      {photos.length > 0 && (
-        <Fab
-          color="primary"
-          size="small"
-          onClick={() => {
-            // 現在選択中のカテゴリをデフォルトに設定（'all'の場合は'interior'）
-            setBulkUploadCategory(selectedCategory !== 'all' ? selectedCategory : 'interior');
-            setBulkUploadDialogOpen(true);
-          }}
-          sx={{
-            position: 'absolute',
-            bottom: 16,
-            right: 16,
-          }}
-        >
-          <AddIcon />
-        </Fab>
-      )}
     </Box>
   );
 }
