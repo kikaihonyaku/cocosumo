@@ -43,11 +43,32 @@ import {
   Cancel as CancelIcon,
   HourglassEmpty as HourglassEmptyIcon,
   ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 
-export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
+export default function RoomsPanel({
+  propertyId,
+  rooms,
+  onRoomsUpdate,
+  expanded: controlledExpanded,
+  onExpandedChange,
+}) {
   const navigate = useNavigate();
   const [roomDialogOpen, setRoomDialogOpen] = useState(false);
+
+  // 親から制御される場合はcontrolledExpanded、そうでなければローカルステート
+  const [localExpanded, setLocalExpanded] = useState(true);
+  const isControlled = controlledExpanded !== undefined;
+  const expanded = isControlled ? controlledExpanded : localExpanded;
+
+  const handleExpandToggle = () => {
+    const newExpanded = !expanded;
+    if (isControlled) {
+      onExpandedChange?.(newExpanded);
+    } else {
+      setLocalExpanded(newExpanded);
+    }
+  };
   const [editingRoom, setEditingRoom] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState(null);
@@ -307,50 +328,66 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: expanded ? '100%' : 'auto', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
-      <Box sx={{
-        px: 2,
-        py: 1.5,
-        borderBottom: '1px solid #e0e0e0',
-        bgcolor: 'background.paper',
-        display: 'flex',
-        alignItems: 'center',
-        minHeight: 56
-      }}>
-        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1, fontWeight: 600, fontSize: '1.05rem' }}>
-          <HomeIcon color="primary" sx={{ fontSize: 26 }} />
-          部屋一覧 ({rooms.length}室)
-        </Typography>
-
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<AddIcon />}
-          onClick={handleAddRoom}
-        >
-          部屋追加
-        </Button>
-      </Box>
-
-      {/* 統計情報 */}
-      <Box sx={{ p: 1, bgcolor: 'grey.50', borderBottom: '1px solid #ddd', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-        {roomStatuses.map(status => {
-          const count = rooms.filter(room => room.status === status.id).length;
-          return count > 0 ? (
-            <Chip
-              key={status.id}
-              label={`${status.name}: ${count}`}
+      <Box
+        sx={{
+          px: 2,
+          py: 1,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          cursor: 'pointer',
+          borderBottom: '1px solid #e0e0e0',
+          '&:hover': { bgcolor: 'action.hover' },
+          flexShrink: 0,
+        }}
+        onClick={handleExpandToggle}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <HomeIcon color="action" />
+          <Typography variant="subtitle2" fontWeight={600}>
+            部屋一覧
+          </Typography>
+          <Chip label={`${rooms.length}室`} size="small" sx={{ height: 20, fontSize: '0.75rem' }} />
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Tooltip title="部屋を追加">
+            <IconButton
               size="small"
-              color={status.color}
-              variant="outlined"
-            />
-          ) : null;
-        })}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddRoom();
+              }}
+            >
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        </Box>
       </Box>
 
-      {/* 部屋一覧テーブル */}
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
+      {/* コンテンツ */}
+      {expanded && (
+        <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {/* 統計情報 */}
+        <Box sx={{ p: 1, bgcolor: 'grey.50', borderBottom: '1px solid #ddd', display: 'flex', gap: 1, flexWrap: 'wrap', flexShrink: 0 }}>
+          {roomStatuses.map(status => {
+            const count = rooms.filter(room => room.status === status.id).length;
+            return count > 0 ? (
+              <Chip
+                key={status.id}
+                label={`${status.name}: ${count}`}
+                size="small"
+                color={status.color}
+                variant="outlined"
+              />
+            ) : null;
+          })}
+        </Box>
+
+        {/* 部屋一覧テーブル */}
+        <Box sx={{ flex: 1, overflow: 'auto' }}>
         {rooms.length === 0 ? (
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <Typography color="text.secondary">
@@ -441,7 +478,9 @@ export default function RoomsPanel({ propertyId, rooms, onRoomsUpdate }) {
             </Table>
           </TableContainer>
         )}
-      </Box>
+        </Box>
+        </Box>
+      )}
 
       {/* アクションメニュー */}
       <Menu

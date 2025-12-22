@@ -18,14 +18,23 @@ import {
   CircularProgress,
   FormControlLabel,
   Checkbox,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   Home as HomeIcon,
   CalendarToday as CalendarIcon,
   Delete as DeleteIcon,
+  Save as SaveIcon,
 } from '@mui/icons-material';
 
-export default function RoomInfoPanel({ room, onSave, loading, isMobile = false, onFormChange }) {
+export default function RoomInfoPanel({
+  room,
+  onSave,
+  loading,
+  isMobile = false,
+  onFormChange,
+}) {
   const [formData, setFormData] = useState({
     room_number: '',
     floor: '',
@@ -180,23 +189,53 @@ export default function RoomInfoPanel({ room, onSave, loading, isMobile = false,
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
-      <Box sx={{
-        px: 2,
-        py: 1.5,
-        borderBottom: '1px solid #e0e0e0',
-        bgcolor: 'background.paper',
-        display: 'flex',
-        alignItems: 'center',
-        minHeight: 56
-      }}>
-        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1, fontWeight: 600, fontSize: '1.05rem' }}>
-          <HomeIcon color="primary" sx={{ fontSize: 26 }} />
-          部屋情報
-        </Typography>
+      <Box
+        sx={{
+          px: 2,
+          py: 1,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '1px solid #e0e0e0',
+          flexShrink: 0,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <HomeIcon color="action" />
+          <Typography variant="subtitle2" fontWeight={600}>
+            部屋情報
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Tooltip title="変更を保存">
+            <span>
+              <IconButton
+                size="small"
+                onClick={handleSubmit}
+                disabled={loading}
+                color={hasUnsavedChanges ? "primary" : "default"}
+              >
+                {loading ? <CircularProgress size={18} /> : <SaveIcon fontSize="small" />}
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title="部屋を削除">
+            <span>
+              <IconButton
+                size="small"
+                onClick={handleDeleteClick}
+                disabled={loading || deleting}
+                color="error"
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
       </Box>
 
       {/* コンテンツ */}
-      <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 2 }}>
         <Stack spacing={3}>
 
         {/* 基本情報 */}
@@ -584,30 +623,7 @@ export default function RoomInfoPanel({ room, onSave, loading, isMobile = false,
         </Box>
 
         </Stack>
-      </Box>
-
-      {/* 保存ボタンと削除ボタン */}
-      <Box sx={{ p: 2, borderTop: '1px solid #ddd', bgcolor: 'grey.50' }}>
-        <Button
-          fullWidth
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={loading}
-          sx={{ mb: 1 }}
-        >
-          {loading ? '保存中...' : '変更を保存'}
-        </Button>
-        <Button
-          fullWidth
-          variant="outlined"
-          color="error"
-          startIcon={<DeleteIcon />}
-          onClick={handleDeleteClick}
-          disabled={loading || deleting}
-        >
-          部屋を削除
-        </Button>
-      </Box>
+        </Box>
 
       {/* 削除確認ダイアログ */}
       <Dialog

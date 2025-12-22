@@ -61,7 +61,16 @@ const BUILDING_PHOTO_CATEGORIES = {
   other: { label: 'その他', value: 'other' },
 };
 
-export default function RoomPhotosPanel({ roomId, buildingId, buildingName, roomNumber, onPhotosUpdate, isMaximized, onToggleMaximize, isMobile = false }) {
+export default function RoomPhotosPanel({
+  roomId,
+  buildingId,
+  buildingName,
+  roomNumber,
+  onPhotosUpdate,
+  isMaximized,
+  onToggleMaximize,
+  isMobile = false,
+}) {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -400,61 +409,55 @@ export default function RoomPhotosPanel({ roomId, buildingId, buildingName, room
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
-      <Box sx={{
-        borderBottom: '1px solid #e0e0e0',
-        bgcolor: 'background.paper',
-      }}>
-        <Box sx={{
+      <Box
+        sx={{
           px: 2,
-          py: 1.5,
+          py: 1,
           display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
-        }}>
-          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1, fontWeight: 600, fontSize: '1.05rem' }}>
-            <PhotoLibraryIcon color="primary" sx={{ fontSize: 26 }} />
-            部屋写真 ({filteredPhotos.length}/{photos.length})
+          borderBottom: '1px solid #e0e0e0',
+          flexShrink: 0,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <PhotoLibraryIcon color="action" />
+          <Typography variant="subtitle2" fontWeight={600}>
+            部屋写真
           </Typography>
-
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddIcon />}
-            onClick={() => {
-              // 現在選択中のカテゴリをデフォルトに設定（'all'の場合は'interior'）
-              setBulkUploadCategory(selectedCategory !== 'all' ? selectedCategory : 'interior');
-              setBulkUploadDialogOpen(true);
-            }}
-            sx={{ mr: 1 }}
-          >
-            写真追加
-          </Button>
-
-          {!isMobile && isMaximized && (
-            <Tooltip title={isMaximized ? "最小化" : "最大化"}>
-              <IconButton
-                size="small"
-                onClick={onToggleMaximize}
-              >
-                {isMaximized ? <CloseFullscreenIcon /> : <OpenInFullIcon />}
-              </IconButton>
-            </Tooltip>
-          )}
+          <Chip label={`${filteredPhotos.length}/${photos.length}`} size="small" sx={{ height: 20, fontSize: '0.75rem' }} />
         </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Tooltip title="写真を追加">
+            <IconButton
+              size="small"
+              onClick={() => {
+                setBulkUploadCategory(selectedCategory !== 'all' ? selectedCategory : 'interior');
+                setBulkUploadDialogOpen(true);
+              }}
+            >
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
 
+      {/* コンテンツ */}
+        <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {/* カテゴリタブ */}
-        <Box sx={{ px: 2, pb: 1 }}>
+        <Box sx={{ px: 2, py: 1, borderBottom: '1px solid #e0e0e0', flexShrink: 0 }}>
           <Tabs
             value={selectedCategory}
             onChange={(e, newValue) => setSelectedCategory(newValue)}
             variant="scrollable"
             scrollButtons="auto"
             sx={{
-              minHeight: 40,
+              minHeight: 36,
               '& .MuiTab-root': {
-                minHeight: 40,
-                py: 1,
-                px: 2,
-                fontSize: '0.875rem',
+                minHeight: 36,
+                py: 0.5,
+                px: 1.5,
+                fontSize: '0.8rem',
               }
             }}
           >
@@ -467,7 +470,6 @@ export default function RoomPhotosPanel({ roomId, buildingId, buildingName, room
             ))}
           </Tabs>
         </Box>
-      </Box>
 
       {/* 写真一覧 */}
       <Box sx={{ flex: 1, overflow: 'hidden', p: 2 }}>
@@ -633,6 +635,7 @@ export default function RoomPhotosPanel({ roomId, buildingId, buildingName, room
             ))}
           </Box>
         )}
+      </Box>
       </Box>
 
       {/* 写真アップロードダイアログ */}

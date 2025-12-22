@@ -18,6 +18,7 @@ import {
   FormControl,
   InputLabel,
   Alert,
+  Collapse,
 } from '@mui/material';
 import {
   PhotoLibrary as PhotoLibraryIcon,
@@ -33,6 +34,8 @@ import {
   ArrowBackIos as ArrowBackIosIcon,
   ArrowForwardIos as ArrowForwardIosIcon,
   MeetingRoom as MeetingRoomIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -58,7 +61,31 @@ const ROOM_PHOTO_CATEGORIES = {
   other: { label: 'その他', value: 'other' },
 };
 
-export default function BuildingPhotosPanel({ propertyId, buildingName, rooms = [], onPhotosUpdate, isMaximized, onToggleMaximize, isMobile = false }) {
+export default function BuildingPhotosPanel({
+  propertyId,
+  buildingName,
+  rooms = [],
+  onPhotosUpdate,
+  isMaximized,
+  onToggleMaximize,
+  isMobile = false,
+  expanded: controlledExpanded,
+  onExpandedChange,
+}) {
+  // 親から制御される場合はcontrolledExpanded、そうでなければローカルステート
+  const [localExpanded, setLocalExpanded] = useState(true);
+  const isControlled = controlledExpanded !== undefined;
+  const expanded = isControlled ? controlledExpanded : localExpanded;
+
+  const handleExpandToggle = () => {
+    const newExpanded = !expanded;
+    if (isControlled) {
+      onExpandedChange?.(newExpanded);
+    } else {
+      setLocalExpanded(newExpanded);
+    }
+  };
+
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -375,59 +402,62 @@ export default function BuildingPhotosPanel({ propertyId, buildingName, rooms = 
   }, [previewDialogOpen, selectedPhoto, photos, selectedCategory]);
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: expanded ? '100%' : 'auto', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
-      <Box sx={{
-        borderBottom: '1px solid #e0e0e0',
-        bgcolor: 'background.paper',
-      }}>
-        <Box sx={{
+      <Box
+        sx={{
           px: 2,
-          py: 1.5,
+          py: 1,
           display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
-        }}>
-          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1, fontWeight: 600, fontSize: '1.05rem' }}>
-            <PhotoLibraryIcon color="primary" sx={{ fontSize: 26 }} />
-            外観写真 ({filteredPhotos.length}/{photos.length})
+          cursor: 'pointer',
+          borderBottom: '1px solid #e0e0e0',
+          '&:hover': { bgcolor: 'action.hover' },
+          flexShrink: 0,
+        }}
+        onClick={handleExpandToggle}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <PhotoLibraryIcon color="action" />
+          <Typography variant="subtitle2" fontWeight={600}>
+            外観写真
           </Typography>
-
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddIcon />}
-            onClick={() => setUploadDialogOpen(true)}
-            sx={{ mr: 1 }}
-          >
-            追加
-          </Button>
-
-          {!isMobile && isMaximized && (
-            <Tooltip title={isMaximized ? "最小化" : "最大化"}>
-              <IconButton
-                size="small"
-                onClick={onToggleMaximize}
-              >
-                {isMaximized ? <CloseFullscreenIcon /> : <OpenInFullIcon />}
-              </IconButton>
-            </Tooltip>
-          )}
+          <Chip label={`${filteredPhotos.length}/${photos.length}`} size="small" sx={{ height: 20, fontSize: '0.75rem' }} />
         </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Tooltip title="写真を追加">
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                setUploadDialogOpen(true);
+              }}
+            >
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        </Box>
+      </Box>
 
+      {/* コンテンツ */}
+      {expanded && (
+        <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {/* カテゴリタブ */}
-        <Box sx={{ px: 2, pb: 1 }}>
+        <Box sx={{ px: 2, py: 1, borderBottom: '1px solid #e0e0e0', flexShrink: 0 }}>
           <Tabs
             value={selectedCategory}
             onChange={(e, newValue) => setSelectedCategory(newValue)}
             variant="scrollable"
             scrollButtons="auto"
             sx={{
-              minHeight: 40,
+              minHeight: 36,
               '& .MuiTab-root': {
-                minHeight: 40,
-                py: 1,
-                px: 2,
-                fontSize: '0.875rem',
+                minHeight: 36,
+                py: 0.5,
+                px: 1.5,
+                fontSize: '0.8rem',
               }
             }}
           >
@@ -440,7 +470,6 @@ export default function BuildingPhotosPanel({ propertyId, buildingName, rooms = 
             ))}
           </Tabs>
         </Box>
-      </Box>
 
       {/* 写真一覧 */}
       <Box sx={{ flex: 1, overflow: 'hidden', p: 2 }}>
@@ -473,14 +502,14 @@ export default function BuildingPhotosPanel({ propertyId, buildingName, rooms = 
           </Box>
         ) : (
           <Box sx={{
-            display: 'flex',
-            gap: 2,
-            overflowX: 'auto',
-            overflowY: 'hidden',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+            gap: 1.5,
+            overflow: 'auto',
             height: '100%',
-            pb: 1,
+            alignContent: 'start',
             '&::-webkit-scrollbar': {
-              height: 8,
+              width: 8,
             },
             '&::-webkit-scrollbar-track': {
               bgcolor: 'grey.100',
@@ -499,9 +528,7 @@ export default function BuildingPhotosPanel({ propertyId, buildingName, rooms = 
                 key={photo.id}
                 sx={{
                   position: 'relative',
-                  flexShrink: 0,
-                  width: isMaximized ? 300 : 200,
-                  height: isMaximized ? 250 : 180,
+                  aspectRatio: '4/3',
                 }}
               >
                 <Box sx={{
@@ -599,6 +626,8 @@ export default function BuildingPhotosPanel({ propertyId, buildingName, rooms = 
           </Box>
         )}
       </Box>
+      </Box>
+      )}
 
       {/* アップロードダイアログ */}
       <Dialog

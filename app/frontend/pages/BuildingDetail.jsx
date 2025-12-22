@@ -66,6 +66,10 @@ export default function BuildingDetail() {
   const [slideshowRoute, setSlideshowRoute] = useState(null); // スライドショー表示中の経路（フルスクリーンダイアログ用）
   const [slideshowPosition, setSlideshowPosition] = useState(null); // スライドショーからの位置情報
   const [inlineSlideshow, setInlineSlideshow] = useState(null); // インラインスライドショー { route, points }
+  const [routePanelExpanded, setRoutePanelExpanded] = useState(true); // 経路パネルの展開状態
+  const [roomsPanelExpanded, setRoomsPanelExpanded] = useState(true); // 部屋パネルの展開状態
+  const [buildingInfoExpanded, setBuildingInfoExpanded] = useState(true); // 建物情報パネルの展開状態
+  const [buildingPhotosExpanded, setBuildingPhotosExpanded] = useState(true); // 外観写真パネルの展開状態
 
   // 経路管理フック
   const {
@@ -712,8 +716,14 @@ export default function BuildingDetail() {
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
-                    height: `${leftPaneTopHeight}%`,
-                    minHeight: 0,
+                    // 両パネルの展開状態に応じて高さを調整
+                    ...(buildingInfoExpanded
+                      ? (buildingPhotosExpanded
+                          ? { height: `${leftPaneTopHeight}%`, minHeight: 0 }
+                          : { flex: 1, minHeight: 0 }
+                        )
+                      : { height: 44, flexShrink: 0 }
+                    ),
                   }}
                 >
                   <BuildingInfoPanel
@@ -722,35 +732,39 @@ export default function BuildingDetail() {
                     loading={saving}
                     onFormChange={handleFormChange}
                     stores={stores}
+                    expanded={buildingInfoExpanded}
+                    onExpandedChange={setBuildingInfoExpanded}
                   />
                 </Paper>
 
-                {/* スプリッタバー（左ペイン垂直方向） */}
-                <Box
-                  onMouseDown={handleLeftVerticalMouseDown}
-                  sx={{
-                    height: 6,
-                    cursor: 'row-resize',
-                    bgcolor: isResizingLeftVertical ? 'primary.main' : 'transparent',
-                    '&:hover': {
-                      bgcolor: 'primary.light',
-                    },
-                    transition: 'background-color 0.2s',
-                    flexShrink: 0,
-                    position: 'relative',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      width: 40,
-                      height: 2,
-                      bgcolor: isResizingLeftVertical ? 'primary.main' : 'grey.400',
-                      borderRadius: 1,
-                    },
-                  }}
-                />
+                {/* スプリッタバー（左ペイン垂直方向） - 両パネル展開時のみ表示 */}
+                {buildingInfoExpanded && buildingPhotosExpanded && (
+                  <Box
+                    onMouseDown={handleLeftVerticalMouseDown}
+                    sx={{
+                      height: 6,
+                      cursor: 'row-resize',
+                      bgcolor: isResizingLeftVertical ? 'primary.main' : 'transparent',
+                      '&:hover': {
+                        bgcolor: 'primary.light',
+                      },
+                      transition: 'background-color 0.2s',
+                      flexShrink: 0,
+                      position: 'relative',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: 40,
+                        height: 2,
+                        bgcolor: isResizingLeftVertical ? 'primary.main' : 'grey.400',
+                        borderRadius: 1,
+                      },
+                    }}
+                  />
+                )}
 
                 {/* 左下: 外観写真カード */}
                 <Paper
@@ -760,8 +774,12 @@ export default function BuildingDetail() {
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
-                    height: `${100 - leftPaneTopHeight}%`,
-                    minHeight: 0,
+                    // 外観写真パネル展開時はflex:1、折りたたみ時はヘッダー高さ固定
+                    // スプリッタがない時（どちらかが折りたたみ）は隙間を追加
+                    ...(buildingPhotosExpanded
+                      ? { flex: 1, minHeight: 0, mt: !buildingInfoExpanded ? 0.75 : 0 }
+                      : { height: 44, flexShrink: 0, mt: 0.75 }
+                    ),
                   }}
                 >
                   <BuildingPhotosPanel
@@ -771,6 +789,8 @@ export default function BuildingDetail() {
                     onPhotosUpdate={() => {}}
                     isMaximized={false}
                     onToggleMaximize={() => {}}
+                    expanded={buildingPhotosExpanded}
+                    onExpandedChange={setBuildingPhotosExpanded}
                   />
                 </Paper>
               </Box>
@@ -886,43 +906,53 @@ export default function BuildingDetail() {
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
-                    height: `${rightPaneTopHeight}%`,
-                    minHeight: 0,
+                    // 両パネルの展開状態に応じて高さを調整
+                    ...(roomsPanelExpanded
+                      ? (routePanelExpanded
+                          ? { height: `${rightPaneTopHeight}%`, minHeight: 0 }
+                          : { flex: 1, minHeight: 0 }
+                        )
+                      : { height: 44, flexShrink: 0 }
+                    ),
                   }}
                 >
                   <RoomsPanel
                     propertyId={id}
                     rooms={rooms}
                     onRoomsUpdate={handleRoomUpdate}
+                    expanded={roomsPanelExpanded}
+                    onExpandedChange={setRoomsPanelExpanded}
                   />
                 </Paper>
 
-                {/* スプリッタバー（垂直方向） */}
-                <Box
-                  onMouseDown={handleVerticalMouseDown}
-                  sx={{
-                    height: 6,
-                    cursor: 'row-resize',
-                    bgcolor: isResizingVertical ? 'primary.main' : 'transparent',
-                    '&:hover': {
-                      bgcolor: 'primary.light',
-                    },
-                    transition: 'background-color 0.2s',
-                    flexShrink: 0,
-                    position: 'relative',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      width: 40,
-                      height: 2,
-                      bgcolor: isResizingVertical ? 'primary.main' : 'grey.400',
-                      borderRadius: 1,
-                    },
-                  }}
-                />
+                {/* スプリッタバー（垂直方向） - 両パネル展開時のみ表示 */}
+                {roomsPanelExpanded && routePanelExpanded && (
+                  <Box
+                    onMouseDown={handleVerticalMouseDown}
+                    sx={{
+                      height: 6,
+                      cursor: 'row-resize',
+                      bgcolor: isResizingVertical ? 'primary.main' : 'transparent',
+                      '&:hover': {
+                        bgcolor: 'primary.light',
+                      },
+                      transition: 'background-color 0.2s',
+                      flexShrink: 0,
+                      position: 'relative',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: 40,
+                        height: 2,
+                        bgcolor: isResizingVertical ? 'primary.main' : 'grey.400',
+                        borderRadius: 1,
+                      },
+                    }}
+                  />
+                )}
 
                 {/* 右下: 経路情報カード */}
                 <Paper
@@ -932,8 +962,12 @@ export default function BuildingDetail() {
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
-                    height: `${100 - rightPaneTopHeight}%`,
-                    minHeight: 0,
+                    // 経路パネル展開時はflex:1、折りたたみ時はヘッダー高さ固定
+                    // スプリッタがない時（どちらかが折りたたみ）は隙間を追加
+                    ...(routePanelExpanded
+                      ? { flex: 1, minHeight: 0, mt: !roomsPanelExpanded ? 0.75 : 0 }
+                      : { height: 44, flexShrink: 0, mt: 0.75 }
+                    ),
                   }}
                 >
                   <RoutePanel
@@ -949,6 +983,8 @@ export default function BuildingDetail() {
                     onRouteRecalculate={recalculateRoute}
                     onSlideshowStart={handleInlineSlideshowStart}
                     isAdmin={true}
+                    expanded={routePanelExpanded}
+                    onExpandedChange={setRoutePanelExpanded}
                   />
                 </Paper>
               </Box>

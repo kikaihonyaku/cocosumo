@@ -983,19 +983,20 @@ export default function PropertyMapPanel({
       {/* 地図ヘッダー */}
       <Box sx={{
         px: 2,
-        py: 1.5,
+        py: 1,
         bgcolor: 'background.paper',
         borderBottom: '1px solid #e0e0e0',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexShrink: 0,
-        minHeight: 56
       }}>
-        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontWeight: 600, fontSize: '1.05rem' }}>
-          <MapIcon color="primary" sx={{ fontSize: 26 }} />
-          物件位置
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <MapIcon color="action" />
+          <Typography variant="subtitle2" fontWeight={600}>
+            物件位置
+          </Typography>
+        </Box>
 
         {/* 位置編集・住所検索・ストリートビューボタン（モバイル時は非表示） */}
         {!isMobile && (

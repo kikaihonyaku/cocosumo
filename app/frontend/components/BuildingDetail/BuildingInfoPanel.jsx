@@ -20,6 +20,8 @@ import {
   Tooltip,
   FormControlLabel,
   Checkbox,
+  Collapse,
+  Chip,
 } from '@mui/material';
 import {
   Business as BusinessIcon,
@@ -27,6 +29,9 @@ import {
   LocationOn as LocationIcon,
   Search as SearchIcon,
   Delete as DeleteIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  Save as SaveIcon,
 } from '@mui/icons-material';
 
 export default function BuildingInfoPanel({
@@ -36,7 +41,23 @@ export default function BuildingInfoPanel({
   isMobile = false,
   onFormChange,
   stores = [],
+  expanded: controlledExpanded,
+  onExpandedChange,
 }) {
+  // 親から制御される場合はcontrolledExpanded、そうでなければローカルステート
+  const [localExpanded, setLocalExpanded] = useState(true);
+  const isControlled = controlledExpanded !== undefined;
+  const expanded = isControlled ? controlledExpanded : localExpanded;
+
+  const handleExpandToggle = () => {
+    const newExpanded = !expanded;
+    if (isControlled) {
+      onExpandedChange?.(newExpanded);
+    } else {
+      setLocalExpanded(newExpanded);
+    }
+  };
+
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -198,25 +219,66 @@ export default function BuildingInfoPanel({
   ];
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: expanded ? '100%' : 'auto', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
-      <Box sx={{
-        px: 2,
-        py: 1.5,
-        borderBottom: '1px solid #e0e0e0',
-        bgcolor: 'background.paper',
-        display: 'flex',
-        alignItems: 'center',
-        minHeight: 56
-      }}>
-        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1, fontWeight: 600, fontSize: '1.05rem' }}>
-          <BusinessIcon color="primary" sx={{ fontSize: 26 }} />
-          建物（土地）
-        </Typography>
+      <Box
+        sx={{
+          px: 2,
+          py: 1,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          cursor: 'pointer',
+          borderBottom: '1px solid #e0e0e0',
+          '&:hover': { bgcolor: 'action.hover' },
+          flexShrink: 0,
+        }}
+        onClick={handleExpandToggle}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <BusinessIcon color="action" />
+          <Typography variant="subtitle2" fontWeight={600}>
+            建物（土地）
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Tooltip title="変更を保存">
+            <span>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSubmit();
+                }}
+                disabled={loading}
+                color={hasUnsavedChanges ? "primary" : "default"}
+              >
+                {loading ? <CircularProgress size={18} /> : <SaveIcon fontSize="small" />}
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title="物件を削除">
+            <span>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteClick();
+                }}
+                disabled={loading || deleting}
+                color="error"
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+          {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        </Box>
       </Box>
 
       {/* コンテンツ */}
-      <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+      {expanded && (
+        <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 2 }}>
         <Stack spacing={3}>
 
         {/* 基本情報 */}
@@ -536,30 +598,8 @@ export default function BuildingInfoPanel({
             </Box>
 
         </Stack>
-      </Box>
-
-      {/* 保存ボタンと削除ボタン */}
-      <Box sx={{ p: 2, borderTop: '1px solid #ddd', bgcolor: 'grey.50' }}>
-        <Button
-          fullWidth
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={loading}
-          sx={{ mb: 1 }}
-        >
-          {loading ? '保存中...' : '変更を保存'}
-        </Button>
-        <Button
-          fullWidth
-          variant="outlined"
-          color="error"
-          startIcon={<DeleteIcon />}
-          onClick={handleDeleteClick}
-          disabled={loading || deleting}
-        >
-          物件を削除
-        </Button>
-      </Box>
+        </Box>
+      )}
 
       {/* 削除確認ダイアログ */}
       <Dialog

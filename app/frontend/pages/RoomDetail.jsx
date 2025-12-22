@@ -44,6 +44,20 @@ export default function RoomDetail() {
   const [isResizingLeft, setIsResizingLeft] = useState(false); // 左側リサイズ中かどうか
   const [isResizingRight, setIsResizingRight] = useState(false); // 右側リサイズ中かどうか
 
+  // 右ペイン内パネルの展開状態
+  const [vsExpanded, setVsExpanded] = useState(true);
+  const [vrTourExpanded, setVrTourExpanded] = useState(true);
+  const [publicationExpanded, setPublicationExpanded] = useState(true);
+
+  // 右ペイン内パネルの高さ管理（展開時の割合）
+  const [vsPanelFlex, setVsPanelFlex] = useState(1);
+  const [vrTourPanelFlex, setVrTourPanelFlex] = useState(1);
+  const [publicationPanelFlex, setPublicationPanelFlex] = useState(1);
+
+  // 右ペインの垂直リサイズ
+  const [isResizingVsSplitter, setIsResizingVsSplitter] = useState(false);
+  const [isResizingVrTourSplitter, setIsResizingVrTourSplitter] = useState(false);
+
   useEffect(() => {
     fetchRoom();
   }, [id]);
@@ -123,6 +137,18 @@ export default function RoomDetail() {
     e.preventDefault();
   };
 
+  // 右ペイン内の垂直スプリッター（VSパネルとVRツアーパネルの間）
+  const handleVsSplitterMouseDown = (e) => {
+    setIsResizingVsSplitter(true);
+    e.preventDefault();
+  };
+
+  // 右ペイン内の垂直スプリッター（VRツアーパネルと物件公開パネルの間）
+  const handleVrTourSplitterMouseDown = (e) => {
+    setIsResizingVrTourSplitter(true);
+    e.preventDefault();
+  };
+
   useEffect(() => {
     const handleMouseMove = (e) => {
       const containerRect = document.querySelector('.room-layout-container')?.getBoundingClientRect();
@@ -143,18 +169,49 @@ export default function RoomDetail() {
         const clampedWidth = Math.max(250, Math.min(600, newWidth));
         setRightPaneWidth(clampedWidth);
       }
+
+      // 右ペイン内の垂直リサイズ
+      if (isResizingVsSplitter || isResizingVrTourSplitter) {
+        const rightPaneContainer = document.querySelector('.right-pane-container');
+        if (!rightPaneContainer) return;
+        const rightPaneRect = rightPaneContainer.getBoundingClientRect();
+        const relativeY = e.clientY - rightPaneRect.top;
+        const totalHeight = rightPaneRect.height;
+
+        if (isResizingVsSplitter && vsExpanded && vrTourExpanded) {
+          // VSパネルとVRツアーパネルの境界
+          const ratio = relativeY / totalHeight;
+          const newVsFlex = Math.max(0.2, Math.min(0.6, ratio)) * 3;
+          setVsPanelFlex(newVsFlex);
+        }
+
+        if (isResizingVrTourSplitter && vrTourExpanded && publicationExpanded) {
+          // VRツアーパネルと物件公開パネルの境界
+          const headerHeight = vsExpanded ? 0 : 44;
+          const adjustedY = relativeY - headerHeight;
+          const adjustedTotal = totalHeight - headerHeight;
+          const ratio = adjustedY / adjustedTotal;
+          const newVrTourFlex = Math.max(0.2, Math.min(0.6, ratio)) * 2;
+          setVrTourPanelFlex(newVrTourFlex);
+        }
+      }
     };
 
     const handleMouseUp = () => {
       setIsResizingLeft(false);
       setIsResizingRight(false);
+      setIsResizingVsSplitter(false);
+      setIsResizingVrTourSplitter(false);
     };
 
-    if (isResizingLeft || isResizingRight) {
+    const isAnyResizing = isResizingLeft || isResizingRight || isResizingVsSplitter || isResizingVrTourSplitter;
+    const cursorType = (isResizingVsSplitter || isResizingVrTourSplitter) ? 'row-resize' : 'col-resize';
+
+    if (isAnyResizing) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       document.body.style.userSelect = 'none';
-      document.body.style.cursor = 'col-resize';
+      document.body.style.cursor = cursorType;
     }
 
     return () => {
@@ -163,7 +220,7 @@ export default function RoomDetail() {
       document.body.style.userSelect = '';
       document.body.style.cursor = '';
     };
-  }, [isResizingLeft, isResizingRight]);
+  }, [isResizingLeft, isResizingRight, isResizingVsSplitter, isResizingVrTourSplitter, vsExpanded, vrTourExpanded, publicationExpanded]);
 
   const handlePhotosUpdate = () => {
     fetchRoom();
@@ -372,27 +429,64 @@ export default function RoomDetail() {
           )}
 
           {/* 右カラム: コンテナ */}
-          <Box sx={{
-            width: isLgUp ? rightPaneWidth : 'auto',
-            flexShrink: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 1,
-            minHeight: isLgUp ? 800 : 'auto',
-          }}>
+          <Box
+            className="right-pane-container"
+            sx={{
+              width: isLgUp ? rightPaneWidth : 'auto',
+              flexShrink: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: isLgUp ? 800 : 'auto',
+            }}
+          >
             {/* バーチャルステージング */}
             <Paper elevation={3} sx={{
               borderRadius: 2,
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
-              flex: 1,
-              minHeight: isLgUp ? 0 : 350,
+              flex: vsExpanded ? vsPanelFlex : 'none',
+              height: vsExpanded ? 'auto' : 44,
+              minHeight: vsExpanded ? (isLgUp ? 0 : 350) : 44,
+              flexShrink: vsExpanded ? 1 : 0,
             }}>
               <RoomVirtualStagingPanel
                 roomId={room.id}
+                expanded={vsExpanded}
+                onExpandedChange={setVsExpanded}
               />
             </Paper>
+
+            {/* VSとVRツアーの間のスプリッター */}
+            {isLgUp && vsExpanded && vrTourExpanded && (
+              <Box
+                onMouseDown={handleVsSplitterMouseDown}
+                sx={{
+                  height: 6,
+                  cursor: 'row-resize',
+                  bgcolor: isResizingVsSplitter ? 'primary.main' : 'transparent',
+                  '&:hover': { bgcolor: 'primary.light' },
+                  transition: 'background-color 0.2s',
+                  flexShrink: 0,
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    height: 2,
+                    width: 40,
+                    bgcolor: isResizingVsSplitter ? 'primary.main' : 'grey.400',
+                    borderRadius: 1,
+                  },
+                }}
+              />
+            )}
+            {/* 折りたたみ時の隙間 */}
+            {isLgUp && (!vsExpanded || !vrTourExpanded) && (
+              <Box sx={{ height: 6, flexShrink: 0 }} />
+            )}
 
             {/* VRツアー */}
             <Paper elevation={3} sx={{
@@ -400,13 +494,48 @@ export default function RoomDetail() {
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
-              flex: 1,
-              minHeight: isLgUp ? 0 : 350,
+              flex: vrTourExpanded ? vrTourPanelFlex : 'none',
+              height: vrTourExpanded ? 'auto' : 44,
+              minHeight: vrTourExpanded ? (isLgUp ? 0 : 350) : 44,
+              flexShrink: vrTourExpanded ? 1 : 0,
             }}>
               <RoomVRTourPanel
                 roomId={room.id}
+                expanded={vrTourExpanded}
+                onExpandedChange={setVrTourExpanded}
               />
             </Paper>
+
+            {/* VRツアーと物件公開の間のスプリッター */}
+            {isLgUp && vrTourExpanded && publicationExpanded && (
+              <Box
+                onMouseDown={handleVrTourSplitterMouseDown}
+                sx={{
+                  height: 6,
+                  cursor: 'row-resize',
+                  bgcolor: isResizingVrTourSplitter ? 'primary.main' : 'transparent',
+                  '&:hover': { bgcolor: 'primary.light' },
+                  transition: 'background-color 0.2s',
+                  flexShrink: 0,
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    height: 2,
+                    width: 40,
+                    bgcolor: isResizingVrTourSplitter ? 'primary.main' : 'grey.400',
+                    borderRadius: 1,
+                  },
+                }}
+              />
+            )}
+            {/* 折りたたみ時の隙間 */}
+            {isLgUp && (!vrTourExpanded || !publicationExpanded) && (
+              <Box sx={{ height: 6, flexShrink: 0 }} />
+            )}
 
             {/* 物件公開ページ */}
             <Paper elevation={3} sx={{
@@ -414,11 +543,15 @@ export default function RoomDetail() {
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
-              flex: 1,
-              minHeight: isLgUp ? 0 : 350,
+              flex: publicationExpanded ? publicationPanelFlex : 'none',
+              height: publicationExpanded ? 'auto' : 44,
+              minHeight: publicationExpanded ? (isLgUp ? 0 : 350) : 44,
+              flexShrink: publicationExpanded ? 1 : 0,
             }}>
               <RoomPropertyPublicationPanel
                 roomId={room.id}
+                expanded={publicationExpanded}
+                onExpandedChange={setPublicationExpanded}
               />
             </Paper>
           </Box>

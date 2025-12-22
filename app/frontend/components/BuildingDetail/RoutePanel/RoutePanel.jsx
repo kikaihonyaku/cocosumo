@@ -59,8 +59,22 @@ export default function RoutePanel({
   onSlideshowStart,
   isAdmin = true,
   isMobile = false,
+  expanded: controlledExpanded,
+  onExpandedChange,
 }) {
-  const [expanded, setExpanded] = useState(true);
+  // 親から制御される場合はcontrolledExpanded、そうでなければローカルステート
+  const [localExpanded, setLocalExpanded] = useState(true);
+  const isControlled = controlledExpanded !== undefined;
+  const expanded = isControlled ? controlledExpanded : localExpanded;
+
+  const handleExpandToggle = () => {
+    const newExpanded = !expanded;
+    if (isControlled) {
+      onExpandedChange?.(newExpanded);
+    } else {
+      setLocalExpanded(newExpanded);
+    }
+  };
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingRoute, setEditingRoute] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
@@ -128,7 +142,7 @@ export default function RoutePanel({
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: expanded ? '100%' : 'auto', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
       <Box
         sx={{
@@ -142,7 +156,7 @@ export default function RoutePanel({
           '&:hover': { bgcolor: 'action.hover' },
           flexShrink: 0,
         }}
-        onClick={() => setExpanded(!expanded)}
+        onClick={handleExpandToggle}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <RouteIcon color="action" />
@@ -170,7 +184,8 @@ export default function RoutePanel({
       </Box>
 
       {/* 経路リスト */}
-      <Collapse in={expanded} sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      {expanded && (
+        <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
         {loading ? (
           <Box sx={{ p: 2, textAlign: 'center' }}>
             <CircularProgress size={24} />
@@ -366,7 +381,8 @@ export default function RoutePanel({
             })}
           </List>
         )}
-      </Collapse>
+        </Box>
+      )}
 
       {/* 経路エディタダイアログ */}
       <RouteEditor
