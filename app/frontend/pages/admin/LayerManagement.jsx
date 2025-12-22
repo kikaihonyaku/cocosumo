@@ -46,6 +46,13 @@ const LAYER_TYPES = {
     label: '学区',
     description: '小学校区・中学校区の境界データ',
     supports_school_type: true,
+    accept_files: '.geojson,.json',
+  },
+  address_points: {
+    label: '住所ポイント',
+    description: '住所座標データ（CSV/ZIP対応）',
+    supports_school_type: false,
+    accept_files: '.csv,.zip,.geojson,.json',
   },
 };
 
@@ -72,10 +79,10 @@ export default function LayerManagement() {
     layer_key: '',
     description: '',
     attribution: '',
-    layer_type: 'school_districts',
+    layer_type: 'address_points', // デフォルトを住所ポイントに変更
     school_type: 'elementary', // school_districts用
-    color: '#FF6B00',
-    opacity: 0.15,
+    color: '#4CAF50',
+    opacity: 0.8,
     display_order: 0,
     is_active: true,
   });
@@ -125,10 +132,10 @@ export default function LayerManagement() {
       layer_key: '',
       description: '',
       attribution: '',
-      layer_type: 'school_districts',
+      layer_type: 'address_points',
       school_type: 'elementary',
-      color: '#FF6B00',
-      opacity: 0.15,
+      color: '#4CAF50',
+      opacity: 0.8,
       display_order: 0,
       is_active: true,
     });
@@ -190,10 +197,24 @@ export default function LayerManagement() {
 
       // layer_keyを自動生成（ファイル名から）
       if (!formData.layer_key) {
-        const key = filename.replace(/\.geojson$|\.json$/i, '').replace(/[^a-z0-9-]/gi, '-');
+        const key = filename.replace(/\.(geojson|json|csv|zip)$/i, '').replace(/[^a-z0-9-]/gi, '-');
         setFormData(prev => ({ ...prev, layer_key: key }));
       }
     }
+  };
+
+  // レイヤータイプが変更されたときの処理
+  const handleLayerTypeChange = (newType) => {
+    const typeConfig = LAYER_TYPES[newType];
+    setFormData(prev => ({
+      ...prev,
+      layer_type: newType,
+      // 住所ポイントの場合はポイント向けのデフォルト設定
+      color: newType === 'address_points' ? '#4CAF50' : '#FF6B00',
+      opacity: newType === 'address_points' ? 0.8 : 0.15,
+    }));
+    // ファイルをリセット（形式が異なる可能性があるため）
+    setSelectedFile(null);
   };
 
   // 学校種別が変更されたときに色を自動設定
@@ -500,13 +521,30 @@ export default function LayerManagement() {
         <DialogTitle>新規レイヤー作成</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            {/* レイヤータイプ選択（ファイル選択の前に配置） */}
+            <FormControl fullWidth>
+              <InputLabel>レイヤータイプ</InputLabel>
+              <Select
+                value={formData.layer_type}
+                label="レイヤータイプ"
+                onChange={(e) => handleLayerTypeChange(e.target.value)}
+              >
+                {Object.entries(LAYER_TYPES).map(([key, config]) => (
+                  <MenuItem key={key} value={key}>
+                    {config.label} - {config.description}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
             {/* ファイルアップロード */}
             <Box sx={{ border: '2px dashed', borderColor: 'divider', borderRadius: 2, p: 3, textAlign: 'center' }}>
               <input
-                accept=".geojson,.json"
+                accept={LAYER_TYPES[formData.layer_type]?.accept_files || '.geojson,.json'}
                 style={{ display: 'none' }}
                 id="file-upload"
                 type="file"
+                key={formData.layer_type} // レイヤータイプ変更時にinputをリセット
                 onChange={handleFileSelect}
               />
               <label htmlFor="file-upload">
@@ -516,7 +554,9 @@ export default function LayerManagement() {
                   startIcon={<CloudUploadIcon />}
                   size="large"
                 >
-                  GeoJSONファイルを選択
+                  {formData.layer_type === 'address_points'
+                    ? 'CSV/ZIPファイルを選択'
+                    : 'GeoJSONファイルを選択'}
                 </Button>
               </label>
               {selectedFile && (
@@ -524,6 +564,11 @@ export default function LayerManagement() {
                   選択: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
                 </Typography>
               )}
+              <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                {formData.layer_type === 'address_points'
+                  ? '対応形式: CSV, ZIP（国土数値情報形式）, GeoJSON'
+                  : '対応形式: GeoJSON'}
+              </Typography>
             </Box>
 
             <TextField
@@ -562,21 +607,6 @@ export default function LayerManagement() {
               rows={2}
               helperText="例：出典：国土交通省国土数値情報ダウンロードサイト（https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A27-2023.html）"
             />
-
-            <FormControl fullWidth>
-              <InputLabel>レイヤータイプ</InputLabel>
-              <Select
-                value={formData.layer_type}
-                label="レイヤータイプ"
-                onChange={(e) => setFormData({ ...formData, layer_type: e.target.value })}
-              >
-                {Object.entries(LAYER_TYPES).map(([key, config]) => (
-                  <MenuItem key={key} value={key}>
-                    {config.label} - {config.description}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
 
             {/* 学区専用：学校種別選択 */}
             {formData.layer_type === 'school_districts' && (
@@ -883,7 +913,7 @@ export default function LayerManagement() {
 
               <Box sx={{ border: '2px dashed', borderColor: 'divider', borderRadius: 2, p: 3, textAlign: 'center' }}>
                 <input
-                  accept=".geojson,.json"
+                  accept={LAYER_TYPES[selectedLayer?.layer_type]?.accept_files || '.geojson,.json,.csv,.zip'}
                   style={{ display: 'none' }}
                   id="data-file-upload"
                   type="file"
@@ -896,7 +926,9 @@ export default function LayerManagement() {
                     startIcon={<CloudUploadIcon />}
                     size="large"
                   >
-                    GeoJSONファイルを選択
+                    {selectedLayer?.layer_type === 'address_points'
+                      ? 'CSV/ZIPファイルを選択'
+                      : 'GeoJSONファイルを選択'}
                   </Button>
                 </label>
                 {selectedFile && (

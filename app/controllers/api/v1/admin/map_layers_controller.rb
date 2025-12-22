@@ -1,3 +1,5 @@
+require 'csv'
+
 class Api::V1::Admin::MapLayersController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
@@ -102,6 +104,8 @@ class Api::V1::Admin::MapLayersController < ApplicationController
     case @layer.layer_type
     when 'school_districts'
       @layer.school_districts.destroy_all
+    when 'address_points'
+      @layer.address_points.destroy_all
     end
 
     # 新しいデータをインポート
@@ -128,7 +132,7 @@ class Api::V1::Admin::MapLayersController < ApplicationController
     params.permit(:name, :layer_key, :description, :layer_type, :color, :opacity, :display_order, :is_active, :icon, :attribution)
   end
 
-  # GeoJSONファイルをインポート
+  # ファイルをインポート（GeoJSONまたはCSV）
   # @param file [ActionDispatch::Http::UploadedFile] アップロードされたファイル
   # @param layer [MapLayer] 対象レイヤー
   # @param append [Boolean] 既存データに追記するか（デフォルト: false）
@@ -140,8 +144,20 @@ class Api::V1::Admin::MapLayersController < ApplicationController
         return { success: false, error: 'ファイルサイズが大きすぎます（最大100MB）' }
       end
 
-      # JSONを解析
       file_content = file.read
+      filename = file.original_filename.downcase
+
+      # CSVファイルの場合
+      if filename.end_with?('.csv')
+        return import_csv_file(file_content, layer)
+      end
+
+      # ZIPファイルの場合（CSVを含むZIP）
+      if filename.end_with?('.zip')
+        return import_zip_file(file, layer)
+      end
+
+      # GeoJSONファイルの場合
       geojson = JSON.parse(file_content)
 
       # GeoJSON形式チェック
@@ -154,6 +170,9 @@ class Api::V1::Admin::MapLayersController < ApplicationController
       when 'school_districts'
         count = import_school_districts(geojson, layer)
         { success: true, count: count }
+      when 'address_points'
+        count = import_address_points_from_geojson(geojson, layer)
+        { success: true, count: count }
       else
         { success: false, error: 'サポートされていないレイヤータイプです' }
       end
@@ -163,6 +182,125 @@ class Api::V1::Admin::MapLayersController < ApplicationController
     rescue => e
       { success: false, error: "インポートエラー: #{e.message}" }
     end
+  end
+
+  # CSVファイルをインポート
+  def import_csv_file(file_content, layer)
+    # 国土数値情報のCSVはShift-JISエンコーディング
+    encodings = ['Shift_JIS', 'UTF-8', 'Windows-31J']
+    csv_data = nil
+
+    encodings.each do |encoding|
+      begin
+        csv_data = CSV.parse(file_content.force_encoding(encoding).encode('UTF-8'), headers: true)
+        break
+      rescue Encoding::InvalidByteSequenceError, Encoding::UndefinedConversionError
+        next
+      end
+    end
+
+    return { success: false, error: 'CSVのエンコーディングを解析できませんでした' } unless csv_data
+
+    # 緯度・経度カラムを検出
+    lat_column = csv_data.headers.find { |h| h&.include?('緯度') }
+    lng_column = csv_data.headers.find { |h| h&.include?('経度') }
+
+    unless lat_column && lng_column
+      return { success: false, error: 'CSVに緯度・経度カラムが見つかりません' }
+    end
+
+    count = 0
+    csv_data.each do |row|
+      lat = row[lat_column]&.to_f
+      lng = row[lng_column]&.to_f
+
+      next if lat.nil? || lng.nil? || lat.zero? || lng.zero?
+
+      # 国土数値情報のCSVフォーマットを解析
+      prefecture = row['都道府県名'] || row[csv_data.headers.find { |h| h&.include?('都道府県') }]
+      city = row['市区町村名'] || row[csv_data.headers.find { |h| h&.include?('市区町村') }]
+      district = row['大字_丁目名'] || row[csv_data.headers.find { |h| h&.include?('大字') || h&.include?('丁目') }]
+      block_number = row['街区符号_地番'] || row[csv_data.headers.find { |h| h&.include?('地番') || h&.include?('街区') }]
+      representative = row['代表フラグ']&.to_s == '1'
+
+      address_point = layer.address_points.build(
+        prefecture: prefecture,
+        city: city,
+        district: district,
+        block_number: block_number,
+        latitude: lat,
+        longitude: lng,
+        representative: representative
+      )
+
+      if address_point.save
+        count += 1
+      else
+        Rails.logger.error("住所ポイントの保存に失敗: #{address_point.errors.full_messages}")
+      end
+    end
+
+    { success: true, count: count }
+  end
+
+  # ZIPファイルをインポート（CSVを含むZIP）
+  def import_zip_file(file, layer)
+    require 'zip'
+    require 'tempfile'
+
+    total_count = 0
+
+    Zip::File.open(file.tempfile) do |zip|
+      zip.each do |entry|
+        next unless entry.name.downcase.end_with?('.csv')
+
+        content = entry.get_input_stream.read
+        result = import_csv_file(content, layer)
+
+        if result[:success]
+          total_count += result[:count]
+        else
+          return result
+        end
+      end
+    end
+
+    if total_count > 0
+      { success: true, count: total_count }
+    else
+      { success: false, error: 'ZIPファイル内にCSVが見つかりませんでした' }
+    end
+  end
+
+  # GeoJSONから住所ポイントをインポート
+  def import_address_points_from_geojson(geojson, layer)
+    count = 0
+
+    geojson['features'].each do |feature|
+      geometry = feature['geometry']
+      next unless geometry && geometry['type'] == 'Point'
+
+      properties = feature['properties'] || {}
+      coordinates = geometry['coordinates']
+
+      address_point = layer.address_points.build(
+        prefecture: properties['prefecture'] || properties['都道府県名'],
+        city: properties['city'] || properties['市区町村名'],
+        district: properties['district'] || properties['大字_丁目名'],
+        block_number: properties['block_number'] || properties['街区符号_地番'],
+        latitude: coordinates[1],
+        longitude: coordinates[0],
+        representative: properties['representative'] || properties['代表フラグ'] == '1'
+      )
+
+      if address_point.save
+        count += 1
+      else
+        Rails.logger.error("住所ポイントの保存に失敗: #{address_point.errors.full_messages}")
+      end
+    end
+
+    count
   end
 
   # 学区データをインポート

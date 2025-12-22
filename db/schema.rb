@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_21_065317) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_22_210146) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -44,6 +44,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_21_065317) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "address_points", force: :cascade do |t|
+    t.bigint "map_layer_id", null: false
+    t.string "prefecture"
+    t.string "city"
+    t.string "district"
+    t.string "block_number"
+    t.decimal "latitude", precision: 10, scale: 6
+    t.decimal "longitude", precision: 10, scale: 6
+    t.st_point "location", geographic: true
+    t.boolean "representative", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location"], name: "index_address_points_on_location", using: :gist
+    t.index ["map_layer_id", "prefecture", "city"], name: "index_address_points_on_map_layer_id_and_prefecture_and_city"
+    t.index ["map_layer_id"], name: "index_address_points_on_map_layer_id"
   end
 
   create_table "ai_generated_images", force: :cascade do |t|
@@ -442,6 +459,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_21_065317) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "address_points", "map_layers"
   add_foreign_key "ai_generated_images", "room_photos"
   add_foreign_key "ai_generated_images", "rooms"
   add_foreign_key "building_photos", "buildings"

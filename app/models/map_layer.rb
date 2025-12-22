@@ -1,6 +1,7 @@
 class MapLayer < ApplicationRecord
   belongs_to :tenant
   has_many :school_districts, dependent: :nullify
+  has_many :address_points, dependent: :destroy
 
   # バリデーション
   validates :name, presence: true
@@ -19,17 +20,26 @@ class MapLayer < ApplicationRecord
     'school_districts' => {
       label: '学区',
       model: 'SchoolDistrict',
-      supports_school_type: true
+      supports_school_type: true,
+      geometry_type: 'polygon'
+    },
+    'address_points' => {
+      label: '住所ポイント',
+      model: 'AddressPoint',
+      supports_school_type: false,
+      geometry_type: 'point'
     },
     'parks' => {
       label: '公園',
       model: 'Park',
-      supports_school_type: false
+      supports_school_type: false,
+      geometry_type: 'polygon'
     },
     'train_stations' => {
       label: '駅',
       model: 'TrainStation',
-      supports_school_type: false
+      supports_school_type: false,
+      geometry_type: 'point'
     }
   }.freeze
 
@@ -38,7 +48,8 @@ class MapLayer < ApplicationRecord
     case layer_type
     when 'school_districts'
       update!(feature_count: school_districts.count)
-    # 将来的に他のレイヤータイプが追加された場合はここに追記
+    when 'address_points'
+      update!(feature_count: address_points.count)
     end
   end
 
@@ -47,7 +58,8 @@ class MapLayer < ApplicationRecord
     case layer_type
     when 'school_districts'
       SchoolDistrict.to_geojson_feature_collection(school_districts)
-    # 将来的に他のレイヤータイプが追加された場合はここに追記
+    when 'address_points'
+      AddressPoint.to_geojson_feature_collection(address_points)
     else
       { type: 'FeatureCollection', features: [] }
     end
