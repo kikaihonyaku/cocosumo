@@ -56,16 +56,70 @@ class DirectionsService
     generate_streetview_points(coordinates, interval_meters: interval_meters)
   end
 
+  # 経路候補を取得（保存しない）
+  def fetch_alternatives
+    response = call_directions_api(with_alternatives: true)
+    raise DirectionsError, "Directions API error: #{response['status']}" unless response['status'] == 'OK'
+
+    response['routes'].map.with_index do |route_data, index|
+      leg = route_data['legs'].first
+      {
+        index: index,
+        distance_meters: leg['distance']['value'],
+        distance_text: leg['distance']['text'],
+        duration_seconds: leg['duration']['value'],
+        duration_text: leg['duration']['text'],
+        encoded_polyline: route_data['overview_polyline']['points'],
+        summary: route_data['summary'] || '',
+        warnings: route_data['warnings'] || []
+      }
+    end
+  end
+
+  # 選択された経路候補を保存
+  def save_selected_route(selected_index)
+    response = call_directions_api(with_alternatives: true)
+    raise DirectionsError, "Directions API error: #{response['status']}" unless response['status'] == 'OK'
+    raise DirectionsError, "選択された経路が見つかりません" unless response['routes'][selected_index]
+
+    route_data = response['routes'][selected_index]
+    leg = route_data['legs'].first
+    overview_polyline = route_data['overview_polyline']['points']
+
+    # ポリラインをデコードしてLineStringに変換
+    coordinates = decode_polyline(overview_polyline)
+    linestring = create_linestring(coordinates)
+
+    # ストリートビューポイントを生成
+    sv_points = generate_streetview_points(coordinates)
+
+    @route.update!(
+      route_geometry: linestring,
+      distance_meters: leg['distance']['value'],
+      duration_seconds: leg['duration']['value'],
+      directions_response: { 'routes' => [route_data], 'status' => 'OK' },
+      encoded_polyline: overview_polyline,
+      streetview_points: sv_points
+    )
+
+    true
+  rescue StandardError => e
+    Rails.logger.error("DirectionsService#save_selected_route error: #{e.message}")
+    Rails.logger.error(e.backtrace.first(10).join("\n"))
+    raise
+  end
+
   private
 
-  def call_directions_api
+  def call_directions_api(with_alternatives: false)
     # キャッシュをチェック
-    cache_key = generate_cache_key
+    cache_key = generate_cache_key(with_alternatives: with_alternatives)
     cached = Rails.cache.read(cache_key)
     return cached if cached
 
     uri = URI(GOOGLE_DIRECTIONS_API_URL)
     params = build_api_params
+    params[:alternatives] = 'true' if with_alternatives
     uri.query = URI.encode_www_form(params)
 
     response = Net::HTTP.get_response(uri)
@@ -101,12 +155,13 @@ class DirectionsService
     "#{point.y},#{point.x}"
   end
 
-  def generate_cache_key
+  def generate_cache_key(with_alternatives: false)
     key_source = {
       origin: format_latlng(@route.origin),
       destination: format_latlng(@route.destination),
       waypoints: @route.waypoints,
-      mode: @route.travel_mode
+      mode: @route.travel_mode,
+      alternatives: with_alternatives
     }
     "directions:#{Digest::SHA256.hexdigest(key_source.to_json)}"
   end

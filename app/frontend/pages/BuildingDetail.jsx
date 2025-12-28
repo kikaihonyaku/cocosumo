@@ -85,6 +85,7 @@ export default function BuildingDetail() {
     deleteRoute,
     recalculateRoute,
     selectRoute,
+    addRoute,
   } = useRoutes(id);
 
   // レスポンシブ設定
@@ -677,6 +678,7 @@ export default function BuildingDetail() {
                   onRouteDelete={deleteRoute}
                   onRouteRecalculate={recalculateRoute}
                   onSlideshowStart={handleInlineSlideshowStart}
+                  onRouteAdd={addRoute}
                   isAdmin={true}
                   isMobile={true}
                   onRequestMapPick={(field) => {
@@ -1010,6 +1012,7 @@ export default function BuildingDetail() {
                     onRouteDelete={deleteRoute}
                     onRouteRecalculate={recalculateRoute}
                     onSlideshowStart={handleInlineSlideshowStart}
+                    onRouteAdd={addRoute}
                     isAdmin={true}
                     expanded={routePanelExpanded}
                     onExpandedChange={setRoutePanelExpanded}

@@ -48,6 +48,10 @@ Rails.application.routes.draw do
 
         # 経路管理
         resources :routes, controller: 'building_routes' do
+          collection do
+            post :preview   # 経路候補プレビュー
+            post :confirm   # 選択した経路を保存
+          end
           member do
             post :calculate           # 経路再計算
             get :streetview_points    # ストリートビューポイント取得

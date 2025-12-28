@@ -65,6 +65,7 @@ export default function RouteEditor({
   route,
   buildingLocation,
   onSave,
+  onPreview = null, // 新規作成時のプレビュー用コールバック (formData) => void
   loading = false,
   isMobile = false,
   onStartMapPick = null, // 外部地図で位置を選択するコールバック (formData, field) => void
@@ -481,7 +482,12 @@ export default function RouteEditor({
       return;
     }
 
-    onSave(formData);
+    // 新規作成時はプレビュー、編集時は保存
+    if (!route && onPreview) {
+      onPreview(formData);
+    } else {
+      onSave(formData);
+    }
   };
 
   const isEdit = !!route;
@@ -771,7 +777,15 @@ export default function RouteEditor({
           キャンセル
         </Button>
         <Button onClick={handleSubmit} variant="contained" disabled={loading}>
-          {loading ? <CircularProgress size={20} /> : isEdit ? '更新' : '作成'}
+          {loading ? (
+            <CircularProgress size={20} />
+          ) : isEdit ? (
+            '更新'
+          ) : onPreview ? (
+            '経路を検索'
+          ) : (
+            '作成'
+          )}
         </Button>
       </DialogActions>
     </Dialog>

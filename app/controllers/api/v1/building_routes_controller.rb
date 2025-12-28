@@ -86,6 +86,59 @@ class Api::V1::BuildingRoutesController < ApplicationController
     render json: { points: points, total: points.length }
   end
 
+  # POST /api/v1/buildings/:building_id/routes/preview
+  # 経路候補をプレビュー（保存しない）
+  def preview
+    @route = @building.building_routes.build(route_params)
+    @route.tenant = current_tenant
+
+    set_origin_from_params
+    set_destination_from_params
+
+    unless @route.origin.present? && @route.destination.present?
+      return render json: { error: '出発地と目的地が必要です' }, status: :unprocessable_entity
+    end
+
+    service = DirectionsService.new(@route)
+    candidates = service.fetch_alternatives
+
+    render json: {
+      candidates: candidates,
+      route_params: {
+        origin: @route.origin_latlng,
+        destination: @route.destination_latlng,
+        travel_mode: @route.travel_mode,
+        waypoints: @route.waypoints
+      }
+    }
+  rescue DirectionsService::DirectionsError => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  # POST /api/v1/buildings/:building_id/routes/confirm
+  # 選択した経路候補を保存
+  def confirm
+    selected_index = params[:selected_index].to_i
+
+    @route = @building.building_routes.build(route_params)
+    @route.tenant = current_tenant
+
+    set_origin_from_params
+    set_destination_from_params
+
+    unless @route.save
+      return render json: { errors: @route.errors.full_messages }, status: :unprocessable_entity
+    end
+
+    service = DirectionsService.new(@route)
+    service.save_selected_route(selected_index)
+
+    render json: @route.reload, status: :created
+  rescue DirectionsService::DirectionsError => e
+    @route&.destroy
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
   private
 
   def set_building

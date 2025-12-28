@@ -209,6 +209,11 @@ export function useRoutes(buildingId) {
     setActiveRoute(null);
   }, []);
 
+  // 経路を直接追加（APIを呼ばずにリストに追加）
+  const addRoute = useCallback((route) => {
+    setRoutes((prev) => [...prev, route]);
+  }, []);
+
   return {
     routes,
     loading,
@@ -221,6 +226,7 @@ export function useRoutes(buildingId) {
     getStreetviewPoints,
     selectRoute,
     clearActiveRoute,
+    addRoute,
     refetch: fetchRoutes,
   };
 }

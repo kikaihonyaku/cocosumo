@@ -29,6 +29,8 @@ import {
   Route as RouteIcon,
 } from '@mui/icons-material';
 import RouteEditor from './RouteEditor';
+import RouteAlternativesDialog from './RouteAlternativesDialog';
+import { useRoutePreview } from '../../../hooks/useRoutePreview';
 
 // 経路タイプの設定
 const ROUTE_TYPE_CONFIG = {
@@ -57,6 +59,7 @@ export default function RoutePanel({
   onRouteDelete,
   onRouteRecalculate,
   onSlideshowStart,
+  onRouteAdd = null, // 経路を直接追加（APIを呼ばずにリストに追加）
   isAdmin = true,
   isMobile = false,
   expanded: controlledExpanded,
@@ -84,6 +87,21 @@ export default function RoutePanel({
   const [actionLoading, setActionLoading] = useState(null);
   // 地図選択モード用：フォームデータを一時保存
   const [pendingFormData, setPendingFormData] = useState(null);
+
+  // 経路候補選択用
+  const [alternativesOpen, setAlternativesOpen] = useState(false);
+  const [previewFormData, setPreviewFormData] = useState(null);
+
+  // 経路プレビューフック
+  const {
+    candidates,
+    loading: previewLoading,
+    error: previewError,
+    routeParams,
+    fetchPreview,
+    confirmRoute,
+    clearPreview,
+  } = useRoutePreview(buildingId);
 
   // 外部地図から位置が選択された時、エディタを再度開く
   useEffect(() => {
@@ -163,6 +181,43 @@ export default function RoutePanel({
     } finally {
       setActionLoading(null);
     }
+  };
+
+  // 経路をプレビュー（候補取得）
+  const handlePreviewRoute = async (formData) => {
+    setPreviewFormData(formData);
+    setEditorOpen(false);
+
+    try {
+      await fetchPreview(formData);
+      setAlternativesOpen(true);
+    } catch (err) {
+      alert(err.message || '経路の検索に失敗しました');
+      setEditorOpen(true); // エラー時はエディタを再度開く
+    }
+  };
+
+  // 経路候補から選択して保存
+  const handleConfirmAlternative = async (selectedIndex) => {
+    try {
+      const newRoute = await confirmRoute(previewFormData, selectedIndex);
+      // 経路をリストに追加（APIは既に呼び出し済み）
+      if (onRouteAdd) {
+        onRouteAdd(newRoute);
+      }
+      setAlternativesOpen(false);
+      setPreviewFormData(null);
+      clearPreview();
+    } catch (err) {
+      alert(err.message || '経路の保存に失敗しました');
+    }
+  };
+
+  // 経路候補ダイアログを閉じる
+  const handleCloseAlternatives = () => {
+    setAlternativesOpen(false);
+    setPreviewFormData(null);
+    clearPreview();
   };
 
   const handleStartSlideshow = (route, e) => {
@@ -424,11 +479,25 @@ export default function RoutePanel({
         route={editingRoute}
         buildingLocation={buildingLocation}
         onSave={handleSaveRoute}
-        loading={actionLoading === 'save'}
+        onPreview={!editingRoute ? handlePreviewRoute : null}
+        loading={actionLoading === 'save' || previewLoading}
         isMobile={isMobile}
         onStartMapPick={onRequestMapPick ? handleStartMapPick : null}
         initialLocation={pendingLocation}
         initialFormData={pendingFormData}
+      />
+
+      {/* 経路候補選択ダイアログ */}
+      <RouteAlternativesDialog
+        open={alternativesOpen}
+        onClose={handleCloseAlternatives}
+        candidates={candidates}
+        routeParams={routeParams}
+        routeFormData={previewFormData}
+        onConfirm={handleConfirmAlternative}
+        loading={previewLoading}
+        error={previewError}
+        buildingLocation={buildingLocation}
       />
     </Box>
   );
