@@ -22,6 +22,7 @@ import MapContainer from "../components/MapSystem/MapContainer";
 import LeftPanel from "../components/MapSystem/LeftPanel/LeftPanel";
 import PropertyTable from "../components/MapSystem/BottomPanel/PropertyTable";
 import BuildingFormModal from "../components/MapSystem/BuildingFormModal";
+import SearchModal from "../components/MapSystem/LeftPanel/SearchModal";
 import { usePropertyFilter } from "../hooks/usePropertyFilter";
 
 export default function MapSystem() {
@@ -38,6 +39,8 @@ export default function MapSystem() {
   // 地図から位置を選択するモード
   const [mapPickMode, setMapPickMode] = useState(false);
   const [pickedLocation, setPickedLocation] = useState(null);
+  // 検索モーダル（物件一覧ボタンから開く用）
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
 
   // データ管理用のステート
   // allProperties: API取得データ（フィルタ前）
@@ -1015,6 +1018,11 @@ export default function MapSystem() {
                 <Button
                   variant="contained"
                   onClick={() => {
+                    // 検索条件未設定時は検索モーダルを表示
+                    if (!hasSearched) {
+                      setSearchModalOpen(true);
+                      return;
+                    }
                     setBottomPanelVisible(true);
                     if (selectedObject) {
                       setRightPanelVisible(true);
@@ -1051,6 +1059,16 @@ export default function MapSystem() {
             setBuildingFormModalOpen(false);
           }}
           initialLocation={pickedLocation}
+        />
+
+        {/* 検索モーダル（物件一覧ボタンから開く用） */}
+        <SearchModal
+          isOpen={searchModalOpen}
+          onClose={() => setSearchModalOpen(false)}
+          onSearch={handleSearch}
+          currentConditions={searchConditions}
+          isLoading={isLoading}
+          stores={stores}
         />
       </Box>
     </ThemeProvider>
