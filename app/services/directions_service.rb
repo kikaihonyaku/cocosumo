@@ -216,29 +216,44 @@ class DirectionsService
   end
 
   # 経路上を一定間隔でサンプリングしてストリートビュー用ポイントを生成
-  def generate_streetview_points(coordinates, interval_meters: 10)
+  # interval_meters: ポイント間の最小距離（メートル）
+  # turn_threshold_degrees: 方向変化がこの角度以上の場合は距離に関係なくポイントを追加
+  def generate_streetview_points(coordinates, interval_meters: 10, turn_threshold_degrees: 30)
     return [] if coordinates.empty?
 
     points = []
     accumulated_distance = 0
     last_point = nil
+    last_heading = nil
 
     coordinates.each_with_index do |(lat, lng), index|
       if last_point
         distance = haversine_distance(last_point[:lat], last_point[:lng], lat, lng)
         accumulated_distance += distance
 
-        if accumulated_distance >= interval_meters
-          # 進行方向（heading）を計算
-          heading = calculate_heading(last_point[:lat], last_point[:lng], lat, lng)
+        # 現在の進行方向を計算
+        current_heading = calculate_heading(last_point[:lat], last_point[:lng], lat, lng)
+
+        # 方向変化を計算（前回のheadingがある場合）
+        heading_change = 0
+        if last_heading
+          heading_change = (current_heading - last_heading).abs
+          # 180度を超える場合は360度から引いて正規化（例: 350° → 10° は10度の変化）
+          heading_change = 360 - heading_change if heading_change > 180
+        end
+
+        # 距離条件 OR 方向変化条件でポイントを追加
+        if accumulated_distance >= interval_meters || heading_change >= turn_threshold_degrees
           points << {
             lat: lat.round(6),
             lng: lng.round(6),
-            heading: heading.round(1),
+            heading: current_heading.round(1),
             index: index
           }
           accumulated_distance = 0
         end
+
+        last_heading = current_heading
       else
         # 最初のポイント
         next_point = coordinates[index + 1]
@@ -249,6 +264,7 @@ class DirectionsService
           heading: heading.round(1),
           index: index
         }
+        last_heading = heading
       end
 
       last_point = { lat: lat, lng: lng }
