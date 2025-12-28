@@ -145,14 +145,24 @@ export function buildFilteredProperties(allProperties, filteredRooms) {
     return [];
   }
   if (!filteredRooms || !Array.isArray(filteredRooms)) {
-    return [];
+    // filteredRoomsが空でも、部屋がない物件は表示する
+    return allProperties.filter(property => !property.rooms || property.rooms.length === 0)
+      .map(property => ({
+        ...property,
+        rooms: [],
+        room_cnt: 0,
+        free_cnt: 0,
+      }));
   }
 
   const filteredRoomIds = new Set(filteredRooms.map(r => r.id));
   const filteredBuildingIds = new Set(filteredRooms.map(r => r.building_id));
 
   return allProperties
-    .filter(property => filteredBuildingIds.has(property.id))
+    .filter(property => {
+      // フィルタされた部屋を持つ物件、または部屋がない物件を含める
+      return filteredBuildingIds.has(property.id) || !property.rooms || property.rooms.length === 0;
+    })
     .map(property => {
       const filteredRoomsForBuilding = (property.rooms || []).filter(room =>
         filteredRoomIds.has(room.id)
