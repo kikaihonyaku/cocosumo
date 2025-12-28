@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -61,6 +61,10 @@ export default function RoutePanel({
   isMobile = false,
   expanded: controlledExpanded,
   onExpandedChange,
+  // 外部地図からの位置選択用
+  onRequestMapPick = null, // 地図選択モードを開始するコールバック (field) => void
+  pendingLocation = null, // 外部地図から選択された位置 { lat, lng, field }
+  onClearPendingLocation = null, // 保留中の位置をクリア
 }) {
   // 親から制御される場合はcontrolledExpanded、そうでなければローカルステート
   const [localExpanded, setLocalExpanded] = useState(true);
@@ -78,15 +82,42 @@ export default function RoutePanel({
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingRoute, setEditingRoute] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
+  // 地図選択モード用：フォームデータを一時保存
+  const [pendingFormData, setPendingFormData] = useState(null);
+
+  // 外部地図から位置が選択された時、エディタを再度開く
+  useEffect(() => {
+    if (pendingLocation && pendingFormData) {
+      setEditorOpen(true);
+    }
+  }, [pendingLocation, pendingFormData]);
 
   const handleAddRoute = () => {
     setEditingRoute(null);
+    setPendingFormData(null);
     setEditorOpen(true);
+  };
+
+  // 地図選択モードを開始
+  const handleStartMapPick = (formData, field) => {
+    // 前回のpendingLocationをクリアしてから新しい選択を開始
+    onClearPendingLocation?.();
+    setPendingFormData(formData);
+    setEditorOpen(false);
+    onRequestMapPick?.(field);
+  };
+
+  // エディタを閉じる時に保留データもクリア
+  const handleEditorClose = () => {
+    setEditorOpen(false);
+    setPendingFormData(null);
+    onClearPendingLocation?.();
   };
 
   const handleEditRoute = (route, e) => {
     e.stopPropagation();
     setEditingRoute(route);
+    setPendingFormData(null);
     setEditorOpen(true);
   };
 
@@ -125,6 +156,8 @@ export default function RoutePanel({
         await onRouteCreate(routeData);
       }
       setEditorOpen(false);
+      setPendingFormData(null);
+      onClearPendingLocation?.();
     } catch (err) {
       alert(err.message || '経路の保存に失敗しました');
     } finally {
@@ -387,12 +420,15 @@ export default function RoutePanel({
       {/* 経路エディタダイアログ */}
       <RouteEditor
         open={editorOpen}
-        onClose={() => setEditorOpen(false)}
+        onClose={handleEditorClose}
         route={editingRoute}
         buildingLocation={buildingLocation}
         onSave={handleSaveRoute}
         loading={actionLoading === 'save'}
         isMobile={isMobile}
+        onStartMapPick={onRequestMapPick ? handleStartMapPick : null}
+        initialLocation={pendingLocation}
+        initialFormData={pendingFormData}
       />
     </Box>
   );

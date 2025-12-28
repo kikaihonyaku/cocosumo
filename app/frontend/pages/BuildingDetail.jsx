@@ -70,6 +70,10 @@ export default function BuildingDetail() {
   const [roomsPanelExpanded, setRoomsPanelExpanded] = useState(true); // 部屋パネルの展開状態
   const [buildingInfoExpanded, setBuildingInfoExpanded] = useState(true); // 建物情報パネルの展開状態
   const [buildingPhotosExpanded, setBuildingPhotosExpanded] = useState(true); // 外観写真パネルの展開状態
+  // 経路追加用の地図選択モード
+  const [routeMapPickMode, setRouteMapPickMode] = useState(false);
+  const [routeMapPickField, setRouteMapPickField] = useState(null); // 'destination' | 'origin'
+  const [routePendingLocation, setRoutePendingLocation] = useState(null); // { lat, lng, field }
 
   // 経路管理フック
   const {
@@ -320,19 +324,32 @@ export default function BuildingDetail() {
     }
   };
 
-  // 地図上からの経路追加
-  const handleRouteAdd = async (destination) => {
+  // 地図上からの経路追加（または位置選択）
+  const handleRouteAdd = async (location) => {
     if (!property?.latitude || !property?.longitude) {
       showSnackbar('物件の位置情報が設定されていません', 'error');
       return;
     }
 
+    // RoutePanelからの地図選択モードの場合は、位置を保留してRouteEditorに渡す
+    if (routeMapPickMode) {
+      setRoutePendingLocation({
+        lat: location.lat,
+        lng: location.lng,
+        field: routeMapPickField || 'destination',
+      });
+      setRouteMapPickMode(false);
+      setRouteMapPickField(null);
+      return;
+    }
+
+    // PropertyMapPanelの「経路追加」ボタンから直接追加する場合
     try {
       await createRoute({
         name: '新しい経路',
         route_type: 'custom',
-        destination_lat: destination.lat,
-        destination_lng: destination.lng,
+        destination_lat: location.lat,
+        destination_lng: location.lng,
         travel_mode: 'walking',
       });
       showSnackbar('経路を追加しました', 'success');
@@ -635,6 +652,8 @@ export default function BuildingDetail() {
                   slideshowPoints={inlineSlideshow?.points || []}
                   onSlideshowEnd={handleInlineSlideshowEnd}
                   onFullscreenSlideshow={handleFullscreenSlideshow}
+                  externalRouteAddMode={routeMapPickMode}
+                  onExternalRouteAddModeCancel={() => setRouteMapPickMode(false)}
                 />
               </Box>
 
@@ -660,6 +679,13 @@ export default function BuildingDetail() {
                   onSlideshowStart={handleInlineSlideshowStart}
                   isAdmin={true}
                   isMobile={true}
+                  onRequestMapPick={(field) => {
+                    setRouteMapPickMode(true);
+                    setRouteMapPickField(field);
+                    setMobileActiveTab(2); // 地図タブに切り替え
+                  }}
+                  pendingLocation={routePendingLocation}
+                  onClearPendingLocation={() => setRoutePendingLocation(null)}
                 />
               </Box>
 
@@ -857,6 +883,8 @@ export default function BuildingDetail() {
                   slideshowPoints={inlineSlideshow?.points || []}
                   onSlideshowEnd={handleInlineSlideshowEnd}
                   onFullscreenSlideshow={handleFullscreenSlideshow}
+                  externalRouteAddMode={routeMapPickMode}
+                  onExternalRouteAddModeCancel={() => setRouteMapPickMode(false)}
                 />
               </Paper>
 
@@ -985,6 +1013,12 @@ export default function BuildingDetail() {
                     isAdmin={true}
                     expanded={routePanelExpanded}
                     onExpandedChange={setRoutePanelExpanded}
+                    onRequestMapPick={(field) => {
+                      setRouteMapPickMode(true);
+                      setRouteMapPickField(field);
+                    }}
+                    pendingLocation={routePendingLocation}
+                    onClearPendingLocation={() => setRoutePendingLocation(null)}
                   />
                 </Paper>
               </Box>

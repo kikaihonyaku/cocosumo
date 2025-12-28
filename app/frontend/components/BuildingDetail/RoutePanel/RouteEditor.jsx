@@ -26,6 +26,7 @@ import {
   Map as MapIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  Place as PlaceIcon,
 } from '@mui/icons-material';
 
 // 経路タイプの選択肢
@@ -43,6 +44,21 @@ const TRAVEL_MODES = [
   { value: 'bicycling', label: '自転車' },
 ];
 
+// フォームの初期値
+const INITIAL_FORM_DATA = {
+  name: '',
+  route_type: 'custom',
+  travel_mode: 'walking',
+  destination_name: '',
+  destination_lat: '',
+  destination_lng: '',
+  description: '',
+  use_building_origin: true,
+  origin_name: '',
+  origin_lat: null,
+  origin_lng: null,
+};
+
 export default function RouteEditor({
   open,
   onClose,
@@ -51,21 +67,11 @@ export default function RouteEditor({
   onSave,
   loading = false,
   isMobile = false,
+  onStartMapPick = null, // 外部地図で位置を選択するコールバック (formData, field) => void
+  initialLocation = null, // 外部地図から選択された位置 { lat, lng, field: 'destination' | 'origin' }
+  initialFormData = null, // 地図選択前のフォームデータを復元用
 }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    route_type: 'custom',
-    travel_mode: 'walking',
-    destination_name: '',
-    destination_lat: '',
-    destination_lng: '',
-    description: '',
-    // 開始位置関連
-    use_building_origin: true,
-    origin_name: '',
-    origin_lat: null,
-    origin_lng: null,
-  });
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [searchQuery, setSearchQuery] = useState('');
   const [originSearchQuery, setOriginSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
@@ -84,10 +90,63 @@ export default function RouteEditor({
   const destMarkerRef = useRef(null);
   const originMarkerRef = useRef(null);
 
-  // 編集モードの場合は既存データをセット
+  // フォームの初期化ロジック
+  // 優先順位: 1) 地図選択からの復帰（initialFormData + initialLocation）, 2) 既存ルート編集, 3) 新規作成
   useEffect(() => {
-    if (route) {
-      // originが設定されているかチェック（建物座標と異なる場合）
+    if (!open) return; // ダイアログが閉じている場合は何もしない
+
+    // 外部地図から位置が選択された場合（新規・編集どちらでも優先）
+    if (initialLocation?.lat && initialLocation?.lng) {
+      const coordsName = `${initialLocation.lat.toFixed(6)}, ${initialLocation.lng.toFixed(6)}`;
+      const isOrigin = initialLocation.field === 'origin';
+
+      if (initialFormData) {
+        // 地図選択前のフォームデータを復元し、選択された位置を上書き
+        if (isOrigin) {
+          setFormData({
+            ...initialFormData,
+            use_building_origin: false, // 明示的にfalseを設定
+            origin_lat: initialLocation.lat,
+            origin_lng: initialLocation.lng,
+            origin_name: coordsName, // 座標から名前を設定
+          });
+          setSearchQuery(initialFormData.destination_name || '');
+          setOriginSearchQuery(coordsName);
+        } else {
+          setFormData({
+            ...initialFormData,
+            destination_lat: initialLocation.lat,
+            destination_lng: initialLocation.lng,
+            destination_name: coordsName, // 座標から名前を設定
+          });
+          setSearchQuery(coordsName);
+          setOriginSearchQuery(initialFormData.origin_name || '');
+        }
+      } else {
+        // フォームデータがない場合は新規作成として位置のみ設定
+        if (isOrigin) {
+          setFormData({
+            ...INITIAL_FORM_DATA,
+            use_building_origin: false,
+            origin_name: coordsName,
+            origin_lat: initialLocation.lat,
+            origin_lng: initialLocation.lng,
+          });
+          setSearchQuery('');
+          setOriginSearchQuery(coordsName);
+        } else {
+          setFormData({
+            ...INITIAL_FORM_DATA,
+            destination_name: coordsName,
+            destination_lat: initialLocation.lat,
+            destination_lng: initialLocation.lng,
+          });
+          setSearchQuery(coordsName);
+          setOriginSearchQuery('');
+        }
+      }
+    } else if (route) {
+      // 既存ルート編集モード（initialLocationがない場合）
       const hasCustomOrigin = route.origin_latlng &&
         buildingLocation &&
         (Math.abs(route.origin_latlng.lat - buildingLocation.lat) > 0.00001 ||
@@ -110,19 +169,7 @@ export default function RouteEditor({
       setOriginSearchQuery(hasCustomOrigin ? (route.origin_name || '') : '');
     } else {
       // 新規作成時はリセット
-      setFormData({
-        name: '',
-        route_type: 'custom',
-        travel_mode: 'walking',
-        destination_name: '',
-        destination_lat: '',
-        destination_lng: '',
-        description: '',
-        use_building_origin: true,
-        origin_name: '',
-        origin_lat: null,
-        origin_lng: null,
-      });
+      setFormData(INITIAL_FORM_DATA);
       setSearchQuery('');
       setOriginSearchQuery('');
     }
@@ -130,7 +177,7 @@ export default function RouteEditor({
     setShowDestinationMap(false);
     setShowOriginMap(false);
     setTempMapPosition(null);
-  }, [route, open, buildingLocation]);
+  }, [route, open, buildingLocation, initialLocation, initialFormData]);
 
   // Google Places Autocomplete の初期化
   useEffect(() => {
@@ -532,21 +579,33 @@ export default function RouteEditor({
                     <IconButton onClick={handleOriginSearch} disabled={originSearching} title="検索">
                       {originSearching ? <CircularProgress size={20} /> : <SearchIcon />}
                     </IconButton>
-                    <IconButton
-                      onClick={() => {
-                        setShowOriginMap(!showOriginMap);
-                        setShowDestinationMap(false);
-                      }}
-                      color={showOriginMap ? 'primary' : 'default'}
-                      title="地図で選択"
-                    >
-                      {showOriginMap ? <ExpandLessIcon /> : <MapIcon />}
-                    </IconButton>
+                    {/* 外部地図が使えない場合のみダイアログ内地図を表示 */}
+                    {!onStartMapPick && (
+                      <IconButton
+                        onClick={() => {
+                          setShowOriginMap(!showOriginMap);
+                          setShowDestinationMap(false);
+                        }}
+                        color={showOriginMap ? 'primary' : 'default'}
+                        title="ここで地図を展開"
+                      >
+                        {showOriginMap ? <ExpandLessIcon /> : <MapIcon />}
+                      </IconButton>
+                    )}
+                    {onStartMapPick && (
+                      <IconButton
+                        onClick={() => onStartMapPick(formData, 'origin')}
+                        color="secondary"
+                        title="建物詳細の地図から選択"
+                      >
+                        <PlaceIcon />
+                      </IconButton>
+                    )}
                   </Box>
                 </Box>
 
-                {/* 開始位置の地図選択エリア */}
-                <Collapse in={showOriginMap}>
+                {/* 開始位置の地図選択エリア（外部地図が使えない場合のみ） */}
+                <Collapse in={showOriginMap && !onStartMapPick}>
                   <Box sx={{ mt: 1 }}>
                     <Box
                       ref={originMapRef}
@@ -606,21 +665,33 @@ export default function RouteEditor({
                 <IconButton onClick={handleSearch} disabled={searching} title="検索">
                   {searching ? <CircularProgress size={20} /> : <SearchIcon />}
                 </IconButton>
-                <IconButton
-                  onClick={() => {
-                    setShowDestinationMap(!showDestinationMap);
-                    setShowOriginMap(false);
-                  }}
-                  color={showDestinationMap ? 'primary' : 'default'}
-                  title="地図で選択"
-                >
-                  {showDestinationMap ? <ExpandLessIcon /> : <MapIcon />}
-                </IconButton>
+                {/* 外部地図が使えない場合のみダイアログ内地図を表示 */}
+                {!onStartMapPick && (
+                  <IconButton
+                    onClick={() => {
+                      setShowDestinationMap(!showDestinationMap);
+                      setShowOriginMap(false);
+                    }}
+                    color={showDestinationMap ? 'primary' : 'default'}
+                    title="ここで地図を展開"
+                  >
+                    {showDestinationMap ? <ExpandLessIcon /> : <MapIcon />}
+                  </IconButton>
+                )}
+                {onStartMapPick && (
+                  <IconButton
+                    onClick={() => onStartMapPick(formData, 'destination')}
+                    color="secondary"
+                    title="建物詳細の地図から選択"
+                  >
+                    <PlaceIcon />
+                  </IconButton>
+                )}
               </Box>
             </Box>
 
-            {/* 目的地の地図選択エリア */}
-            <Collapse in={showDestinationMap}>
+            {/* 目的地の地図選択エリア（外部地図が使えない場合のみ） */}
+            <Collapse in={showDestinationMap && !onStartMapPick}>
               <Box sx={{ mt: 1 }}>
                 <Box
                   ref={destMapRef}

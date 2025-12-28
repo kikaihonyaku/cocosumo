@@ -58,6 +58,9 @@ export default function PropertyMapPanel({
   slideshowPoints = [], // 経路上のストリートビューポイント
   onSlideshowEnd, // スライドショー終了時のコールバック
   onFullscreenSlideshow, // フルスクリーンスライドショーを開くコールバック
+  // 外部からの経路追加モード制御
+  externalRouteAddMode = false,
+  onExternalRouteAddModeCancel = null,
 }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -82,8 +85,10 @@ export default function PropertyMapPanel({
   const [streetViewVisible, setStreetViewVisible] = useState(false); // ストリートビュー表示状態
   const originalPositionRef = useRef(null);
   const [widgetVisible, setWidgetVisible] = useState(false); // ウィジェットの表示状態
-  const [routeAddMode, setRouteAddMode] = useState(false); // 経路追加モード
+  const [internalRouteAddMode, setInternalRouteAddMode] = useState(false); // 内部経路追加モード
   const [tempDestination, setTempDestination] = useState(null); // 仮の目的地
+  // 経路追加モード（内部または外部から制御）
+  const routeAddMode = internalRouteAddMode || externalRouteAddMode;
 
   // インラインスライドショー用state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -954,29 +959,39 @@ export default function PropertyMapPanel({
     }
   };
 
-  // 経路追加モードの開始
+  // 経路追加モードの開始（内部ボタンから）
   const handleStartRouteAddMode = useCallback(() => {
-    setRouteAddMode(true);
+    setInternalRouteAddMode(true);
     setTempDestination(null);
   }, []);
 
   // 経路追加モードのキャンセル
   const handleCancelRouteAddMode = useCallback(() => {
-    setRouteAddMode(false);
+    setInternalRouteAddMode(false);
     if (tempDestMarkerRef.current) {
       tempDestMarkerRef.current.setMap(null);
       tempDestMarkerRef.current = null;
     }
     setTempDestination(null);
-  }, []);
+    // 外部モードの場合は外部のキャンセルも呼び出す
+    if (externalRouteAddMode) {
+      onExternalRouteAddModeCancel?.();
+    }
+  }, [externalRouteAddMode, onExternalRouteAddModeCancel]);
 
   // 目的地確定
   const handleConfirmDestination = useCallback(() => {
     if (!tempDestination || !onRouteAdd) return;
 
     onRouteAdd(tempDestination);
-    handleCancelRouteAddMode();
-  }, [tempDestination, onRouteAdd, handleCancelRouteAddMode]);
+    // 状態をリセット
+    setInternalRouteAddMode(false);
+    if (tempDestMarkerRef.current) {
+      tempDestMarkerRef.current.setMap(null);
+      tempDestMarkerRef.current = null;
+    }
+    setTempDestination(null);
+  }, [tempDestination, onRouteAdd]);
 
   return (
     <Box sx={{ height: '100%', width: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
