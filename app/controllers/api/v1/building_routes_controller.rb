@@ -74,7 +74,7 @@ class Api::V1::BuildingRoutesController < ApplicationController
   # GET /api/v1/buildings/:building_id/routes/:id/streetview_points
   # 経路上のストリートビューポイントを取得
   def streetview_points
-    interval = params[:interval]&.to_i || 50
+    interval = params[:interval]&.to_i || 10
 
     points = if @route.streetview_points.present?
                @route.streetview_points
