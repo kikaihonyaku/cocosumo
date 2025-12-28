@@ -24,6 +24,8 @@ import {
   FullscreenExit as FullscreenExitIcon,
   KeyboardArrowUp as ArrowUpIcon,
   KeyboardArrowDown as ArrowDownIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 
 export default function StreetViewSlideshow({
@@ -43,6 +45,7 @@ export default function StreetViewSlideshow({
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showThumbnails, setShowThumbnails] = useState(true);
+  const [showPlayer, setShowPlayer] = useState(true); // プレイヤーの表示/非表示
   const [controlsVisible, setControlsVisible] = useState(true);
 
   const streetViewRef = useRef(null);
@@ -207,25 +210,18 @@ export default function StreetViewSlideshow({
   };
 
   const toggleFullscreen = useCallback(() => {
-    if (!dialogRef.current) return;
-
-    if (!isFullscreen) {
-      dialogRef.current.requestFullscreen?.();
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen?.();
-      setIsFullscreen(false);
-    }
-  }, [isFullscreen]);
-
-  // フルスクリーン変更の監視
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    setIsFullscreen((prev) => {
+      const newFullscreen = !prev;
+      if (newFullscreen) {
+        // フルスクリーン時はプレイヤー非表示、再生停止
+        setShowPlayer(false);
+        setIsPlaying(false);
+      } else {
+        // 通常表示に戻る時はプレイヤー表示
+        setShowPlayer(true);
+      }
+      return newFullscreen;
+    });
   }, []);
 
   // サムネイル用のURL生成（Street View Static API）
@@ -300,16 +296,32 @@ export default function StreetViewSlideshow({
     <Dialog
       open={open}
       onClose={onClose}
-      fullScreen={isMobile}
-      maxWidth={isMobile ? false : "lg"}
-      fullWidth={!isMobile}
+      fullScreen={isMobile || isFullscreen}
+      maxWidth={isMobile || isFullscreen ? false : "lg"}
+      fullWidth={!isMobile && !isFullscreen}
       PaperProps={{
         ref: dialogRef,
-        sx: { height: isMobile ? '100%' : '85vh', bgcolor: 'grey.900' },
+        sx: {
+          height: isMobile || isFullscreen ? '100%' : '85vh',
+          bgcolor: 'grey.900',
+          ...(isFullscreen && {
+            maxWidth: '100%',
+            maxHeight: '100%',
+            margin: 0,
+            borderRadius: 0,
+          }),
+        },
       }}
     >
       <DialogContent
-        sx={{ p: 0, display: 'flex', flexDirection: 'column', height: '100%' }}
+        sx={{
+          p: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setControlsVisible(true)}
       >
@@ -321,7 +333,7 @@ export default function StreetViewSlideshow({
               top: 0,
               left: 0,
               right: 0,
-              zIndex: 10,
+              zIndex: 1000,
               background: 'linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)',
               p: 2,
               display: 'flex',
@@ -338,18 +350,27 @@ export default function StreetViewSlideshow({
                 {route?.formatted_duration}
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <Tooltip title={showPlayer ? 'プレイヤーを隠す' : 'プレイヤーを表示'}>
+                <IconButton onClick={() => setShowPlayer(!showPlayer)} sx={{ color: 'white' }}>
+                  {showPlayer ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                </IconButton>
+              </Tooltip>
               <Tooltip title={showThumbnails ? 'サムネイルを隠す' : 'サムネイルを表示'}>
                 <IconButton onClick={() => setShowThumbnails(!showThumbnails)} sx={{ color: 'white' }}>
                   {showThumbnails ? <ArrowDownIcon /> : <ArrowUpIcon />}
                 </IconButton>
               </Tooltip>
-              <IconButton onClick={toggleFullscreen} sx={{ color: 'white' }}>
-                {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
-              </IconButton>
-              <IconButton onClick={onClose} sx={{ color: 'white' }}>
-                <CloseIcon />
-              </IconButton>
+              <Tooltip title={isFullscreen ? '通常表示' : 'フルスクリーン'}>
+                <IconButton onClick={toggleFullscreen} sx={{ color: 'white' }}>
+                  {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="閉じる">
+                <IconButton onClick={onClose} sx={{ color: 'white' }}>
+                  <CloseIcon />
+                </IconButton>
+              </Tooltip>
             </Box>
           </Box>
         </Fade>
@@ -371,29 +392,30 @@ export default function StreetViewSlideshow({
         )}
 
         {/* コントロールバー */}
-        <Fade in={controlsVisible}>
+        <Fade in={controlsVisible && showPlayer}>
           <Paper
-            elevation={8}
+            elevation={4}
             sx={{
               position: 'absolute',
-              bottom: showThumbnails ? (isMobile ? 100 : 130) : 16,
+              bottom: showThumbnails ? (isMobile || isFullscreen ? 100 : 130) : 16,
               left: '50%',
               transform: 'translateX(-50%)',
-              width: isMobile ? 'calc(100% - 16px)' : 'calc(100% - 32px)',
-              maxWidth: isMobile ? 'none' : 600,
+              width: isMobile || isFullscreen ? 'calc(100% - 16px)' : 'calc(100% - 32px)',
+              maxWidth: isMobile || isFullscreen ? 'none' : 600,
               borderRadius: 2,
-              bgcolor: 'rgba(255,255,255,0.95)',
-              backdropFilter: 'blur(10px)',
+              bgcolor: 'rgba(0, 0, 0, 0.5)',
+              backdropFilter: 'blur(8px)',
               transition: 'bottom 0.3s ease',
+              zIndex: 1000,
             }}
           >
             <Box sx={{ p: isMobile ? 1.5 : 2 }}>
               {/* 進捗情報 */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant={isMobile ? 'caption' : 'body2'} color="text.secondary">
+                <Typography variant={isMobile ? 'caption' : 'body2'} color="grey.300">
                   {currentIndex + 1} / {points.length} ポイント
                 </Typography>
-                <Typography variant={isMobile ? 'caption' : 'body2'} color="text.secondary">
+                <Typography variant={isMobile ? 'caption' : 'body2'} color="grey.300">
                   進捗 {progress}%
                 </Typography>
               </Box>
@@ -405,38 +427,54 @@ export default function StreetViewSlideshow({
                 min={0}
                 max={Math.max(0, points.length - 1)}
                 step={1}
-                sx={{ mb: 1 }}
+                sx={{
+                  mb: 1,
+                  color: 'white',
+                  '& .MuiSlider-thumb': { bgcolor: 'white' },
+                  '& .MuiSlider-track': { bgcolor: 'white' },
+                  '& .MuiSlider-rail': { bgcolor: 'rgba(255,255,255,0.3)' },
+                }}
               />
 
               {/* 再生コントロール */}
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: isMobile ? 0.5 : 1 }}>
                 <Tooltip title="前へ (←)">
                   <span>
-                    <IconButton onClick={handlePrev} disabled={currentIndex === 0} size={isMobile ? 'medium' : 'large'}>
+                    <IconButton
+                      onClick={handlePrev}
+                      disabled={currentIndex === 0}
+                      size={isMobile ? 'medium' : 'large'}
+                      sx={{ color: 'white', '&.Mui-disabled': { color: 'rgba(255,255,255,0.3)' } }}
+                    >
                       <PrevIcon />
                     </IconButton>
                   </span>
                 </Tooltip>
 
                 <Tooltip title={isPlaying ? '一時停止 (Space)' : '再生 (Space)'}>
-                  <IconButton onClick={handlePlayPause} color="primary" size="large">
+                  <IconButton onClick={handlePlayPause} size="large" sx={{ color: 'white' }}>
                     {isPlaying ? <PauseIcon fontSize="large" /> : <PlayIcon fontSize="large" />}
                   </IconButton>
                 </Tooltip>
 
                 <Tooltip title="次へ (→)">
                   <span>
-                    <IconButton onClick={handleNext} disabled={currentIndex >= points.length - 1} size={isMobile ? 'medium' : 'large'}>
+                    <IconButton
+                      onClick={handleNext}
+                      disabled={currentIndex >= points.length - 1}
+                      size={isMobile ? 'medium' : 'large'}
+                      sx={{ color: 'white', '&.Mui-disabled': { color: 'rgba(255,255,255,0.3)' } }}
+                    >
                       <NextIcon />
                     </IconButton>
                   </span>
                 </Tooltip>
 
-                {/* 再生速度（モバイルでは非表示） */}
-                {!isMobile && (
+                {/* 再生速度（モバイル・フルスクリーンでは非表示） */}
+                {!isMobile && !isFullscreen && (
                   <Box sx={{ display: 'flex', alignItems: 'center', ml: 3, minWidth: 120 }}>
                     <Tooltip title="再生速度">
-                      <SpeedIcon sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} />
+                      <SpeedIcon sx={{ mr: 1, color: 'grey.300', fontSize: 20 }} />
                     </Tooltip>
                     <Slider
                       value={playbackSpeed}
@@ -446,7 +484,13 @@ export default function StreetViewSlideshow({
                       step={0.5}
                       valueLabelDisplay="auto"
                       valueLabelFormat={(v) => `${v}x`}
-                      sx={{ width: 80 }}
+                      sx={{
+                        width: 80,
+                        color: 'white',
+                        '& .MuiSlider-thumb': { bgcolor: 'white' },
+                        '& .MuiSlider-track': { bgcolor: 'white' },
+                        '& .MuiSlider-rail': { bgcolor: 'rgba(255,255,255,0.3)' },
+                      }}
                     />
                   </Box>
                 )}
@@ -463,10 +507,10 @@ export default function StreetViewSlideshow({
               bottom: 0,
               left: 0,
               right: 0,
-              height: isMobile ? 80 : 110,
+              height: isMobile || isFullscreen ? 80 : 110,
               background: 'linear-gradient(transparent, rgba(0,0,0,0.85))',
-              zIndex: 10,
-              pt: isMobile ? 1 : 2,
+              zIndex: 1000,
+              pt: isMobile || isFullscreen ? 1 : 2,
             }}
           >
             <Box
@@ -576,8 +620,8 @@ export default function StreetViewSlideshow({
           </Box>
         </Fade>
 
-        {/* 現在位置情報（モバイルでは非表示） */}
-        {!isMobile && (
+        {/* 現在位置情報（モバイル・フルスクリーンでは非表示） */}
+        {!isMobile && !isFullscreen && (
           <Fade in={controlsVisible}>
             <Box
               sx={{
@@ -591,6 +635,7 @@ export default function StreetViewSlideshow({
                 borderRadius: 1,
                 fontSize: '0.75rem',
                 transition: 'bottom 0.3s ease',
+                zIndex: 1000,
               }}
             >
               {currentPoint?.lat.toFixed(6)}, {currentPoint?.lng.toFixed(6)} ・ 方位:{' '}
