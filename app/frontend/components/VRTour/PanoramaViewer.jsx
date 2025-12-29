@@ -1,6 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
 import { Viewer } from "@photo-sphere-viewer/core";
 import { MarkersPlugin } from "@photo-sphere-viewer/markers-plugin";
+import { AutorotatePlugin } from "@photo-sphere-viewer/autorotate-plugin";
+import { GyroscopePlugin } from "@photo-sphere-viewer/gyroscope-plugin";
 import "@photo-sphere-viewer/core/index.css";
 import "@photo-sphere-viewer/markers-plugin/index.css";
 import { Box, CircularProgress, Alert } from "@mui/material";
@@ -19,7 +21,7 @@ const generateMarkerHtml = (marker, editable = false) => {
   }
 };
 
-export default function PanoramaViewer({
+const PanoramaViewer = forwardRef(function PanoramaViewer({
   imageUrl,
   initialView = { yaw: 0, pitch: 0 },
   markers = [],
@@ -28,12 +30,83 @@ export default function PanoramaViewer({
   editable = false,
   onViewerReady,
   fullscreenContainerId = null,
-  onMarkerDragEnd
-}) {
+  onMarkerDragEnd,
+  autoRotate = false,
+  autoRotateSpeed = 1,
+  gyroscopeEnabled = false,
+  onGyroscopeError,
+}, ref) {
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // 外部からビューアを制御するためのメソッドを公開
+  useImperativeHandle(ref, () => ({
+    startAutoRotate: () => {
+      if (viewerRef.current) {
+        const autorotatePlugin = viewerRef.current.getPlugin(AutorotatePlugin);
+        if (autorotatePlugin) {
+          autorotatePlugin.start();
+        }
+      }
+    },
+    stopAutoRotate: () => {
+      if (viewerRef.current) {
+        const autorotatePlugin = viewerRef.current.getPlugin(AutorotatePlugin);
+        if (autorotatePlugin) {
+          autorotatePlugin.stop();
+        }
+      }
+    },
+    isAutoRotating: () => {
+      if (viewerRef.current) {
+        const autorotatePlugin = viewerRef.current.getPlugin(AutorotatePlugin);
+        return autorotatePlugin?.isEnabled() || false;
+      }
+      return false;
+    },
+    setAutoRotateSpeed: (speed) => {
+      if (viewerRef.current) {
+        const autorotatePlugin = viewerRef.current.getPlugin(AutorotatePlugin);
+        if (autorotatePlugin) {
+          autorotatePlugin.setOptions({ autorotateSpeed: `${speed}rpm` });
+        }
+      }
+    },
+    startGyroscope: async () => {
+      if (viewerRef.current) {
+        const gyroscopePlugin = viewerRef.current.getPlugin(GyroscopePlugin);
+        if (gyroscopePlugin) {
+          try {
+            await gyroscopePlugin.start();
+            return true;
+          } catch (error) {
+            console.error('Gyroscope start error:', error);
+            onGyroscopeError && onGyroscopeError(error);
+            return false;
+          }
+        }
+      }
+      return false;
+    },
+    stopGyroscope: () => {
+      if (viewerRef.current) {
+        const gyroscopePlugin = viewerRef.current.getPlugin(GyroscopePlugin);
+        if (gyroscopePlugin) {
+          gyroscopePlugin.stop();
+        }
+      }
+    },
+    isGyroscopeEnabled: () => {
+      if (viewerRef.current) {
+        const gyroscopePlugin = viewerRef.current.getPlugin(GyroscopePlugin);
+        return gyroscopePlugin?.isEnabled() || false;
+      }
+      return false;
+    },
+    getViewer: () => viewerRef.current,
+  }));
 
   // editableの最新値を保持するref（クロージャ問題を回避）
   const editableRef = useRef(editable);
@@ -130,6 +203,16 @@ export default function PanoramaViewer({
                 tooltip: marker.tooltip,
                 data: marker.data
               }))
+            }],
+            [AutorotatePlugin, {
+              autorotateSpeed: `${autoRotateSpeed}rpm`,
+              autostartDelay: null, // 自動開始しない
+              autostartOnIdle: false,
+            }],
+            [GyroscopePlugin, {
+              touchmove: true, // ジャイロ有効時もタッチ操作を許可
+              absolutePosition: false,
+              moveMode: 'smooth',
             }]
           ],
         });
@@ -367,4 +450,6 @@ export default function PanoramaViewer({
       />
     </Box>
   );
-}
+});
+
+export default PanoramaViewer;

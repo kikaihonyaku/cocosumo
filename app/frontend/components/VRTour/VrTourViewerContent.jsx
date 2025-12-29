@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -27,19 +27,48 @@ import {
 import PanoramaViewer from "./PanoramaViewer";
 import ComparisonPanoramaViewer from "./ComparisonPanoramaViewer";
 import MinimapDisplay from "./MinimapDisplay";
+import AutoplayControls from "./AutoplayControls";
+import SharePanel from "../VirtualStaging/SharePanel";
+import InfoHotspotPanel from "./InfoHotspotPanel";
+import GyroscopeButton from "./GyroscopeButton";
+import SceneTransition from "./SceneTransition";
 
 export default function VrTourViewerContent({
   vrTour,
   scenes,
   onClose,
   isPreview = false,
-  roomId
+  roomId,
+  publicUrl = null,
 }) {
   const navigate = useNavigate();
   const [currentScene, setCurrentScene] = useState(scenes.length > 0 ? scenes[0] : null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentViewAngle, setCurrentViewAngle] = useState(0);
   const [footerOpen, setFooterOpen] = useState(false);
+
+  // 情報ホットスポット関連state
+  const [infoHotspotOpen, setInfoHotspotOpen] = useState(false);
+  const [selectedInfoHotspot, setSelectedInfoHotspot] = useState(null);
+
+  // ジャイロスコープ関連state
+  const [gyroscopeEnabled, setGyroscopeEnabled] = useState(false);
+
+  // シーントランジション関連state
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [nextSceneName, setNextSceneName] = useState('');
+
+  // オートプレイ関連state
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+  const [autoRotateEnabled, setAutoRotateEnabled] = useState(true);
+  const [sceneDuration, setSceneDuration] = useState(10); // 秒
+  const [rotateSpeed, setRotateSpeed] = useState(1);
+  const [sceneProgress, setSceneProgress] = useState(0);
+
+  // refs
+  const panoramaViewerRef = useRef(null);
+  const autoplayTimerRef = useRef(null);
+  const progressTimerRef = useRef(null);
 
   // シーンが変更されたら最初のシーンを設定
   useEffect(() => {
@@ -49,21 +78,272 @@ export default function VrTourViewerContent({
     }
   }, [scenes]);
 
+  // キーボードショートカット
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // 入力フィールドにフォーカスがある場合は無視
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowRight':
+        case 'n':
+        case 'N':
+          // 次のシーン
+          e.preventDefault();
+          if (currentSceneIndex < scenes.length - 1) {
+            changeSceneWithTransition(scenes[currentSceneIndex + 1]);
+          }
+          break;
+
+        case 'ArrowLeft':
+        case 'p':
+        case 'P':
+          // 前のシーン
+          e.preventDefault();
+          if (currentSceneIndex > 0) {
+            changeSceneWithTransition(scenes[currentSceneIndex - 1]);
+          }
+          break;
+
+        case ' ':
+          // オートプレイの再生/一時停止
+          e.preventDefault();
+          setIsAutoPlaying(prev => !prev);
+          break;
+
+        case 'f':
+        case 'F':
+          // フルスクリーン切り替え
+          e.preventDefault();
+          const container = document.getElementById(containerId);
+          if (container) {
+            if (!document.fullscreenElement) {
+              container.requestFullscreen?.();
+            } else {
+              document.exitFullscreen?.();
+            }
+          }
+          break;
+
+        case 'Escape':
+          // ドロワーを閉じる / フルスクリーン終了
+          if (drawerOpen) {
+            setDrawerOpen(false);
+          } else if (footerOpen) {
+            setFooterOpen(false);
+          }
+          break;
+
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+          // 数字キーでシーン直接ジャンプ
+          const sceneNum = parseInt(e.key) - 1;
+          if (sceneNum < scenes.length) {
+            changeSceneWithTransition(scenes[sceneNum]);
+          }
+          break;
+
+        case 'm':
+        case 'M':
+          // ミニマップの表示切り替え（将来の機能）
+          break;
+
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentSceneIndex, scenes, drawerOpen, footerOpen, containerId, changeSceneWithTransition]);
+
+  // トランジション付きシーン変更
+  const changeSceneWithTransition = useCallback((newScene) => {
+    if (!newScene || newScene.id === currentScene?.id) return;
+
+    setIsTransitioning(true);
+    setNextSceneName(newScene.title || '');
+
+    // トランジション表示後にシーンを切り替え
+    setTimeout(() => {
+      setCurrentScene(newScene);
+      setCurrentViewAngle(newScene?.initial_view?.yaw || 0);
+    }, 300);
+
+    // トランジション終了
+    setTimeout(() => {
+      setIsTransitioning(false);
+      setNextSceneName('');
+    }, 800);
+  }, [currentScene?.id]);
+
+  // 現在のシーンのインデックスを取得
+  const currentSceneIndex = scenes.findIndex(s => s.id === currentScene?.id);
+
+  // 次のシーンへ移動
+  const goToNextScene = useCallback(() => {
+    const nextIndex = currentSceneIndex + 1;
+    if (nextIndex < scenes.length) {
+      changeSceneWithTransition(scenes[nextIndex]);
+      setSceneProgress(0);
+    } else {
+      // 最後のシーンの場合、オートプレイを停止
+      setIsAutoPlaying(false);
+    }
+  }, [currentSceneIndex, scenes, changeSceneWithTransition]);
+
+  // 前のシーンへ移動
+  const goToPrevScene = useCallback(() => {
+    const prevIndex = currentSceneIndex - 1;
+    if (prevIndex >= 0) {
+      changeSceneWithTransition(scenes[prevIndex]);
+      setSceneProgress(0);
+    }
+  }, [currentSceneIndex, scenes, changeSceneWithTransition]);
+
+  // オートプレイタイマー管理
+  useEffect(() => {
+    if (isAutoPlaying) {
+      // プログレスバー更新用タイマー（100msごとに更新）
+      progressTimerRef.current = setInterval(() => {
+        setSceneProgress(prev => {
+          const increment = (100 / sceneDuration) * 0.1; // 100ms分の進捗
+          return Math.min(prev + increment, 100);
+        });
+      }, 100);
+
+      // シーン切り替え用タイマー
+      autoplayTimerRef.current = setTimeout(() => {
+        goToNextScene();
+      }, sceneDuration * 1000);
+
+      // オートローテーション開始
+      if (autoRotateEnabled && panoramaViewerRef.current) {
+        panoramaViewerRef.current.startAutoRotate();
+      }
+    } else {
+      // タイマークリア
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+      }
+      if (autoplayTimerRef.current) {
+        clearTimeout(autoplayTimerRef.current);
+      }
+      // オートローテーション停止
+      if (panoramaViewerRef.current) {
+        panoramaViewerRef.current.stopAutoRotate();
+      }
+    }
+
+    return () => {
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+      }
+      if (autoplayTimerRef.current) {
+        clearTimeout(autoplayTimerRef.current);
+      }
+    };
+  }, [isAutoPlaying, sceneDuration, autoRotateEnabled, goToNextScene]);
+
+  // シーンが変わったらプログレスリセット
+  useEffect(() => {
+    setSceneProgress(0);
+    // タイマーをリセット
+    if (isAutoPlaying) {
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+      }
+      if (autoplayTimerRef.current) {
+        clearTimeout(autoplayTimerRef.current);
+      }
+
+      // 新しいタイマーを開始
+      progressTimerRef.current = setInterval(() => {
+        setSceneProgress(prev => {
+          const increment = (100 / sceneDuration) * 0.1;
+          return Math.min(prev + increment, 100);
+        });
+      }, 100);
+
+      autoplayTimerRef.current = setTimeout(() => {
+        goToNextScene();
+      }, sceneDuration * 1000);
+    }
+  }, [currentScene?.id]);
+
+  // オートローテーションのトグル
+  const handleToggleAutoRotate = useCallback(() => {
+    setAutoRotateEnabled(prev => {
+      const newValue = !prev;
+      if (panoramaViewerRef.current) {
+        if (newValue && isAutoPlaying) {
+          panoramaViewerRef.current.startAutoRotate();
+        } else {
+          panoramaViewerRef.current.stopAutoRotate();
+        }
+      }
+      return newValue;
+    });
+  }, [isAutoPlaying]);
+
+  // 回転速度の変更
+  const handleRotateSpeedChange = useCallback((speed) => {
+    setRotateSpeed(speed);
+    if (panoramaViewerRef.current) {
+      panoramaViewerRef.current.setAutoRotateSpeed(speed);
+    }
+  }, []);
+
+  // ジャイロスコープの切り替え
+  const handleGyroscopeChange = useCallback(async (enabled) => {
+    if (panoramaViewerRef.current) {
+      if (enabled) {
+        const success = await panoramaViewerRef.current.startGyroscope();
+        if (success) {
+          setGyroscopeEnabled(true);
+          // ジャイロスコープ有効時はオートローテーションを停止
+          if (isAutoPlaying) {
+            setIsAutoPlaying(false);
+          }
+        }
+      } else {
+        panoramaViewerRef.current.stopGyroscope();
+        setGyroscopeEnabled(false);
+      }
+    }
+  }, [isAutoPlaying]);
+
   const handleMarkerClick = (marker) => {
     console.log('Marker clicked:', marker);
+
+    // 情報ホットスポットの場合、情報パネルを表示
+    if (marker.data?.type === 'info') {
+      setSelectedInfoHotspot(marker);
+      setInfoHotspotOpen(true);
+      return;
+    }
 
     // シーンリンクタイプの場合、対象シーンに移動
     if (marker.data?.type === 'scene_link' && marker.data?.target_scene_id) {
       const targetScene = scenes.find(s => s.id === parseInt(marker.data.target_scene_id));
       if (targetScene) {
-        setCurrentScene(targetScene);
+        changeSceneWithTransition(targetScene);
         setDrawerOpen(false);
       }
     }
   };
 
   const handleSceneSelect = (scene) => {
-    setCurrentScene(scene);
+    changeSceneWithTransition(scene);
     setDrawerOpen(false);
   };
 
@@ -141,6 +421,18 @@ export default function VrTourViewerContent({
               プレビューモード
             </Typography>
           )}
+          {/* ジャイロスコープボタン（モバイルでのみ表示） */}
+          <GyroscopeButton
+            gyroscopeEnabled={gyroscopeEnabled}
+            onGyroscopeChange={handleGyroscopeChange}
+          />
+          {publicUrl && !isPreview && (
+            <SharePanel
+              publicUrl={publicUrl}
+              title={vrTour.title || 'VRツアー'}
+              variant="icon"
+            />
+          )}
           {scenes.length > 0 && (
             <IconButton
               onClick={() => setDrawerOpen(true)}
@@ -172,6 +464,7 @@ export default function VrTourViewerContent({
                 />
               ) : (
                 <PanoramaViewer
+                  ref={panoramaViewerRef}
                   key={currentScene.id}
                   imageUrl={currentScene.photo_url}
                   initialView={currentScene.initial_view || { yaw: 0, pitch: 0 }}
@@ -180,6 +473,7 @@ export default function VrTourViewerContent({
                   onMarkerClick={handleMarkerClick}
                   onViewChange={handleViewChange}
                   fullscreenContainerId={containerId}
+                  autoRotateSpeed={rotateSpeed}
                 />
               )}
             </Box>
@@ -209,6 +503,25 @@ export default function VrTourViewerContent({
               viewAngle={currentViewAngle}
               onSceneClick={handleSceneSelect}
             />
+
+            {/* オートプレイコントロール */}
+            {scenes.length > 1 && (
+              <AutoplayControls
+                isPlaying={isAutoPlaying}
+                onPlayPause={() => setIsAutoPlaying(!isAutoPlaying)}
+                onNext={goToNextScene}
+                onPrev={goToPrevScene}
+                currentSceneIndex={currentSceneIndex}
+                totalScenes={scenes.length}
+                autoRotateEnabled={autoRotateEnabled}
+                onToggleAutoRotate={handleToggleAutoRotate}
+                sceneDuration={sceneDuration}
+                onSceneDurationChange={setSceneDuration}
+                rotateSpeed={rotateSpeed}
+                onRotateSpeedChange={handleRotateSpeedChange}
+                sceneProgress={sceneProgress}
+              />
+            )}
           </>
         ) : scenes.length > 0 ? (
           <Box sx={{
@@ -412,6 +725,20 @@ export default function VrTourViewerContent({
           </List>
         </Box>
       </Drawer>
+
+      {/* 情報ホットスポットパネル */}
+      <InfoHotspotPanel
+        open={infoHotspotOpen}
+        onClose={() => setInfoHotspotOpen(false)}
+        hotspot={selectedInfoHotspot}
+      />
+
+      {/* シーントランジション */}
+      <SceneTransition
+        show={isTransitioning}
+        sceneName={nextSceneName}
+        transitionType="fade"
+      />
     </>
   );
 }

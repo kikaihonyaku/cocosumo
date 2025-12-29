@@ -45,7 +45,13 @@ export default function HotspotEditor({
     target_scene_id: '',
     arrow_direction: 'right',
     yaw: 0,
-    pitch: 0
+    pitch: 0,
+    // info type fields
+    title: '',
+    description: '',
+    image_url: '',
+    link_url: '',
+    link_text: ''
   });
 
   const ARROW_DIRECTIONS = [
@@ -90,7 +96,12 @@ export default function HotspotEditor({
       target_scene_id: '',
       arrow_direction: 'right',
       yaw: pendingPosition?.yaw || 0,
-      pitch: pendingPosition?.pitch || 0
+      pitch: pendingPosition?.pitch || 0,
+      title: '',
+      description: '',
+      image_url: '',
+      link_url: '',
+      link_text: ''
     });
     setEditDialogOpen(true);
     onAddHotspotRequest && onAddHotspotRequest();
@@ -104,7 +115,12 @@ export default function HotspotEditor({
       target_scene_id: hotspot.data?.target_scene_id ? String(hotspot.data.target_scene_id) : '',
       arrow_direction: hotspot.data?.arrow_direction || 'right',
       yaw: hotspot.yaw || 0,
-      pitch: hotspot.pitch || 0
+      pitch: hotspot.pitch || 0,
+      title: hotspot.data?.title || '',
+      description: hotspot.data?.description || '',
+      image_url: hotspot.data?.image_url || '',
+      link_url: hotspot.data?.link_url || '',
+      link_text: hotspot.data?.link_text || ''
     });
     setEditDialogOpen(true);
   };
@@ -128,6 +144,19 @@ export default function HotspotEditor({
       return;
     }
 
+    // Build data object based on type
+    const data = { type: hotspotForm.type };
+    if (hotspotForm.type === 'scene_link') {
+      data.target_scene_id = hotspotForm.target_scene_id;
+      data.arrow_direction = hotspotForm.arrow_direction;
+    } else if (hotspotForm.type === 'info') {
+      data.title = hotspotForm.title;
+      data.description = hotspotForm.description;
+      data.image_url = hotspotForm.image_url;
+      data.link_url = hotspotForm.link_url;
+      data.link_text = hotspotForm.link_text;
+    }
+
     let newHotspots;
     if (editingHotspot) {
       // 編集
@@ -137,11 +166,7 @@ export default function HotspotEditor({
           text: hotspotForm.text,
           yaw: hotspotForm.yaw,
           pitch: hotspotForm.pitch,
-          data: {
-            type: hotspotForm.type,
-            target_scene_id: hotspotForm.target_scene_id,
-            arrow_direction: hotspotForm.arrow_direction
-          }
+          data
         } : h
       );
     } else {
@@ -151,11 +176,7 @@ export default function HotspotEditor({
         text: hotspotForm.text,
         yaw: hotspotForm.yaw,
         pitch: hotspotForm.pitch,
-        data: {
-          type: hotspotForm.type,
-          target_scene_id: hotspotForm.target_scene_id,
-          arrow_direction: hotspotForm.arrow_direction
-        }
+        data
       };
       newHotspots = [...hotspots, newHotspot];
     }
@@ -336,6 +357,53 @@ export default function HotspotEditor({
                     ))}
                   </Select>
                 </FormControl>
+              </>
+            )}
+
+            {hotspotForm.type === 'info' && (
+              <>
+                <TextField
+                  fullWidth
+                  label="タイトル（オプション）"
+                  value={hotspotForm.title}
+                  onChange={(e) => setHotspotForm({ ...hotspotForm, title: e.target.value })}
+                  helperText="空の場合はテキストがタイトルとして使用されます"
+                />
+
+                <TextField
+                  fullWidth
+                  label="説明文"
+                  value={hotspotForm.description}
+                  onChange={(e) => setHotspotForm({ ...hotspotForm, description: e.target.value })}
+                  multiline
+                  rows={3}
+                />
+
+                <TextField
+                  fullWidth
+                  label="画像URL（オプション）"
+                  value={hotspotForm.image_url}
+                  onChange={(e) => setHotspotForm({ ...hotspotForm, image_url: e.target.value })}
+                  placeholder="https://example.com/image.jpg"
+                />
+
+                <TextField
+                  fullWidth
+                  label="リンクURL（オプション）"
+                  value={hotspotForm.link_url}
+                  onChange={(e) => setHotspotForm({ ...hotspotForm, link_url: e.target.value })}
+                  placeholder="https://example.com"
+                />
+
+                {hotspotForm.link_url && (
+                  <TextField
+                    fullWidth
+                    label="リンクテキスト"
+                    value={hotspotForm.link_text}
+                    onChange={(e) => setHotspotForm({ ...hotspotForm, link_text: e.target.value })}
+                    placeholder="詳細を見る"
+                  />
+                )}
               </>
             )}
 

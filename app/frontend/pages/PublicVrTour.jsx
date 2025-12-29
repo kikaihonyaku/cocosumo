@@ -76,12 +76,16 @@ export default function PublicVrTour() {
     );
   }
 
+  // 現在のページのURLを取得
+  const publicUrl = window.location.href;
+
   return (
     <Box sx={{ height: '100vh', position: 'relative', bgcolor: '#000' }}>
       <VrTourViewerContent
         vrTour={vrTour}
         scenes={scenes}
         isPreview={false}
+        publicUrl={publicUrl}
       />
     </Box>
   );
