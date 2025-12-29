@@ -100,114 +100,122 @@ export default function RouteAlternativesDialog({
 
   // 地図を初期化・更新
   useEffect(() => {
-    if (!open || !mapRef.current || !window.google?.maps || candidates.length === 0) {
+    if (!open || !window.google?.maps || candidates.length === 0) {
       return;
     }
 
-    // 前回のポリラインとマーカーをクリア
-    polylinesRef.current.forEach((p) => p.setMap(null));
-    polylinesRef.current = [];
-    markersRef.current.forEach((m) => m.setMap(null));
-    markersRef.current = [];
+    // ダイアログが開いた直後はDOMがまだ準備できていない可能性があるため少し遅延
+    const timeoutId = setTimeout(() => {
+      if (!mapRef.current) {
+        return;
+      }
 
-    // 地図の初期化（初回のみ）
-    if (!mapInstanceRef.current) {
-      const defaultCenter = routeParams?.origin || buildingLocation || { lat: 35.6762, lng: 139.6503 };
-      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
-        center: defaultCenter,
-        zoom: 14,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false,
+      // 前回のポリラインとマーカーをクリア
+      polylinesRef.current.forEach((p) => p.setMap(null));
+      polylinesRef.current = [];
+      markersRef.current.forEach((m) => m.setMap(null));
+      markersRef.current = [];
+
+      // 地図の初期化（初回のみ）
+      if (!mapInstanceRef.current) {
+        const defaultCenter = routeParams?.origin || buildingLocation || { lat: 35.6762, lng: 139.6503 };
+        mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+          center: defaultCenter,
+          zoom: 14,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+        });
+      }
+
+      const map = mapInstanceRef.current;
+      const bounds = new window.google.maps.LatLngBounds();
+
+      // 各候補のポリラインを描画
+      candidates.forEach((candidate, index) => {
+        const path = decodePolyline(candidate.encoded_polyline);
+        if (path.length === 0) return;
+
+        const isSelected = index === selectedIndex;
+
+        const polyline = new window.google.maps.Polyline({
+          path,
+          strokeColor: getRouteColor(index),
+          strokeWeight: isSelected ? 6 : 4,
+          strokeOpacity: isSelected ? 0.9 : 0.5,
+          map,
+          zIndex: isSelected ? 100 : index,
+        });
+
+        // クリックで選択
+        polyline.addListener('click', () => {
+          setSelectedIndex(index);
+        });
+
+        // マウスオーバーでハイライト
+        polyline.addListener('mouseover', () => {
+          if (index !== selectedIndex) {
+            polyline.setOptions({ strokeOpacity: 0.8, strokeWeight: 5 });
+          }
+        });
+
+        polyline.addListener('mouseout', () => {
+          if (index !== selectedIndex) {
+            polyline.setOptions({ strokeOpacity: 0.5, strokeWeight: 4 });
+          }
+        });
+
+        polylinesRef.current.push(polyline);
+
+        // バウンズに追加
+        path.forEach((point) => bounds.extend(point));
       });
-    }
 
-    const map = mapInstanceRef.current;
-    const bounds = new window.google.maps.LatLngBounds();
+      // 出発地マーカー
+      if (routeParams?.origin) {
+        const originMarker = new window.google.maps.Marker({
+          position: routeParams.origin,
+          map,
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: '#4CAF50',
+            fillOpacity: 1,
+            strokeColor: '#fff',
+            strokeWeight: 2,
+          },
+          title: '出発地',
+        });
+        markersRef.current.push(originMarker);
+      }
 
-    // 各候補のポリラインを描画
-    candidates.forEach((candidate, index) => {
-      const path = decodePolyline(candidate.encoded_polyline);
-      if (path.length === 0) return;
+      // 目的地マーカー
+      if (routeParams?.destination) {
+        const destMarker = new window.google.maps.Marker({
+          position: routeParams.destination,
+          map,
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: '#F44336',
+            fillOpacity: 1,
+            strokeColor: '#fff',
+            strokeWeight: 2,
+          },
+          title: '目的地',
+        });
+        markersRef.current.push(destMarker);
+      }
 
-      const isSelected = index === selectedIndex;
-
-      const polyline = new window.google.maps.Polyline({
-        path,
-        strokeColor: getRouteColor(index),
-        strokeWeight: isSelected ? 6 : 4,
-        strokeOpacity: isSelected ? 0.9 : 0.5,
-        map,
-        zIndex: isSelected ? 100 : index,
-      });
-
-      // クリックで選択
-      polyline.addListener('click', () => {
-        setSelectedIndex(index);
-      });
-
-      // マウスオーバーでハイライト
-      polyline.addListener('mouseover', () => {
-        if (index !== selectedIndex) {
-          polyline.setOptions({ strokeOpacity: 0.8, strokeWeight: 5 });
-        }
-      });
-
-      polyline.addListener('mouseout', () => {
-        if (index !== selectedIndex) {
-          polyline.setOptions({ strokeOpacity: 0.5, strokeWeight: 4 });
-        }
-      });
-
-      polylinesRef.current.push(polyline);
-
-      // バウンズに追加
-      path.forEach((point) => bounds.extend(point));
-    });
-
-    // 出発地マーカー
-    if (routeParams?.origin) {
-      const originMarker = new window.google.maps.Marker({
-        position: routeParams.origin,
-        map,
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: '#4CAF50',
-          fillOpacity: 1,
-          strokeColor: '#fff',
-          strokeWeight: 2,
-        },
-        title: '出発地',
-      });
-      markersRef.current.push(originMarker);
-    }
-
-    // 目的地マーカー
-    if (routeParams?.destination) {
-      const destMarker = new window.google.maps.Marker({
-        position: routeParams.destination,
-        map,
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: '#F44336',
-          fillOpacity: 1,
-          strokeColor: '#fff',
-          strokeWeight: 2,
-        },
-        title: '目的地',
-      });
-      markersRef.current.push(destMarker);
-    }
-
-    // 地図をフィット
-    if (!bounds.isEmpty()) {
-      map.fitBounds(bounds, { padding: 50 });
-    }
+      // 地図をフィット
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds, { padding: 50 });
+      }
+    }, 100);
 
     // クリーンアップ
     return () => {
+      clearTimeout(timeoutId);
       polylinesRef.current.forEach((p) => {
         window.google?.maps?.event?.clearInstanceListeners(p);
       });
@@ -343,7 +351,7 @@ export default function RouteAlternativesDialog({
                   sx={{
                     borderColor: isSelected ? 'primary.main' : 'divider',
                     borderWidth: isSelected ? 2 : 1,
-                    bgcolor: isSelected ? 'primary.50' : 'background.paper',
+                    bgcolor: isSelected ? 'rgba(1, 104, 183, 0.08)' : 'background.paper',
                     transition: 'all 0.2s',
                   }}
                 >
