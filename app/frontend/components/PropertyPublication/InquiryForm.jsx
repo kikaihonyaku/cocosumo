@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
   TextField,
@@ -23,6 +23,43 @@ export default function InquiryForm({ publicationId }) {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
 
+  // Spam prevention: honeypot field and form load timestamp
+  const [honeypot, setHoneypot] = useState('');
+  const formLoadTimeRef = useRef(Date.now());
+  const MIN_FORM_FILL_TIME_MS = 3000; // Minimum 3 seconds to fill form
+
+  // Source tracking: collect UTM parameters and referrer
+  const getTrackingData = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const referrer = document.referrer || '';
+
+    // Determine source based on referrer and UTM parameters
+    let source = 'direct';
+    if (urlParams.get('utm_source')) {
+      source = 'campaign';
+    } else if (referrer) {
+      const referrerUrl = new URL(referrer);
+      const socialDomains = ['twitter.com', 'x.com', 'facebook.com', 'line.me', 'instagram.com', 'linkedin.com'];
+      const searchDomains = ['google.com', 'google.co.jp', 'yahoo.co.jp', 'bing.com'];
+
+      if (socialDomains.some(domain => referrerUrl.hostname.includes(domain))) {
+        source = 'social';
+      } else if (searchDomains.some(domain => referrerUrl.hostname.includes(domain))) {
+        source = 'organic_search';
+      } else if (!referrerUrl.hostname.includes(window.location.hostname)) {
+        source = 'referral';
+      }
+    }
+
+    return {
+      source,
+      utm_source: urlParams.get('utm_source') || '',
+      utm_medium: urlParams.get('utm_medium') || '',
+      utm_campaign: urlParams.get('utm_campaign') || '',
+      referrer: referrer.substring(0, 500) // Limit referrer length
+    };
+  };
+
   const handleChange = (field) => (event) => {
     setFormData({
       ...formData,
@@ -36,19 +73,43 @@ export default function InquiryForm({ publicationId }) {
     setError(null);
     setSuccess(false);
 
+    // Spam check 1: Honeypot field should be empty (bots often fill all fields)
+    if (honeypot) {
+      // Silently reject but show success to prevent bot from knowing
+      setSuccess(true);
+      setSubmitting(false);
+      return;
+    }
+
+    // Spam check 2: Form should take at least 3 seconds to fill (bots are too fast)
+    const formFillTime = Date.now() - formLoadTimeRef.current;
+    if (formFillTime < MIN_FORM_FILL_TIME_MS) {
+      setError('フォームの送信が早すぎます。もう一度お試しください。');
+      setSubmitting(false);
+      return;
+    }
+
     try {
+      // Merge form data with tracking data
+      const trackingData = getTrackingData();
+      const inquiryData = {
+        ...formData,
+        ...trackingData
+      };
+
       await axios.post(`/api/v1/property_publications/${publicationId}/inquiries`, {
-        property_inquiry: formData
+        property_inquiry: inquiryData
       });
 
       setSuccess(true);
-      // Clear form
+      // Clear form and reset load time
       setFormData({
         name: '',
         email: '',
         phone: '',
         message: ''
       });
+      formLoadTimeRef.current = Date.now();
     } catch (err) {
       console.error('Error submitting inquiry:', err);
       setError('お問い合わせの送信に失敗しました。もう一度お試しください。');
@@ -65,6 +126,25 @@ export default function InquiryForm({ publicationId }) {
       <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
         この物件についてのお問い合わせはこちらから
       </Typography>
+
+      {/* Honeypot field - hidden from humans, visible to bots */}
+      <TextField
+        value={honeypot}
+        onChange={(e) => setHoneypot(e.target.value)}
+        sx={{
+          position: 'absolute',
+          left: '-9999px',
+          opacity: 0,
+          height: 0,
+          width: 0,
+          overflow: 'hidden'
+        }}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        name="website_url"
+        label="Website"
+      />
 
       {success && (
         <Alert severity="success" sx={{ mb: 2 }}>

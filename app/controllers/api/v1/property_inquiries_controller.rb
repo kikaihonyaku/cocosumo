@@ -42,7 +42,7 @@ class Api::V1::PropertyInquiriesController < ApplicationController
   private
 
   def property_inquiry_params
-    params.require(:property_inquiry).permit(:name, :email, :phone, :message)
+    params.require(:property_inquiry).permit(:name, :email, :phone, :message, :source, :utm_source, :utm_medium, :utm_campaign, :referrer)
   end
 
   def send_notification_emails(property_inquiry)

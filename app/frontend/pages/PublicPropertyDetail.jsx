@@ -70,14 +70,16 @@ function PublicPropertyDetail() {
         catch_copy,
         pr_text,
         property_publication_photos,
-        public_url
+        public_url,
+        room
       } = data;
+      const building = room?.building;
 
       // Set page title
       document.title = `${title} | CoCoスモ`;
 
       // Set meta description
-      const description = catch_copy || pr_text?.substring(0, 160) || `${title}の物件情報`;
+      const description = catch_copy || pr_text?.replace(/<[^>]*>/g, '').substring(0, 160) || `${title}の物件情報`;
       let metaDescription = document.querySelector('meta[name="description"]');
       if (!metaDescription) {
         metaDescription = document.createElement('meta');
@@ -86,21 +88,37 @@ function PublicPropertyDetail() {
       }
       metaDescription.content = description;
 
+      // Get image URL
+      let imageUrl = null;
+      if (property_publication_photos && property_publication_photos.length > 0) {
+        const firstPhoto = property_publication_photos[0];
+        imageUrl = firstPhoto.room_photo?.photo_url || firstPhoto.photo_url;
+        // Ensure absolute URL
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          imageUrl = `${window.location.origin}${imageUrl}`;
+        }
+      }
+
       // Set OG tags for social sharing
       const ogTags = {
         'og:title': title,
         'og:description': description,
-        'og:url': public_url,
-        'og:type': 'website'
+        'og:url': public_url || window.location.href,
+        'og:type': 'website',
+        'og:site_name': 'CoCoスモ',
+        'og:locale': 'ja_JP'
       };
 
-      // Add first photo as og:image if available
-      if (property_publication_photos && property_publication_photos.length > 0) {
-        const firstPhoto = property_publication_photos[0];
-        ogTags['og:image'] = firstPhoto.room_photo?.photo_url || firstPhoto.photo_url;
+      // Add image with dimensions
+      if (imageUrl) {
+        ogTags['og:image'] = imageUrl;
+        ogTags['og:image:width'] = '1200';
+        ogTags['og:image:height'] = '630';
+        ogTags['og:image:alt'] = title;
       }
 
       Object.entries(ogTags).forEach(([property, content]) => {
+        if (!content) return;
         let meta = document.querySelector(`meta[property="${property}"]`);
         if (!meta) {
           meta = document.createElement('meta');
@@ -109,11 +127,113 @@ function PublicPropertyDetail() {
         }
         meta.content = content;
       });
+
+      // Set Twitter Card tags
+      const twitterTags = {
+        'twitter:card': 'summary_large_image',
+        'twitter:title': title,
+        'twitter:description': description
+      };
+
+      if (imageUrl) {
+        twitterTags['twitter:image'] = imageUrl;
+        twitterTags['twitter:image:alt'] = title;
+      }
+
+      Object.entries(twitterTags).forEach(([name, content]) => {
+        if (!content) return;
+        let meta = document.querySelector(`meta[name="${name}"]`);
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.setAttribute('name', name);
+          document.head.appendChild(meta);
+        }
+        meta.content = content;
+      });
+
+      // Set canonical URL
+      let canonicalLink = document.querySelector('link[rel="canonical"]');
+      if (!canonicalLink) {
+        canonicalLink = document.createElement('link');
+        canonicalLink.rel = 'canonical';
+        document.head.appendChild(canonicalLink);
+      }
+      canonicalLink.href = public_url || window.location.href;
+
+      // Add JSON-LD structured data for real estate
+      let jsonLdScript = document.querySelector('script[type="application/ld+json"][data-property]');
+      if (!jsonLdScript) {
+        jsonLdScript = document.createElement('script');
+        jsonLdScript.type = 'application/ld+json';
+        jsonLdScript.setAttribute('data-property', 'true');
+        document.head.appendChild(jsonLdScript);
+      }
+
+      const structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'RealEstateListing',
+        'name': title,
+        'description': description,
+        'url': public_url || window.location.href
+      };
+
+      // Add property details if available
+      if (room) {
+        if (room.rent) {
+          structuredData.offers = {
+            '@type': 'Offer',
+            'price': room.rent,
+            'priceCurrency': 'JPY',
+            'priceValidUntil': new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          };
+        }
+
+        if (room.area) {
+          structuredData.floorSize = {
+            '@type': 'QuantitativeValue',
+            'value': room.area,
+            'unitCode': 'MTK' // Square meters
+          };
+        }
+
+        if (room.room_type) {
+          structuredData.numberOfRooms = room.room_type;
+        }
+      }
+
+      // Add address if available
+      if (building?.address) {
+        structuredData.address = {
+          '@type': 'PostalAddress',
+          'addressLocality': building.address,
+          'addressCountry': 'JP'
+        };
+      }
+
+      // Add images
+      if (property_publication_photos && property_publication_photos.length > 0) {
+        structuredData.image = property_publication_photos.map(photo => {
+          const url = photo.room_photo?.photo_url || photo.photo_url;
+          return url?.startsWith('http') ? url : `${window.location.origin}${url}`;
+        }).filter(Boolean);
+      }
+
+      jsonLdScript.textContent = JSON.stringify(structuredData);
     }
 
-    // Cleanup function to reset title on unmount
+    // Cleanup function to reset title and remove meta tags on unmount
     return () => {
       document.title = 'CoCoスモ';
+      // Clean up dynamically added meta tags
+      const cleanupSelectors = [
+        'meta[property^="og:"]',
+        'meta[name^="twitter:"]',
+        'link[rel="canonical"]',
+        'script[data-property="true"]'
+      ];
+      cleanupSelectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => el.remove());
+      });
     };
   }, [data]);
 
