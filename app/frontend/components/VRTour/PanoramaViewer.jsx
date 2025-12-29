@@ -26,6 +26,8 @@ const PanoramaViewer = forwardRef(function PanoramaViewer({
   initialView = { yaw: 0, pitch: 0 },
   markers = [],
   onMarkerClick,
+  onMarkerHover,
+  onMarkerLeave,
   onViewChange,
   editable = false,
   onViewerReady,
@@ -341,6 +343,30 @@ const PanoramaViewer = forwardRef(function PanoramaViewer({
             // ドラッグ中はクリックイベントを無視
             if (isDraggingRef.current) return;
             onMarkerClick(e.marker);
+          });
+        }
+
+        // マーカーホバーイベント
+        if (onMarkerHover) {
+          markersPlugin.addEventListener('enter-marker', (e) => {
+            // マーカーの画面座標を取得
+            const markerPosition = viewer.dataHelper.sphericalCoordsToViewerCoords({
+              yaw: e.marker.config.position.yaw,
+              pitch: e.marker.config.position.pitch
+            });
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (rect && markerPosition) {
+              onMarkerHover(e.marker, {
+                x: rect.left + markerPosition.x,
+                y: rect.top + markerPosition.y
+              });
+            }
+          });
+        }
+
+        if (onMarkerLeave) {
+          markersPlugin.addEventListener('leave-marker', (e) => {
+            onMarkerLeave(e.marker);
           });
         }
 

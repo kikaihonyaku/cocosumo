@@ -23,7 +23,8 @@ import {
   DialogActions,
   Chip,
   ThemeProvider,
-  useMediaQuery
+  useMediaQuery,
+  Divider
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -39,6 +40,7 @@ import ComparisonPanoramaViewer from "../components/VRTour/ComparisonPanoramaVie
 import HotspotEditor from "../components/VRTour/HotspotEditor";
 import VrTourPreview from "../components/VRTour/VrTourPreview";
 import MinimapEditor from "../components/VRTour/MinimapEditor";
+import InitialViewSelector from "../components/VRTour/InitialViewSelector";
 import muiTheme from '../theme/muiTheme';
 
 export default function VrTourEditor() {
@@ -74,6 +76,7 @@ export default function VrTourEditor() {
   const [currentTab, setCurrentTab] = useState(1);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [currentView, setCurrentView] = useState({ yaw: 0, pitch: 0 });
 
   // ペイン幅の管理
   const [leftPaneWidth, setLeftPaneWidth] = useState(280);
@@ -397,6 +400,39 @@ export default function VrTourEditor() {
       }
     } catch (err) {
       console.error('シーン更新エラー:', err);
+    }
+  };
+
+  // 初期視点の変更ハンドラー
+  const handleInitialViewChange = async (newInitialView) => {
+    if (!selectedScene) return;
+
+    try {
+      const response = await fetch(`/api/v1/vr_tours/${id}/vr_scenes/${selectedScene.id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          vr_scene: {
+            initial_view: newInitialView
+          }
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedScene(data);
+        // シーンリストも更新
+        setScenes(scenes.map(s => s.id === data.id ? data : s));
+        setSnackbarMessage('初期視点を更新しました');
+        setSnackbarOpen(true);
+      } else {
+        console.error('初期視点の保存に失敗しました');
+      }
+    } catch (err) {
+      console.error('初期視点保存エラー:', err);
     }
   };
 
@@ -861,7 +897,7 @@ export default function VrTourEditor() {
                           }}
                           onMarkerDragEnd={handleMarkerDragEnd}
                           onViewChange={(view) => {
-                            // View change tracking if needed
+                            setCurrentView(view);
                           }}
                         />
                       </>
@@ -908,7 +944,7 @@ export default function VrTourEditor() {
                   />
                 )}
 
-            {/* 右：ホットスポットエディタ */}
+            {/* 右：設定パネル */}
             <Paper sx={{
               width: { xs: '100%', md: rightPaneWidth },
               height: { xs: '300px', md: 'auto' },
@@ -916,18 +952,28 @@ export default function VrTourEditor() {
               overflow: 'auto'
             }}>
               {selectedScene ? (
-                <HotspotEditor
-                  hotspots={selectedScene.hotspots || []}
-                  scenes={scenes}
-                  currentSceneId={selectedScene.id}
-                  onHotspotsChange={handleHotspotsChange}
-                  onAddHotspotRequest={() => {
-                    setAddingHotspot(true);
-                    setPendingPosition(null);
-                  }}
-                  pendingPosition={pendingPosition}
-                  onHotspotEdit={(callback) => setEditHotspotCallback(() => callback)}
-                />
+                <>
+                  {/* 初期視点設定 */}
+                  <InitialViewSelector
+                    currentView={currentView}
+                    initialView={selectedScene.initial_view || { yaw: 0, pitch: 0 }}
+                    onInitialViewChange={handleInitialViewChange}
+                  />
+                  <Divider />
+                  {/* ホットスポットエディタ */}
+                  <HotspotEditor
+                    hotspots={selectedScene.hotspots || []}
+                    scenes={scenes}
+                    currentSceneId={selectedScene.id}
+                    onHotspotsChange={handleHotspotsChange}
+                    onAddHotspotRequest={() => {
+                      setAddingHotspot(true);
+                      setPendingPosition(null);
+                    }}
+                    pendingPosition={pendingPosition}
+                    onHotspotEdit={(callback) => setEditHotspotCallback(() => callback)}
+                  />
+                </>
               ) : (
                 <Box sx={{ p: 3, textAlign: 'center' }}>
                   <Typography variant="body2" color="text.secondary">

@@ -32,6 +32,7 @@ import SharePanel from "../VirtualStaging/SharePanel";
 import InfoHotspotPanel from "./InfoHotspotPanel";
 import GyroscopeButton from "./GyroscopeButton";
 import SceneTransition from "./SceneTransition";
+import HotspotPreview from "./HotspotPreview";
 
 export default function VrTourViewerContent({
   vrTour,
@@ -57,6 +58,11 @@ export default function VrTourViewerContent({
   // シーントランジション関連state
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [nextSceneName, setNextSceneName] = useState('');
+
+  // ホットスポットプレビュー関連state
+  const [hoveredMarker, setHoveredMarker] = useState(null);
+  const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 });
+  const [showPreview, setShowPreview] = useState(false);
 
   // オートプレイ関連state
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
@@ -322,8 +328,34 @@ export default function VrTourViewerContent({
     }
   }, [isAutoPlaying]);
 
+  // ホットスポットホバーハンドラー
+  const handleMarkerHover = useCallback((marker, position) => {
+    setHoveredMarker(marker);
+    setPreviewPosition(position);
+    setShowPreview(true);
+  }, []);
+
+  // ホットスポットリーブハンドラー
+  const handleMarkerLeave = useCallback(() => {
+    setShowPreview(false);
+    // 少し遅延してからマーカー情報をクリア（フェードアウトのため）
+    setTimeout(() => {
+      setHoveredMarker(null);
+    }, 200);
+  }, []);
+
+  // ターゲットシーンを取得
+  const getTargetScene = useCallback((marker) => {
+    if (marker?.data?.type === 'scene_link' && marker?.data?.target_scene_id) {
+      return scenes.find(s => s.id === parseInt(marker.data.target_scene_id));
+    }
+    return null;
+  }, [scenes]);
+
   const handleMarkerClick = (marker) => {
     console.log('Marker clicked:', marker);
+    // クリック時はプレビューを非表示
+    setShowPreview(false);
 
     // 情報ホットスポットの場合、情報パネルを表示
     if (marker.data?.type === 'info') {
@@ -471,6 +503,8 @@ export default function VrTourViewerContent({
                   markers={currentScene.hotspots || []}
                   editable={false}
                   onMarkerClick={handleMarkerClick}
+                  onMarkerHover={handleMarkerHover}
+                  onMarkerLeave={handleMarkerLeave}
                   onViewChange={handleViewChange}
                   fullscreenContainerId={containerId}
                   autoRotateSpeed={rotateSpeed}
@@ -738,6 +772,14 @@ export default function VrTourViewerContent({
         show={isTransitioning}
         sceneName={nextSceneName}
         transitionType="fade"
+      />
+
+      {/* ホットスポットプレビュー */}
+      <HotspotPreview
+        show={showPreview}
+        marker={hoveredMarker}
+        targetScene={getTargetScene(hoveredMarker)}
+        position={previewPosition}
       />
     </>
   );

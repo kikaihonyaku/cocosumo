@@ -12,10 +12,10 @@
 | 4 | ジャイロスコープ対応 | ✅ 完了 | 2025-12-29 |
 | 5 | 埋め込みコード生成 | ✅ 完了 | 2025-12-29 |
 | 6 | シーン切り替えトランジション | ✅ 完了 | 2025-12-29 |
-| 7 | 音声ガイド / BGM | ⏳ 未着手 | - |
+| 7 | 音声ガイド / BGM | ⏸️ 保留 | - |
 | 8 | キーボード操作対応 | ✅ 完了 | 2025-12-29 |
-| 9 | ホットスポットプレビュー | ⏳ 未着手 | - |
-| 10 | 初期視点プリセット | ⏳ 未着手 | - |
+| 9 | ホットスポットプレビュー | ✅ 完了 | 2025-12-29 |
+| 10 | 初期視点プリセット | ✅ 完了 | 2025-12-29 |
 
 ---
 
@@ -225,37 +225,48 @@
 
 ---
 
-## 9. ホットスポットプレビュー
+## 9. ホットスポットプレビュー ✅ 完了
 
 ### 目的
 移動先の確認で迷子を防止
 
-### 実装予定
-- [ ] ホットスポットホバーで移動先シーンのサムネイル表示
-- [ ] シーン名と簡単な説明
-- [ ] Tooltip/Popover形式で表示
-- [ ] タッチデバイスではロングプレスで表示
+### 実装内容
+- [x] ホットスポットホバーで移動先シーンのサムネイル表示
+- [x] シーン名と簡単な説明
+- [x] Fade/Paper形式で表示
+- [x] シーンリンク・インフォスポット両方に対応
+
+### 技術メモ
+- MarkersPluginの`enter-marker`/`leave-marker`イベントを活用
+- マーカーの画面座標を計算してプレビューを表示
 
 ### 関連ファイル
-- `app/frontend/components/VRTour/PanoramaViewer.jsx`
-- `app/frontend/components/VRTour/HotspotPreview.jsx`（新規）
+- `app/frontend/components/VRTour/PanoramaViewer.jsx` - ホバーイベント追加
+- `app/frontend/components/VRTour/HotspotPreview.jsx` - 新規作成
+- `app/frontend/components/VRTour/VrTourViewerContent.jsx` - プレビュー統合
 
 ---
 
-## 10. 初期視点プリセット
+## 10. 初期視点プリセット ✅ 完了
 
 ### 目的
 初期視点設定の簡易化
 
-### 実装予定
-- [ ] 「現在の視点を初期視点に設定」ボタン
-- [ ] プリセットボタン（正面、左90°、右90°、後ろ）
-- [ ] 視覚的なコンパス/方位表示
-- [ ] yaw/pitch数値入力も可能
+### 実装内容
+- [x] 「現在の視点を初期視点に設定」ボタン
+- [x] プリセットボタン（正面、左90°、右90°、後ろ）
+- [x] 視覚的なコンパス/方位表示（方向指示器付き）
+- [x] yaw/pitch数値入力も可能
+- [x] 保存時に自動でシーンに反映
+
+### 技術メモ
+- VrTourEditorの右ペインに配置
+- onViewChangeイベントで現在の視点を追跡
+- API経由でシーンのinitial_viewを更新
 
 ### 関連ファイル
-- `app/frontend/components/VRTour/HotspotEditor.jsx`
-- `app/frontend/components/VRTour/InitialViewSelector.jsx`（新規）
+- `app/frontend/components/VRTour/InitialViewSelector.jsx` - 新規作成
+- `app/frontend/pages/VrTourEditor.jsx` - InitialViewSelector統合
 
 ---
 
