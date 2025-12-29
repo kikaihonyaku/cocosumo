@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    }
+    .content {
+      background: #f8f9fa;
+      padding: 20px;
+      border: 1px solid #e9ecef;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+    }
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+    }
+    .info-table th {
+      text-align: left;
+      padding: 10px;
+      background: #e9ecef;
+      border: 1px solid #dee2e6;
+      width: 120px;
+    }
+    .info-table td {
+      padding: 10px;
+      background: white;
+      border: 1px solid #dee2e6;
+    }
+    .message-box {
+      background: white;
+      border: 1px solid #dee2e6;
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      margin: 15px 0;
+    }
+    .btn {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 15px;
+    }
+    .footer {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e9ecef;
+      font-size: 12px;
+      color: #6c757d;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>物件へのお問い合わせ</h1>
+  </div>
+
+  <div class="content">
+    <p>以下の物件に新しいお問い合わせがありました。</p>
+
+    <h3>物件情報</h3>
+    <table class="info-table">
+      <tr>
+        <th>物件名</th>
+        <td><%= @building.name %></td>
+      </tr>
+      <tr>
+        <th>部屋番号</th>
+        <td><%= @room.room_number %>号室</td>
+      </tr>
+      <tr>
+        <th>公開ページ</th>
+        <td><%= @publication.title %></td>
+      </tr>
+    </table>
+
+    <h3>お問い合わせ者情報</h3>
+    <table class="info-table">
+      <tr>
+        <th>お名前</th>
+        <td><%= @inquiry.name %></td>
+      </tr>
+      <tr>
+        <th>メールアドレス</th>
+        <td><a href="mailto:<%= @inquiry.email %>"><%= @inquiry.email %></a></td>
+      </tr>
+      <% if @inquiry.phone.present? %>
+      <tr>
+        <th>電話番号</th>
+        <td><a href="tel:<%= @inquiry.phone %>"><%= @inquiry.phone %></a></td>
+      </tr>
+      <% end %>
+      <tr>
+        <th>お問い合わせ日時</th>
+        <td><%= @inquiry.created_at.strftime('%Y年%m月%d日 %H:%M') %></td>
+      </tr>
+    </table>
+
+    <h3>お問い合わせ内容</h3>
+    <div class="message-box">
+      <%= simple_format(@inquiry.message) %>
+    </div>
+
+    <p>
+      <a href="<%= @property_url %>" class="btn">物件公開ページを確認する</a>
+    </p>
+
+    <p style="margin-top: 20px; color: #6c757d; font-size: 14px;">
+      ※ このメールは自動送信されています。お問い合わせ者への返信は、上記メールアドレスに直接ご連絡ください。
+    </p>
+  </div>
+
+  <div class="footer">
+    <p>CoCoスモ - 不動産物件管理システム</p>
+  </div>
+</body>
+</html>

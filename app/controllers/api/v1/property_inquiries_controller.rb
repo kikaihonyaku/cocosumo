@@ -13,7 +13,9 @@ class Api::V1::PropertyInquiriesController < ApplicationController
     @property_inquiry = @property_publication.property_inquiries.build(property_inquiry_params)
 
     if @property_inquiry.save
-      # TODO: メール通知などの処理を追加
+      # メール通知を非同期で送信
+      send_notification_emails(@property_inquiry)
+
       render json: {
         success: true,
         message: 'お問い合わせを受け付けました。担当者より折り返しご連絡いたします。'
@@ -41,5 +43,16 @@ class Api::V1::PropertyInquiriesController < ApplicationController
 
   def property_inquiry_params
     params.require(:property_inquiry).permit(:name, :email, :phone, :message)
+  end
+
+  def send_notification_emails(property_inquiry)
+    # 管理者への通知メール
+    PropertyInquiryMailer.notify_admin(property_inquiry).deliver_later
+
+    # 顧客への自動返信メール
+    PropertyInquiryMailer.confirm_to_customer(property_inquiry).deliver_later
+  rescue => e
+    # メール送信エラーはログに記録するが、レスポンスには影響させない
+    Rails.logger.error "Failed to send inquiry notification emails: #{e.message}"
   end
 end
