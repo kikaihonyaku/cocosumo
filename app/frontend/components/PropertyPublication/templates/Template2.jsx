@@ -360,8 +360,46 @@ function Template2({ data, publicationId }) {
           font-size: 14px;
           line-height: 1.8;
           color: #333;
-          white-space: pre-line;
           margin-bottom: 24px;
+        }
+
+        .template2-roomspot .pr-text p {
+          margin: 0 0 0.5em 0;
+        }
+
+        .template2-roomspot .pr-text h2 {
+          font-size: 1.25rem;
+          font-weight: 600;
+          margin: 1em 0 0.5em 0;
+        }
+
+        .template2-roomspot .pr-text h3 {
+          font-size: 1.1rem;
+          font-weight: 600;
+          margin: 1em 0 0.5em 0;
+        }
+
+        .template2-roomspot .pr-text ul,
+        .template2-roomspot .pr-text ol {
+          padding-left: 1.5em;
+          margin: 0.5em 0;
+        }
+
+        .template2-roomspot .pr-text li {
+          margin: 0.25em 0;
+        }
+
+        .template2-roomspot .pr-text blockquote {
+          border-left: 3px solid #9acd32;
+          padding-left: 1em;
+          margin: 0.5em 0;
+          color: #666;
+          font-style: italic;
+        }
+
+        .template2-roomspot .pr-text a {
+          color: #ff1493;
+          text-decoration: underline;
         }
 
         /* VR Section */
@@ -570,7 +608,13 @@ function Template2({ data, publicationId }) {
         {pr_text && (
           <div>
             <h2 className="section-title">物件の特徴</h2>
-            <div className="pr-text">{pr_text}</div>
+            <div
+              className="pr-text"
+              style={{
+                whiteSpace: 'normal',
+              }}
+              dangerouslySetInnerHTML={{ __html: pr_text }}
+            />
           </div>
         )}
 

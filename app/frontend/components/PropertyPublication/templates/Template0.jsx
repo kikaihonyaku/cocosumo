@@ -162,9 +162,25 @@ function Template0({ data, publicationId }) {
                 <Typography variant="h6" gutterBottom sx={{ color: '#0068b7', fontWeight: 'bold', borderBottom: '3px solid #0068b7', pb: 1, mb: 2 }}>
                   物件の特徴
                 </Typography>
-                <Typography variant="body1" sx={{ lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-                  {pr_text}
-                </Typography>
+                <Box
+                  sx={{
+                    lineHeight: 1.8,
+                    '& p': { margin: '0 0 0.5em 0' },
+                    '& h2': { fontSize: '1.25rem', fontWeight: 600, margin: '1em 0 0.5em 0' },
+                    '& h3': { fontSize: '1.1rem', fontWeight: 600, margin: '1em 0 0.5em 0' },
+                    '& ul, & ol': { paddingLeft: '1.5em', margin: '0.5em 0' },
+                    '& li': { margin: '0.25em 0' },
+                    '& blockquote': {
+                      borderLeft: '3px solid #e0e0e0',
+                      paddingLeft: '1em',
+                      margin: '0.5em 0',
+                      color: 'text.secondary',
+                      fontStyle: 'italic',
+                    },
+                    '& a': { color: '#0068b7', textDecoration: 'underline' },
+                  }}
+                  dangerouslySetInnerHTML={{ __html: pr_text }}
+                />
               </Paper>
             )}
 

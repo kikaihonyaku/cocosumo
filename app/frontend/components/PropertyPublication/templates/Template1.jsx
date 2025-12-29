@@ -362,9 +362,27 @@ function Template1({ data, publicationId }) {
               <Box className="suumo-section">
                 <div className="suumo-section-header">物件の特徴・おすすめポイント</div>
                 <Box className="suumo-section-body">
-                  <Typography sx={{ lineHeight: 1.8, whiteSpace: 'pre-line', color: '#333', fontSize: '14px' }}>
-                    {pr_text}
-                  </Typography>
+                  <Box
+                    sx={{
+                      lineHeight: 1.8,
+                      color: '#333',
+                      fontSize: '14px',
+                      '& p': { margin: '0 0 0.5em 0' },
+                      '& h2': { fontSize: '1.25rem', fontWeight: 600, margin: '1em 0 0.5em 0' },
+                      '& h3': { fontSize: '1.1rem', fontWeight: 600, margin: '1em 0 0.5em 0' },
+                      '& ul, & ol': { paddingLeft: '1.5em', margin: '0.5em 0' },
+                      '& li': { margin: '0.25em 0' },
+                      '& blockquote': {
+                        borderLeft: '3px solid #e0e0e0',
+                        paddingLeft: '1em',
+                        margin: '0.5em 0',
+                        color: '#666',
+                        fontStyle: 'italic',
+                      },
+                      '& a': { color: '#00b900', textDecoration: 'underline' },
+                    }}
+                    dangerouslySetInnerHTML={{ __html: pr_text }}
+                  />
                 </Box>
               </Box>
             )}

@@ -49,6 +49,7 @@ import PhotoSelector from '../components/PropertyPublication/PhotoSelector';
 import ContentSelector from '../components/PropertyPublication/ContentSelector';
 import VisibleFieldsSelector from '../components/PropertyPublication/VisibleFieldsSelector';
 import PhotoGallery from '../components/PropertyPublication/PhotoGallery';
+import RichTextEditor from '../components/shared/RichTextEditor';
 
 function PropertyPublicationEditor() {
   const { roomId, id } = useParams();
@@ -443,16 +444,15 @@ function PropertyPublicationEditor() {
                 placeholder="物件の魅力を一言で表現してください"
               />
 
-              <TextField
-                fullWidth
-                label="PR文"
-                value={propertyPublication.pr_text}
-                onChange={(e) => setPropertyPublication({ ...propertyPublication, pr_text: e.target.value })}
-                margin="normal"
-                multiline
-                rows={4}
-                placeholder="物件の詳細な説明や特徴を記載してください"
-              />
+              <Box sx={{ mt: 2 }}>
+                <RichTextEditor
+                  label="PR文"
+                  value={propertyPublication.pr_text}
+                  onChange={(html) => setPropertyPublication({ ...propertyPublication, pr_text: html })}
+                  placeholder="物件の詳細な説明や特徴を記載してください"
+                  minHeight={150}
+                />
+              </Box>
             </Paper>
 
             {/* テンプレート選択カード */}
@@ -705,9 +705,25 @@ function PropertyPublicationEditor() {
 
                     {propertyPublication.pr_text && (
                       <>
-                        <Typography variant="body1" paragraph>
-                          {propertyPublication.pr_text}
-                        </Typography>
+                        <Box
+                          sx={{
+                            '& p': { margin: '0 0 0.5em 0' },
+                            '& h2': { fontSize: '1.25rem', fontWeight: 600, margin: '1em 0 0.5em 0' },
+                            '& h3': { fontSize: '1.1rem', fontWeight: 600, margin: '1em 0 0.5em 0' },
+                            '& ul, & ol': { paddingLeft: '1.5em', margin: '0.5em 0' },
+                            '& li': { margin: '0.25em 0' },
+                            '& blockquote': {
+                              borderLeft: '3px solid',
+                              borderColor: 'grey.300',
+                              paddingLeft: '1em',
+                              margin: '0.5em 0',
+                              color: 'text.secondary',
+                              fontStyle: 'italic',
+                            },
+                            '& a': { color: 'primary.main', textDecoration: 'underline' },
+                          }}
+                          dangerouslySetInnerHTML={{ __html: propertyPublication.pr_text }}
+                        />
                         <Divider sx={{ my: 2 }} />
                       </>
                     )}

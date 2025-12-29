@@ -212,9 +212,26 @@ function Template3({ data, publicationId }) {
                       <Typography variant="h6" gutterBottom sx={{ color: '#2e7d32', fontWeight: 'bold', borderBottom: '2px solid #4caf50', pb: 1 }}>
                         物件のポイント
                       </Typography>
-                      <Typography variant="body1" sx={{ lineHeight: 1.9, mt: 2, whiteSpace: 'pre-line' }}>
-                        {pr_text}
-                      </Typography>
+                      <Box
+                        sx={{
+                          lineHeight: 1.9,
+                          mt: 2,
+                          '& p': { margin: '0 0 0.5em 0' },
+                          '& h2': { fontSize: '1.25rem', fontWeight: 600, margin: '1em 0 0.5em 0' },
+                          '& h3': { fontSize: '1.1rem', fontWeight: 600, margin: '1em 0 0.5em 0' },
+                          '& ul, & ol': { paddingLeft: '1.5em', margin: '0.5em 0' },
+                          '& li': { margin: '0.25em 0' },
+                          '& blockquote': {
+                            borderLeft: '3px solid #4caf50',
+                            paddingLeft: '1em',
+                            margin: '0.5em 0',
+                            color: 'text.secondary',
+                            fontStyle: 'italic',
+                          },
+                          '& a': { color: '#2e7d32', textDecoration: 'underline' },
+                        }}
+                        dangerouslySetInnerHTML={{ __html: pr_text }}
+                      />
                     </Paper>
                   )}
 
