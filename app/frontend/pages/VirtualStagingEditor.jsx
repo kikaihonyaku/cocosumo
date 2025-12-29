@@ -30,9 +30,11 @@ import {
   ContentCopy as ContentCopyIcon,
   VisibilityOff as UnpublishIcon,
   Edit as EditIcon,
+  AutoAwesome as AiIcon,
 } from '@mui/icons-material';
 import BeforeAfterSlider from '../components/VirtualStaging/BeforeAfterSlider';
 import PhotoSelector from '../components/VirtualStaging/PhotoSelector';
+import AiStagingDialog from '../components/VirtualStaging/AiStagingDialog';
 import muiTheme from '../theme/muiTheme';
 
 const VirtualStagingEditor = () => {
@@ -45,6 +47,7 @@ const VirtualStagingEditor = () => {
   const [publishDialog, setPublishDialog] = useState(false);
   const [beforePhotoDialog, setBeforePhotoDialog] = useState(false);
   const [afterPhotoDialog, setAfterPhotoDialog] = useState(false);
+  const [aiStagingDialog, setAiStagingDialog] = useState(false);
   const [virtualStaging, setVirtualStaging] = useState({
     title: '',
     description: '',
@@ -424,12 +427,33 @@ const VirtualStagingEditor = () => {
                 <Button
                   variant="outlined"
                   onClick={() => setAfterPhotoDialog(true)}
-                  fullWidth
+                  sx={{ flex: 1 }}
                 >
                   {virtualStaging.after_photo_id
                     ? roomPhotos.find((p) => p.id === virtualStaging.after_photo_id)?.caption || `画像 ${virtualStaging.after_photo_id}`
-                    : '画像を選択してください'}
+                    : '画像を選択'}
                 </Button>
+                <Tooltip title="AIでAfter画像を自動生成">
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => setAiStagingDialog(true)}
+                    disabled={!virtualStaging.before_photo_id}
+                    sx={{
+                      minWidth: 'auto',
+                      px: 2,
+                      background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
+                      '&:hover': {
+                        background: 'linear-gradient(45deg, #5a6fd6 30%, #6a4292 90%)',
+                      },
+                    }}
+                  >
+                    <AiIcon sx={{ mr: { xs: 0, sm: 0.5 } }} />
+                    <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                      AI生成
+                    </Box>
+                  </Button>
+                </Tooltip>
                 {virtualStaging.after_photo_id && (
                   <Tooltip title="画像を編集">
                     <IconButton
@@ -546,6 +570,24 @@ const VirtualStagingEditor = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* AI生成ダイアログ */}
+      <AiStagingDialog
+        open={aiStagingDialog}
+        onClose={() => setAiStagingDialog(false)}
+        beforePhoto={roomPhotos.find((p) => p.id === virtualStaging.before_photo_id)}
+        roomId={roomId}
+        onGenerated={(savedPhoto) => {
+          // 新しく生成した写真を写真リストに追加
+          setRoomPhotos((prev) => [...prev, savedPhoto]);
+          // After画像として設定
+          setVirtualStaging((prev) => ({
+            ...prev,
+            after_photo_id: savedPhoto.id,
+          }));
+          showSnackbar('AI生成画像をAfterに設定しました', 'success');
+        }}
+      />
 
       {/* スナックバー */}
       <Snackbar
