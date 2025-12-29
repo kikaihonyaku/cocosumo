@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Fade } from '@mui/material';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Box, Typography, Fade, IconButton, Tooltip } from '@mui/material';
 import {
   ReactCompareSlider,
   ReactCompareSliderImage,
@@ -7,6 +7,8 @@ import {
 import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
+  Fullscreen as FullscreenIcon,
+  FullscreenExit as FullscreenExitIcon,
 } from '@mui/icons-material';
 
 /**
@@ -77,10 +79,13 @@ const BeforeAfterSlider = ({
   height = '600px',
   showLabels = true,
   showGuide = true,
+  showFullscreenButton = true,
 }) => {
   const [position, setPosition] = useState(50);
   const [showHint, setShowHint] = useState(showGuide);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef(null);
 
   // 初回操作でヒントを非表示
   const handlePositionChange = useCallback((newPosition) => {
@@ -114,19 +119,65 @@ const BeforeAfterSlider = ({
       setPosition((prev) => Math.min(100, prev + step));
       setHasInteracted(true);
       setShowHint(false);
+    } else if (e.key === 'Escape' && isFullscreen) {
+      handleExitFullscreen();
     }
+  }, [isFullscreen]);
+
+  // フルスクリーン切り替え
+  const handleToggleFullscreen = useCallback(async () => {
+    if (!containerRef.current) return;
+
+    try {
+      if (!isFullscreen) {
+        if (containerRef.current.requestFullscreen) {
+          await containerRef.current.requestFullscreen();
+        } else if (containerRef.current.webkitRequestFullscreen) {
+          await containerRef.current.webkitRequestFullscreen();
+        }
+      } else {
+        handleExitFullscreen();
+      }
+    } catch (err) {
+      console.error('Fullscreen error:', err);
+    }
+  }, [isFullscreen]);
+
+  const handleExitFullscreen = useCallback(() => {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+  }, []);
+
+  // フルスクリーン状態の変更を監視
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
   }, []);
 
   return (
     <Box
+      ref={containerRef}
       sx={{
         position: 'relative',
         width: '100%',
-        height: height,
+        height: isFullscreen ? '100vh' : height,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         outline: 'none',
+        bgcolor: isFullscreen ? '#1a1a2e' : 'transparent',
         '&:focus': {
           outline: '2px solid #667eea',
           outlineOffset: '2px',
@@ -219,6 +270,29 @@ const BeforeAfterSlider = ({
             </Typography>
           </Box>
         </>
+      )}
+
+      {/* フルスクリーンボタン */}
+      {showFullscreenButton && (
+        <Tooltip title={isFullscreen ? 'フルスクリーン終了 (ESC)' : 'フルスクリーン表示'}>
+          <IconButton
+            onClick={handleToggleFullscreen}
+            sx={{
+              position: 'absolute',
+              bottom: 16,
+              right: 16,
+              bgcolor: 'rgba(0, 0, 0, 0.6)',
+              color: 'white',
+              zIndex: 15,
+              backdropFilter: 'blur(4px)',
+              '&:hover': {
+                bgcolor: 'rgba(0, 0, 0, 0.8)',
+              },
+            }}
+          >
+            {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
+          </IconButton>
+        </Tooltip>
       )}
 
       {/* 操作ガイド（初回表示） */}
