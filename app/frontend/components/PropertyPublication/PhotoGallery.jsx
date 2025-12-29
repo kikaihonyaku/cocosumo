@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   IconButton,
@@ -6,7 +6,8 @@ import {
   ImageListItem,
   Typography,
   Modal,
-  Backdrop
+  Backdrop,
+  Skeleton
 } from '@mui/material';
 import {
   ChevronLeft as ChevronLeftIcon,
@@ -15,9 +16,106 @@ import {
   Fullscreen as FullscreenIcon
 } from '@mui/icons-material';
 
-export default function PhotoGallery({ photos = [] }) {
+// Progressive image component with blur-up loading
+function ProgressiveImage({ src, alt, style, sx, onClick, onLoad: externalOnLoad }) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  const handleLoad = () => {
+    setLoaded(true);
+    externalOnLoad?.();
+  };
+
+  const handleError = () => {
+    setError(true);
+  };
+
+  if (error) {
+    return (
+      <Box
+        sx={{
+          ...sx,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'grey.200',
+          color: 'grey.500'
+        }}
+      >
+        画像を読み込めませんでした
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ position: 'relative', ...sx }} onClick={onClick}>
+      {!loaded && (
+        <Skeleton
+          variant="rectangular"
+          animation="wave"
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            bgcolor: 'grey.300'
+          }}
+        />
+      )}
+      <Box
+        component="img"
+        src={src}
+        alt={alt}
+        loading="lazy"
+        onLoad={handleLoad}
+        onError={handleError}
+        sx={{
+          ...sx,
+          opacity: loaded ? 1 : 0,
+          transition: 'opacity 0.3s ease-in-out'
+        }}
+        style={style}
+      />
+    </Box>
+  );
+}
+
+export default function PhotoGallery({ photos = [], publicationId, onPhotoView }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  // Touch swipe handling
+  const touchStartRef = useRef(null);
+  const touchEndRef = useRef(null);
+  const minSwipeDistance = 50;
+
+  // Touch swipe handlers
+  const handleTouchStart = useCallback((e) => {
+    touchEndRef.current = null;
+    touchStartRef.current = e.targetTouches[0].clientX;
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    touchEndRef.current = e.targetTouches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!touchStartRef.current || !touchEndRef.current) return;
+
+    const distance = touchStartRef.current - touchEndRef.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      setCurrentIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
+    } else if (isRightSwipe) {
+      setCurrentIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
+    }
+
+    touchStartRef.current = null;
+    touchEndRef.current = null;
+  }, [photos.length]);
 
   // Keyboard navigation
   const handleKeyDown = useCallback((event) => {
@@ -99,7 +197,7 @@ export default function PhotoGallery({ photos = [] }) {
   const imageAlt = currentPhoto.room_photo?.caption || `写真 ${currentIndex + 1}`;
 
   return (
-    <Box>
+    <Box role="region" aria-label="物件写真ギャラリー">
       {/* Main Image Display */}
       <Box
         sx={{
@@ -107,15 +205,26 @@ export default function PhotoGallery({ photos = [] }) {
           bgcolor: '#000',
           borderRadius: 1,
           overflow: 'hidden',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          touchAction: 'pan-y pinch-zoom'
         }}
         onClick={handleOpenLightbox}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        role="button"
+        tabIndex={0}
+        aria-label={`${imageAlt}を拡大表示。${currentIndex + 1}枚目/${photos.length}枚`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleOpenLightbox();
+          }
+        }}
       >
-        <Box
-          component="img"
+        <ProgressiveImage
           src={imageUrl}
           alt={imageAlt}
-          loading="lazy"
           sx={{
             width: '100%',
             height: { xs: 250, sm: 350, md: 400 },
@@ -147,7 +256,7 @@ export default function PhotoGallery({ photos = [] }) {
           <Typography variant="caption">拡大表示</Typography>
         </Box>
 
-        {/* Navigation Buttons */}
+        {/* Navigation Buttons - 44px minimum for touch targets */}
         {photos.length > 1 && (
           <>
             <IconButton
@@ -155,18 +264,26 @@ export default function PhotoGallery({ photos = [] }) {
                 e.stopPropagation();
                 handlePrevious();
               }}
+              aria-label="前の写真を表示"
               sx={{
                 position: 'absolute',
                 left: 8,
                 top: '50%',
                 transform: 'translateY(-50%)',
                 bgcolor: 'rgba(255, 255, 255, 0.7)',
+                width: { xs: 44, md: 48 },
+                height: { xs: 44, md: 48 },
                 '&:hover': {
                   bgcolor: 'rgba(255, 255, 255, 0.9)',
+                },
+                '&:focus-visible': {
+                  outline: '2px solid',
+                  outlineColor: 'primary.main',
+                  outlineOffset: 2
                 }
               }}
             >
-              <ChevronLeftIcon />
+              <ChevronLeftIcon sx={{ fontSize: { xs: 28, md: 32 } }} />
             </IconButton>
 
             <IconButton
@@ -174,18 +291,26 @@ export default function PhotoGallery({ photos = [] }) {
                 e.stopPropagation();
                 handleNext();
               }}
+              aria-label="次の写真を表示"
               sx={{
                 position: 'absolute',
                 right: 8,
                 top: '50%',
                 transform: 'translateY(-50%)',
                 bgcolor: 'rgba(255, 255, 255, 0.7)',
+                width: { xs: 44, md: 48 },
+                height: { xs: 44, md: 48 },
                 '&:hover': {
                   bgcolor: 'rgba(255, 255, 255, 0.9)',
+                },
+                '&:focus-visible': {
+                  outline: '2px solid',
+                  outlineColor: 'primary.main',
+                  outlineOffset: 2
                 }
               }}
             >
-              <ChevronRightIcon />
+              <ChevronRightIcon sx={{ fontSize: { xs: 28, md: 32 } }} />
             </IconButton>
 
             {/* Image Counter */}
@@ -296,6 +421,8 @@ export default function PhotoGallery({ photos = [] }) {
             sx: { bgcolor: 'rgba(0, 0, 0, 0.95)' }
           }
         }}
+        aria-labelledby="lightbox-title"
+        aria-describedby="lightbox-description"
       >
         <Box
           sx={{
@@ -308,24 +435,42 @@ export default function PhotoGallery({ photos = [] }) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            outline: 'none'
+            outline: 'none',
+            touchAction: 'pan-y pinch-zoom'
           }}
           onClick={handleCloseLightbox}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          role="dialog"
+          aria-modal="true"
         >
-          {/* Close button */}
+          {/* Screen reader only title */}
+          <Typography id="lightbox-title" sx={{ position: 'absolute', left: -9999 }}>
+            写真拡大表示: {currentIndex + 1}枚目/{photos.length}枚
+          </Typography>
+
+          {/* Close button - 44px minimum */}
           <IconButton
             onClick={handleCloseLightbox}
+            aria-label="拡大表示を閉じる"
             sx={{
               position: 'absolute',
               top: 16,
               right: 16,
               color: 'white',
               bgcolor: 'rgba(255, 255, 255, 0.1)',
+              width: { xs: 44, md: 48 },
+              height: { xs: 44, md: 48 },
               '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' },
+              '&:focus-visible': {
+                outline: '2px solid white',
+                outlineOffset: 2
+              },
               zIndex: 10
             }}
           >
-            <CloseIcon />
+            <CloseIcon sx={{ fontSize: { xs: 24, md: 28 } }} />
           </IconButton>
 
           {/* Image counter */}
@@ -361,11 +506,12 @@ export default function PhotoGallery({ photos = [] }) {
             onClick={(e) => e.stopPropagation()}
           />
 
-          {/* Navigation buttons */}
+          {/* Navigation buttons - 44px minimum for touch targets */}
           {photos.length > 1 && (
             <>
               <IconButton
                 onClick={handlePrevious}
+                aria-label="前の写真を表示"
                 sx={{
                   position: 'absolute',
                   left: { xs: 8, md: 24 },
@@ -374,15 +520,20 @@ export default function PhotoGallery({ photos = [] }) {
                   color: 'white',
                   bgcolor: 'rgba(255, 255, 255, 0.1)',
                   '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' },
-                  width: { xs: 40, md: 56 },
-                  height: { xs: 40, md: 56 }
+                  '&:focus-visible': {
+                    outline: '2px solid white',
+                    outlineOffset: 2
+                  },
+                  width: { xs: 48, md: 56 },
+                  height: { xs: 48, md: 56 }
                 }}
               >
-                <ChevronLeftIcon sx={{ fontSize: { xs: 24, md: 32 } }} />
+                <ChevronLeftIcon sx={{ fontSize: { xs: 28, md: 36 } }} />
               </IconButton>
 
               <IconButton
                 onClick={handleNext}
+                aria-label="次の写真を表示"
                 sx={{
                   position: 'absolute',
                   right: { xs: 8, md: 24 },
@@ -391,11 +542,15 @@ export default function PhotoGallery({ photos = [] }) {
                   color: 'white',
                   bgcolor: 'rgba(255, 255, 255, 0.1)',
                   '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' },
-                  width: { xs: 40, md: 56 },
-                  height: { xs: 40, md: 56 }
+                  '&:focus-visible': {
+                    outline: '2px solid white',
+                    outlineOffset: 2
+                  },
+                  width: { xs: 48, md: 56 },
+                  height: { xs: 48, md: 56 }
                 }}
               >
-                <ChevronRightIcon sx={{ fontSize: { xs: 24, md: 32 } }} />
+                <ChevronRightIcon sx={{ fontSize: { xs: 28, md: 36 } }} />
               </IconButton>
             </>
           )}
@@ -424,18 +579,25 @@ export default function PhotoGallery({ photos = [] }) {
             </Box>
           )}
 
-          {/* Keyboard hint */}
+          {/* Navigation hints */}
           <Box
             sx={{
               position: 'absolute',
               bottom: 16,
               right: 16,
               color: 'rgba(255, 255, 255, 0.5)',
-              fontSize: '0.75rem',
-              display: { xs: 'none', md: 'block' }
+              fontSize: '0.75rem'
             }}
+            aria-hidden="true"
           >
-            ←→ で移動 / ESC で閉じる
+            {/* Mobile swipe hint */}
+            <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+              スワイプで移動
+            </Box>
+            {/* Desktop keyboard hint */}
+            <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+              ←→ で移動 / ESC で閉じる
+            </Box>
           </Box>
         </Box>
       </Modal>

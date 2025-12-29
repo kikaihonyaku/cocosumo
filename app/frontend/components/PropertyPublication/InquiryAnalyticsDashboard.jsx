@@ -93,6 +93,96 @@ function SummaryCard({ title, value, subtitle, trend, icon }) {
   );
 }
 
+// Conversion Funnel Component
+function ConversionFunnel({ data }) {
+  // Simulated funnel data based on actual inquiry data
+  // In production, this would come from GA4 or internal analytics
+  const totalInquiries = data?.summary?.total || 0;
+
+  // Estimate funnel steps based on typical conversion rates
+  // These multipliers represent typical drop-off rates
+  const funnelSteps = [
+    { name: 'ページ閲覧', value: totalInquiries * 20, color: '#e3f2fd', textColor: '#1976d2' },
+    { name: 'スクロール50%', value: totalInquiries * 12, color: '#bbdefb', textColor: '#1565c0' },
+    { name: 'ギャラリー閲覧', value: totalInquiries * 6, color: '#90caf9', textColor: '#0d47a1' },
+    { name: '問い合わせ開始', value: totalInquiries * 2, color: '#64b5f6', textColor: '#0d47a1' },
+    { name: '問い合わせ送信', value: totalInquiries, color: '#1976d2', textColor: 'white' }
+  ];
+
+  const maxValue = Math.max(...funnelSteps.map(s => s.value), 1);
+
+  if (totalInquiries === 0) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 4 }}>
+        <Typography variant="body2" color="text.secondary">
+          問い合わせデータがないため、ファネルを表示できません
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+          問い合わせが発生すると、コンバージョンファネルが表示されます
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      {funnelSteps.map((step, index) => {
+        const widthPercent = (step.value / maxValue) * 100;
+        const prevValue = index > 0 ? funnelSteps[index - 1].value : step.value;
+        const dropOff = prevValue > 0 ? ((prevValue - step.value) / prevValue * 100).toFixed(0) : 0;
+
+        return (
+          <Box key={step.name} sx={{ mb: 1 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2
+              }}
+            >
+              <Box
+                sx={{
+                  width: `${Math.max(widthPercent, 20)}%`,
+                  bgcolor: step.color,
+                  color: step.textColor,
+                  py: 1.5,
+                  px: 2,
+                  borderRadius: 1,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  minWidth: 120,
+                  transition: 'width 0.3s ease'
+                }}
+              >
+                <Typography variant="body2" fontWeight={600}>
+                  {step.name}
+                </Typography>
+                <Typography variant="body2" fontWeight={700}>
+                  {Math.round(step.value)}
+                </Typography>
+              </Box>
+              {index > 0 && dropOff > 0 && (
+                <Typography variant="caption" color="error.main">
+                  -{dropOff}%
+                </Typography>
+              )}
+            </Box>
+          </Box>
+        );
+      })}
+      <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+        <Typography variant="body2" color="text.secondary">
+          全体コンバージョン率:
+          <Typography component="span" variant="body2" fontWeight={700} color="success.main" sx={{ ml: 1 }}>
+            {((totalInquiries / (totalInquiries * 20)) * 100).toFixed(1)}%
+          </Typography>
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
+
 // Source Breakdown Component
 function SourceBreakdown({ data }) {
   const total = Object.values(data).reduce((sum, count) => sum + count, 0);
@@ -468,25 +558,40 @@ export default function InquiryAnalyticsDashboard() {
         </Grid>
       </Grid>
 
-      {/* Charts Row */}
+      {/* Conversion Funnel */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        {/* Daily Trend */}
-        <Grid size={{ xs: 12, md: 8 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper sx={{ p: 3, height: '100%' }}>
             <Typography variant="h6" gutterBottom>
-              日別推移
+              コンバージョンファネル
             </Typography>
-            <SimpleBarChart data={data.daily_trend} label="日別" />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+              ページ閲覧から問い合わせ送信までの流れ（推定値）
+            </Typography>
+            <ConversionFunnel data={data} />
           </Paper>
         </Grid>
 
         {/* Source Breakdown */}
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper sx={{ p: 3, height: '100%' }}>
             <Typography variant="h6" gutterBottom>
               流入元別
             </Typography>
             <SourceBreakdown data={data.source_breakdown} />
+          </Paper>
+        </Grid>
+      </Grid>
+
+      {/* Charts Row */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        {/* Daily Trend */}
+        <Grid size={{ xs: 12 }}>
+          <Paper sx={{ p: 3, height: '100%' }}>
+            <Typography variant="h6" gutterBottom>
+              日別推移
+            </Typography>
+            <SimpleBarChart data={data.daily_trend} label="日別" />
           </Paper>
         </Grid>
       </Grid>

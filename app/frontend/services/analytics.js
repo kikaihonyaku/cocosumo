@@ -184,10 +184,101 @@ export const UserAnalytics = {
   }
 };
 
+/**
+ * Conversion Funnel Tracking
+ * Tracks user progress through the property viewing funnel:
+ * 1. Page View -> 2. Scroll 50% -> 3. Photo/Gallery View -> 4. Inquiry Start -> 5. Inquiry Submit
+ */
+export const FunnelAnalytics = {
+  // Funnel step names for consistency
+  STEPS: {
+    PAGE_VIEW: 'funnel_page_view',
+    SCROLL_50: 'funnel_scroll_50',
+    SCROLL_100: 'funnel_scroll_100',
+    GALLERY_VIEW: 'funnel_gallery_view',
+    INQUIRY_START: 'funnel_inquiry_start',
+    INQUIRY_SUBMIT: 'funnel_inquiry_submit'
+  },
+
+  // Track funnel step
+  trackStep: (step, publicationId, additionalParams = {}) => {
+    trackEvent(step, {
+      publication_id: publicationId,
+      funnel_step: step,
+      ...additionalParams
+    });
+  },
+
+  // Create scroll observer for a property page
+  createScrollObserver: (publicationId) => {
+    const scrollMilestones = { 50: false, 100: false };
+
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = Math.round((scrollTop / docHeight) * 100);
+
+      if (scrollPercent >= 50 && !scrollMilestones[50]) {
+        scrollMilestones[50] = true;
+        FunnelAnalytics.trackStep(FunnelAnalytics.STEPS.SCROLL_50, publicationId, {
+          scroll_percent: 50
+        });
+      }
+
+      if (scrollPercent >= 100 && !scrollMilestones[100]) {
+        scrollMilestones[100] = true;
+        FunnelAnalytics.trackStep(FunnelAnalytics.STEPS.SCROLL_100, publicationId, {
+          scroll_percent: 100
+        });
+      }
+    };
+
+    // Debounce scroll handler
+    let scrollTimeout;
+    const debouncedScroll = () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(handleScroll, 100);
+    };
+
+    window.addEventListener('scroll', debouncedScroll, { passive: true });
+
+    // Return cleanup function
+    return () => {
+      window.removeEventListener('scroll', debouncedScroll);
+      clearTimeout(scrollTimeout);
+    };
+  },
+
+  // Track page view as first funnel step
+  trackPageView: (publicationId, templateType) => {
+    FunnelAnalytics.trackStep(FunnelAnalytics.STEPS.PAGE_VIEW, publicationId, {
+      template_type: templateType
+    });
+  },
+
+  // Track gallery view (when user opens photo gallery or clicks on photos)
+  trackGalleryView: (publicationId) => {
+    FunnelAnalytics.trackStep(FunnelAnalytics.STEPS.GALLERY_VIEW, publicationId);
+  },
+
+  // Track inquiry start
+  trackInquiryStart: (publicationId) => {
+    FunnelAnalytics.trackStep(FunnelAnalytics.STEPS.INQUIRY_START, publicationId);
+  },
+
+  // Track inquiry submit
+  trackInquirySubmit: (publicationId, source) => {
+    FunnelAnalytics.trackStep(FunnelAnalytics.STEPS.INQUIRY_SUBMIT, publicationId, {
+      lead_source: source
+    });
+  }
+};
+
 export default {
   initializeGA,
   trackPageView,
   trackEvent,
   PropertyAnalytics,
-  UserAnalytics
+  UserAnalytics,
+  FunnelAnalytics
 };
