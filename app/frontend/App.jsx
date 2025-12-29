@@ -22,6 +22,7 @@ import PhotoEditor from "./pages/PhotoEditor";
 import VirtualStagingEditor from "./pages/VirtualStagingEditor";
 import VirtualStagingViewer from "./pages/VirtualStagingViewer";
 import PublicVirtualStaging from "./pages/PublicVirtualStaging";
+import EmbedVirtualStaging from "./pages/EmbedVirtualStaging";
 import VirtualStagings from "./pages/VirtualStagings";
 import PropertyPublicationEditor from "./pages/PropertyPublicationEditor";
 import PublicPropertyDetail from "./pages/PublicPropertyDetail";
@@ -112,6 +113,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/vr/:publicId" element={<PublicVrTour />} />
           <Route path="/virtual-staging/:publicId" element={<PublicVirtualStaging />} />
+          <Route path="/embed/virtual-staging/:publicId" element={<EmbedVirtualStaging />} />
           {/* 物件公開ページ（publication_idで識別） */}
           <Route path="/property/:publicationId" element={<PublicPropertyDetail />} />
           {/* ブログページ */}

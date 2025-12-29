@@ -38,6 +38,7 @@ import AiStagingDialog from '../components/VirtualStaging/AiStagingDialog';
 import SharePanel from '../components/VirtualStaging/SharePanel';
 import VariationsPanel from '../components/VirtualStaging/VariationsPanel';
 import AnnotationsPanel from '../components/VirtualStaging/AnnotationsPanel';
+import EmbedCodePanel from '../components/VirtualStaging/EmbedCodePanel';
 import muiTheme from '../theme/muiTheme';
 
 const VirtualStagingEditor = () => {
@@ -521,6 +522,16 @@ const VirtualStagingEditor = () => {
             onAnnotationsChange={setAnnotations}
             beforeImageUrl={getBeforePhotoUrl()}
             afterImageUrl={getAfterPhotoUrl()}
+          />
+        </Paper>
+      )}
+
+      {/* 埋め込みコード（公開中のみ） */}
+      {isEditMode && isPublished && virtualStaging.public_id && (
+        <Paper sx={{ p: 3, mt: 3 }}>
+          <EmbedCodePanel
+            publicId={virtualStaging.public_id}
+            title={virtualStaging.title}
           />
         </Paper>
       )}
