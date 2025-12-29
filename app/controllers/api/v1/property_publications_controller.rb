@@ -358,6 +358,32 @@ class Api::V1::PropertyPublicationsController < ApplicationController
     render json: { error: 'Not found' }, status: :not_found
   end
 
+  # POST /api/v1/property_publications/:publication_id/track_analytics
+  def track_analytics
+    @property_publication = PropertyPublication.kept.find_by!(publication_id: params[:publication_id])
+
+    # Only track for published pages (not previews)
+    if @property_publication.published?
+      scroll_depth = params[:scroll_depth].to_i
+      session_duration = params[:session_duration].to_i
+
+      # Update max scroll depth if higher
+      if scroll_depth > (@property_publication.max_scroll_depth || 0)
+        @property_publication.update(max_scroll_depth: scroll_depth)
+      end
+
+      # Calculate rolling average for session duration
+      current_avg = @property_publication.avg_session_duration || 0
+      view_count = @property_publication.view_count || 1
+      new_avg = ((current_avg * (view_count - 1)) + session_duration) / view_count
+      @property_publication.update(avg_session_duration: new_avg.to_i)
+    end
+
+    render json: { success: true }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Not found' }, status: :not_found
+  end
+
   # POST /api/v1/property_publications/bulk_action
   def bulk_action
     ids = params[:ids]
@@ -427,6 +453,8 @@ class Api::V1::PropertyPublicationsController < ApplicationController
       :template_type,
       :scheduled_publish_at,
       :scheduled_unpublish_at,
+      :primary_color,
+      :accent_color,
       visible_fields: {}
     )
   end

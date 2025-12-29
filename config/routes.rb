@@ -197,6 +197,7 @@ Rails.application.routes.draw do
 
       # ページビュー追跡（認証不要）
       post 'property_publications/:publication_id/track_view', to: 'property_publications#track_view'
+      post 'property_publications/:publication_id/track_analytics', to: 'property_publications#track_analytics'
 
       # 物件分析API
       get 'property_analysis', to: 'property_analysis#show'
@@ -209,6 +210,7 @@ Rails.application.routes.draw do
 
       # 問い合わせ分析API（認証必要）
       get 'inquiry_analytics', to: 'property_inquiries#analytics'
+      get 'inquiries/export_csv', to: 'property_inquiries#export_csv'
 
       # ブログ記事API（認証不要）
       resources :blog_posts, only: [:index] do

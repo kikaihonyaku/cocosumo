@@ -388,6 +388,8 @@ export default function PropertyPublicationsManager() {
               <TableCell>ステータス</TableCell>
               <TableCell>スケジュール</TableCell>
               <TableCell align="right">閲覧数</TableCell>
+              <TableCell align="right">スクロール率</TableCell>
+              <TableCell align="right">平均滞在</TableCell>
               <TableCell>更新日</TableCell>
               <TableCell align="center">操作</TableCell>
             </TableRow>
@@ -468,6 +470,16 @@ export default function PropertyPublicationsManager() {
                     {(pub.view_count || 0).toLocaleString()}
                   </Typography>
                 </TableCell>
+                <TableCell align="right">
+                  <Typography variant="body2" color={pub.max_scroll_depth >= 75 ? 'success.main' : pub.max_scroll_depth >= 50 ? 'warning.main' : 'text.secondary'}>
+                    {pub.max_scroll_depth ? `${pub.max_scroll_depth}%` : '-'}
+                  </Typography>
+                </TableCell>
+                <TableCell align="right">
+                  <Typography variant="body2" color="text.secondary">
+                    {pub.avg_session_duration ? `${Math.floor(pub.avg_session_duration / 60)}:${String(pub.avg_session_duration % 60).padStart(2, '0')}` : '-'}
+                  </Typography>
+                </TableCell>
                 <TableCell>
                   <Typography variant="caption" color="text.secondary">
                     {new Date(pub.updated_at).toLocaleDateString('ja-JP')}
@@ -493,7 +505,7 @@ export default function PropertyPublicationsManager() {
             ))}
             {filteredPublications.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={12} align="center" sx={{ py: 4 }}>
                   <Typography variant="body2" color="text.secondary">
                     物件公開ページがありません
                   </Typography>

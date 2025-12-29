@@ -33,10 +33,18 @@ function Template0({ data, publicationId }) {
     property_publication_vr_tours,
     property_publication_virtual_stagings,
     public_url,
-    qr_code_data_url
+    qr_code_data_url,
+    primary_color,
+    accent_color
   } = data;
   const building = room?.building;
   const visibleFields = visible_fields_with_defaults || {};
+
+  // カスタムカラー（デフォルト値付き）
+  const colors = {
+    primary: primary_color || '#0068b7',
+    accent: accent_color || '#e3f2fd'
+  };
 
   const getRoomTypeLabel = (roomType) => {
     const labels = {
@@ -71,7 +79,7 @@ function Template0({ data, publicationId }) {
         {/* SUUMO-style Header with prominent rent display */}
         <Paper sx={{ mb: 3, overflow: 'hidden' }}>
           {/* Title Section */}
-          <Box sx={{ bgcolor: '#0068b7', color: 'white', px: 3, py: 2 }}>
+          <Box sx={{ bgcolor: colors.primary, color: 'white', px: 3, py: 2 }}>
             <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold' }}>
               {title}
             </Typography>
@@ -90,7 +98,7 @@ function Template0({ data, publicationId }) {
             {visibleFields.rent && room.rent && (
               <Box sx={{ mb: 2 }}>
                 <Typography variant="h3" component="div" sx={{
-                  color: '#0068b7',
+                  color: colors.primary,
                   fontWeight: 'bold',
                   mb: 1
                 }}>
@@ -106,7 +114,7 @@ function Template0({ data, publicationId }) {
               <Typography variant="body1" sx={{
                 color: '#333',
                 fontWeight: 'medium',
-                borderLeft: '4px solid #0068b7',
+                borderLeft: `4px solid ${colors.primary}`,
                 pl: 2,
                 my: 2
               }}>
@@ -119,21 +127,21 @@ function Template0({ data, publicationId }) {
                 <Chip
                   label={getRoomTypeLabel(room.room_type)}
                   size="small"
-                  sx={{ bgcolor: '#e3f2fd' }}
+                  sx={{ bgcolor: colors.accent }}
                 />
               )}
               {visibleFields.area && room.area && (
                 <Chip
                   label={`${room.area}m²`}
                   size="small"
-                  sx={{ bgcolor: '#e3f2fd' }}
+                  sx={{ bgcolor: colors.accent }}
                 />
               )}
               {visibleFields.floor && room.floor && (
                 <Chip
                   label={`${room.floor}階`}
                   size="small"
-                  sx={{ bgcolor: '#e3f2fd' }}
+                  sx={{ bgcolor: colors.accent }}
                 />
               )}
             </Box>
@@ -145,8 +153,8 @@ function Template0({ data, publicationId }) {
           <Grid size={{ xs: 12, md: 8 }}>
             {/* Image Gallery - SUUMO style with white background */}
             {property_publication_photos && property_publication_photos.length > 0 && (
-              <Paper sx={{ mb: 3, overflow: 'hidden' }}>
-                <Box sx={{ bgcolor: '#0068b7', color: 'white', px: 2, py: 1.5 }}>
+              <Paper id="gallery" sx={{ mb: 3, overflow: 'hidden' }}>
+                <Box sx={{ bgcolor: colors.primary, color: 'white', px: 2, py: 1.5 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
                     写真（{property_publication_photos.length}点）
                   </Typography>
@@ -160,7 +168,7 @@ function Template0({ data, publicationId }) {
             {/* PR Text Section */}
             {pr_text && (
               <Paper sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ color: '#0068b7', fontWeight: 'bold', borderBottom: '3px solid #0068b7', pb: 1, mb: 2 }}>
+                <Typography variant="h6" gutterBottom sx={{ color: colors.primary, fontWeight: 'bold', borderBottom: `3px solid ${colors.primary}`, pb: 1, mb: 2 }}>
                   物件の特徴
                 </Typography>
                 <Box
@@ -178,7 +186,7 @@ function Template0({ data, publicationId }) {
                       color: 'text.secondary',
                       fontStyle: 'italic',
                     },
-                    '& a': { color: '#0068b7', textDecoration: 'underline' },
+                    '& a': { color: colors.primary, textDecoration: 'underline' },
                   }}
                   dangerouslySetInnerHTML={{ __html: pr_text }}
                 />
@@ -186,8 +194,8 @@ function Template0({ data, publicationId }) {
             )}
 
             {/* Property Details - SUUMO style striped table */}
-            <Paper sx={{ mb: 3, overflow: 'hidden' }}>
-              <Box sx={{ bgcolor: '#0068b7', color: 'white', px: 2, py: 1.5 }}>
+            <Paper id="property-info" sx={{ mb: 3, overflow: 'hidden' }}>
+              <Box sx={{ bgcolor: colors.primary, color: 'white', px: 2, py: 1.5 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
                   物件詳細
                 </Typography>
@@ -198,7 +206,7 @@ function Template0({ data, publicationId }) {
                   {visibleFields.rent && room.rent && (
                     <TableRow sx={{ bgcolor: '#fafafa' }}>
                       <TableCell sx={{ fontWeight: 'bold', width: '35%', py: 2, borderBottom: '1px solid #e0e0e0' }}>賃料</TableCell>
-                      <TableCell sx={{ py: 2, borderBottom: '1px solid #e0e0e0', color: '#0068b7', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                      <TableCell sx={{ py: 2, borderBottom: '1px solid #e0e0e0', color: colors.primary, fontWeight: 'bold', fontSize: '1.1rem' }}>
                         {room.rent.toLocaleString()}円
                       </TableCell>
                     </TableRow>
@@ -270,8 +278,8 @@ function Template0({ data, publicationId }) {
             {/* VR Tour & Virtual Staging - SUUMO style */}
             {((property_publication_vr_tours && property_publication_vr_tours.length > 0) ||
               (property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0)) && (
-              <Paper sx={{ mb: 3, overflow: 'hidden' }}>
-                <Box sx={{ bgcolor: '#0068b7', color: 'white', px: 2, py: 1.5 }}>
+              <Paper id="vr-tour" sx={{ mb: 3, overflow: 'hidden' }}>
+                <Box sx={{ bgcolor: colors.primary, color: 'white', px: 2, py: 1.5 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
                     バーチャル内覧
                   </Typography>
@@ -283,7 +291,7 @@ function Template0({ data, publicationId }) {
                     <Box sx={{ mb: 3 }}>
                       {property_publication_vr_tours.map((item) => (
                         <Box key={item.vr_tour.id} sx={{ mb: 3 }}>
-                          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#0068b7' }}>
+                          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: colors.primary }}>
                             VRツアー: {item.vr_tour.title}
                           </Typography>
                           {item.vr_tour.description && (
@@ -297,7 +305,7 @@ function Template0({ data, publicationId }) {
                             sx={{
                               width: '100%',
                               height: 500,
-                              border: '2px solid #0068b7',
+                              border: `2px solid ${colors.primary}`,
                               borderRadius: 1,
                               mt: 1
                             }}
@@ -312,7 +320,7 @@ function Template0({ data, publicationId }) {
                     <Box>
                       {property_publication_virtual_stagings.map((item) => (
                         <Box key={item.virtual_staging.id} sx={{ mb: 3 }}>
-                          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#0068b7' }}>
+                          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: colors.primary }}>
                             バーチャルステージング: {item.virtual_staging.title}
                           </Typography>
                           {item.virtual_staging.description && (
@@ -326,7 +334,7 @@ function Template0({ data, publicationId }) {
                             sx={{
                               width: '100%',
                               height: 500,
-                              border: '2px solid #0068b7',
+                              border: `2px solid ${colors.primary}`,
                               borderRadius: 1,
                               mt: 1
                             }}
@@ -342,8 +350,8 @@ function Template0({ data, publicationId }) {
 
           {/* Right Column - SUUMO style */}
           <Grid size={{ xs: 12, md: 4 }}>
-            <Paper sx={{ mb: 3, position: 'sticky', top: 20, overflow: 'hidden' }} className="no-print">
-              <Box sx={{ bgcolor: '#0068b7', color: 'white', px: 2, py: 1.5 }}>
+            <Paper id="inquiry" sx={{ mb: 3, position: 'sticky', top: 20, overflow: 'hidden' }} className="no-print">
+              <Box sx={{ bgcolor: colors.primary, color: 'white', px: 2, py: 1.5 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
                   お問い合わせ
                 </Typography>

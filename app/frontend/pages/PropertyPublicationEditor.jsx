@@ -82,7 +82,9 @@ function PropertyPublicationEditor() {
     template_type: 'template1',
     visible_fields: {},
     publication_id: '',
-    public_url: ''
+    public_url: '',
+    primary_color: '',
+    accent_color: ''
   });
   const [room, setRoom] = useState(null);
   const [selectedPhotos, setSelectedPhotos] = useState([]); // [{photo_id: number, comment: string}]
@@ -154,7 +156,9 @@ function PropertyPublicationEditor() {
         catch_copy: propertyPublication.catch_copy,
         pr_text: propertyPublication.pr_text,
         template_type: propertyPublication.template_type,
-        visible_fields: propertyPublication.visible_fields
+        visible_fields: propertyPublication.visible_fields,
+        primary_color: propertyPublication.primary_color,
+        accent_color: propertyPublication.accent_color
       },
       selectedPhotos,
       selectedVrTourIds,
@@ -219,7 +223,9 @@ function PropertyPublicationEditor() {
           pr_text: propertyPublication.pr_text,
           status: propertyPublication.status,
           template_type: propertyPublication.template_type,
-          visible_fields: propertyPublication.visible_fields
+          visible_fields: propertyPublication.visible_fields,
+          primary_color: propertyPublication.primary_color || null,
+          accent_color: propertyPublication.accent_color || null
         },
         photos: selectedPhotos,
         vr_tour_ids: selectedVrTourIds,
@@ -248,7 +254,9 @@ function PropertyPublicationEditor() {
           pr_text: propertyPublication.pr_text,
           status: propertyPublication.status,
           template_type: propertyPublication.template_type,
-          visible_fields: propertyPublication.visible_fields
+          visible_fields: propertyPublication.visible_fields,
+          primary_color: propertyPublication.primary_color || null,
+          accent_color: propertyPublication.accent_color || null
         },
         photos: selectedPhotos,
         vr_tour_ids: selectedVrTourIds,
@@ -750,6 +758,70 @@ function PropertyPublicationEditor() {
                 </Box>
               </RadioGroup>
             </FormControl>
+            </Paper>
+
+            {/* カラーカスタマイズ */}
+            <Paper sx={{ p: 3, flex: 1 }}>
+              <FormLabel component="legend" sx={{ mb: 2, fontWeight: 'bold' }}>
+                カラーカスタマイズ（オプション）
+              </FormLabel>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                カスタムカラーを指定しない場合、テンプレートのデフォルトカラーが使用されます
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                <Box>
+                  <Typography variant="body2" sx={{ mb: 1 }}>メインカラー</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <input
+                      type="color"
+                      value={propertyPublication.primary_color || '#1976d2'}
+                      onChange={(e) => setPropertyPublication({ ...propertyPublication, primary_color: e.target.value })}
+                      style={{ width: 50, height: 40, border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                    />
+                    <TextField
+                      size="small"
+                      value={propertyPublication.primary_color || ''}
+                      onChange={(e) => setPropertyPublication({ ...propertyPublication, primary_color: e.target.value })}
+                      placeholder="#1976d2"
+                      sx={{ width: 120 }}
+                    />
+                    {propertyPublication.primary_color && (
+                      <Button
+                        size="small"
+                        onClick={() => setPropertyPublication({ ...propertyPublication, primary_color: '' })}
+                      >
+                        リセット
+                      </Button>
+                    )}
+                  </Box>
+                </Box>
+                <Box>
+                  <Typography variant="body2" sx={{ mb: 1 }}>アクセントカラー</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <input
+                      type="color"
+                      value={propertyPublication.accent_color || '#ff5722'}
+                      onChange={(e) => setPropertyPublication({ ...propertyPublication, accent_color: e.target.value })}
+                      style={{ width: 50, height: 40, border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                    />
+                    <TextField
+                      size="small"
+                      value={propertyPublication.accent_color || ''}
+                      onChange={(e) => setPropertyPublication({ ...propertyPublication, accent_color: e.target.value })}
+                      placeholder="#ff5722"
+                      sx={{ width: 120 }}
+                    />
+                    {propertyPublication.accent_color && (
+                      <Button
+                        size="small"
+                        onClick={() => setPropertyPublication({ ...propertyPublication, accent_color: '' })}
+                      >
+                        リセット
+                      </Button>
+                    )}
+                  </Box>
+                </Box>
+              </Box>
             </Paper>
           </Box>
         )}

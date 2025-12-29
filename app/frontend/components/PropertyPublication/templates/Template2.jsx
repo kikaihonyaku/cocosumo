@@ -28,10 +28,18 @@ function Template2({ data, publicationId }) {
     property_publication_vr_tours,
     property_publication_virtual_stagings,
     public_url,
-    qr_code_data_url
+    qr_code_data_url,
+    primary_color,
+    accent_color
   } = data;
   const building = room?.building;
   const visibleFields = visible_fields_with_defaults || {};
+
+  // カスタムカラー（デフォルト値付き）
+  const colors = {
+    primary: primary_color || '#9acd32',
+    accent: accent_color || '#ff1493'
+  };
 
   const getRoomTypeLabel = (roomType) => {
     const labels = {
@@ -61,7 +69,7 @@ function Template2({ data, publicationId }) {
   };
 
   return (
-    <Box className="template2-roomspot print-container">
+    <Box className="template2-roomspot print-container" style={{ '--primary-color': colors.primary, '--accent-color': colors.accent }}>
       {/* RoomSpot風のカスタムCSS */}
       <style>{`
         .template2-roomspot {
@@ -72,7 +80,7 @@ function Template2({ data, publicationId }) {
 
         /* Header Section */
         .template2-roomspot .header-section {
-          background: linear-gradient(135deg, #9acd32 0%, #7cb342 100%);
+          background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 80%, black) 100%);
           color: white;
           padding: 16px 0;
           margin-bottom: 0;
@@ -93,7 +101,7 @@ function Template2({ data, publicationId }) {
 
         .template2-roomspot .header-badge {
           background: white;
-          color: #7cb342;
+          color: var(--primary-color);
           padding: 6px 16px;
           border-radius: 16px;
           font-size: 12px;
@@ -119,7 +127,7 @@ function Template2({ data, publicationId }) {
         }
 
         .template2-roomspot .breadcrumb-text a:hover {
-          color: #ff1493;
+          color: var(--accent-color);
           text-decoration: underline;
         }
 
@@ -142,7 +150,7 @@ function Template2({ data, publicationId }) {
           margin-bottom: 12px;
           line-height: 1.4;
           padding-bottom: 12px;
-          border-bottom: 3px solid #9acd32;
+          border-bottom: 3px solid var(--primary-color);
         }
 
         .template2-roomspot .property-meta {
@@ -176,21 +184,21 @@ function Template2({ data, publicationId }) {
         /* Price Box - Pink */
         .template2-roomspot .price-box {
           background: #fff;
-          border: 3px solid #ff1493;
+          border: 3px solid var(--accent-color);
           border-radius: 8px;
           padding: 20px;
           margin-bottom: 16px;
         }
 
         .template2-roomspot .price-label {
-          color: #ff1493;
+          color: var(--accent-color);
           font-size: 14px;
           font-weight: bold;
           margin-bottom: 8px;
         }
 
         .template2-roomspot .price-amount {
-          color: #ff1493;
+          color: var(--accent-color);
           font-size: 36px;
           font-weight: bold;
           line-height: 1.2;
@@ -231,7 +239,7 @@ function Template2({ data, publicationId }) {
 
         /* Point Badge */
         .template2-roomspot .point-badge {
-          background: #9acd32;
+          background: var(--primary-color);
           color: white;
           padding: 4px 12px;
           border-radius: 3px;
@@ -244,7 +252,7 @@ function Template2({ data, publicationId }) {
         /* Catch Copy */
         .template2-roomspot .catch-copy-box {
           background: #fffacd;
-          border-left: 4px solid #9acd32;
+          border-left: 4px solid var(--primary-color);
           padding: 12px 16px;
           margin-bottom: 20px;
           font-size: 14px;
@@ -258,7 +266,7 @@ function Template2({ data, publicationId }) {
           color: #333;
           margin-bottom: 16px;
           padding-bottom: 8px;
-          border-bottom: 2px solid #9acd32;
+          border-bottom: 2px solid var(--primary-color);
         }
 
         /* Property Details Table */
@@ -296,14 +304,14 @@ function Template2({ data, publicationId }) {
         }
 
         .template2-roomspot .details-table td.highlight {
-          color: #ff1493;
+          color: var(--accent-color);
           font-size: 18px;
           font-weight: bold;
         }
 
         /* Contact Form Section */
         .template2-roomspot .contact-section {
-          background: #e8f5e9;
+          background: color-mix(in srgb, var(--primary-color) 10%, white);
           border-radius: 8px;
           padding: 24px;
           margin-bottom: 24px;
@@ -319,7 +327,7 @@ function Template2({ data, publicationId }) {
 
         /* CTA Button - Pink */
         .template2-roomspot .cta-button {
-          background: #ff1493;
+          background: var(--accent-color);
           color: white;
           border: none;
           border-radius: 6px;
@@ -328,11 +336,11 @@ function Template2({ data, publicationId }) {
           font-weight: bold;
           width: 100%;
           cursor: pointer;
-          transition: background 0.3s;
+          transition: filter 0.3s;
         }
 
         .template2-roomspot .cta-button:hover {
-          background: #e6127f;
+          filter: brightness(0.9);
         }
 
         /* Feature Icons */
@@ -348,7 +356,7 @@ function Template2({ data, publicationId }) {
           flex-direction: column;
           align-items: center;
           gap: 4px;
-          color: #9acd32;
+          color: var(--primary-color);
         }
 
         .template2-roomspot .feature-icon-label {
@@ -391,7 +399,7 @@ function Template2({ data, publicationId }) {
         }
 
         .template2-roomspot .pr-text blockquote {
-          border-left: 3px solid #9acd32;
+          border-left: 3px solid var(--primary-color);
           padding-left: 1em;
           margin: 0.5em 0;
           color: #666;
@@ -399,7 +407,7 @@ function Template2({ data, publicationId }) {
         }
 
         .template2-roomspot .pr-text a {
-          color: #ff1493;
+          color: var(--accent-color);
           text-decoration: underline;
         }
 
@@ -415,7 +423,7 @@ function Template2({ data, publicationId }) {
         .template2-roomspot .vr-item-title {
           font-size: 16px;
           font-weight: bold;
-          color: #ff1493;
+          color: var(--accent-color);
           margin-bottom: 8px;
         }
 
@@ -517,12 +525,12 @@ function Template2({ data, publicationId }) {
         {visibleFields.address && building?.address && (
           <div className="property-meta">
             <div className="property-meta-item">
-              <LocationOnIcon sx={{ fontSize: 18, color: '#9acd32' }} />
+              <LocationOnIcon sx={{ fontSize: 18, color: colors.primary }} />
               <span>{building.address}</span>
             </div>
             {visibleFields.building_type && building?.building_type && (
               <div className="property-meta-item">
-                <HomeIcon sx={{ fontSize: 18, color: '#9acd32' }} />
+                <HomeIcon sx={{ fontSize: 18, color: colors.primary }} />
                 <span>{getBuildingTypeLabel(building.building_type)}</span>
               </div>
             )}
@@ -532,7 +540,7 @@ function Template2({ data, publicationId }) {
         {/* 2 Column Layout */}
         <div className="two-column">
           {/* Left Column - Photos */}
-          <div className="photo-section">
+          <div id="gallery" className="photo-section">
             {property_publication_photos && property_publication_photos.length > 0 && (
               <PhotoGallery photos={property_publication_photos} />
             )}
@@ -540,16 +548,16 @@ function Template2({ data, publicationId }) {
             {/* Feature Icons */}
             <div className="feature-icons" style={{ marginTop: '16px' }}>
               <div className="feature-icon">
-                <HomeIcon sx={{ fontSize: 32, color: '#9acd32' }} />
+                <HomeIcon sx={{ fontSize: 32, color: colors.primary }} />
                 <span className="feature-icon-label">賃貸</span>
               </div>
               <div className="feature-icon">
-                <LocationOnIcon sx={{ fontSize: 32, color: '#9acd32' }} />
+                <LocationOnIcon sx={{ fontSize: 32, color: colors.primary }} />
                 <span className="feature-icon-label">好立地</span>
               </div>
               {visibleFields.area && room.area && (
                 <div className="feature-icon">
-                  <SquareIcon sx={{ fontSize: 32, color: '#9acd32' }} />
+                  <SquareIcon sx={{ fontSize: 32, color: colors.primary }} />
                   <span className="feature-icon-label">広々</span>
                 </div>
               )}
@@ -620,7 +628,7 @@ function Template2({ data, publicationId }) {
         )}
 
         {/* Property Details Table */}
-        <div>
+        <div id="property-info">
           <h2 className="section-title">物件詳細情報</h2>
           <table className="details-table">
             <tbody>
@@ -697,7 +705,7 @@ function Template2({ data, publicationId }) {
         {/* VR Tour & Virtual Staging */}
         {((property_publication_vr_tours && property_publication_vr_tours.length > 0) ||
           (property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0)) && (
-          <div className="vr-section">
+          <div id="vr-tour" className="vr-section">
             <h2 className="section-title">バーチャルコンテンツ</h2>
 
             {property_publication_vr_tours && property_publication_vr_tours.length > 0 && (
@@ -739,7 +747,7 @@ function Template2({ data, publicationId }) {
         )}
 
         {/* Contact Form Section */}
-        <div className="contact-section no-print">
+        <div id="inquiry" className="contact-section no-print">
           <div className="contact-title">お問い合わせ</div>
           <InquiryForm publicationId={publicationId} />
         </div>

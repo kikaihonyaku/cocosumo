@@ -14,7 +14,8 @@ import {
   Divider,
   ToggleButton,
   ToggleButtonGroup,
-  LinearProgress
+  LinearProgress,
+  Button
 } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
@@ -29,7 +30,8 @@ import {
   QuestionMark as QuestionMarkIcon,
   Home as HomeIcon,
   Dashboard as DashboardIcon,
-  EmojiEvents as EmojiEventsIcon
+  EmojiEvents as EmojiEventsIcon,
+  Download as DownloadIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -588,6 +590,15 @@ export default function InquiryAnalyticsDashboard() {
     }
   };
 
+  const handleExportCSV = () => {
+    // Calculate date range based on period
+    const endDate = new Date().toISOString().split('T')[0];
+    const startDate = new Date(Date.now() - period * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // Open CSV download in new tab
+    window.open(`/api/v1/inquiries/export_csv?start_date=${startDate}&end_date=${endDate}`, '_blank');
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -615,16 +626,26 @@ export default function InquiryAnalyticsDashboard() {
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           問い合わせ分析
         </Typography>
-        <ToggleButtonGroup
-          value={period}
-          exclusive
-          onChange={handlePeriodChange}
-          size="small"
-        >
-          <ToggleButton value={7}>7日</ToggleButton>
-          <ToggleButton value={30}>30日</ToggleButton>
-          <ToggleButton value={90}>90日</ToggleButton>
-        </ToggleButtonGroup>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <ToggleButtonGroup
+            value={period}
+            exclusive
+            onChange={handlePeriodChange}
+            size="small"
+          >
+            <ToggleButton value={7}>7日</ToggleButton>
+            <ToggleButton value={30}>30日</ToggleButton>
+            <ToggleButton value={90}>90日</ToggleButton>
+          </ToggleButtonGroup>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={handleExportCSV}
+            size="small"
+          >
+            CSVエクスポート
+          </Button>
+        </Box>
       </Box>
 
       {/* Summary Cards */}

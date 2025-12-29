@@ -43,10 +43,18 @@ function Template3({ data, publicationId }) {
     property_publication_vr_tours,
     property_publication_virtual_stagings,
     public_url,
-    qr_code_data_url
+    qr_code_data_url,
+    primary_color,
+    accent_color
   } = data;
   const building = room?.building;
   const visibleFields = visible_fields_with_defaults || {};
+
+  // カスタムカラー（デフォルト値付き）
+  const colors = {
+    primary: primary_color || '#2e7d32',
+    accent: accent_color || '#ff9800'
+  };
 
   const getRoomTypeLabel = (roomType) => {
     const labels = {
@@ -78,7 +86,7 @@ function Template3({ data, publicationId }) {
   return (
     <Box sx={{ bgcolor: '#f5f5f5', minHeight: '100vh' }} className="print-container">
       {/* H-Sys style Header with Contact Info */}
-      <Box sx={{ bgcolor: '#2e7d32', color: 'white', py: 1.5, px: 2 }}>
+      <Box sx={{ bgcolor: colors.primary, color: 'white', py: 1.5, px: 2 }}>
         <Container maxWidth="lg">
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="body2">
@@ -104,7 +112,7 @@ function Template3({ data, publicationId }) {
 
             {visibleFields.address && building?.address && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-                <LocationOnIcon sx={{ color: '#2e7d32', fontSize: 20 }} />
+                <LocationOnIcon sx={{ color: colors.primary, fontSize: 20 }} />
                 <Typography variant="body1" color="text.secondary">
                   {building.address}
                 </Typography>
@@ -115,8 +123,8 @@ function Template3({ data, publicationId }) {
             {visibleFields.rent && room.rent && (
               <Box
                 sx={{
-                  bgcolor: '#fff3e0',
-                  border: '2px solid #ff9800',
+                  bgcolor: `color-mix(in srgb, ${colors.accent} 10%, white)`,
+                  border: `2px solid ${colors.accent}`,
                   borderRadius: 2,
                   p: 2,
                   mb: 2,
@@ -126,7 +134,7 @@ function Template3({ data, publicationId }) {
                 <Typography variant="caption" display="block" color="text.secondary" sx={{ mb: 0.5 }}>
                   賃料
                 </Typography>
-                <Typography variant="h3" sx={{ color: '#e65100', fontWeight: 'bold' }}>
+                <Typography variant="h3" sx={{ color: colors.accent, fontWeight: 'bold' }}>
                   {room.rent.toLocaleString()}円
                 </Typography>
               </Box>
@@ -138,8 +146,8 @@ function Template3({ data, publicationId }) {
                 fontWeight: 'medium',
                 mt: 2,
                 p: 2,
-                bgcolor: '#f9fbe7',
-                borderLeft: '4px solid #4caf50'
+                bgcolor: `color-mix(in srgb, ${colors.primary} 5%, white)`,
+                borderLeft: `4px solid ${colors.primary}`
               }}>
                 {catch_copy}
               </Typography>
@@ -151,21 +159,21 @@ function Template3({ data, publicationId }) {
                   icon={<HomeIcon />}
                   label={getRoomTypeLabel(room.room_type)}
                   size="medium"
-                  sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontWeight: 'bold' }}
+                  sx={{ bgcolor: `color-mix(in srgb, ${colors.primary} 10%, white)`, color: colors.primary, fontWeight: 'bold' }}
                 />
               )}
               {visibleFields.area && room.area && (
                 <Chip
                   label={`${room.area}m²`}
                   size="medium"
-                  sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontWeight: 'bold' }}
+                  sx={{ bgcolor: `color-mix(in srgb, ${colors.primary} 10%, white)`, color: colors.primary, fontWeight: 'bold' }}
                 />
               )}
               {visibleFields.floor && room.floor && (
                 <Chip
                   label={`${room.floor}階`}
                   size="medium"
-                  sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontWeight: 'bold' }}
+                  sx={{ bgcolor: `color-mix(in srgb, ${colors.primary} 10%, white)`, color: colors.primary, fontWeight: 'bold' }}
                 />
               )}
             </Box>
@@ -184,10 +192,10 @@ function Template3({ data, publicationId }) {
                   color: '#666'
                 },
                 '& .Mui-selected': {
-                  color: '#2e7d32'
+                  color: colors.primary
                 },
                 '& .MuiTabs-indicator': {
-                  bgcolor: '#2e7d32',
+                  bgcolor: colors.primary,
                   height: 3
                 }
               }}
@@ -210,7 +218,7 @@ function Template3({ data, publicationId }) {
                   {/* PR Text */}
                   {pr_text && (
                     <Paper sx={{ p: 3, mb: 3, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                      <Typography variant="h6" gutterBottom sx={{ color: '#2e7d32', fontWeight: 'bold', borderBottom: '2px solid #4caf50', pb: 1 }}>
+                      <Typography variant="h6" gutterBottom sx={{ color: colors.primary, fontWeight: 'bold', borderBottom: `2px solid ${colors.primary}`, pb: 1 }}>
                         物件のポイント
                       </Typography>
                       <Box
@@ -223,13 +231,13 @@ function Template3({ data, publicationId }) {
                           '& ul, & ol': { paddingLeft: '1.5em', margin: '0.5em 0' },
                           '& li': { margin: '0.25em 0' },
                           '& blockquote': {
-                            borderLeft: '3px solid #4caf50',
+                            borderLeft: `3px solid ${colors.primary}`,
                             paddingLeft: '1em',
                             margin: '0.5em 0',
                             color: 'text.secondary',
                             fontStyle: 'italic',
                           },
-                          '& a': { color: '#2e7d32', textDecoration: 'underline' },
+                          '& a': { color: colors.primary, textDecoration: 'underline' },
                         }}
                         dangerouslySetInnerHTML={{ __html: pr_text }}
                       />
@@ -237,14 +245,14 @@ function Template3({ data, publicationId }) {
                   )}
 
             {/* Property Details - Detailed Layout */}
-            <Paper sx={{ p: 3, mb: 3 }}>
-              <Typography variant="h6" gutterBottom sx={{ color: '#2e7d32', fontWeight: 'bold', mb: 3 }}>
+            <Paper id="property-info" sx={{ p: 3, mb: 3 }}>
+              <Typography variant="h6" gutterBottom sx={{ color: colors.primary, fontWeight: 'bold', mb: 3 }}>
                 物件詳細情報
               </Typography>
 
               {/* Basic Information */}
               <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ color: '#555', borderBottom: '2px solid #4caf50', pb: 1 }}>
+                <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ color: '#555', borderBottom: `2px solid ${colors.primary}`, pb: 1 }}>
                   基本情報
                 </Typography>
                 <Table size="small" sx={{ mt: 2 }}>
@@ -285,7 +293,7 @@ function Template3({ data, publicationId }) {
 
               {/* Financial Information */}
               <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ color: '#555', borderBottom: '2px solid #4caf50', pb: 1 }}>
+                <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ color: '#555', borderBottom: `2px solid ${colors.primary}`, pb: 1 }}>
                   費用
                 </Typography>
                 <Table size="small" sx={{ mt: 2 }}>
@@ -295,7 +303,7 @@ function Template3({ data, publicationId }) {
                         <TableCell sx={{ fontWeight: 'bold', width: '35%', bgcolor: '#f9f9f9' }}>
                           賃料
                         </TableCell>
-                        <TableCell sx={{ fontWeight: 'medium', color: '#2e7d32', fontSize: '1.1rem' }}>
+                        <TableCell sx={{ fontWeight: 'medium', color: colors.primary, fontSize: '1.1rem' }}>
                           {room.rent.toLocaleString()}円
                         </TableCell>
                       </TableRow>
@@ -336,7 +344,7 @@ function Template3({ data, publicationId }) {
 
               {/* Building Information */}
               <Box>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ color: '#555', borderBottom: '2px solid #4caf50', pb: 1 }}>
+                <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ color: '#555', borderBottom: `2px solid ${colors.primary}`, pb: 1 }}>
                   建物情報
                 </Typography>
                 <Table size="small" sx={{ mt: 2 }}>
@@ -390,8 +398,8 @@ function Template3({ data, publicationId }) {
 
               {/* Tab 1: Photos */}
               {activeTab === 1 && property_publication_photos && property_publication_photos.length > 0 && (
-                <Paper sx={{ p: 3, mb: 3, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                  <Typography variant="h6" gutterBottom sx={{ color: '#2e7d32', fontWeight: 'bold', borderBottom: '2px solid #4caf50', pb: 1, mb: 2 }}>
+                <Paper id="gallery" sx={{ p: 3, mb: 3, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                  <Typography variant="h6" gutterBottom sx={{ color: colors.primary, fontWeight: 'bold', borderBottom: `2px solid ${colors.primary}`, pb: 1, mb: 2 }}>
                     物件写真（{property_publication_photos.length}点）
                   </Typography>
                   <PhotoGallery photos={property_publication_photos} />
@@ -401,8 +409,8 @@ function Template3({ data, publicationId }) {
               {/* Tab 2: Virtual Tour */}
               {activeTab === 2 && ((property_publication_vr_tours && property_publication_vr_tours.length > 0) ||
                 (property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0)) && (
-                <Paper sx={{ p: 3, mb: 3, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                  <Typography variant="h6" gutterBottom sx={{ color: '#2e7d32', fontWeight: 'bold', borderBottom: '2px solid #4caf50', pb: 1, mb: 3 }}>
+                <Paper id="vr-tour" sx={{ p: 3, mb: 3, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                  <Typography variant="h6" gutterBottom sx={{ color: colors.primary, fontWeight: 'bold', borderBottom: `2px solid ${colors.primary}`, pb: 1, mb: 3 }}>
                     バーチャル内覧
                   </Typography>
 
@@ -410,8 +418,8 @@ function Template3({ data, publicationId }) {
                     <Box sx={{ mb: 3 }}>
                       {property_publication_vr_tours.map((item) => (
                         <Box key={item.vr_tour.id} sx={{ mb: 3 }}>
-                          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#2e7d32' }}>
-                            <CheckCircleIcon sx={{ color: '#4caf50', fontSize: 20, verticalAlign: 'text-bottom', mr: 0.5 }} />
+                          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: colors.primary }}>
+                            <CheckCircleIcon sx={{ color: colors.primary, fontSize: 20, verticalAlign: 'text-bottom', mr: 0.5 }} />
                             VRツアー: {item.vr_tour.title}
                           </Typography>
                           {item.vr_tour.description && (
@@ -425,7 +433,7 @@ function Template3({ data, publicationId }) {
                             sx={{
                               width: '100%',
                               height: 500,
-                              border: '3px solid #4caf50',
+                              border: `3px solid ${colors.primary}`,
                               borderRadius: 2,
                               mt: 1
                             }}
@@ -439,8 +447,8 @@ function Template3({ data, publicationId }) {
                     <Box>
                       {property_publication_virtual_stagings.map((item) => (
                         <Box key={item.virtual_staging.id} sx={{ mb: 3 }}>
-                          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#2e7d32' }}>
-                            <CheckCircleIcon sx={{ color: '#4caf50', fontSize: 20, verticalAlign: 'text-bottom', mr: 0.5 }} />
+                          <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: colors.primary }}>
+                            <CheckCircleIcon sx={{ color: colors.primary, fontSize: 20, verticalAlign: 'text-bottom', mr: 0.5 }} />
                             バーチャルステージング: {item.virtual_staging.title}
                           </Typography>
                           {item.virtual_staging.description && (
@@ -454,7 +462,7 @@ function Template3({ data, publicationId }) {
                             sx={{
                               width: '100%',
                               height: 500,
-                              border: '3px solid #4caf50',
+                              border: `3px solid ${colors.primary}`,
                               borderRadius: 2,
                               mt: 1
                             }}
@@ -471,16 +479,17 @@ function Template3({ data, publicationId }) {
           {/* Right Column - H-Sys style */}
           <Grid size={{ xs: 12, md: 4 }}>
             <Paper
+              id="inquiry"
               sx={{
                 mb: 3,
                 position: 'sticky',
                 top: 20,
-                borderTop: '4px solid #4caf50',
+                borderTop: `4px solid ${colors.primary}`,
                 boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
               }}
               className="no-print"
             >
-              <Box sx={{ bgcolor: '#4caf50', color: 'white', p: 2 }}>
+              <Box sx={{ bgcolor: colors.primary, color: 'white', p: 2 }}>
                 <Typography variant="h6" fontWeight="bold">
                   お問い合わせ
                 </Typography>
@@ -494,7 +503,7 @@ function Template3({ data, publicationId }) {
 
               <Divider />
 
-              <Box sx={{ p: 3, bgcolor: '#f1f8e9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box sx={{ p: 3, bgcolor: `color-mix(in srgb, ${colors.primary} 5%, white)`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <ShareButtons
                   url={public_url || window.location.href}
                   title={title}

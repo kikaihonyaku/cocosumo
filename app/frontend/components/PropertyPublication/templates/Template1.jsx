@@ -31,10 +31,18 @@ function Template1({ data, publicationId }) {
     property_publication_vr_tours,
     property_publication_virtual_stagings,
     public_url,
-    qr_code_data_url
+    qr_code_data_url,
+    primary_color,
+    accent_color
   } = data;
   const building = room?.building;
   const visibleFields = visible_fields_with_defaults || {};
+
+  // カスタムカラー（デフォルト値付き）
+  const colors = {
+    primary: primary_color || '#00b900',
+    accent: accent_color || '#ff6600'
+  };
 
   const getRoomTypeLabel = (roomType) => {
     const labels = {
@@ -64,7 +72,7 @@ function Template1({ data, publicationId }) {
   };
 
   return (
-    <Box className="template1-suumo print-container">
+    <Box className="template1-suumo print-container" style={{ '--primary-color': colors.primary, '--accent-color': colors.accent }}>
       {/* SUUMO風のカスタムCSS */}
       <style>{`
         .template1-suumo {
@@ -106,7 +114,7 @@ function Template1({ data, publicationId }) {
 
         .template1-suumo .suumo-rent-box {
           background: linear-gradient(to bottom, #fff9ed 0%, #fff 100%);
-          border: 2px solid #ff8c00;
+          border: 2px solid var(--accent-color);
           border-radius: 4px;
           padding: 16px 20px;
           margin-bottom: 16px;
@@ -115,7 +123,7 @@ function Template1({ data, publicationId }) {
         .template1-suumo .suumo-rent-amount {
           font-size: 36px;
           font-weight: bold;
-          color: #ff6600;
+          color: var(--accent-color);
           line-height: 1.2;
         }
 
@@ -132,7 +140,7 @@ function Template1({ data, publicationId }) {
         }
 
         .template1-suumo .suumo-btn-primary {
-          background: #00b900;
+          background: var(--primary-color);
           color: white;
           font-weight: bold;
           padding: 14px 32px;
@@ -145,16 +153,16 @@ function Template1({ data, publicationId }) {
         }
 
         .template1-suumo .suumo-btn-primary:hover {
-          background: #009900;
+          filter: brightness(0.9);
         }
 
         .template1-suumo .suumo-btn-secondary {
           background: #fff;
-          color: #00b900;
+          color: var(--primary-color);
           font-weight: bold;
           padding: 14px 24px;
           border-radius: 4px;
-          border: 2px solid #00b900;
+          border: 2px solid var(--primary-color);
           font-size: 14px;
           cursor: pointer;
           transition: all 0.2s;
@@ -174,7 +182,7 @@ function Template1({ data, publicationId }) {
         .template1-suumo .suumo-section-header {
           background: #f7f7f7;
           padding: 14px 20px;
-          border-bottom: 2px solid #00b900;
+          border-bottom: 2px solid var(--primary-color);
           font-size: 18px;
           font-weight: bold;
           color: #333;
@@ -216,7 +224,7 @@ function Template1({ data, publicationId }) {
         }
 
         .template1-suumo .suumo-table td.highlight {
-          color: #ff6600;
+          color: var(--accent-color);
           font-size: 18px;
           font-weight: bold;
         }
@@ -239,8 +247,8 @@ function Template1({ data, publicationId }) {
         }
 
         .template1-suumo .suumo-tag {
-          background: #e8f5e9;
-          color: #2e7d32;
+          background: color-mix(in srgb, var(--primary-color) 15%, white);
+          color: var(--primary-color);
           padding: 6px 14px;
           border-radius: 16px;
           font-size: 13px;
@@ -264,7 +272,7 @@ function Template1({ data, publicationId }) {
 
         .template1-suumo .suumo-contact-box {
           background: #fff;
-          border: 2px solid #00b900;
+          border: 2px solid var(--primary-color);
           border-radius: 8px;
           padding: 20px;
           margin-bottom: 16px;
@@ -297,7 +305,7 @@ function Template1({ data, publicationId }) {
 
           {visibleFields.address && building?.address && (
             <div className="suumo-address">
-              <LocationOnIcon sx={{ fontSize: 18, color: '#00b900' }} />
+              <LocationOnIcon sx={{ fontSize: 18, color: colors.primary }} />
               <span>{building.address}</span>
             </div>
           )}
@@ -345,7 +353,7 @@ function Template1({ data, publicationId }) {
           <Grid size={{ xs: 12, md: 8 }}>
             {/* Image Gallery - SUUMO style */}
             {property_publication_photos && property_publication_photos.length > 0 && (
-              <Box className="suumo-section">
+              <Box id="gallery" className="suumo-section">
                 <div className="suumo-section-header">
                   写真
                   <span className="suumo-photo-count" style={{ marginLeft: '12px' }}>
@@ -380,7 +388,7 @@ function Template1({ data, publicationId }) {
                         color: '#666',
                         fontStyle: 'italic',
                       },
-                      '& a': { color: '#00b900', textDecoration: 'underline' },
+                      '& a': { color: colors.primary, textDecoration: 'underline' },
                     }}
                     dangerouslySetInnerHTML={{ __html: pr_text }}
                   />
@@ -389,7 +397,7 @@ function Template1({ data, publicationId }) {
             )}
 
             {/* Property Details - SUUMO style table */}
-            <Box className="suumo-section">
+            <Box id="property-info" className="suumo-section">
               <div className="suumo-section-header">物件詳細</div>
               <Box className="suumo-section-body" sx={{ p: '0 !important' }}>
                 <table className="suumo-table">
@@ -468,7 +476,7 @@ function Template1({ data, publicationId }) {
             {/* VR Tour & Virtual Staging - SUUMO style */}
             {((property_publication_vr_tours && property_publication_vr_tours.length > 0) ||
               (property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0)) && (
-              <Box className="suumo-section">
+              <Box id="vr-tour" className="suumo-section">
                 <div className="suumo-section-header">パノラマ写真・VR内覧</div>
                 <Box className="suumo-section-body">
                   {/* VR Tours */}
@@ -536,7 +544,7 @@ function Template1({ data, publicationId }) {
           {/* Right Column - SUUMO style sidebar */}
           <Grid size={{ xs: 12, md: 4 }}>
             <Box className="suumo-sidebar no-print">
-              <Box className="suumo-contact-box">
+              <Box id="inquiry" className="suumo-contact-box">
                 <div className="suumo-contact-title">
                   この物件へのお問い合わせ
                 </div>

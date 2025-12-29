@@ -16,6 +16,8 @@ import Template1 from '../components/PropertyPublication/templates/Template1';
 import Template2 from '../components/PropertyPublication/templates/Template2';
 import Template3 from '../components/PropertyPublication/templates/Template3';
 import { PropertyAnalytics } from '../services/analytics';
+import SectionNavigation from '../components/property-publication/SectionNavigation';
+import { useScrollTracking } from '../hooks/useScrollTracking';
 
 function PublicPropertyDetail() {
   const { publicationId } = useParams();
@@ -29,6 +31,9 @@ function PublicPropertyDetail() {
   const isPreview = urlParams.get('preview') === 'true';
   const roomId = urlParams.get('roomId');
   const publicationIdParam = urlParams.get('publicationId');
+
+  // Scroll tracking (only for non-preview views)
+  useScrollTracking(publicationId, !isPreview && !loading);
 
   useEffect(() => {
     loadData();
@@ -274,8 +279,25 @@ function PublicPropertyDetail() {
   }
 
   const {
-    template_type
+    template_type,
+    property_publication_photos,
+    property_publication_vr_tours,
+    property_publication_virtual_stagings
   } = data;
+
+  // Determine which sections are available
+  const availableSections = [];
+  if (property_publication_photos && property_publication_photos.length > 0) {
+    availableSections.push('gallery');
+  }
+  if (property_publication_vr_tours && property_publication_vr_tours.length > 0) {
+    availableSections.push('vr-tour');
+  }
+  if (property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0) {
+    availableSections.push('virtual-staging');
+  }
+  availableSections.push('property-info');
+  availableSections.push('inquiry');
 
   // Select template component based on template_type
   const renderTemplate = () => {
@@ -385,7 +407,17 @@ function PublicPropertyDetail() {
         </Box>
       )}
 
-      {renderTemplate()}
+      {/* Main content with section IDs */}
+      <Box id="top">
+        {renderTemplate()}
+      </Box>
+
+      {/* Section Navigation (hidden in preview mode and print) */}
+      {!isPreview && (
+        <Box className="no-print">
+          <SectionNavigation availableSections={availableSections} />
+        </Box>
+      )}
     </>
   );
 }

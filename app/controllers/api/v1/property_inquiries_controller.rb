@@ -42,6 +42,55 @@ class Api::V1::PropertyInquiriesController < ApplicationController
     render json: { error: '物件公開ページが見つかりませんでした' }, status: :not_found
   end
 
+  # GET /api/v1/inquiries/export_csv (認証必要)
+  def export_csv
+    return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
+
+    # ユーザーに紐づく物件のみ
+    user_publication_ids = PropertyPublication.kept.joins(room: :building)
+                                              .where(buildings: { user_id: current_user.id })
+                                              .pluck(:id)
+
+    inquiries = PropertyInquiry.where(property_publication_id: user_publication_ids)
+                               .includes(:property_publication)
+                               .order(created_at: :desc)
+
+    # Date range filter
+    if params[:start_date].present?
+      inquiries = inquiries.where('created_at >= ?', Date.parse(params[:start_date]).beginning_of_day)
+    end
+    if params[:end_date].present?
+      inquiries = inquiries.where('created_at <= ?', Date.parse(params[:end_date]).end_of_day)
+    end
+
+    require 'csv'
+
+    csv_data = CSV.generate(headers: true, force_quotes: true) do |csv|
+      csv << ['ID', '問い合わせ日時', '物件名', '名前', 'メール', '電話番号', 'メッセージ', '流入元', 'UTMソース', 'UTMメディア', 'UTMキャンペーン', 'リファラー']
+
+      inquiries.each do |inquiry|
+        csv << [
+          inquiry.id,
+          inquiry.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+          inquiry.property_publication.title,
+          inquiry.name,
+          inquiry.email,
+          inquiry.phone,
+          inquiry.message&.gsub(/\r?\n/, ' '),
+          inquiry.source,
+          inquiry.utm_source,
+          inquiry.utm_medium,
+          inquiry.utm_campaign,
+          inquiry.referrer
+        ]
+      end
+    end
+
+    send_data csv_data,
+              filename: "inquiries_#{Date.today.strftime('%Y%m%d')}.csv",
+              type: 'text/csv; charset=utf-8'
+  end
+
   # GET /api/v1/inquiry_analytics (認証必要)
   def analytics
     return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
