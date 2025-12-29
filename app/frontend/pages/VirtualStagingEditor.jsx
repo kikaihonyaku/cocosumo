@@ -35,6 +35,7 @@ import {
 import BeforeAfterSlider from '../components/VirtualStaging/BeforeAfterSlider';
 import PhotoSelector from '../components/VirtualStaging/PhotoSelector';
 import AiStagingDialog from '../components/VirtualStaging/AiStagingDialog';
+import SharePanel from '../components/VirtualStaging/SharePanel';
 import muiTheme from '../theme/muiTheme';
 
 const VirtualStagingEditor = () => {
@@ -307,24 +308,13 @@ const VirtualStagingEditor = () => {
             {/* 公開中のボタン群 */}
             {isEditMode && isPublished && (
               <>
-                <Button
-                  variant="outlined"
-                  startIcon={isMdUp ? <ContentCopyIcon /> : null}
-                  onClick={handleCopyUrl}
-                  sx={{
-                    mr: { xs: 0.5, md: 1 },
-                    minWidth: { xs: 'auto', md: 'auto' },
-                    px: { xs: 1, md: 2 },
-                    color: 'white',
-                    borderColor: 'rgba(255, 255, 255, 0.5)',
-                    '&:hover': {
-                      borderColor: 'white',
-                      bgcolor: 'rgba(255, 255, 255, 0.1)',
-                    }
-                  }}
-                >
-                  {isMdUp ? 'URLコピー' : <ContentCopyIcon />}
-                </Button>
+                <Box sx={{ mr: { xs: 0.5, md: 1 } }}>
+                  <SharePanel
+                    publicUrl={`${window.location.origin}/virtual-staging/${virtualStaging.public_id}`}
+                    title={virtualStaging.title}
+                    variant="icon"
+                  />
+                </Box>
                 <Button
                   variant="outlined"
                   color="warning"

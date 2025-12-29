@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Paper, Alert } from '@mui/material';
 import { LocationOn as LocationIcon } from '@mui/icons-material';
 import BeforeAfterSlider from '../components/VirtualStaging/BeforeAfterSlider';
+import SharePanel from '../components/VirtualStaging/SharePanel';
 
 const PublicVirtualStaging = () => {
   const { publicId } = useParams();
@@ -165,6 +166,22 @@ const PublicVirtualStaging = () => {
           </Box>
         </Paper>
       )}
+
+      {/* 共有ボタン（右上） */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 20,
+          right: 20,
+          zIndex: 10,
+        }}
+      >
+        <SharePanel
+          publicUrl={window.location.href}
+          title={virtualStaging.title}
+          variant="icon"
+        />
+      </Box>
 
       {/* フッター（右下に控えめに表示） */}
       <Box
