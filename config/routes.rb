@@ -195,6 +195,9 @@ Rails.application.routes.draw do
         resources :inquiries, only: [:create, :index], controller: 'property_inquiries'
       end
 
+      # 問い合わせ分析API（認証必要）
+      get 'inquiry_analytics', to: 'property_inquiries#analytics'
+
       # ブログ記事API（認証不要）
       resources :blog_posts, only: [:index] do
         collection do

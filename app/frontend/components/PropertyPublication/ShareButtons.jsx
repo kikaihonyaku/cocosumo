@@ -18,32 +18,38 @@ import {
   WhatsApp as WhatsAppIcon,
   Email as EmailIcon
 } from '@mui/icons-material';
+import { PropertyAnalytics } from '../../services/analytics';
 
-export default function ShareButtons({ url, title, qrCodeUrl }) {
+export default function ShareButtons({ url, title, qrCodeUrl, publicationId }) {
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const handleTwitterShare = () => {
+    PropertyAnalytics.shareProperty(publicationId, 'twitter');
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`;
     window.open(twitterUrl, '_blank', 'width=600,height=400');
   };
 
   const handleFacebookShare = () => {
+    PropertyAnalytics.shareProperty(publicationId, 'facebook');
     const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
     window.open(facebookUrl, '_blank', 'width=600,height=400');
   };
 
   const handleLineShare = () => {
+    PropertyAnalytics.shareProperty(publicationId, 'line');
     const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}`;
     window.open(lineUrl, '_blank', 'width=600,height=400');
   };
 
   const handleWhatsAppShare = () => {
+    PropertyAnalytics.shareProperty(publicationId, 'whatsapp');
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${title}\n${url}`)}`;
     window.open(whatsappUrl, '_blank', 'width=600,height=400');
   };
 
   const handleEmailShare = () => {
+    PropertyAnalytics.shareProperty(publicationId, 'email');
     const subject = encodeURIComponent(`【物件情報】${title}`);
     const body = encodeURIComponent(`この物件をご覧ください。\n\n${title}\n\n詳細はこちら：\n${url}`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
@@ -52,6 +58,7 @@ export default function ShareButtons({ url, title, qrCodeUrl }) {
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(url);
+      PropertyAnalytics.copyUrl(publicationId);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -154,7 +161,10 @@ export default function ShareButtons({ url, title, qrCodeUrl }) {
         {qrCodeUrl && (
           <Tooltip title="QRコードを表示">
             <IconButton
-              onClick={() => setQrDialogOpen(true)}
+              onClick={() => {
+                PropertyAnalytics.viewQrCode(publicationId);
+                setQrDialogOpen(true);
+              }}
               sx={{
                 bgcolor: 'grey.600',
                 color: 'white',

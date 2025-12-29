@@ -34,9 +34,91 @@ class Api::V1::PropertyInquiriesController < ApplicationController
     @property_publication = PropertyPublication.kept.find(params[:property_publication_id])
     @property_inquiries = @property_publication.property_inquiries.recent
 
-    render json: @property_inquiries.as_json(methods: [:formatted_created_at])
+    render json: @property_inquiries.as_json(
+      methods: [:formatted_created_at],
+      only: [:id, :name, :email, :phone, :message, :source, :utm_source, :utm_medium, :utm_campaign, :referrer, :created_at]
+    )
   rescue ActiveRecord::RecordNotFound
     render json: { error: '物件公開ページが見つかりませんでした' }, status: :not_found
+  end
+
+  # GET /api/v1/inquiry_analytics (認証必要)
+  def analytics
+    return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
+
+    # 期間パラメータ（デフォルト: 過去30日）
+    days = (params[:days] || 30).to_i
+    start_date = days.days.ago.beginning_of_day
+
+    # 全問い合わせ（ユーザーに紐づく物件のみ）
+    user_publication_ids = PropertyPublication.kept.joins(room: :building)
+                                              .where(buildings: { user_id: current_user.id })
+                                              .pluck(:id)
+
+    base_query = PropertyInquiry.where(property_publication_id: user_publication_ids)
+    period_query = base_query.where('created_at >= ?', start_date)
+
+    # 基本統計
+    total_count = period_query.count
+    previous_period_count = base_query.where(created_at: (start_date - days.days)..start_date).count
+
+    # ソース別集計
+    source_breakdown = period_query.group(:source).count.transform_keys { |k| k || 'unknown' }
+
+    # 日別推移（過去30日）
+    daily_trend = period_query.group("DATE(created_at)").count.transform_keys(&:to_s)
+
+    # 週別推移（過去12週）
+    weekly_trend = base_query.where('created_at >= ?', 12.weeks.ago)
+                             .group("DATE_TRUNC('week', created_at)")
+                             .count
+                             .transform_keys { |k| k.to_date.to_s }
+
+    # 物件別ランキング（トップ10）
+    top_publications = period_query.joins(:property_publication)
+                                   .group(:property_publication_id, 'property_publications.title')
+                                   .order('count_all DESC')
+                                   .limit(10)
+                                   .count
+                                   .map { |(pub_id, title), count| { id: pub_id, title: title, count: count } }
+
+    # キャンペーン別集計
+    campaign_breakdown = period_query.where.not(utm_campaign: [nil, ''])
+                                     .group(:utm_campaign)
+                                     .count
+
+    # 最新の問い合わせ（5件）
+    recent_inquiries = period_query.includes(:property_publication)
+                                   .order(created_at: :desc)
+                                   .limit(5)
+                                   .map do |inquiry|
+      {
+        id: inquiry.id,
+        name: inquiry.name,
+        source: inquiry.source,
+        property_title: inquiry.property_publication.title,
+        created_at: inquiry.formatted_created_at
+      }
+    end
+
+    render json: {
+      period: {
+        days: days,
+        start_date: start_date.to_date,
+        end_date: Date.today
+      },
+      summary: {
+        total: total_count,
+        previous_period: previous_period_count,
+        change_percentage: previous_period_count > 0 ? ((total_count - previous_period_count).to_f / previous_period_count * 100).round(1) : nil
+      },
+      source_breakdown: source_breakdown,
+      daily_trend: daily_trend,
+      weekly_trend: weekly_trend,
+      top_publications: top_publications,
+      campaign_breakdown: campaign_breakdown,
+      recent_inquiries: recent_inquiries
+    }
   end
 
   private

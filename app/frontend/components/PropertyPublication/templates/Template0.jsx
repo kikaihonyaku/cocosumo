@@ -358,6 +358,7 @@ function Template0({ data, publicationId }) {
                   url={public_url || window.location.href}
                   title={title}
                   qrCodeUrl={qr_code_data_url}
+                  publicationId={publicationId}
                 />
               </Box>
             </Paper>

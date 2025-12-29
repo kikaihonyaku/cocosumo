@@ -15,6 +15,7 @@ import Template0 from '../components/PropertyPublication/templates/Template0';
 import Template1 from '../components/PropertyPublication/templates/Template1';
 import Template2 from '../components/PropertyPublication/templates/Template2';
 import Template3 from '../components/PropertyPublication/templates/Template3';
+import { PropertyAnalytics } from '../services/analytics';
 
 function PublicPropertyDetail() {
   const { publicationId } = useParams();
@@ -219,6 +220,11 @@ function PublicPropertyDetail() {
       }
 
       jsonLdScript.textContent = JSON.stringify(structuredData);
+
+      // Track property view (only for non-preview views)
+      if (!isPreview) {
+        PropertyAnalytics.viewProperty(publicationId, title, data.template_type);
+      }
     }
 
     // Cleanup function to reset title and remove meta tags on unmount

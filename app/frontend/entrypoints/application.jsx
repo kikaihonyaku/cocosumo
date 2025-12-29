@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from '../App'
+import AnalyticsProvider from '../components/AnalyticsProvider'
 import './application.css'
 
 console.log('CoCoスモ Starting React application...')
@@ -15,7 +16,9 @@ if (!rootElement) {
   root.render(
     <React.StrictMode>
       <BrowserRouter>
-        <App />
+        <AnalyticsProvider>
+          <App />
+        </AnalyticsProvider>
       </BrowserRouter>
     </React.StrictMode>
   )

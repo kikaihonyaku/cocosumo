@@ -32,6 +32,7 @@ import SuumoImport from "./pages/admin/SuumoImport";
 import StoreManagement from "./pages/admin/StoreManagement";
 import BlogList from "./pages/BlogList";
 import BlogDetail from "./pages/BlogDetail";
+import InquiryAnalytics from "./pages/InquiryAnalytics";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -131,6 +132,7 @@ export default function App() {
             <Route path="/admin/stores" element={<StoreManagement />} />
             <Route path="/admin/layers" element={<LayerManagement />} />
             <Route path="/admin/suumo-import" element={<SuumoImport />} />
+            <Route path="/analytics/inquiries" element={<InquiryAnalytics />} />
             <Route path="/buildings" element={<Buildings />} />
             <Route path="/buildings/new" element={<BuildingForm />} />
             <Route path="/buildings/:id/edit" element={<BuildingForm />} />

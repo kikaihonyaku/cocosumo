@@ -11,6 +11,7 @@ import {
   Send as SendIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import { PropertyAnalytics } from '../../services/analytics';
 
 export default function InquiryForm({ publicationId }) {
   const [formData, setFormData] = useState({
@@ -27,6 +28,17 @@ export default function InquiryForm({ publicationId }) {
   const [honeypot, setHoneypot] = useState('');
   const formLoadTimeRef = useRef(Date.now());
   const MIN_FORM_FILL_TIME_MS = 3000; // Minimum 3 seconds to fill form
+
+  // Track if form start has been recorded
+  const formStartTrackedRef = useRef(false);
+
+  // Track form start when user focuses on first field
+  const handleFormStart = () => {
+    if (!formStartTrackedRef.current) {
+      PropertyAnalytics.startInquiry(publicationId);
+      formStartTrackedRef.current = true;
+    }
+  };
 
   // Source tracking: collect UTM parameters and referrer
   const getTrackingData = () => {
@@ -101,8 +113,12 @@ export default function InquiryForm({ publicationId }) {
         property_inquiry: inquiryData
       });
 
+      // Track successful inquiry submission
+      PropertyAnalytics.submitInquiry(publicationId, trackingData.source);
+
       setSuccess(true);
       // Clear form and reset load time
+      formStartTrackedRef.current = false; // Reset for potential re-submission
       setFormData({
         name: '',
         email: '',
@@ -163,6 +179,7 @@ export default function InquiryForm({ publicationId }) {
         label="お名前"
         value={formData.name}
         onChange={handleChange('name')}
+        onFocus={handleFormStart}
         required
         margin="normal"
         size="small"

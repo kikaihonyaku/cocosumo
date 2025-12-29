@@ -52,6 +52,7 @@ import ContentSelector from '../components/PropertyPublication/ContentSelector';
 import VisibleFieldsSelector from '../components/PropertyPublication/VisibleFieldsSelector';
 import PhotoGallery from '../components/PropertyPublication/PhotoGallery';
 import RichTextEditor from '../components/shared/RichTextEditor';
+import InquiryList from '../components/PropertyPublication/InquiryList';
 
 function PropertyPublicationEditor() {
   const { roomId, id } = useParams();
@@ -551,6 +552,7 @@ function PropertyPublicationEditor() {
         <Tab label="コンテンツ" />
         <Tab label="表示項目" />
         <Tab label="プレビュー" />
+        {isEditMode && <Tab label="問い合わせ" />}
       </Tabs>
 
       {/* Content */}
@@ -1044,6 +1046,13 @@ function PropertyPublicationEditor() {
               </Grid>
             </Box>
           </Box>
+        )}
+
+        {/* Tab 5: Inquiries (Edit mode only) */}
+        {activeTab === 5 && isEditMode && (
+          <Paper sx={{ p: 3, maxWidth: 900 }}>
+            <InquiryList publicationId={id} roomId={roomId} />
+          </Paper>
         )}
       </Box>
 
