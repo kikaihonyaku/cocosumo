@@ -84,6 +84,12 @@ export default function VrTourViewerContent({
     }
   }, [scenes]);
 
+  // 現在のシーンのインデックスを取得（useEffectより前に定義）
+  const currentSceneIndex = scenes.findIndex(s => s.id === currentScene?.id);
+
+  // コンテナID（useEffectより前に定義）
+  const containerId = isPreview ? "vr-preview-container" : "vr-viewer-container";
+
   // キーボードショートカット
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -191,9 +197,6 @@ export default function VrTourViewerContent({
       setNextSceneName('');
     }, 800);
   }, [currentScene?.id]);
-
-  // 現在のシーンのインデックスを取得
-  const currentSceneIndex = scenes.findIndex(s => s.id === currentScene?.id);
 
   // 次のシーンへ移動
   const goToNextScene = useCallback(() => {
@@ -390,8 +393,6 @@ export default function VrTourViewerContent({
       navigate(`/room/${roomId}`);
     }
   };
-
-  const containerId = isPreview ? "vr-preview-container" : "vr-viewer-container";
 
   return (
     <>
