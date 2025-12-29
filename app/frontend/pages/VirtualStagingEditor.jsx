@@ -37,6 +37,7 @@ import PhotoSelector from '../components/VirtualStaging/PhotoSelector';
 import AiStagingDialog from '../components/VirtualStaging/AiStagingDialog';
 import SharePanel from '../components/VirtualStaging/SharePanel';
 import VariationsPanel from '../components/VirtualStaging/VariationsPanel';
+import AnnotationsPanel from '../components/VirtualStaging/AnnotationsPanel';
 import muiTheme from '../theme/muiTheme';
 
 const VirtualStagingEditor = () => {
@@ -56,8 +57,10 @@ const VirtualStagingEditor = () => {
     before_photo_id: '',
     after_photo_id: '',
     status: 'draft',
+    annotations: [],
   });
   const [variations, setVariations] = useState([]);
+  const [annotations, setAnnotations] = useState([]);
 
   const isEditMode = !!id;
   const isPublished = virtualStaging.status === 'published';
@@ -90,6 +93,7 @@ const VirtualStagingEditor = () => {
         const data = await response.json();
         setVirtualStaging(data);
         setVariations(data.variations || []);
+        setAnnotations(data.annotations || []);
       } else if (response.status === 401) {
         navigate('/login');
       }
@@ -125,7 +129,12 @@ const VirtualStagingEditor = () => {
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ virtual_staging: virtualStaging }),
+        body: JSON.stringify({
+          virtual_staging: {
+            ...virtualStaging,
+            annotations: annotations,
+          },
+        }),
       });
 
       if (response.ok) {
@@ -485,6 +494,7 @@ const VirtualStagingEditor = () => {
             beforeLabel="Before"
             afterLabel="After"
             height="500px"
+            annotations={annotations}
           />
         </Paper>
       )}
@@ -499,6 +509,18 @@ const VirtualStagingEditor = () => {
             beforePhotoId={virtualStaging.before_photo_id}
             onVariationsChange={setVariations}
             onOpenAiDialog={() => setAiStagingDialog(true)}
+          />
+        </Paper>
+      )}
+
+      {/* アノテーション管理（編集モード・プレビュー可能時） */}
+      {isEditMode && canShowPreview && (
+        <Paper sx={{ p: 3, mt: 3 }}>
+          <AnnotationsPanel
+            annotations={annotations}
+            onAnnotationsChange={setAnnotations}
+            beforeImageUrl={getBeforePhotoUrl()}
+            afterImageUrl={getAfterPhotoUrl()}
           />
         </Paper>
       )}

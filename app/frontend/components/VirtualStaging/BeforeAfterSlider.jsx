@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Box, Typography, Fade, IconButton, Tooltip } from '@mui/material';
+import { Box, Typography, Fade, IconButton, Tooltip, Popper, Paper } from '@mui/material';
 import {
   ReactCompareSlider,
   ReactCompareSliderImage,
@@ -9,6 +9,7 @@ import {
   ChevronRight as ChevronRightIcon,
   Fullscreen as FullscreenIcon,
   FullscreenExit as FullscreenExitIcon,
+  PushPin as PinIcon,
 } from '@mui/icons-material';
 
 /**
@@ -71,6 +72,47 @@ const CustomHandle = ({ style }) => {
 /**
  * Before/After画像比較スライダーコンポーネント
  */
+/**
+ * アノテーションピンコンポーネント
+ */
+const AnnotationPin = ({ annotation, sliderPosition, onHover, onLeave }) => {
+  const isVisible = () => {
+    if (annotation.side === 'both') return true;
+    if (annotation.side === 'before') return annotation.x < sliderPosition;
+    if (annotation.side === 'after') return annotation.x >= sliderPosition;
+    return true;
+  };
+
+  if (!isVisible()) return null;
+
+  return (
+    <Box
+      sx={{
+        position: 'absolute',
+        left: `${annotation.x}%`,
+        top: `${annotation.y}%`,
+        transform: 'translate(-50%, -100%)',
+        zIndex: 20,
+        cursor: 'pointer',
+        transition: 'transform 0.2s ease',
+        '&:hover': {
+          transform: 'translate(-50%, -100%) scale(1.2)',
+        },
+      }}
+      onMouseEnter={(e) => onHover(e, annotation)}
+      onMouseLeave={onLeave}
+    >
+      <PinIcon
+        sx={{
+          color: annotation.color || '#667eea',
+          fontSize: 32,
+          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))',
+        }}
+      />
+    </Box>
+  );
+};
+
 const BeforeAfterSlider = ({
   beforeImageUrl,
   afterImageUrl,
@@ -80,12 +122,25 @@ const BeforeAfterSlider = ({
   showLabels = true,
   showGuide = true,
   showFullscreenButton = true,
+  annotations = [],
 }) => {
   const [position, setPosition] = useState(50);
   const [showHint, setShowHint] = useState(showGuide);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hoveredAnnotation, setHoveredAnnotation] = useState(null);
+  const [annotationAnchor, setAnnotationAnchor] = useState(null);
   const containerRef = useRef(null);
+
+  const handleAnnotationHover = (e, annotation) => {
+    setAnnotationAnchor(e.currentTarget);
+    setHoveredAnnotation(annotation);
+  };
+
+  const handleAnnotationLeave = () => {
+    setAnnotationAnchor(null);
+    setHoveredAnnotation(null);
+  };
 
   // 初回操作でヒントを非表示
   const handlePositionChange = useCallback((newPosition) => {
@@ -328,6 +383,68 @@ const BeforeAfterSlider = ({
           <ChevronRightIcon sx={{ fontSize: 20 }} />
         </Box>
       </Fade>
+
+      {/* アノテーションオーバーレイ */}
+      {annotations.length > 0 && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: 'none',
+            zIndex: 15,
+          }}
+        >
+          {annotations.map((annotation, index) => (
+            <Box key={annotation.id || index} sx={{ pointerEvents: 'auto' }}>
+              <AnnotationPin
+                annotation={annotation}
+                sliderPosition={position}
+                onHover={handleAnnotationHover}
+                onLeave={handleAnnotationLeave}
+              />
+            </Box>
+          ))}
+        </Box>
+      )}
+
+      {/* アノテーションポップオーバー */}
+      <Popper
+        open={Boolean(annotationAnchor)}
+        anchorEl={annotationAnchor}
+        placement="top"
+        sx={{ zIndex: 1500 }}
+        modifiers={[
+          {
+            name: 'offset',
+            options: {
+              offset: [0, 8],
+            },
+          },
+        ]}
+      >
+        {hoveredAnnotation && (
+          <Paper
+            elevation={8}
+            sx={{
+              px: 2,
+              py: 1,
+              maxWidth: 250,
+              bgcolor: 'rgba(0, 0, 0, 0.85)',
+              color: 'white',
+              backdropFilter: 'blur(8px)',
+              borderLeft: '3px solid',
+              borderColor: hoveredAnnotation.color || '#667eea',
+            }}
+          >
+            <Typography variant="body2" fontWeight="500">
+              {hoveredAnnotation.text}
+            </Typography>
+          </Paper>
+        )}
+      </Popper>
     </Box>
   );
 };

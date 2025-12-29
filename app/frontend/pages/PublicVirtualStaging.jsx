@@ -110,6 +110,7 @@ const PublicVirtualStaging = () => {
           beforeLabel="Before"
           afterLabel="After"
           height="calc(100vh - 32px)"
+          annotations={virtualStaging.annotations || []}
         />
       </Box>
 

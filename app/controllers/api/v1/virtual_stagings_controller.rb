@@ -184,7 +184,7 @@ class Api::V1::VirtualStagingsController < ApplicationController
   end
 
   def virtual_staging_params
-    params.require(:virtual_staging).permit(:title, :description, :before_photo_id, :after_photo_id, :status)
+    params.require(:virtual_staging).permit(:title, :description, :before_photo_id, :after_photo_id, :status, annotations: [:id, :text, :side, :color, :x, :y])
   end
 
   def require_login

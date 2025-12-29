@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_22_210146) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_29_013549) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -406,6 +406,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_22_210146) do
     t.index ["tenant_id"], name: "index_users_on_tenant_id"
   end
 
+  create_table "virtual_staging_variations", force: :cascade do |t|
+    t.bigint "virtual_staging_id", null: false
+    t.bigint "after_photo_id", null: false
+    t.string "style_name", null: false
+    t.integer "display_order", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["after_photo_id"], name: "index_virtual_staging_variations_on_after_photo_id"
+    t.index ["virtual_staging_id", "display_order"], name: "index_vs_variations_on_staging_and_order"
+    t.index ["virtual_staging_id"], name: "index_virtual_staging_variations_on_virtual_staging_id"
+  end
+
   create_table "virtual_stagings", force: :cascade do |t|
     t.integer "room_id", null: false
     t.string "title"
@@ -417,6 +429,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_22_210146) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "public_id"
+    t.json "annotations", default: []
     t.index ["after_photo_id"], name: "index_virtual_stagings_on_after_photo_id"
     t.index ["before_photo_id"], name: "index_virtual_stagings_on_before_photo_id"
     t.index ["public_id"], name: "index_virtual_stagings_on_public_id", unique: true
@@ -484,6 +497,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_22_210146) do
   add_foreign_key "stores", "tenants"
   add_foreign_key "suumo_import_histories", "tenants"
   add_foreign_key "users", "tenants"
+  add_foreign_key "virtual_staging_variations", "room_photos", column: "after_photo_id"
+  add_foreign_key "virtual_staging_variations", "virtual_stagings"
   add_foreign_key "virtual_stagings", "room_photos", column: "after_photo_id"
   add_foreign_key "virtual_stagings", "room_photos", column: "before_photo_id"
   add_foreign_key "virtual_stagings", "rooms"
