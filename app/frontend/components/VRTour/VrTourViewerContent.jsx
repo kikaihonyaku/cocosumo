@@ -90,6 +90,26 @@ export default function VrTourViewerContent({
   // コンテナID（useEffectより前に定義）
   const containerId = isPreview ? "vr-preview-container" : "vr-viewer-container";
 
+  // トランジション付きシーン変更（useEffectより前に定義）
+  const changeSceneWithTransition = useCallback((newScene) => {
+    if (!newScene || newScene.id === currentScene?.id) return;
+
+    setIsTransitioning(true);
+    setNextSceneName(newScene.title || '');
+
+    // トランジション表示後にシーンを切り替え
+    setTimeout(() => {
+      setCurrentScene(newScene);
+      setCurrentViewAngle(newScene?.initial_view?.yaw || 0);
+    }, 300);
+
+    // トランジション終了
+    setTimeout(() => {
+      setIsTransitioning(false);
+      setNextSceneName('');
+    }, 800);
+  }, [currentScene?.id]);
+
   // キーボードショートカット
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -177,26 +197,6 @@ export default function VrTourViewerContent({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentSceneIndex, scenes, drawerOpen, footerOpen, containerId, changeSceneWithTransition]);
-
-  // トランジション付きシーン変更
-  const changeSceneWithTransition = useCallback((newScene) => {
-    if (!newScene || newScene.id === currentScene?.id) return;
-
-    setIsTransitioning(true);
-    setNextSceneName(newScene.title || '');
-
-    // トランジション表示後にシーンを切り替え
-    setTimeout(() => {
-      setCurrentScene(newScene);
-      setCurrentViewAngle(newScene?.initial_view?.yaw || 0);
-    }, 300);
-
-    // トランジション終了
-    setTimeout(() => {
-      setIsTransitioning(false);
-      setNextSceneName('');
-    }, 800);
-  }, [currentScene?.id]);
 
   // 次のシーンへ移動
   const goToNextScene = useCallback(() => {
