@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -42,7 +42,9 @@ import {
   Home as HomeIcon,
   LocationOn as LocationOnIcon,
   AttachMoney as AttachMoneyIcon,
-  OpenInNew as OpenInNewIcon
+  OpenInNew as OpenInNewIcon,
+  CloudDone as CloudDoneIcon,
+  CloudUpload as CloudUploadIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import PhotoSelector from '../components/PropertyPublication/PhotoSelector';
@@ -62,6 +64,13 @@ function PropertyPublicationEditor() {
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [qrCodeDialog, setQrCodeDialog] = useState(false);
+
+  // Auto-save state
+  const [isDirty, setIsDirty] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState(null);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const autoSaveIntervalRef = useRef(null);
+  const lastSavedDataRef = useRef(null);
 
   // Data state
   const [propertyPublication, setPropertyPublication] = useState({
@@ -136,6 +145,98 @@ function PropertyPublicationEditor() {
     }
   };
 
+  // Create current data snapshot for comparison
+  const getCurrentDataSnapshot = useCallback(() => {
+    return JSON.stringify({
+      propertyPublication: {
+        title: propertyPublication.title,
+        catch_copy: propertyPublication.catch_copy,
+        pr_text: propertyPublication.pr_text,
+        template_type: propertyPublication.template_type,
+        visible_fields: propertyPublication.visible_fields
+      },
+      selectedPhotos,
+      selectedVrTourIds,
+      selectedVirtualStagingIds
+    });
+  }, [propertyPublication, selectedPhotos, selectedVrTourIds, selectedVirtualStagingIds]);
+
+  // Initialize lastSavedDataRef after data is loaded
+  useEffect(() => {
+    if (!loading && !lastSavedDataRef.current) {
+      // Set initial snapshot after first load
+      setTimeout(() => {
+        lastSavedDataRef.current = getCurrentDataSnapshot();
+      }, 100);
+    }
+  }, [loading, getCurrentDataSnapshot]);
+
+  // Check if data has changed
+  useEffect(() => {
+    if (loading) return;
+
+    const currentSnapshot = getCurrentDataSnapshot();
+    if (lastSavedDataRef.current && currentSnapshot !== lastSavedDataRef.current) {
+      setIsDirty(true);
+    }
+  }, [getCurrentDataSnapshot, loading]);
+
+  // Auto-save effect
+  useEffect(() => {
+    if (!autoSaveEnabled || !isEditMode) return;
+
+    // Clear existing interval
+    if (autoSaveIntervalRef.current) {
+      clearInterval(autoSaveIntervalRef.current);
+    }
+
+    // Set up new interval (30 seconds)
+    autoSaveIntervalRef.current = setInterval(() => {
+      if (isDirty && !saving) {
+        handleAutoSave();
+      }
+    }, 30000);
+
+    // Cleanup on unmount
+    return () => {
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current);
+      }
+    };
+  }, [autoSaveEnabled, isEditMode, isDirty, saving]);
+
+  // Auto-save handler (silent save without navigation)
+  const handleAutoSave = async () => {
+    if (!isEditMode || saving) return;
+
+    setSaving(true);
+    try {
+      const payload = {
+        property_publication: {
+          title: propertyPublication.title,
+          catch_copy: propertyPublication.catch_copy,
+          pr_text: propertyPublication.pr_text,
+          status: propertyPublication.status,
+          template_type: propertyPublication.template_type,
+          visible_fields: propertyPublication.visible_fields
+        },
+        photos: selectedPhotos,
+        vr_tour_ids: selectedVrTourIds,
+        virtual_staging_ids: selectedVirtualStagingIds
+      };
+
+      await axios.patch(`/api/v1/rooms/${roomId}/property_publications/${id}`, payload);
+      lastSavedDataRef.current = getCurrentDataSnapshot();
+      setIsDirty(false);
+      setLastSavedAt(new Date());
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+      // Don't show error for auto-save, just log it
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -156,10 +257,16 @@ function PropertyPublicationEditor() {
       if (isEditMode) {
         const response = await axios.patch(`/api/v1/rooms/${roomId}/property_publications/${id}`, payload);
         setPropertyPublication(response.data);
+        lastSavedDataRef.current = getCurrentDataSnapshot();
+        setIsDirty(false);
+        setLastSavedAt(new Date());
         showSnackbar('保存しました', 'success');
       } else {
         const response = await axios.post(`/api/v1/rooms/${roomId}/property_publications`, payload);
         setPropertyPublication(response.data);
+        lastSavedDataRef.current = getCurrentDataSnapshot();
+        setIsDirty(false);
+        setLastSavedAt(new Date());
         showSnackbar('作成しました', 'success');
         // Navigate to edit mode
         navigate(`/room/${roomId}/property-publication/${response.data.id}/edit`, { replace: true });
@@ -331,6 +438,39 @@ function PropertyPublicationEditor() {
               size="small"
               sx={{ mr: 2 }}
             />
+          )}
+
+          {/* Auto-save status indicator */}
+          {isEditMode && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                mr: 2,
+                color: 'rgba(255, 255, 255, 0.9)',
+                fontSize: '0.75rem'
+              }}
+            >
+              {saving ? (
+                <>
+                  <CloudUploadIcon sx={{ fontSize: 18 }} />
+                  <Typography variant="caption">保存中...</Typography>
+                </>
+              ) : isDirty ? (
+                <>
+                  <CloudUploadIcon sx={{ fontSize: 18, opacity: 0.7 }} />
+                  <Typography variant="caption">未保存の変更あり</Typography>
+                </>
+              ) : lastSavedAt ? (
+                <>
+                  <CloudDoneIcon sx={{ fontSize: 18 }} />
+                  <Typography variant="caption">
+                    保存済み {lastSavedAt.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                  </Typography>
+                </>
+              ) : null}
+            </Box>
           )}
 
           <Button
