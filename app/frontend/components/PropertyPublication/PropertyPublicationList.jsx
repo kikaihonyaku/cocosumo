@@ -23,7 +23,8 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as VisibilityIcon,
-  Description as DraftIcon
+  Description as DraftIcon,
+  ContentCopy as ContentCopyIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -85,6 +86,22 @@ export default function PropertyPublicationList({ roomId }) {
       } catch (error) {
         console.error('Error deleting property publication:', error);
         alert('削除に失敗しました');
+      }
+    }
+    handleMenuClose();
+  };
+
+  const handleDuplicate = async () => {
+    if (selectedPublication) {
+      try {
+        const response = await axios.post(`/api/v1/rooms/${roomId}/property_publications/${selectedPublication.id}/duplicate`);
+        if (response.data.success) {
+          loadPropertyPublications();
+          alert('物件公開ページを複製しました');
+        }
+      } catch (error) {
+        console.error('Error duplicating property publication:', error);
+        alert('複製に失敗しました');
       }
     }
     handleMenuClose();
@@ -243,6 +260,10 @@ export default function PropertyPublicationList({ roomId }) {
         <MenuItem onClick={handleEdit}>
           <EditIcon fontSize="small" sx={{ mr: 1 }} />
           編集
+        </MenuItem>
+        <MenuItem onClick={handleDuplicate}>
+          <ContentCopyIcon fontSize="small" sx={{ mr: 1 }} />
+          複製
         </MenuItem>
         <MenuItem onClick={handleDelete}>
           <DeleteIcon fontSize="small" sx={{ mr: 1 }} />

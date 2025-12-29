@@ -27,7 +27,9 @@ import {
   Campaign as CampaignIcon,
   Link as LinkIcon,
   QuestionMark as QuestionMarkIcon,
-  Home as HomeIcon
+  Home as HomeIcon,
+  Dashboard as DashboardIcon,
+  EmojiEvents as EmojiEventsIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -439,6 +441,117 @@ function RecentInquiries({ data }) {
   );
 }
 
+// Template name mapping
+const getTemplateName = (template) => {
+  const templateMap = {
+    template0: { name: 'クラシック', color: '#757575', description: 'シンプルで見やすい' },
+    template1: { name: 'SUUMO風', color: '#00b900', description: '親しみやすいデザイン' },
+    template2: { name: 'モダン', color: '#1976d2', description: '洗練されたスタイル' },
+    template3: { name: 'ナチュラル', color: '#4caf50', description: '落ち着いた雰囲気' }
+  };
+  return templateMap[template] || { name: template, color: '#9e9e9e', description: '' };
+};
+
+// Template Performance Component
+function TemplatePerformance({ data }) {
+  if (!data || data.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
+        テンプレートデータがありません
+      </Typography>
+    );
+  }
+
+  // Sort by avg_per_publication (best performing first)
+  const sortedData = [...data]
+    .filter(t => t.publication_count > 0)
+    .sort((a, b) => b.avg_per_publication - a.avg_per_publication);
+
+  const maxAvg = Math.max(...sortedData.map(t => t.avg_per_publication), 1);
+  const bestTemplate = sortedData[0];
+
+  if (sortedData.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
+        公開中のテンプレートがありません
+      </Typography>
+    );
+  }
+
+  return (
+    <Box>
+      {/* Best performer highlight */}
+      {bestTemplate && bestTemplate.avg_per_publication > 0 && (
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          mb: 2,
+          p: 1.5,
+          borderRadius: 1,
+          bgcolor: `${getTemplateName(bestTemplate.template).color}10`,
+          border: `1px solid ${getTemplateName(bestTemplate.template).color}30`
+        }}>
+          <EmojiEventsIcon sx={{ color: '#ffc107' }} />
+          <Box>
+            <Typography variant="body2" fontWeight={600}>
+              最も効果的: {getTemplateName(bestTemplate.template).name}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              平均 {bestTemplate.avg_per_publication} 件/物件
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
+      {/* Template breakdown */}
+      {sortedData.map((template) => {
+        const templateInfo = getTemplateName(template.template);
+        const widthPercent = maxAvg > 0 ? (template.avg_per_publication / maxAvg) * 100 : 0;
+
+        return (
+          <Box key={template.template} sx={{ mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <DashboardIcon sx={{ color: templateInfo.color, fontSize: 18 }} />
+                <Typography variant="body2">{templateInfo.name}</Typography>
+                <Chip
+                  label={`${template.publication_count}件`}
+                  size="small"
+                  sx={{ height: 20, fontSize: '0.65rem' }}
+                />
+              </Box>
+              <Typography variant="body2" fontWeight={600}>
+                {template.inquiry_count}件 (平均 {template.avg_per_publication}/物件)
+              </Typography>
+            </Box>
+            <LinearProgress
+              variant="determinate"
+              value={Math.max(widthPercent, 2)}
+              sx={{
+                height: 8,
+                borderRadius: 4,
+                bgcolor: 'grey.200',
+                '& .MuiLinearProgress-bar': {
+                  bgcolor: templateInfo.color,
+                  borderRadius: 4
+                }
+              }}
+            />
+          </Box>
+        );
+      })}
+
+      {/* All templates summary */}
+      <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+        <Typography variant="caption" color="text.secondary">
+          ※ 平均問い合わせ数が高いテンプレートは、より効果的に訪問者を問い合わせにつなげています
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
+
 // Main Dashboard Component
 export default function InquiryAnalyticsDashboard() {
   const [loading, setLoading] = useState(true);
@@ -615,6 +728,19 @@ export default function InquiryAnalyticsDashboard() {
               最新の問い合わせ
             </Typography>
             <RecentInquiries data={data.recent_inquiries} />
+          </Paper>
+        </Grid>
+
+        {/* Template Performance */}
+        <Grid size={{ xs: 12 }}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              テンプレート別パフォーマンス
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+              どのテンプレートデザインが最も問い合わせを獲得しているかを比較
+            </Typography>
+            <TemplatePerformance data={data.template_breakdown} />
           </Paper>
         </Grid>
 

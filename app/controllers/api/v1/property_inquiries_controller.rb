@@ -87,6 +87,32 @@ class Api::V1::PropertyInquiriesController < ApplicationController
                                      .group(:utm_campaign)
                                      .count
 
+    # テンプレート別パフォーマンス
+    template_performance = period_query.joins(:property_publication)
+                                       .group('property_publications.template_type')
+                                       .count
+                                       .transform_keys { |k| k || 'template1' }
+
+    # テンプレート別の物件数（分母）
+    template_publication_counts = PropertyPublication.kept
+                                                     .where(id: user_publication_ids)
+                                                     .group(:template_type)
+                                                     .count
+
+    # テンプレート別パフォーマンス詳細を計算
+    template_breakdown = PropertyPublication::template_types.keys.map do |template|
+      inquiry_count = template_performance[template] || 0
+      publication_count = template_publication_counts[template] || 0
+      avg_per_publication = publication_count > 0 ? (inquiry_count.to_f / publication_count).round(2) : 0
+
+      {
+        template: template,
+        inquiry_count: inquiry_count,
+        publication_count: publication_count,
+        avg_per_publication: avg_per_publication
+      }
+    end
+
     # 最新の問い合わせ（5件）
     recent_inquiries = period_query.includes(:property_publication)
                                    .order(created_at: :desc)
@@ -117,6 +143,7 @@ class Api::V1::PropertyInquiriesController < ApplicationController
       weekly_trend: weekly_trend,
       top_publications: top_publications,
       campaign_breakdown: campaign_breakdown,
+      template_breakdown: template_breakdown,
       recent_inquiries: recent_inquiries
     }
   end

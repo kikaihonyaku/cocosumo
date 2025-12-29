@@ -2,7 +2,7 @@ class Api::V1::PropertyPublicationsController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login, except: [:show_public]
   before_action :set_room, only: [:index, :create], if: -> { params[:room_id].present? }
-  before_action :set_property_publication, only: [:show, :update, :destroy, :publish, :unpublish]
+  before_action :set_property_publication, only: [:show, :update, :destroy, :publish, :unpublish, :duplicate]
 
   # GET /api/v1/property_publications (全物件公開ページ一覧)
   # GET /api/v1/rooms/:room_id/property_publications (部屋単位の物件公開ページ一覧)
@@ -318,6 +318,30 @@ class Api::V1::PropertyPublicationsController < ApplicationController
     else
       render json: { errors: @property_publication.errors.full_messages }, status: :unprocessable_entity
     end
+  end
+
+  # POST /api/v1/property_publications/:id/duplicate
+  def duplicate
+    new_publication = @property_publication.duplicate
+    render json: {
+      success: true,
+      message: '物件公開ページを複製しました',
+      property_publication: new_publication.as_json(
+        include: {
+          room: {
+            only: [:id, :room_number],
+            include: {
+              building: {
+                only: [:id, :name, :address]
+              }
+            }
+          }
+        },
+        methods: [:thumbnail_url, :public_url]
+      )
+    }, status: :created
+  rescue => e
+    render json: { errors: [e.message] }, status: :unprocessable_entity
   end
 
   private

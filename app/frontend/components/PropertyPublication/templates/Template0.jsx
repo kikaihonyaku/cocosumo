@@ -20,6 +20,7 @@ import {
 import PhotoGallery from '../PhotoGallery';
 import InquiryForm from '../InquiryForm';
 import ShareButtons from '../ShareButtons';
+import FavoriteButton from '../FavoriteButton';
 
 function Template0({ data, publicationId }) {
   const {
@@ -353,12 +354,23 @@ function Template0({ data, publicationId }) {
 
               <Divider />
 
-              <Box sx={{ p: 2 }}>
+              <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <ShareButtons
                   url={public_url || window.location.href}
                   title={title}
                   qrCodeUrl={qr_code_data_url}
                   publicationId={publicationId}
+                />
+                <FavoriteButton
+                  publicationId={publicationId}
+                  title={title}
+                  catchCopy={catch_copy}
+                  thumbnailUrl={property_publication_photos?.[0]?.room_photo?.photo_url}
+                  address={building?.address}
+                  rent={room?.rent}
+                  roomType={room?.room_type}
+                  area={room?.area}
+                  size="large"
                 />
               </Box>
             </Paper>

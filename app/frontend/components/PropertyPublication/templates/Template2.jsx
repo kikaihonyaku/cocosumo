@@ -15,6 +15,7 @@ import {
 import PhotoGallery from '../PhotoGallery';
 import InquiryForm from '../InquiryForm';
 import ShareButtons from '../ShareButtons';
+import FavoriteButton from '../FavoriteButton';
 
 function Template2({ data, publicationId }) {
   const {
@@ -745,7 +746,20 @@ function Template2({ data, publicationId }) {
 
         {/* Share Section */}
         <div className="share-box no-print">
-          <div className="share-title">この物件をシェア</div>
+          <div className="share-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>この物件をシェア</span>
+            <FavoriteButton
+              publicationId={publicationId}
+              title={title}
+              catchCopy={catch_copy}
+              thumbnailUrl={property_publication_photos?.[0]?.room_photo?.photo_url}
+              address={building?.address}
+              rent={room?.rent}
+              roomType={room?.room_type}
+              area={room?.area}
+              size="large"
+            />
+          </div>
           <ShareButtons
             url={public_url || window.location.href}
             title={title}

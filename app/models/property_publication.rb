@@ -109,6 +109,48 @@ class PropertyPublication < ApplicationRecord
     property_publication_photos.first&.room_photo&.photo_url
   end
 
+  # Duplicate the property publication
+  def duplicate
+    new_publication = dup
+    new_publication.publication_id = nil # Will be regenerated
+    new_publication.title = "#{title} (コピー)"
+    new_publication.status = :draft
+    new_publication.published_at = nil
+    new_publication.created_at = nil
+    new_publication.updated_at = nil
+
+    ActiveRecord::Base.transaction do
+      new_publication.save!
+
+      # Duplicate photos
+      property_publication_photos.each do |photo|
+        new_publication.property_publication_photos.create!(
+          room_photo_id: photo.room_photo_id,
+          comment: photo.comment,
+          display_order: photo.display_order
+        )
+      end
+
+      # Duplicate VR tours
+      property_publication_vr_tours.each do |vr_tour|
+        new_publication.property_publication_vr_tours.create!(
+          vr_tour_id: vr_tour.vr_tour_id,
+          display_order: vr_tour.display_order
+        )
+      end
+
+      # Duplicate virtual stagings
+      property_publication_virtual_stagings.each do |staging|
+        new_publication.property_publication_virtual_stagings.create!(
+          virtual_staging_id: staging.virtual_staging_id,
+          display_order: staging.display_order
+        )
+      end
+    end
+
+    new_publication
+  end
+
   private
 
   def generate_publication_id

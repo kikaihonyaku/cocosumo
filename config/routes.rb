@@ -145,6 +145,7 @@ Rails.application.routes.draw do
           member do
             post :publish
             post :unpublish
+            post :duplicate
           end
         end
       end

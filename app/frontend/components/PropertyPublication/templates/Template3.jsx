@@ -28,6 +28,7 @@ import {
 import PhotoGallery from '../PhotoGallery';
 import InquiryForm from '../InquiryForm';
 import ShareButtons from '../ShareButtons';
+import FavoriteButton from '../FavoriteButton';
 
 function Template3({ data, publicationId }) {
   const [activeTab, setActiveTab] = useState(0);
@@ -493,12 +494,23 @@ function Template3({ data, publicationId }) {
 
               <Divider />
 
-              <Box sx={{ p: 3, bgcolor: '#f1f8e9' }}>
+              <Box sx={{ p: 3, bgcolor: '#f1f8e9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <ShareButtons
                   url={public_url || window.location.href}
                   title={title}
                   qrCodeUrl={qr_code_data_url}
                   publicationId={publicationId}
+                />
+                <FavoriteButton
+                  publicationId={publicationId}
+                  title={title}
+                  catchCopy={catch_copy}
+                  thumbnailUrl={property_publication_photos?.[0]?.room_photo?.photo_url}
+                  address={building?.address}
+                  rent={room?.rent}
+                  roomType={room?.room_type}
+                  area={room?.area}
+                  size="large"
                 />
               </Box>
             </Paper>

@@ -16,7 +16,8 @@ import {
   Link as LinkIcon,
   QrCode as QrCodeIcon,
   WhatsApp as WhatsAppIcon,
-  Email as EmailIcon
+  Email as EmailIcon,
+  Print as PrintIcon
 } from '@mui/icons-material';
 import { PropertyAnalytics } from '../../services/analytics';
 
@@ -64,6 +65,11 @@ export default function ShareButtons({ url, title, qrCodeUrl, publicationId }) {
     } catch (err) {
       console.error('Failed to copy:', err);
     }
+  };
+
+  const handlePrint = () => {
+    PropertyAnalytics.printProperty(publicationId);
+    window.print();
   };
 
   return (
@@ -176,6 +182,22 @@ export default function ShareButtons({ url, title, qrCodeUrl, publicationId }) {
             </IconButton>
           </Tooltip>
         )}
+
+        <Tooltip title="印刷 / PDF保存">
+          <IconButton
+            onClick={handlePrint}
+            sx={{
+              bgcolor: '#6B7280',
+              color: 'white',
+              '&:hover': { bgcolor: '#4B5563' },
+              '@media print': { display: 'none' }
+            }}
+            size="small"
+            aria-label="印刷またはPDF保存"
+          >
+            <PrintIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Stack>
 
       {/* QR Code Dialog */}

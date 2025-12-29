@@ -18,6 +18,7 @@ import {
 import PhotoGallery from '../PhotoGallery';
 import InquiryForm from '../InquiryForm';
 import ShareButtons from '../ShareButtons';
+import FavoriteButton from '../FavoriteButton';
 
 function Template1({ data, publicationId }) {
   const {
@@ -544,12 +545,30 @@ function Template1({ data, publicationId }) {
 
               <Box className="suumo-section" sx={{ mb: 2 }}>
                 <Box className="suumo-section-body">
-                  <ShareButtons
-                    url={public_url || window.location.href}
-                    title={title}
-                    qrCodeUrl={qr_code_data_url}
-                    publicationId={publicationId}
-                  />
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                    <ShareButtons
+                      url={public_url || window.location.href}
+                      title={title}
+                      qrCodeUrl={qr_code_data_url}
+                      publicationId={publicationId}
+                    />
+                    <FavoriteButton
+                      publicationId={publicationId}
+                      title={title}
+                      catchCopy={catch_copy}
+                      thumbnailUrl={property_publication_photos?.[0]?.room_photo?.photo_url}
+                      address={building?.address}
+                      rent={room?.rent}
+                      roomType={room?.room_type}
+                      area={room?.area}
+                      size="large"
+                      sx={{
+                        bgcolor: 'white',
+                        boxShadow: 1,
+                        '&:hover': { bgcolor: 'grey.100' }
+                      }}
+                    />
+                  </Box>
                 </Box>
               </Box>
             </Box>
