@@ -8,6 +8,9 @@ import {
   CardContent,
   Chip,
   Alert,
+  Popper,
+  Fade,
+  Paper,
 } from '@mui/material';
 
 // カテゴリ定義
@@ -23,9 +26,21 @@ const PHOTO_CATEGORIES = {
 
 const PhotoSelector = ({ photos, selectedPhotoId, onPhotoSelect, label }) => {
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [hoveredPhoto, setHoveredPhoto] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
 
   const getPhotoDisplayName = (photo) => {
     return photo.caption || `画像 ${photo.id}`;
+  };
+
+  const handleMouseEnter = (event, photo) => {
+    setAnchorEl(event.currentTarget);
+    setHoveredPhoto(photo);
+  };
+
+  const handleMouseLeave = () => {
+    setAnchorEl(null);
+    setHoveredPhoto(null);
   };
 
   const filteredPhotos = photos.filter((photo) =>
@@ -82,6 +97,8 @@ const PhotoSelector = ({ photos, selectedPhotoId, onPhotoSelect, label }) => {
                       },
                     }}
                     onClick={() => onPhotoSelect(photo.id)}
+                    onMouseEnter={(e) => handleMouseEnter(e, photo)}
+                    onMouseLeave={handleMouseLeave}
                   >
                     <CardMedia
                       component="img"
@@ -108,6 +125,72 @@ const PhotoSelector = ({ photos, selectedPhotoId, onPhotoSelect, label }) => {
           )}
         </>
       )}
+
+      {/* ホバープレビュー */}
+      <Popper
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        placement="right-start"
+        transition
+        sx={{ zIndex: 1500 }}
+        modifiers={[
+          {
+            name: 'offset',
+            options: {
+              offset: [0, 8],
+            },
+          },
+          {
+            name: 'preventOverflow',
+            options: {
+              boundary: 'viewport',
+              padding: 8,
+            },
+          },
+        ]}
+      >
+        {({ TransitionProps }) => (
+          <Fade {...TransitionProps} timeout={200}>
+            <Paper
+              elevation={8}
+              sx={{
+                p: 1,
+                maxWidth: 320,
+                bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              {hoveredPhoto && (
+                <>
+                  <Box
+                    component="img"
+                    src={hoveredPhoto.photo_url}
+                    alt={getPhotoDisplayName(hoveredPhoto)}
+                    sx={{
+                      width: '100%',
+                      maxHeight: 200,
+                      objectFit: 'contain',
+                      borderRadius: 1,
+                      mb: 1,
+                    }}
+                  />
+                  <Typography variant="subtitle2" fontWeight="600">
+                    {getPhotoDisplayName(hoveredPhoto)}
+                  </Typography>
+                  {hoveredPhoto.photo_type && (
+                    <Chip
+                      label={PHOTO_CATEGORIES[hoveredPhoto.photo_type] || hoveredPhoto.photo_type}
+                      size="small"
+                      sx={{ mt: 0.5 }}
+                    />
+                  )}
+                </>
+              )}
+            </Paper>
+          </Fade>
+        )}
+      </Popper>
     </Box>
   );
 };
