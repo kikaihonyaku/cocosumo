@@ -32,6 +32,8 @@ class PropertyPublication < ApplicationRecord
   # Scopes
   scope :published, -> { where(status: :published) }
   scope :draft, -> { where(status: :draft) }
+  scope :scheduled_to_publish, -> { where.not(scheduled_publish_at: nil) }
+  scope :scheduled_to_unpublish, -> { where.not(scheduled_unpublish_at: nil) }
 
   # Publish the property publication
   def publish!

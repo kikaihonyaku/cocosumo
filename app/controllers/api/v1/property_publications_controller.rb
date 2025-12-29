@@ -344,6 +344,70 @@ class Api::V1::PropertyPublicationsController < ApplicationController
     render json: { errors: [e.message] }, status: :unprocessable_entity
   end
 
+  # POST /api/v1/property_publications/:publication_id/track_view
+  def track_view
+    @property_publication = PropertyPublication.kept.find_by!(publication_id: params[:publication_id])
+
+    # Only count views for published pages (not previews)
+    if @property_publication.published?
+      @property_publication.increment!(:view_count)
+    end
+
+    render json: { success: true, view_count: @property_publication.view_count }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Not found' }, status: :not_found
+  end
+
+  # POST /api/v1/property_publications/bulk_action
+  def bulk_action
+    ids = params[:ids]
+    action = params[:bulk_action]
+
+    return render json: { error: 'IDが指定されていません' }, status: :bad_request if ids.blank?
+    return render json: { error: 'アクションが指定されていません' }, status: :bad_request if action.blank?
+
+    publications = PropertyPublication.kept.where(id: ids)
+
+    case action
+    when 'publish'
+      count = 0
+      publications.each do |pub|
+        if pub.draft?
+          pub.publish!
+          count += 1
+        end
+      end
+      render json: { success: true, message: "#{count}件の物件を公開しました", affected_count: count }
+
+    when 'unpublish'
+      count = 0
+      publications.each do |pub|
+        if pub.published?
+          pub.unpublish!
+          count += 1
+        end
+      end
+      render json: { success: true, message: "#{count}件の物件を非公開にしました", affected_count: count }
+
+    when 'delete'
+      count = publications.count
+      publications.each(&:discard)
+      render json: { success: true, message: "#{count}件の物件を削除しました", affected_count: count }
+
+    when 'change_template'
+      template_type = params[:template_type]
+      return render json: { error: 'テンプレートが指定されていません' }, status: :bad_request if template_type.blank?
+
+      count = publications.update_all(template_type: template_type)
+      render json: { success: true, message: "#{count}件の物件のテンプレートを変更しました", affected_count: count }
+
+    else
+      render json: { error: '不明なアクションです' }, status: :bad_request
+    end
+  rescue => e
+    render json: { errors: [e.message] }, status: :unprocessable_entity
+  end
+
   private
 
   def set_room
@@ -361,6 +425,8 @@ class Api::V1::PropertyPublicationsController < ApplicationController
       :pr_text,
       :status,
       :template_type,
+      :scheduled_publish_at,
+      :scheduled_unpublish_at,
       visible_fields: {}
     )
   end

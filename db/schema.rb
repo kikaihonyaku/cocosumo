@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_29_085451) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_29_101057) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -266,6 +266,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_29_085451) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "template_type", default: 0, null: false
+    t.integer "view_count", default: 0, null: false
+    t.datetime "scheduled_publish_at"
+    t.datetime "scheduled_unpublish_at"
     t.index ["discarded_at"], name: "index_property_publications_on_discarded_at"
     t.index ["publication_id"], name: "index_property_publications_on_publication_id", unique: true
     t.index ["room_id"], name: "index_property_publications_on_room_id"

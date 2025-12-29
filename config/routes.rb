@@ -12,6 +12,10 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "pages#index"
 
+  # SEO routes
+  get 'sitemap.xml', to: 'sitemaps#index', defaults: { format: 'xml' }
+  get 'robots.txt', to: 'sitemaps#robots', defaults: { format: 'text' }
+
   # API routes
   namespace :api do
     namespace :v1 do
@@ -182,10 +186,17 @@ Rails.application.routes.draw do
       get 'virtual_stagings/:public_id/public', to: 'virtual_stagings#show_public', as: :public_virtual_staging
 
       # 物件公開ページ一覧
-      resources :property_publications, only: [:index]
+      resources :property_publications, only: [:index] do
+        collection do
+          post :bulk_action
+        end
+      end
 
       # 公開物件詳細表示用（認証不要、publication_idで取得）
       get 'property_publications/:publication_id/public', to: 'property_publications#show_public'
+
+      # ページビュー追跡（認証不要）
+      post 'property_publications/:publication_id/track_view', to: 'property_publications#track_view'
 
       # 物件分析API
       get 'property_analysis', to: 'property_analysis#show'

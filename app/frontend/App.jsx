@@ -26,6 +26,7 @@ import EmbedVirtualStaging from "./pages/EmbedVirtualStaging";
 import EmbedVrTour from "./pages/EmbedVrTour";
 import VirtualStagings from "./pages/VirtualStagings";
 import PropertyPublicationEditor from "./pages/PropertyPublicationEditor";
+import PropertyPublicationsManager from "./pages/PropertyPublicationsManager";
 import PublicPropertyDetail from "./pages/PublicPropertyDetail";
 import LayerManagement from "./pages/admin/LayerManagement";
 import SuumoImport from "./pages/admin/SuumoImport";
@@ -133,6 +134,7 @@ export default function App() {
             <Route path="/admin/layers" element={<LayerManagement />} />
             <Route path="/admin/suumo-import" element={<SuumoImport />} />
             <Route path="/analytics/inquiries" element={<InquiryAnalytics />} />
+            <Route path="/admin/publications" element={<PropertyPublicationsManager />} />
             <Route path="/buildings" element={<Buildings />} />
             <Route path="/buildings/new" element={<BuildingForm />} />
             <Route path="/buildings/:id/edit" element={<BuildingForm />} />

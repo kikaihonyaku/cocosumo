@@ -51,6 +51,16 @@ function PublicPropertyDetail() {
       }
 
       setData(responseData);
+
+      // Track page view (only for non-preview views)
+      if (!isPreview) {
+        try {
+          await axios.post(`/api/v1/property_publications/${publicationId}/track_view`);
+        } catch (e) {
+          // Silent fail - don't block page load for analytics
+          console.log('View tracking skipped');
+        }
+      }
     } catch (error) {
       console.error('Error loading data:', error);
       if (error.response?.status === 401) {
