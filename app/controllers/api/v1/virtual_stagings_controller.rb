@@ -50,6 +50,10 @@ class Api::V1::VirtualStagingsController < ApplicationController
               only: [:id, :name, :address]
             }
           }
+        },
+        variations: {
+          only: [:id, :style_name, :display_order, :after_photo_id],
+          methods: [:after_photo_url]
         }
       },
       methods: [:before_photo_url, :after_photo_url]
@@ -70,6 +74,10 @@ class Api::V1::VirtualStagingsController < ApplicationController
                 only: [:id, :name, :address]
               }
             }
+          },
+          variations: {
+            only: [:id, :style_name, :display_order, :after_photo_id],
+            methods: [:after_photo_url]
           }
         },
         methods: [:before_photo_url, :after_photo_url]

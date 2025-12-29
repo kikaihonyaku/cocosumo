@@ -2,6 +2,7 @@ class VirtualStaging < ApplicationRecord
   belongs_to :room
   belongs_to :before_photo, class_name: 'RoomPhoto', foreign_key: :before_photo_id
   belongs_to :after_photo, class_name: 'RoomPhoto', foreign_key: :after_photo_id
+  has_many :variations, class_name: 'VirtualStagingVariation', dependent: :destroy
 
   # ステータス管理
   enum :status, { draft: 0, published: 1 }, default: :draft

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Box, Typography, CircularProgress, Paper, Alert } from '@mui/material';
+import { Box, Typography, CircularProgress, Paper, Alert, Chip, Stack } from '@mui/material';
 import { LocationOn as LocationIcon } from '@mui/icons-material';
 import BeforeAfterSlider from '../components/VirtualStaging/BeforeAfterSlider';
 import SharePanel from '../components/VirtualStaging/SharePanel';
@@ -10,6 +10,7 @@ const PublicVirtualStaging = () => {
   const [loading, setLoading] = useState(true);
   const [virtualStaging, setVirtualStaging] = useState(null);
   const [error, setError] = useState(null);
+  const [selectedVariationId, setSelectedVariationId] = useState(null);
 
   useEffect(() => {
     loadVirtualStaging();
@@ -70,6 +71,19 @@ const PublicVirtualStaging = () => {
     );
   }
 
+  // 現在表示するAfter画像を取得
+  const getActiveAfterImageUrl = () => {
+    if (selectedVariationId && virtualStaging.variations) {
+      const variation = virtualStaging.variations.find(v => v.id === selectedVariationId);
+      if (variation) {
+        return variation.after_photo_url;
+      }
+    }
+    return virtualStaging.after_photo_url;
+  };
+
+  const hasVariations = virtualStaging.variations && virtualStaging.variations.length > 0;
+
   return (
     <Box
       sx={{
@@ -92,12 +106,66 @@ const PublicVirtualStaging = () => {
       >
         <BeforeAfterSlider
           beforeImageUrl={virtualStaging.before_photo_url}
-          afterImageUrl={virtualStaging.after_photo_url}
+          afterImageUrl={getActiveAfterImageUrl()}
           beforeLabel="Before"
           afterLabel="After"
           height="calc(100vh - 32px)"
         />
       </Box>
+
+      {/* バリエーション切り替え（下部中央） */}
+      {hasVariations && (
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 80,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 10,
+          }}
+        >
+          <Paper
+            sx={{
+              bgcolor: 'rgba(0, 0, 0, 0.7)',
+              backdropFilter: 'blur(8px)',
+              px: 2,
+              py: 1.5,
+              borderRadius: 2,
+            }}
+          >
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', display: 'block', mb: 1, textAlign: 'center' }}>
+              スタイルを選択
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center">
+              <Chip
+                label="オリジナル"
+                onClick={() => setSelectedVariationId(null)}
+                color={selectedVariationId === null ? 'primary' : 'default'}
+                variant={selectedVariationId === null ? 'filled' : 'outlined'}
+                sx={{
+                  color: 'white',
+                  borderColor: 'rgba(255,255,255,0.5)',
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                }}
+              />
+              {virtualStaging.variations.map((variation) => (
+                <Chip
+                  key={variation.id}
+                  label={variation.style_name}
+                  onClick={() => setSelectedVariationId(variation.id)}
+                  color={selectedVariationId === variation.id ? 'primary' : 'default'}
+                  variant={selectedVariationId === variation.id ? 'filled' : 'outlined'}
+                  sx={{
+                    color: 'white',
+                    borderColor: 'rgba(255,255,255,0.5)',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                  }}
+                />
+              ))}
+            </Stack>
+          </Paper>
+        </Box>
+      )}
 
       {/* タイトル（上部中央にオーバーレイ） */}
       <Box

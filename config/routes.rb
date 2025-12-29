@@ -169,7 +169,13 @@ Rails.application.routes.draw do
       get 'vr_tours/:public_id/public', to: 'vr_tours#show_public', as: :public_vr_tour
 
       # バーチャルステージング一覧
-      resources :virtual_stagings, only: [:index]
+      resources :virtual_stagings, only: [:index] do
+        resources :variations, controller: 'virtual_staging_variations', only: [:create, :update, :destroy] do
+          collection do
+            post :reorder
+          end
+        end
+      end
 
       # 公開バーチャルステージング表示用（認証不要、public_idで取得）
       get 'virtual_stagings/:public_id/public', to: 'virtual_stagings#show_public', as: :public_virtual_staging

@@ -36,6 +36,7 @@ import BeforeAfterSlider from '../components/VirtualStaging/BeforeAfterSlider';
 import PhotoSelector from '../components/VirtualStaging/PhotoSelector';
 import AiStagingDialog from '../components/VirtualStaging/AiStagingDialog';
 import SharePanel from '../components/VirtualStaging/SharePanel';
+import VariationsPanel from '../components/VirtualStaging/VariationsPanel';
 import muiTheme from '../theme/muiTheme';
 
 const VirtualStagingEditor = () => {
@@ -56,6 +57,7 @@ const VirtualStagingEditor = () => {
     after_photo_id: '',
     status: 'draft',
   });
+  const [variations, setVariations] = useState([]);
 
   const isEditMode = !!id;
   const isPublished = virtualStaging.status === 'published';
@@ -87,6 +89,7 @@ const VirtualStagingEditor = () => {
       if (response.ok) {
         const data = await response.json();
         setVirtualStaging(data);
+        setVariations(data.variations || []);
       } else if (response.status === 401) {
         navigate('/login');
       }
@@ -482,6 +485,20 @@ const VirtualStagingEditor = () => {
             beforeLabel="Before"
             afterLabel="After"
             height="500px"
+          />
+        </Paper>
+      )}
+
+      {/* バリエーション管理（編集モードのみ） */}
+      {isEditMode && (
+        <Paper sx={{ p: 3, mt: 3 }}>
+          <VariationsPanel
+            virtualStagingId={id}
+            variations={variations}
+            roomPhotos={roomPhotos}
+            beforePhotoId={virtualStaging.before_photo_id}
+            onVariationsChange={setVariations}
+            onOpenAiDialog={() => setAiStagingDialog(true)}
           />
         </Paper>
       )}
