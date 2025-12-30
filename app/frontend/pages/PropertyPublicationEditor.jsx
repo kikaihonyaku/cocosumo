@@ -54,6 +54,7 @@ import PhotoGallery from '../components/PropertyPublication/PhotoGallery';
 import RichTextEditor from '../components/shared/RichTextEditor';
 import InquiryList from '../components/PropertyPublication/InquiryList';
 import ViewAnalyticsDashboard from '../components/PropertyPublication/ViewAnalyticsDashboard';
+import { getRoomTypeLabel } from '../utils/formatters';
 
 function PropertyPublicationEditor() {
   const { roomId, id } = useParams();
@@ -385,23 +386,6 @@ function PropertyPublicationEditor() {
   };
 
   // Helper functions for display
-  const getRoomTypeLabel = (roomType) => {
-    const labels = {
-      'studio': 'ワンルーム',
-      '1K': '1K',
-      '1DK': '1DK',
-      '1LDK': '1LDK',
-      '2K': '2K',
-      '2DK': '2DK',
-      '2LDK': '2LDK',
-      '3K': '3K',
-      '3DK': '3DK',
-      '3LDK': '3LDK',
-      'other': 'その他'
-    };
-    return labels[roomType] || roomType;
-  };
-
   const getBuildingTypeLabel = (buildingType) => {
     const labels = {
       'apartment': 'アパート',

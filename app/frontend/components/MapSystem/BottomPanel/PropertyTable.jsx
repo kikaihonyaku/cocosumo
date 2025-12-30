@@ -19,6 +19,7 @@ import {
   FileDownload as FileDownloadIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
+import { getRoomTypeLabel } from '../../../utils/formatters';
 
 export default function PropertyTable({ properties = [], onPropertySelect, searchConditions = {} }) {
   const [pageSize, setPageSize] = useState(25);
@@ -91,44 +92,70 @@ export default function PropertyTable({ properties = [], onPropertySelect, searc
       renderCell: (params) => `${params.value || 0}戸`,
     },
     {
-      field: 'free_cnt',
-      headerName: '空室数',
+      field: 'buildingAge',
+      headerName: '築年数',
       width: 100,
       type: 'number',
       align: 'center',
       headerAlign: 'center',
       filterable: true,
       sortable: true,
-      renderCell: (params) => `${params.value || 0}戸`,
+      valueGetter: (value, row) => {
+        if (!row.built_date) return null;
+        const builtYear = new Date(row.built_date).getFullYear();
+        const currentYear = new Date().getFullYear();
+        return currentYear - builtYear;
+      },
+      renderCell: (params) => {
+        if (params.value === null || params.value === undefined) return '-';
+        return `${params.value}年`;
+      },
     },
     {
-      field: 'vacancyRate',
-      headerName: '空室率(%)',
+      field: 'avgRent',
+      headerName: '平均賃料',
       width: 120,
       type: 'number',
-      align: 'center',
+      align: 'right',
       headerAlign: 'center',
       filterable: true,
       sortable: true,
       valueGetter: (value, row) => {
-        if (!row.room_cnt || row.room_cnt === 0) return 0;
-        return parseFloat(((row.free_cnt / row.room_cnt) * 100).toFixed(1));
+        if (!row.rooms || !Array.isArray(row.rooms) || row.rooms.length === 0) return null;
+        // 明示的に数値変換し、有効な値のみフィルタ
+        const rentsWithValue = row.rooms
+          .map(r => parseFloat(r.rent))
+          .filter(r => !isNaN(r) && r > 0);
+        if (rentsWithValue.length === 0) return null;
+        return rentsWithValue.reduce((sum, r) => sum + r, 0) / rentsWithValue.length;
       },
       renderCell: (params) => {
-        const rate = parseFloat(params.value);
-        let color = 'default';
-        if (rate === 0) color = 'success';
-        else if (rate <= 10) color = 'info';
-        else if (rate <= 30) color = 'warning';
-        else color = 'error';
-
+        if (params.value === null || params.value === undefined || isNaN(params.value)) return '-';
+        const rentInMan = (params.value / 10000).toFixed(1);
+        return `${rentInMan}万円`;
+      },
+    },
+    {
+      field: 'floorPlans',
+      headerName: '間取り',
+      width: 180,
+      filterable: true,
+      sortable: false,
+      valueGetter: (value, row) => {
+        if (!row.rooms || !Array.isArray(row.rooms) || row.rooms.length === 0) return '';
+        // room_typeを日本語ラベルに変換してからユニーク化
+        const labels = row.rooms.map(r => getRoomTypeLabel(r.room_type)).filter(Boolean);
+        const uniqueLabels = [...new Set(labels)];
+        if (uniqueLabels.length === 0) return '';
+        if (uniqueLabels.length <= 3) return uniqueLabels.join('、');
+        return uniqueLabels.slice(0, 3).join('、') + '、他…';
+      },
+      renderCell: (params) => {
+        if (!params.value) return '-';
         return (
-          <Chip
-            label={`${rate}%`}
-            size="small"
-            color={color}
-            sx={{ minWidth: 60 }}
-          />
+          <Typography variant="body2" noWrap title={params.value}>
+            {params.value}
+          </Typography>
         );
       },
     },

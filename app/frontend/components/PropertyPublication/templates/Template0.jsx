@@ -23,6 +23,7 @@ import ShareButtons from '../ShareButtons';
 import FavoriteButton from '../FavoriteButton';
 import PdfExportButton from '../PdfExportButton';
 import CompareButton from '../CompareButton';
+import { getRoomTypeLabel } from '../../../utils/formatters';
 
 function Template0({ data, publicationId }) {
   const {
@@ -46,23 +47,6 @@ function Template0({ data, publicationId }) {
   const colors = {
     primary: primary_color || '#0068b7',
     accent: accent_color || '#e3f2fd'
-  };
-
-  const getRoomTypeLabel = (roomType) => {
-    const labels = {
-      'studio': 'ワンルーム',
-      '1K': '1K',
-      '1DK': '1DK',
-      '1LDK': '1LDK',
-      '2K': '2K',
-      '2DK': '2DK',
-      '2LDK': '2LDK',
-      '3K': '3K',
-      '3DK': '3DK',
-      '3LDK': '3LDK',
-      'other': 'その他'
-    };
-    return labels[roomType] || roomType;
   };
 
   const getBuildingTypeLabel = (buildingType) => {

@@ -31,6 +31,7 @@ import ShareButtons from '../ShareButtons';
 import FavoriteButton from '../FavoriteButton';
 import PdfExportButton from '../PdfExportButton';
 import CompareButton from '../CompareButton';
+import { getRoomTypeLabel } from '../../../utils/formatters';
 
 function Template3({ data, publicationId }) {
   const [activeTab, setActiveTab] = useState(0);
@@ -56,23 +57,6 @@ function Template3({ data, publicationId }) {
   const colors = {
     primary: primary_color || '#2e7d32',
     accent: accent_color || '#ff9800'
-  };
-
-  const getRoomTypeLabel = (roomType) => {
-    const labels = {
-      'studio': 'ワンルーム',
-      '1K': '1K',
-      '1DK': '1DK',
-      '1LDK': '1LDK',
-      '2K': '2K',
-      '2DK': '2DK',
-      '2LDK': '2LDK',
-      '3K': '3K',
-      '3DK': '3DK',
-      '3LDK': '3LDK',
-      'other': 'その他'
-    };
-    return labels[roomType] || roomType;
   };
 
   const getBuildingTypeLabel = (buildingType) => {

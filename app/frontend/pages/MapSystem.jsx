@@ -24,6 +24,7 @@ import PropertyTable from "../components/MapSystem/BottomPanel/PropertyTable";
 import BuildingFormModal from "../components/MapSystem/BuildingFormModal";
 import SearchModal from "../components/MapSystem/LeftPanel/SearchModal";
 import { usePropertyFilter } from "../hooks/usePropertyFilter";
+import { getRoomTypeLabel } from "../utils/formatters";
 
 export default function MapSystem() {
   const [leftPanelPinned, setLeftPanelPinned] = useState(true);
@@ -368,8 +369,9 @@ export default function MapSystem() {
       // 平均賃料（部屋の賃料から計算）
       if (property.rooms && Array.isArray(property.rooms)) {
         property.rooms.forEach(room => {
-          if (room.rent && room.rent > 0) {
-            totalRent += room.rent;
+          const rent = parseFloat(room.rent);
+          if (!isNaN(rent) && rent > 0) {
+            totalRent += rent;
             rentCount++;
           }
         });
@@ -868,7 +870,7 @@ export default function MapSystem() {
                                               {room.room_number || '-'}
                                             </Box>
                                             <Box sx={{ fontSize: '0.85rem', color: 'text.secondary', minWidth: '50px' }}>
-                                              {room.room_type || '-'}
+                                              {getRoomTypeLabel(room.room_type)}
                                             </Box>
                                           </Box>
                                           <Box sx={{ fontWeight: 600, fontSize: '0.9rem', color: 'primary.main' }}>

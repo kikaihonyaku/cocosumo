@@ -297,7 +297,7 @@ export default function AdvancedSearchTab({
             textAlign: 'center',
           }}>
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              {summary?.avgRent ? `${Math.round(summary.avgRent / 10000)}万` : '-'}
+              {summary?.avgRent ? `${(summary.avgRent / 10000).toFixed(1)}万` : '-'}
             </Typography>
             <Typography variant="caption" sx={{ opacity: 0.8 }}>
               平均賃料

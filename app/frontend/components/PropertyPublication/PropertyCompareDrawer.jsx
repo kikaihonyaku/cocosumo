@@ -29,24 +29,7 @@ import {
   clearComparison,
   getCompareCount
 } from '../../services/comparison';
-
-// 間取りラベル
-const getRoomTypeLabel = (roomType) => {
-  const labels = {
-    'studio': 'ワンルーム',
-    '1K': '1K',
-    '1DK': '1DK',
-    '1LDK': '1LDK',
-    '2K': '2K',
-    '2DK': '2DK',
-    '2LDK': '2LDK',
-    '3K': '3K',
-    '3DK': '3DK',
-    '3LDK': '3LDK',
-    'other': 'その他'
-  };
-  return labels[roomType] || roomType || '-';
-};
+import { getRoomTypeLabel } from '../../utils/formatters';
 
 // 建物種別ラベル
 const getBuildingTypeLabel = (buildingType) => {

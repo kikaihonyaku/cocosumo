@@ -45,6 +45,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
+import { getRoomTypeLabel } from '../../utils/formatters';
 
 export default function RoomsPanel({
   propertyId,
@@ -132,41 +133,6 @@ export default function RoomsPanel({
     '3K', '3DK', '3LDK',
     '4LDK以上'
   ];
-
-  // 間取りコード値を表示用に変換
-  const getRoomTypeLabel = (roomType) => {
-    if (!roomType) return '-';
-
-    // スネークケース形式からの変換マッピング
-    const typeMap = {
-      'one_room': '1R',
-      '1R': '1R',
-      'one_k': '1K',
-      '1K': '1K',
-      'one_dk': '1DK',
-      '1DK': '1DK',
-      'one_ldk': '1LDK',
-      '1LDK': '1LDK',
-      'two_k': '2K',
-      '2K': '2K',
-      'two_dk': '2DK',
-      '2DK': '2DK',
-      'two_ldk': '2LDK',
-      '2LDK': '2LDK',
-      'three_k': '3K',
-      '3K': '3K',
-      'three_dk': '3DK',
-      '3DK': '3DK',
-      'three_ldk': '3LDK',
-      '3LDK': '3LDK',
-      'four_ldk_or_more': '4LDK以上',
-      '4LDK以上': '4LDK以上',
-      'other': 'その他',
-      'その他': 'その他',
-    };
-
-    return typeMap[roomType] || roomType;
-  };
 
   const handleAddRoom = () => {
     setEditingRoom(null);
