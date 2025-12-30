@@ -76,7 +76,15 @@ class Api::V1::PropertyPublicationsController < ApplicationController
 
   # GET /property/:publication_id (公開用、認証不要)
   def show_public
-    @property_publication = PropertyPublication.kept.find_by!(publication_id: params[:publication_id])
+    # N+1クエリ回避のためeager loadingを使用
+    @property_publication = PropertyPublication.kept
+      .includes(
+        property_publication_photos: { room_photo: { photo_attachment: :blob } },
+        property_publication_vr_tours: :vr_tour,
+        property_publication_virtual_stagings: :virtual_staging,
+        room: :building
+      )
+      .find_by!(publication_id: params[:publication_id])
 
     # プレビューモードの場合はログインユーザーのみアクセス可能
     is_preview = params[:preview].present?
@@ -155,6 +163,15 @@ class Api::V1::PropertyPublicationsController < ApplicationController
       result['qr_code_data_url'] = @property_publication.qr_code_data_url(host: host)
       # Add expiration info
       result['expires_at'] = @property_publication.expires_at
+      # Add OGP metadata for social sharing
+      result['og_metadata'] = @property_publication.og_metadata(host: host)
+
+      # HTTPキャッシュヘッダーを設定（プレビューモード以外）
+      unless is_preview
+        # ETagベースのキャッシュ（更新時に自動無効化）
+        response.headers['Cache-Control'] = 'public, max-age=300' # 5分間キャッシュ
+        response.headers['ETag'] = Digest::MD5.hexdigest("#{@property_publication.id}-#{@property_publication.updated_at}")
+      end
 
       render json: result
     else

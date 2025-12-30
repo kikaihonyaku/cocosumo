@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -16,13 +16,22 @@ import {
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Edit as EditIcon, Lock as LockIcon } from '@mui/icons-material';
 import axios from 'axios';
-import Template0 from '../components/PropertyPublication/templates/Template0';
-import Template1 from '../components/PropertyPublication/templates/Template1';
-import Template2 from '../components/PropertyPublication/templates/Template2';
-import Template3 from '../components/PropertyPublication/templates/Template3';
 import { PropertyAnalytics } from '../services/analytics';
 import SectionNavigation from '../components/property-publication/SectionNavigation';
 import { useScrollTracking } from '../hooks/useScrollTracking';
+
+// テンプレートを動的インポート（Code Splitting）でバンドルサイズ削減
+const Template0 = lazy(() => import('../components/PropertyPublication/templates/Template0'));
+const Template1 = lazy(() => import('../components/PropertyPublication/templates/Template1'));
+const Template2 = lazy(() => import('../components/PropertyPublication/templates/Template2'));
+const Template3 = lazy(() => import('../components/PropertyPublication/templates/Template3'));
+
+// テンプレート読み込み中のフォールバックコンポーネント
+const TemplateLoadingFallback = () => (
+  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+    <CircularProgress />
+  </Box>
+);
 
 // デバイスタイプを判定
 const getDeviceType = () => {
@@ -149,15 +158,16 @@ function PublicPropertyDetail() {
         pr_text,
         property_publication_photos,
         public_url,
-        room
+        room,
+        og_metadata
       } = data;
       const building = room?.building;
 
       // Set page title
       document.title = `${title} | CoCoスモ`;
 
-      // Set meta description
-      const description = catch_copy || pr_text?.replace(/<[^>]*>/g, '').substring(0, 160) || `${title}の物件情報`;
+      // Set meta description (APIからのog_metadataを優先使用)
+      const description = og_metadata?.description || catch_copy || pr_text?.replace(/<[^>]*>/g, '').substring(0, 160) || `${title}の物件情報`;
       let metaDescription = document.querySelector('meta[name="description"]');
       if (!metaDescription) {
         metaDescription = document.createElement('meta');
@@ -166,9 +176,9 @@ function PublicPropertyDetail() {
       }
       metaDescription.content = description;
 
-      // Get image URL
-      let imageUrl = null;
-      if (property_publication_photos && property_publication_photos.length > 0) {
+      // Get image URL (APIからのog_metadataを優先使用)
+      let imageUrl = og_metadata?.image || null;
+      if (!imageUrl && property_publication_photos && property_publication_photos.length > 0) {
         const firstPhoto = property_publication_photos[0];
         imageUrl = firstPhoto.room_photo?.photo_url || firstPhoto.photo_url;
         // Ensure absolute URL
@@ -177,14 +187,14 @@ function PublicPropertyDetail() {
         }
       }
 
-      // Set OG tags for social sharing
+      // Set OG tags for social sharing (APIからのog_metadataを活用)
       const ogTags = {
-        'og:title': title,
+        'og:title': og_metadata?.title || title,
         'og:description': description,
-        'og:url': public_url || window.location.href,
-        'og:type': 'website',
-        'og:site_name': 'CoCoスモ',
-        'og:locale': 'ja_JP'
+        'og:url': og_metadata?.url || public_url || window.location.href,
+        'og:type': og_metadata?.type || 'website',
+        'og:site_name': og_metadata?.site_name || 'CoCoスモ',
+        'og:locale': og_metadata?.locale || 'ja_JP'
       };
 
       // Add image with dimensions
@@ -209,7 +219,7 @@ function PublicPropertyDetail() {
       // Set Twitter Card tags
       const twitterTags = {
         'twitter:card': 'summary_large_image',
-        'twitter:title': title,
+        'twitter:title': og_metadata?.title || title,
         'twitter:description': description
       };
 
@@ -247,54 +257,148 @@ function PublicPropertyDetail() {
         document.head.appendChild(jsonLdScript);
       }
 
-      const structuredData = {
-        '@context': 'https://schema.org',
+      const pageUrl = public_url || window.location.href;
+
+      // 複数の構造化データを配列で管理（@graph形式）
+      const structuredDataGraph = [];
+
+      // 1. RealEstateListing（物件情報）
+      const realEstateListing = {
         '@type': 'RealEstateListing',
+        '@id': `${pageUrl}#listing`,
         'name': title,
         'description': description,
-        'url': public_url || window.location.href
+        'url': pageUrl,
+        'datePosted': data.published_at || new Date().toISOString(),
+        'availability': 'https://schema.org/InStock'
       };
 
       // Add property details if available
       if (room) {
         if (room.rent) {
-          structuredData.offers = {
+          realEstateListing.offers = {
             '@type': 'Offer',
             'price': room.rent,
             'priceCurrency': 'JPY',
-            'priceValidUntil': new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+            'priceValidUntil': new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            'availability': 'https://schema.org/InStock'
           };
         }
 
         if (room.area) {
-          structuredData.floorSize = {
+          realEstateListing.floorSize = {
             '@type': 'QuantitativeValue',
             'value': room.area,
-            'unitCode': 'MTK' // Square meters
+            'unitCode': 'MTK'
           };
         }
 
         if (room.room_type) {
-          structuredData.numberOfRooms = room.room_type;
+          realEstateListing.numberOfRooms = room.room_type;
+        }
+
+        // 階数情報
+        if (room.floor) {
+          realEstateListing.floorLevel = room.floor;
+        }
+
+        // 設備情報
+        if (room.facilities && room.facilities.length > 0) {
+          realEstateListing.amenityFeature = room.facilities.map(facility => ({
+            '@type': 'LocationFeatureSpecification',
+            'name': facility,
+            'value': true
+          }));
         }
       }
 
       // Add address if available
       if (building?.address) {
-        structuredData.address = {
+        realEstateListing.address = {
           '@type': 'PostalAddress',
           'addressLocality': building.address,
-          'addressCountry': 'JP'
+          'addressCountry': 'JP',
+          'addressRegion': '日本'
         };
+
+        // 座標情報
+        if (building.latitude && building.longitude) {
+          realEstateListing.geo = {
+            '@type': 'GeoCoordinates',
+            'latitude': building.latitude,
+            'longitude': building.longitude
+          };
+        }
+
+        // 建物情報
+        if (building.name) {
+          realEstateListing.containedInPlace = {
+            '@type': 'Apartment',
+            'name': building.name,
+            'address': realEstateListing.address
+          };
+        }
       }
 
       // Add images
       if (property_publication_photos && property_publication_photos.length > 0) {
-        structuredData.image = property_publication_photos.map(photo => {
+        realEstateListing.image = property_publication_photos.map(photo => {
           const url = photo.room_photo?.photo_url || photo.photo_url;
           return url?.startsWith('http') ? url : `${window.location.origin}${url}`;
         }).filter(Boolean);
       }
+
+      structuredDataGraph.push(realEstateListing);
+
+      // 2. BreadcrumbList（パンくずリスト）
+      const breadcrumbList = {
+        '@type': 'BreadcrumbList',
+        '@id': `${pageUrl}#breadcrumb`,
+        'itemListElement': [
+          {
+            '@type': 'ListItem',
+            'position': 1,
+            'name': 'ホーム',
+            'item': window.location.origin
+          },
+          {
+            '@type': 'ListItem',
+            'position': 2,
+            'name': '物件情報',
+            'item': `${window.location.origin}/property`
+          },
+          {
+            '@type': 'ListItem',
+            'position': 3,
+            'name': title,
+            'item': pageUrl
+          }
+        ]
+      };
+      structuredDataGraph.push(breadcrumbList);
+
+      // 3. WebPage（ウェブページ情報）
+      const webPage = {
+        '@type': 'WebPage',
+        '@id': pageUrl,
+        'name': title,
+        'description': description,
+        'url': pageUrl,
+        'isPartOf': {
+          '@type': 'WebSite',
+          'name': 'CoCoスモ',
+          'url': window.location.origin
+        },
+        'breadcrumb': { '@id': `${pageUrl}#breadcrumb` },
+        'mainEntity': { '@id': `${pageUrl}#listing` }
+      };
+      structuredDataGraph.push(webPage);
+
+      // JSON-LDを@graph形式で出力
+      const structuredData = {
+        '@context': 'https://schema.org',
+        '@graph': structuredDataGraph
+      };
 
       jsonLdScript.textContent = JSON.stringify(structuredData);
 
@@ -525,7 +629,9 @@ function PublicPropertyDetail() {
 
       {/* Main content with section IDs */}
       <Box id="top">
-        {renderTemplate()}
+        <Suspense fallback={<TemplateLoadingFallback />}>
+          {renderTemplate()}
+        </Suspense>
       </Box>
 
       {/* Section Navigation (hidden in preview mode and print) */}
