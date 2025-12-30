@@ -19,6 +19,8 @@ import PhotoGallery from '../PhotoGallery';
 import InquiryForm from '../InquiryForm';
 import ShareButtons from '../ShareButtons';
 import FavoriteButton from '../FavoriteButton';
+import PdfExportButton from '../PdfExportButton';
+import CompareButton from '../CompareButton';
 
 function Template1({ data, publicationId }) {
   const {
@@ -575,6 +577,35 @@ function Template1({ data, publicationId }) {
                         boxShadow: 1,
                         '&:hover': { bgcolor: 'grey.100' }
                       }}
+                    />
+                    <CompareButton
+                      publicationId={publicationId}
+                      title={title}
+                      catchCopy={catch_copy}
+                      thumbnailUrl={property_publication_photos?.[0]?.room_photo?.photo_url}
+                      address={building?.address}
+                      rent={room?.rent}
+                      managementFee={room?.management_fee}
+                      deposit={room?.deposit}
+                      keyMoney={room?.key_money}
+                      roomType={room?.room_type}
+                      area={room?.area}
+                      floor={room?.floor}
+                      builtYear={building?.built_year}
+                      buildingType={building?.building_type}
+                      structure={building?.structure}
+                      facilities={room?.facilities}
+                      size="large"
+                      sx={{
+                        bgcolor: 'white',
+                        boxShadow: 1,
+                        '&:hover': { bgcolor: 'grey.100' }
+                      }}
+                    />
+                    <PdfExportButton
+                      title={title}
+                      publicationId={publicationId}
+                      size="large"
                     />
                   </Box>
                 </Box>

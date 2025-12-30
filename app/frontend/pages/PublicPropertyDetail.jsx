@@ -19,6 +19,7 @@ import axios from 'axios';
 import { PropertyAnalytics } from '../services/analytics';
 import SectionNavigation from '../components/property-publication/SectionNavigation';
 import { useScrollTracking } from '../hooks/useScrollTracking';
+import PropertyCompareDrawer from '../components/PropertyPublication/PropertyCompareDrawer';
 
 // テンプレートを動的インポート（Code Splitting）でバンドルサイズ削減
 const Template0 = lazy(() => import('../components/PropertyPublication/templates/Template0'));
@@ -640,6 +641,9 @@ function PublicPropertyDetail() {
           <SectionNavigation availableSections={availableSections} />
         </Box>
       )}
+
+      {/* Property Comparison Drawer (hidden in preview mode) */}
+      {!isPreview && <PropertyCompareDrawer />}
     </>
   );
 }

@@ -161,6 +161,23 @@ export const PropertyAnalytics = {
     trackEvent('print_property', {
       publication_id: publicationId
     });
+  },
+
+  // Track PDF export
+  exportPdf: (publicationId, format, pageCount) => {
+    trackEvent('export_pdf', {
+      publication_id: publicationId,
+      pdf_format: format,
+      page_count: pageCount
+    });
+  },
+
+  // Track favorite action
+  toggleFavorite: (publicationId, action) => {
+    trackEvent('favorite_property', {
+      publication_id: publicationId,
+      action: action // 'add' or 'remove'
+    });
   }
 };
 

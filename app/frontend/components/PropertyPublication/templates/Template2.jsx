@@ -16,6 +16,8 @@ import PhotoGallery from '../PhotoGallery';
 import InquiryForm from '../InquiryForm';
 import ShareButtons from '../ShareButtons';
 import FavoriteButton from '../FavoriteButton';
+import PdfExportButton from '../PdfExportButton';
+import CompareButton from '../CompareButton';
 
 function Template2({ data, publicationId }) {
   const {
@@ -756,23 +758,49 @@ function Template2({ data, publicationId }) {
         <div className="share-box no-print">
           <div className="share-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span>この物件をシェア</span>
-            <FavoriteButton
-              publicationId={publicationId}
-              title={title}
-              catchCopy={catch_copy}
-              thumbnailUrl={property_publication_photos?.[0]?.room_photo?.photo_url}
-              address={building?.address}
-              rent={room?.rent}
-              roomType={room?.room_type}
-              area={room?.area}
-              size="large"
-            />
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <FavoriteButton
+                publicationId={publicationId}
+                title={title}
+                catchCopy={catch_copy}
+                thumbnailUrl={property_publication_photos?.[0]?.room_photo?.photo_url}
+                address={building?.address}
+                rent={room?.rent}
+                roomType={room?.room_type}
+                area={room?.area}
+                size="large"
+              />
+              <CompareButton
+                publicationId={publicationId}
+                title={title}
+                catchCopy={catch_copy}
+                thumbnailUrl={property_publication_photos?.[0]?.room_photo?.photo_url}
+                address={building?.address}
+                rent={room?.rent}
+                managementFee={room?.management_fee}
+                deposit={room?.deposit}
+                keyMoney={room?.key_money}
+                roomType={room?.room_type}
+                area={room?.area}
+                floor={room?.floor}
+                builtYear={building?.built_year}
+                buildingType={building?.building_type}
+                structure={building?.structure}
+                facilities={room?.facilities}
+                size="large"
+              />
+            </Box>
           </div>
           <ShareButtons
             url={public_url || window.location.href}
             title={title}
             qrCodeUrl={qr_code_data_url}
             publicationId={publicationId}
+          />
+          <PdfExportButton
+            title={title}
+            publicationId={publicationId}
+            size="large"
           />
         </div>
       </Container>

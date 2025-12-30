@@ -73,14 +73,21 @@ export default function ShareButtons({ url, title, qrCodeUrl, publicationId }) {
   };
 
   return (
-    <Box>
-      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
+    <Box role="region" aria-label="物件をシェア">
+      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }} id="share-buttons-label">
         シェア
       </Typography>
-      <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{ mb: 2 }}
+        role="group"
+        aria-labelledby="share-buttons-label"
+      >
         <Tooltip title="Twitterでシェア">
           <IconButton
             onClick={handleTwitterShare}
+            aria-label="Twitterでシェア"
             sx={{
               bgcolor: '#1DA1F2',
               color: 'white',
@@ -95,6 +102,7 @@ export default function ShareButtons({ url, title, qrCodeUrl, publicationId }) {
         <Tooltip title="Facebookでシェア">
           <IconButton
             onClick={handleFacebookShare}
+            aria-label="Facebookでシェア"
             sx={{
               bgcolor: '#4267B2',
               color: 'white',
@@ -109,6 +117,7 @@ export default function ShareButtons({ url, title, qrCodeUrl, publicationId }) {
         <Tooltip title="LINEで送る">
           <IconButton
             onClick={handleLineShare}
+            aria-label="LINEで送る"
             sx={{
               bgcolor: '#00B900',
               color: 'white',
@@ -116,7 +125,7 @@ export default function ShareButtons({ url, title, qrCodeUrl, publicationId }) {
             }}
             size="small"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.771.039 1.086l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
             </svg>
           </IconButton>
@@ -125,6 +134,7 @@ export default function ShareButtons({ url, title, qrCodeUrl, publicationId }) {
         <Tooltip title="WhatsAppで送る">
           <IconButton
             onClick={handleWhatsAppShare}
+            aria-label="WhatsAppで送る"
             sx={{
               bgcolor: '#25D366',
               color: 'white',
@@ -139,6 +149,7 @@ export default function ShareButtons({ url, title, qrCodeUrl, publicationId }) {
         <Tooltip title="メールで送る">
           <IconButton
             onClick={handleEmailShare}
+            aria-label="メールで送る"
             sx={{
               bgcolor: '#EA4335',
               color: 'white',
@@ -153,6 +164,8 @@ export default function ShareButtons({ url, title, qrCodeUrl, publicationId }) {
         <Tooltip title={copied ? 'コピーしました！' : 'URLをコピー'}>
           <IconButton
             onClick={handleCopyLink}
+            aria-label={copied ? 'URLをコピーしました' : 'URLをコピー'}
+            aria-live="polite"
             sx={{
               bgcolor: copied ? 'success.main' : 'grey.600',
               color: 'white',
@@ -171,6 +184,8 @@ export default function ShareButtons({ url, title, qrCodeUrl, publicationId }) {
                 PropertyAnalytics.viewQrCode(publicationId);
                 setQrDialogOpen(true);
               }}
+              aria-label="QRコードを表示"
+              aria-haspopup="dialog"
               sx={{
                 bgcolor: 'grey.600',
                 color: 'white',
@@ -201,19 +216,35 @@ export default function ShareButtons({ url, title, qrCodeUrl, publicationId }) {
       </Stack>
 
       {/* QR Code Dialog */}
-      <Dialog open={qrDialogOpen} onClose={() => setQrDialogOpen(false)}>
-        <DialogTitle>QRコード</DialogTitle>
+      <Dialog
+        open={qrDialogOpen}
+        onClose={() => setQrDialogOpen(false)}
+        aria-labelledby="qr-dialog-title"
+        aria-describedby="qr-dialog-description"
+      >
+        <DialogTitle id="qr-dialog-title">QRコード</DialogTitle>
         <DialogContent>
           <Box sx={{ textAlign: 'center', p: 2 }}>
             {qrCodeUrl && (
-              <img src={qrCodeUrl} alt="QR Code" style={{ maxWidth: '100%', maxHeight: 300 }} />
+              <img
+                src={qrCodeUrl}
+                alt={`${title}の物件ページへアクセスするQRコード`}
+                style={{ maxWidth: '100%', maxHeight: 300 }}
+              />
             )}
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mt: 2 }}
+              id="qr-dialog-description"
+            >
               スマートフォンでスキャンしてアクセスできます
             </Typography>
           </Box>
         </DialogContent>
-        <Button onClick={() => setQrDialogOpen(false)}>閉じる</Button>
+        <Button onClick={() => setQrDialogOpen(false)} aria-label="QRコードダイアログを閉じる">
+          閉じる
+        </Button>
       </Dialog>
     </Box>
   );
