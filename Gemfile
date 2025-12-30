@@ -67,6 +67,29 @@ group :development, :test do
 
   # Load environment variables from .env file
   gem "dotenv-rails"
+
+  # RSpec testing framework
+  gem "rspec-rails", "~> 7.0"
+  gem "factory_bot_rails", "~> 6.4"
+  gem "faker", "~> 3.4"
+
+  # Additional matchers
+  gem "shoulda-matchers", "~> 6.0"
+
+  # API mocking
+  gem "webmock", "~> 3.23"
+  gem "vcr", "~> 6.2"
+
+  # Coverage
+  gem "simplecov", "~> 0.22", require: false
+
+  # Database cleaner for test isolation
+  gem "database_cleaner-active_record", "~> 2.1"
+end
+
+group :test do
+  # CI test output formatter
+  gem "rspec_junit_formatter", "~> 0.6"
 end
 
 group :development do
