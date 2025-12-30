@@ -1,6 +1,6 @@
 class Api::V1::PropertyPublicationsController < ApplicationController
   skip_before_action :verify_authenticity_token
-  before_action :require_login, except: [:show_public]
+  before_action :require_login, except: [:show_public, :verify_password, :track_view, :track_analytics]
   before_action :set_room, only: [:index, :create], if: -> { params[:room_id].present? }
   before_action :set_property_publication, only: [:show, :update, :destroy, :publish, :unpublish, :duplicate]
 

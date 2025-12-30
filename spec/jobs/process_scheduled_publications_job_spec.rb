@@ -5,13 +5,13 @@ require 'rails_helper'
 RSpec.describe ProcessScheduledPublicationsJob, type: :job do
   let(:tenant) { create(:tenant) }
   let(:building) { create(:building, tenant: tenant) }
-  let(:room) { create(:room, building: building, tenant: tenant) }
+  let(:room) { create(:room, building: building) }
 
   describe '#perform' do
     describe 'scheduled publish processing' do
       context 'with publications scheduled for the past' do
         let!(:publication) do
-          create(:property_publication, room: room, tenant: tenant,
+          create(:property_publication, room: room,
                  status: :draft,
                  scheduled_publish_at: 1.hour.ago)
         end
@@ -28,7 +28,7 @@ RSpec.describe ProcessScheduledPublicationsJob, type: :job do
 
       context 'with publications scheduled for exactly now' do
         let!(:publication) do
-          create(:property_publication, room: room, tenant: tenant,
+          create(:property_publication, room: room,
                  status: :draft,
                  scheduled_publish_at: Time.current)
         end
@@ -43,7 +43,7 @@ RSpec.describe ProcessScheduledPublicationsJob, type: :job do
 
       context 'with publications scheduled for the future' do
         let!(:publication) do
-          create(:property_publication, room: room, tenant: tenant,
+          create(:property_publication, room: room,
                  status: :draft,
                  scheduled_publish_at: 1.hour.from_now)
         end
@@ -59,7 +59,7 @@ RSpec.describe ProcessScheduledPublicationsJob, type: :job do
 
       context 'with already published publications' do
         let!(:publication) do
-          create(:property_publication, :published, room: room, tenant: tenant,
+          create(:property_publication, :published, room: room,
                  scheduled_publish_at: 1.hour.ago)
         end
 
@@ -76,7 +76,7 @@ RSpec.describe ProcessScheduledPublicationsJob, type: :job do
 
       context 'with discarded publications' do
         let!(:publication) do
-          create(:property_publication, room: room, tenant: tenant,
+          create(:property_publication, room: room,
                  status: :draft,
                  scheduled_publish_at: 1.hour.ago)
         end
@@ -94,7 +94,7 @@ RSpec.describe ProcessScheduledPublicationsJob, type: :job do
       context 'with multiple publications scheduled' do
         let!(:publications) do
           3.times.map do |i|
-            create(:property_publication, room: room, tenant: tenant,
+            create(:property_publication, room: room,
                    status: :draft,
                    scheduled_publish_at: (i + 1).hours.ago,
                    title: "Publication #{i + 1}")
@@ -115,7 +115,7 @@ RSpec.describe ProcessScheduledPublicationsJob, type: :job do
     describe 'scheduled unpublish processing' do
       context 'with publications scheduled to unpublish in the past' do
         let!(:publication) do
-          create(:property_publication, :published, room: room, tenant: tenant,
+          create(:property_publication, :published, room: room,
                  scheduled_unpublish_at: 1.hour.ago)
         end
 
@@ -131,7 +131,7 @@ RSpec.describe ProcessScheduledPublicationsJob, type: :job do
 
       context 'with publications scheduled to unpublish exactly now' do
         let!(:publication) do
-          create(:property_publication, :published, room: room, tenant: tenant,
+          create(:property_publication, :published, room: room,
                  scheduled_unpublish_at: Time.current)
         end
 
@@ -145,7 +145,7 @@ RSpec.describe ProcessScheduledPublicationsJob, type: :job do
 
       context 'with publications scheduled to unpublish in the future' do
         let!(:publication) do
-          create(:property_publication, :published, room: room, tenant: tenant,
+          create(:property_publication, :published, room: room,
                  scheduled_unpublish_at: 1.hour.from_now)
         end
 
@@ -160,7 +160,7 @@ RSpec.describe ProcessScheduledPublicationsJob, type: :job do
 
       context 'with draft publications with scheduled unpublish' do
         let!(:publication) do
-          create(:property_publication, room: room, tenant: tenant,
+          create(:property_publication, room: room,
                  status: :draft,
                  scheduled_unpublish_at: 1.hour.ago)
         end
@@ -177,7 +177,7 @@ RSpec.describe ProcessScheduledPublicationsJob, type: :job do
 
       context 'with discarded publications' do
         let!(:publication) do
-          create(:property_publication, :published, room: room, tenant: tenant,
+          create(:property_publication, :published, room: room,
                  scheduled_unpublish_at: 1.hour.ago)
         end
 
@@ -194,18 +194,18 @@ RSpec.describe ProcessScheduledPublicationsJob, type: :job do
 
     describe 'combined publish and unpublish processing' do
       let!(:to_publish) do
-        create(:property_publication, room: room, tenant: tenant,
+        create(:property_publication, room: room,
                status: :draft,
                scheduled_publish_at: 1.hour.ago)
       end
 
       let!(:to_unpublish) do
-        create(:property_publication, :published, room: room, tenant: tenant,
+        create(:property_publication, :published, room: room,
                scheduled_unpublish_at: 1.hour.ago)
       end
 
       let!(:no_change) do
-        create(:property_publication, :published, room: room, tenant: tenant)
+        create(:property_publication, :published, room: room)
       end
 
       it 'processes both publish and unpublish in single job run' do
@@ -226,13 +226,14 @@ RSpec.describe ProcessScheduledPublicationsJob, type: :job do
 
   describe 'logging' do
     let!(:publication) do
-      create(:property_publication, room: room, tenant: tenant,
+      create(:property_publication, room: room,
              status: :draft,
              scheduled_publish_at: 1.hour.ago)
     end
 
     it 'logs when publishing' do
-      expect(Rails.logger).to receive(:info).with(/Published:.*#{publication.id}/)
+      allow(Rails.logger).to receive(:info).and_call_original
+      expect(Rails.logger).to receive(:info).with(/\[ScheduledPublication\] Published:.*#{publication.id}/)
 
       described_class.perform_now
     end

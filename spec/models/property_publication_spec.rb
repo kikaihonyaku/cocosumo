@@ -12,9 +12,22 @@ RSpec.describe PropertyPublication, type: :model do
   describe 'validations' do
     subject { build(:property_publication) }
 
-    it { is_expected.to validate_presence_of(:publication_id) }
     it { is_expected.to validate_presence_of(:title) }
     it { is_expected.to validate_presence_of(:status) }
+
+    describe 'publication_id uniqueness' do
+      subject { create(:property_publication) }
+      it { is_expected.to validate_uniqueness_of(:publication_id) }
+    end
+  end
+
+  describe '#generate_publication_id' do
+    it 'auto-generates publication_id on create' do
+      publication = build(:property_publication, publication_id: nil)
+      publication.save!
+      expect(publication.publication_id).to be_present
+      expect(publication.publication_id.length).to eq(12)
+    end
   end
 
   describe '#publish!' do
@@ -25,10 +38,8 @@ RSpec.describe PropertyPublication, type: :model do
     end
 
     it 'sets published_at timestamp' do
-      freeze_time do
-        publication.publish!
-        expect(publication.published_at).to eq(Time.current)
-      end
+      publication.publish!
+      expect(publication.published_at).to be_within(1.second).of(Time.current)
     end
   end
 

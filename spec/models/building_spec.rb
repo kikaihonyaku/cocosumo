@@ -18,7 +18,7 @@ RSpec.describe Building, type: :model do
   end
 
   describe 'enums' do
-    it { is_expected.to define_enum_for(:building_type).with_values(apartment: 'apartment', mansion: 'mansion', house: 'house', office: 'office').with_prefix(true) }
+    it { is_expected.to define_enum_for(:building_type).with_values(apartment: 'apartment', mansion: 'mansion', house: 'house', office: 'office').backed_by_column_of_type(:string).with_prefix(true) }
   end
 
   describe '.within_bounds' do
@@ -58,7 +58,7 @@ RSpec.describe Building, type: :model do
 
     it 'returns nearest buildings limited by count' do
       result = described_class.nearest(35.6762, 139.6503, 2)
-      expect(result.count).to eq(2)
+      expect(result.size).to eq(2)
       expect(result.first).to eq(building1)
     end
   end

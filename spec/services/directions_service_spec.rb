@@ -207,7 +207,7 @@ RSpec.describe DirectionsService, type: :service do
   # Integration tests with VCR (require actual API responses)
   describe '#calculate_and_save', :vcr do
     it 'fetches directions and saves to route' do
-      pending 'Requires VCR cassette with Google Directions API response'
+      skip 'Requires VCR cassette with Google Directions API response'
       # This test would:
       # 1. Make actual API call (recorded by VCR)
       # 2. Verify route is updated with geometry, distance, duration
@@ -217,7 +217,7 @@ RSpec.describe DirectionsService, type: :service do
 
   describe '#fetch_alternatives', :vcr do
     it 'returns multiple route options' do
-      pending 'Requires VCR cassette with Google Directions API response'
+      skip 'Requires VCR cassette with Google Directions API response'
       # This test would:
       # 1. Request alternatives from API
       # 2. Verify multiple routes are returned

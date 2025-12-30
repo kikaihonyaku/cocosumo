@@ -273,7 +273,7 @@ RSpec.describe VertexAiGroundingService, type: :service do
     let(:service) { described_class.new }
 
     it 'returns answer with sources' do
-      pending 'Requires VCR cassette with Vertex AI API response'
+      skip 'Requires VCR cassette with Vertex AI API response'
 
       result = service.query_with_grounding(
         query: '近くのスーパーマーケットを教えてください',

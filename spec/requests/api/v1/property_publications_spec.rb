@@ -5,8 +5,8 @@ require 'rails_helper'
 RSpec.describe 'Api::V1::PropertyPublications', type: :request do
   let(:tenant) { create(:tenant) }
   let(:user) { create(:user, tenant: tenant, password: 'password123') }
-  let(:building) { create(:building, tenant: tenant) }
-  let(:room) { create(:room, building: building, tenant: tenant) }
+  let(:building) { create(:building) }
+  let(:room) { create(:room, building: building) }
 
   def login_user
     post '/api/v1/auth/login', params: { email: user.email, password: 'password123' }
@@ -14,10 +14,10 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
 
   describe 'GET /property/:publication_id (show_public)' do
     context 'with published page' do
-      let!(:publication) { create(:property_publication, :published, room: room, tenant: tenant) }
+      let!(:publication) { create(:property_publication, :published, room: room) }
 
       it 'returns publication data' do
-        get "/property/#{publication.publication_id}"
+        get "/api/v1/property_publications/#{publication.publication_id}/public"
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
@@ -26,7 +26,7 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
       end
 
       it 'includes room and building data' do
-        get "/property/#{publication.publication_id}"
+        get "/api/v1/property_publications/#{publication.publication_id}/public"
 
         json = JSON.parse(response.body)
         expect(json['room']['id']).to eq(room.id)
@@ -34,7 +34,7 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
       end
 
       it 'includes QR code and expiration info' do
-        get "/property/#{publication.publication_id}"
+        get "/api/v1/property_publications/#{publication.publication_id}/public"
 
         json = JSON.parse(response.body)
         expect(json).to have_key('qr_code_data_url')
@@ -43,16 +43,16 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
     end
 
     context 'with draft page' do
-      let!(:publication) { create(:property_publication, room: room, tenant: tenant, status: :draft) }
+      let!(:publication) { create(:property_publication, room: room, status: :draft) }
 
       it 'returns not found for anonymous user' do
-        get "/property/#{publication.publication_id}"
+        get "/api/v1/property_publications/#{publication.publication_id}/public"
 
         expect(response).to have_http_status(:not_found)
       end
 
       it 'returns unauthorized for preview without login' do
-        get "/property/#{publication.publication_id}", params: { preview: true }
+        get "/api/v1/property_publications/#{publication.publication_id}/public", params: { preview: true }
 
         expect(response).to have_http_status(:unauthorized)
         json = JSON.parse(response.body)
@@ -61,7 +61,7 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
 
       it 'returns data for preview with logged in user' do
         login_user
-        get "/property/#{publication.publication_id}", params: { preview: true }
+        get "/api/v1/property_publications/#{publication.publication_id}/public", params: { preview: true }
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
@@ -71,11 +71,11 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
 
     context 'with password protected page' do
       let!(:publication) do
-        create(:property_publication, :published, :with_password, room: room, tenant: tenant)
+        create(:property_publication, :published, :with_password, room: room)
       end
 
       it 'returns password_required error without password' do
-        get "/property/#{publication.publication_id}"
+        get "/api/v1/property_publications/#{publication.publication_id}/public"
 
         expect(response).to have_http_status(:unauthorized)
         json = JSON.parse(response.body)
@@ -84,7 +84,7 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
       end
 
       it 'returns invalid_password error with wrong password' do
-        get "/property/#{publication.publication_id}", params: { password: 'wrong_password' }
+        get "/api/v1/property_publications/#{publication.publication_id}/public", params: { password: 'wrong_password' }
 
         expect(response).to have_http_status(:unauthorized)
         json = JSON.parse(response.body)
@@ -92,7 +92,7 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
       end
 
       it 'returns data with correct password' do
-        get "/property/#{publication.publication_id}", params: { password: 'testpass123' }
+        get "/api/v1/property_publications/#{publication.publication_id}/public", params: { password: 'secret123' }
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
@@ -101,17 +101,17 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
 
       it 'bypasses password check for logged in user (preview mode)' do
         login_user
-        get "/property/#{publication.publication_id}", params: { preview: true }
+        get "/api/v1/property_publications/#{publication.publication_id}/public", params: { preview: true }
 
         expect(response).to have_http_status(:ok)
       end
     end
 
     context 'with expired page' do
-      let!(:publication) { create(:property_publication, :expired, room: room, tenant: tenant) }
+      let!(:publication) { create(:property_publication, :published, :expired, room: room) }
 
       it 'returns gone status' do
-        get "/property/#{publication.publication_id}"
+        get "/api/v1/property_publications/#{publication.publication_id}/public"
 
         expect(response).to have_http_status(:gone)
         json = JSON.parse(response.body)
@@ -120,7 +120,7 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
 
       it 'allows preview mode for logged in user' do
         login_user
-        get "/property/#{publication.publication_id}", params: { preview: true }
+        get "/api/v1/property_publications/#{publication.publication_id}/public", params: { preview: true }
 
         expect(response).to have_http_status(:ok)
       end
@@ -128,19 +128,19 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
 
     context 'with non-existent publication' do
       it 'returns not found' do
-        get '/property/nonexistent_id'
+        get '/api/v1/property_publications/nonexistent_id/public'
 
         expect(response).to have_http_status(:not_found)
       end
     end
 
     context 'with discarded (soft-deleted) publication' do
-      let!(:publication) { create(:property_publication, :published, room: room, tenant: tenant) }
+      let!(:publication) { create(:property_publication, :published, room: room) }
 
       before { publication.discard }
 
       it 'returns not found' do
-        get "/property/#{publication.publication_id}"
+        get "/api/v1/property_publications/#{publication.publication_id}/public"
 
         expect(response).to have_http_status(:not_found)
       end
@@ -149,10 +149,10 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
 
   describe 'POST /api/v1/property_publications/bulk_action' do
     let!(:draft_publications) do
-      create_list(:property_publication, 2, room: room, tenant: tenant, status: :draft)
+      create_list(:property_publication, 2, room: room, status: :draft)
     end
     let!(:published_publications) do
-      create_list(:property_publication, 2, :published, room: room, tenant: tenant)
+      create_list(:property_publication, 2, :published, room: room)
     end
 
     before { login_user }
@@ -291,11 +291,11 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
   end
 
   describe 'POST /api/v1/property_publications/:publication_id/verify_password' do
-    let!(:publication) { create(:property_publication, :published, :with_password, room: room, tenant: tenant) }
+    let!(:publication) { create(:property_publication, :published, :with_password, room: room) }
 
     it 'returns success with correct password' do
       post "/api/v1/property_publications/#{publication.publication_id}/verify_password",
-           params: { password: 'testpass123' }
+           params: { password: 'secret123' }
 
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
@@ -313,12 +313,12 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
 
     context 'with expired publication' do
       let!(:expired_publication) do
-        create(:property_publication, :expired, :with_password, room: room, tenant: tenant)
+        create(:property_publication, :published, :expired, :with_password, room: room)
       end
 
       it 'returns gone status' do
         post "/api/v1/property_publications/#{expired_publication.publication_id}/verify_password",
-             params: { password: 'testpass123' }
+             params: { password: 'secret123' }
 
         expect(response).to have_http_status(:gone)
       end
@@ -326,7 +326,7 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
   end
 
   describe 'POST /api/v1/property_publications/:publication_id/track_view' do
-    let!(:publication) { create(:property_publication, :published, room: room, tenant: tenant) }
+    let!(:publication) { create(:property_publication, :published, room: room) }
 
     it 'increments view count' do
       expect {
@@ -339,7 +339,7 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
     end
 
     it 'does not increment view count for draft publications' do
-      draft = create(:property_publication, room: room, tenant: tenant, status: :draft)
+      draft = create(:property_publication, room: room, status: :draft)
 
       expect {
         post "/api/v1/property_publications/#{draft.publication_id}/track_view"
@@ -349,7 +349,7 @@ RSpec.describe 'Api::V1::PropertyPublications', type: :request do
 
   describe 'GET /api/v1/property_publications/:publication_id/analytics' do
     let!(:publication) do
-      create(:property_publication, :published, room: room, tenant: tenant,
+      create(:property_publication, :published, room: room,
              view_count: 100, max_scroll_depth: 75, avg_session_duration: 120)
     end
 
