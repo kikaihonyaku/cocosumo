@@ -139,3 +139,7 @@ puts "VRツアー: #{VrTour.count}件"
 puts "\nログイン情報:"
 puts "管理者 - Email: admin@example.com / Password: password123"
 puts "一般ユーザー - Email: member@example.com / Password: password123"
+
+# ブログ記事のシードデータを読み込み
+puts "\n"
+load Rails.root.join('db/seeds/blog_posts.rb')
