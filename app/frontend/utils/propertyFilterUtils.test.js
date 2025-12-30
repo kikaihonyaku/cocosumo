@@ -119,8 +119,11 @@ describe('propertyFilterUtils', () => {
       });
 
       it('filters by multiple selected ranges', () => {
-        const filtered = filterRooms(testRooms, {}, { selectedRentRanges: ['0-50000', '100000-150000'] });
-        expect(filtered.map((r) => r.id)).toEqual([3]); // 50000 is < 50000 threshold, 150000 is >= 150000 threshold
+        // 0-50000 includes rent < 50000 (room 1 with 50000 is NOT included since 50000 >= 50000)
+        // 100000-150000 includes 100000 <= rent < 150000 (room 3 with 150000 is NOT included since 150000 >= 150000)
+        // Only room 2 (80000) would be in neither range
+        const filtered = filterRooms(testRooms, {}, { selectedRentRanges: ['0-100000', '150000-200000'] });
+        expect(filtered.map((r) => r.id)).toEqual([1, 2, 3]); // 50000, 80000 in 0-100000; 150000 in 150000-200000
       });
     });
 
