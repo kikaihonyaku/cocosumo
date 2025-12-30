@@ -153,6 +153,27 @@ export default function PhotoGallery({ photos = [], publicationId, onPhotoView }
     };
   }, [lightboxOpen]);
 
+  // Preload adjacent images for smoother navigation
+  useEffect(() => {
+    if (photos.length <= 1) return;
+
+    const preloadImage = (url) => {
+      if (!url) return;
+      const img = new Image();
+      img.src = url;
+    };
+
+    // Preload next image
+    const nextIndex = currentIndex === photos.length - 1 ? 0 : currentIndex + 1;
+    const nextPhoto = photos[nextIndex]?.room_photo?.photo_url;
+    preloadImage(nextPhoto);
+
+    // Preload previous image
+    const prevIndex = currentIndex === 0 ? photos.length - 1 : currentIndex - 1;
+    const prevPhoto = photos[prevIndex]?.room_photo?.photo_url;
+    preloadImage(prevPhoto);
+  }, [currentIndex, photos]);
+
   if (photos.length === 0) {
     return (
       <Box

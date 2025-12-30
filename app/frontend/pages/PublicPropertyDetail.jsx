@@ -17,9 +17,12 @@ import {
 import { ArrowBack as ArrowBackIcon, Edit as EditIcon, Lock as LockIcon } from '@mui/icons-material';
 import axios from 'axios';
 import { PropertyAnalytics } from '../services/analytics';
+import { addToHistory } from '../services/viewHistory';
 import SectionNavigation from '../components/property-publication/SectionNavigation';
 import { useScrollTracking } from '../hooks/useScrollTracking';
 import PropertyCompareDrawer from '../components/PropertyPublication/PropertyCompareDrawer';
+import RecentlyViewed from '../components/PropertyPublication/RecentlyViewed';
+import SkeletonLoader, { TemplateSkeletonFallback } from '../components/PropertyPublication/SkeletonLoader';
 
 // テンプレートを動的インポート（Code Splitting）でバンドルサイズ削減
 const Template0 = lazy(() => import('../components/PropertyPublication/templates/Template0'));
@@ -27,12 +30,8 @@ const Template1 = lazy(() => import('../components/PropertyPublication/templates
 const Template2 = lazy(() => import('../components/PropertyPublication/templates/Template2'));
 const Template3 = lazy(() => import('../components/PropertyPublication/templates/Template3'));
 
-// テンプレート読み込み中のフォールバックコンポーネント
-const TemplateLoadingFallback = () => (
-  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-    <CircularProgress />
-  </Box>
-);
+// テンプレート読み込み中のフォールバックコンポーネント（スケルトン使用）
+const TemplateLoadingFallback = () => <TemplateSkeletonFallback />;
 
 // デバイスタイプを判定
 const getDeviceType = () => {
@@ -104,6 +103,18 @@ function PublicPropertyDetail() {
           // Silent fail - don't block page load for analytics
           console.log('View tracking skipped');
         }
+
+        // Add to view history (localStorage)
+        addToHistory({
+          publicationId: publicationId,
+          title: responseData.title,
+          catchCopy: responseData.catch_copy,
+          thumbnailUrl: responseData.property_publication_photos?.[0]?.room_photo?.photo_url,
+          address: responseData.room?.building?.address,
+          rent: responseData.room?.rent,
+          roomType: responseData.room?.room_type,
+          area: responseData.room?.area
+        });
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -426,11 +437,7 @@ function PublicPropertyDetail() {
   }, [data]);
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <SkeletonLoader />;
   }
 
   // パスワード入力画面
@@ -644,6 +651,9 @@ function PublicPropertyDetail() {
 
       {/* Property Comparison Drawer (hidden in preview mode) */}
       {!isPreview && <PropertyCompareDrawer />}
+
+      {/* Recently Viewed Properties (hidden in preview mode) */}
+      {!isPreview && <RecentlyViewed currentPublicationId={publicationId} />}
     </>
   );
 }

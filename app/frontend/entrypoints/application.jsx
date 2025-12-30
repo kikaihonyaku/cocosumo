@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from '../App'
 import AnalyticsProvider from '../components/AnalyticsProvider'
 import './application.css'
+import '../styles/animations.css'
 
 console.log('CoCoスモ Starting React application...')
 
