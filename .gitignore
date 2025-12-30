@@ -49,3 +49,6 @@ node_modules
 # Google Cloud credentials
 config/google-credentials.json
 google-credentials.json
+
+# Test coverage
+/coverage/
