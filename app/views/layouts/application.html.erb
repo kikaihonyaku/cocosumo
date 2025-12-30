@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1976d2">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
@@ -15,6 +16,7 @@
 
     <link rel="icon" href="/icon.png?v=<%= Time.now.to_i %>" type="image/png">
     <link rel="apple-touch-icon" href="/icon.png?v=<%= Time.now.to_i %>">
+    <link rel="manifest" href="/manifest.json">
 
     <%# Vite + React (CSS is bundled with JS) %>
     <%= vite_client_tag %>

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from '../App'
 import AnalyticsProvider from '../components/AnalyticsProvider'
+import { registerServiceWorker } from '../services/serviceWorker'
 import './application.css'
 import '../styles/animations.css'
 
@@ -24,4 +25,9 @@ if (!rootElement) {
     </React.StrictMode>
   )
   console.log('CoCoスモ: React app mounted successfully!')
+
+  // Register service worker for PWA functionality
+  if (process.env.NODE_ENV === 'production') {
+    registerServiceWorker()
+  }
 }

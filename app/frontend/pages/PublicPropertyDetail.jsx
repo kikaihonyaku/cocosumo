@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -12,17 +12,26 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField
+  TextField,
+  Snackbar
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, Edit as EditIcon, Lock as LockIcon } from '@mui/icons-material';
+import {
+  ArrowBack as ArrowBackIcon,
+  Edit as EditIcon,
+  Lock as LockIcon,
+  Refresh as RefreshIcon,
+  WifiOff as WifiOffIcon
+} from '@mui/icons-material';
 import axios from 'axios';
 import { PropertyAnalytics } from '../services/analytics';
 import { addToHistory } from '../services/viewHistory';
 import SectionNavigation from '../components/property-publication/SectionNavigation';
 import { useScrollTracking } from '../hooks/useScrollTracking';
+import { useOnlineStatus } from '../hooks/useRetry';
 import PropertyCompareDrawer from '../components/PropertyPublication/PropertyCompareDrawer';
 import RecentlyViewed from '../components/PropertyPublication/RecentlyViewed';
 import SkeletonLoader, { TemplateSkeletonFallback } from '../components/PropertyPublication/SkeletonLoader';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 // テンプレートを動的インポート（Code Splitting）でバンドルサイズ削減
 const Template0 = lazy(() => import('../components/PropertyPublication/templates/Template0'));
@@ -47,12 +56,17 @@ function PublicPropertyDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // パスワード保護用の状態
   const [passwordRequired, setPasswordRequired] = useState(false);
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordVerified, setPasswordVerified] = useState(false);
+
+  // オンライン/オフライン状態
+  const { isOnline, wasOffline } = useOnlineStatus();
+  const [showOfflineSnackbar, setShowOfflineSnackbar] = useState(false);
 
   // URLクエリパラメータを取得
   const urlParams = new URLSearchParams(window.location.search);
@@ -62,6 +76,20 @@ function PublicPropertyDetail() {
 
   // Scroll tracking (only for non-preview views)
   useScrollTracking(publicationId, !isPreview && !loading);
+
+  // オフライン時にスナックバー表示
+  useEffect(() => {
+    if (!isOnline) {
+      setShowOfflineSnackbar(true);
+    }
+  }, [isOnline]);
+
+  // オンライン復帰時に自動リトライ
+  useEffect(() => {
+    if (wasOffline && error) {
+      loadData();
+    }
+  }, [wasOffline]);
 
   useEffect(() => {
     loadData();
@@ -497,7 +525,29 @@ function PublicPropertyDetail() {
   if (error) {
     return (
       <Container maxWidth="md" sx={{ py: 4 }}>
-        <Alert severity="error">{error}</Alert>
+        <Alert
+          severity="error"
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              startIcon={<RefreshIcon />}
+              onClick={() => {
+                setRetryCount(prev => prev + 1);
+                loadData();
+              }}
+            >
+              再試行
+            </Button>
+          }
+        >
+          {error}
+          {retryCount > 0 && (
+            <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+              再試行回数: {retryCount}
+            </Typography>
+          )}
+        </Alert>
       </Container>
     );
   }
@@ -654,8 +704,43 @@ function PublicPropertyDetail() {
 
       {/* Recently Viewed Properties (hidden in preview mode) */}
       {!isPreview && <RecentlyViewed currentPublicationId={publicationId} />}
+
+      {/* Offline notification snackbar */}
+      <Snackbar
+        open={showOfflineSnackbar && !isOnline}
+        onClose={() => setShowOfflineSnackbar(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        message={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WifiOffIcon fontSize="small" />
+            <span>オフラインです。接続を確認してください。</span>
+          </Box>
+        }
+        action={
+          <Button
+            color="inherit"
+            size="small"
+            onClick={() => setShowOfflineSnackbar(false)}
+          >
+            閉じる
+          </Button>
+        }
+      />
     </>
   );
 }
 
-export default PublicPropertyDetail;
+// Wrap with ErrorBoundary for graceful error handling
+function PublicPropertyDetailWithErrorBoundary(props) {
+  return (
+    <ErrorBoundary
+      onError={(error) => {
+        console.error('PublicPropertyDetail error:', error);
+      }}
+    >
+      <PublicPropertyDetail {...props} />
+    </ErrorBoundary>
+  );
+}
+
+export default PublicPropertyDetailWithErrorBoundary;
