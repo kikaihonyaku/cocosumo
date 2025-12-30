@@ -3,6 +3,132 @@ import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
+// カスタムMarkdownコンポーネント
+const MarkdownComponents = {
+  // コードブロックのカスタムレンダリング（react-markdown v10対応）
+  code(props) {
+    const { node, className, children, ...rest } = props;
+    const match = /language-(\w+)/.exec(className || '');
+    const language = match ? match[1] : '';
+
+    // 親要素がpreかどうかでインラインかブロックかを判定
+    const isBlock = node?.position?.start?.line !== node?.position?.end?.line ||
+                    String(children).includes('\n') ||
+                    language;
+
+    // インラインコードの場合
+    if (!isBlock) {
+      return (
+        <code className="bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded text-sm font-mono" {...rest}>
+          {children}
+        </code>
+      );
+    }
+
+    // コードブロックの場合
+    return (
+      <div className="relative group my-6">
+        {language && (
+          <div className="absolute top-0 right-0 px-3 py-1 text-xs text-gray-400 bg-gray-800 rounded-bl-lg rounded-tr-xl font-mono z-10">
+            {language}
+          </div>
+        )}
+        <SyntaxHighlighter
+          style={oneDark}
+          language={language || 'text'}
+          PreTag="div"
+          className="rounded-xl shadow-lg !my-0"
+          showLineNumbers={language ? true : false}
+          wrapLines={true}
+          customStyle={{
+            margin: 0,
+            borderRadius: '0.75rem',
+            fontSize: '0.875rem',
+            padding: '1rem',
+          }}
+          {...rest}
+        >
+          {String(children).replace(/\n$/, '')}
+        </SyntaxHighlighter>
+      </div>
+    );
+  },
+  // preタグをそのまま子要素として扱う（コードブロック用）
+  pre({ children }) {
+    return <>{children}</>;
+  },
+  // 見出しにアンカーリンクを追加
+  h2({ children, ...props }) {
+    const id = String(children).toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+    return (
+      <h2 id={id} className="group" {...props}>
+        <a href={`#${id}`} className="absolute -left-6 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-blue-500">
+          #
+        </a>
+        {children}
+      </h2>
+    );
+  },
+  h3({ children, ...props }) {
+    const id = String(children).toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+    return (
+      <h3 id={id} className="group" {...props}>
+        <a href={`#${id}`} className="absolute -left-5 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-blue-500">
+          #
+        </a>
+        {children}
+      </h3>
+    );
+  },
+  // テーブルのスタイリング
+  table({ children }) {
+    return (
+      <div className="overflow-x-auto my-6">
+        <table className="min-w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
+          {children}
+        </table>
+      </div>
+    );
+  },
+  // 画像のスタイリング
+  img({ src, alt, ...props }) {
+    return (
+      <figure className="my-8">
+        <img
+          src={src}
+          alt={alt}
+          className="rounded-xl shadow-lg max-w-full h-auto mx-auto"
+          loading="lazy"
+          {...props}
+        />
+        {alt && (
+          <figcaption className="text-center text-sm text-gray-500 mt-3">
+            {alt}
+          </figcaption>
+        )}
+      </figure>
+    );
+  },
+  // 引用ブロック
+  blockquote({ children }) {
+    return (
+      <blockquote className="border-l-4 border-blue-500 bg-blue-50 py-3 px-6 my-6 rounded-r-lg italic text-gray-700">
+        {children}
+      </blockquote>
+    );
+  },
+  // リストアイテム
+  li({ children, ...props }) {
+    return (
+      <li className="text-gray-700 mb-2 leading-relaxed" {...props}>
+        {children}
+      </li>
+    );
+  },
+};
 
 export default function BlogDetail() {
   const { publicId } = useParams();
@@ -158,7 +284,7 @@ export default function BlogDetail() {
             {/* 本文（Markdown） */}
             <div className="
               prose prose-lg max-w-none
-              prose-headings:text-gray-900 prose-headings:font-bold
+              prose-headings:text-gray-900 prose-headings:font-bold prose-headings:relative
               prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-6 prose-h2:pb-3 prose-h2:border-b prose-h2:border-gray-200
               prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4
               prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-6
@@ -166,17 +292,14 @@ export default function BlogDetail() {
               prose-strong:text-gray-900 prose-strong:font-semibold
               prose-ul:my-6 prose-ul:list-disc prose-ul:pl-6
               prose-ol:my-6 prose-ol:list-decimal prose-ol:pl-6
-              prose-li:text-gray-700 prose-li:mb-2 prose-li:leading-relaxed
-              prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-50 prose-blockquote:py-2 prose-blockquote:px-6 prose-blockquote:my-6 prose-blockquote:rounded-r-lg prose-blockquote:italic prose-blockquote:text-gray-700
-              prose-code:bg-gray-100 prose-code:text-pink-600 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
-              prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-xl prose-pre:shadow-lg prose-pre:overflow-x-auto
-              prose-img:rounded-xl prose-img:shadow-lg prose-img:my-8
-              prose-table:border-collapse prose-table:w-full
-              prose-th:bg-gray-100 prose-th:border prose-th:border-gray-300 prose-th:px-4 prose-th:py-2 prose-th:text-left
-              prose-td:border prose-td:border-gray-300 prose-td:px-4 prose-td:py-2
               prose-hr:my-12 prose-hr:border-gray-200
             ">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={MarkdownComponents}
+              >
+                {post.content}
+              </ReactMarkdown>
             </div>
           </div>
 
