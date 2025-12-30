@@ -111,8 +111,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           {/* 公開ページ */}
-          {/* ランディングページを一時的に無効化し、/homeにリダイレクト */}
-          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/vr/:publicId" element={<PublicVrTour />} />
           <Route path="/virtual-staging/:publicId" element={<PublicVirtualStaging />} />
