@@ -7,9 +7,14 @@ import {
   Alert,
   IconButton,
   Typography,
-  Button
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, Edit as EditIcon } from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon, Edit as EditIcon, Lock as LockIcon } from '@mui/icons-material';
 import axios from 'axios';
 import Template0 from '../components/PropertyPublication/templates/Template0';
 import Template1 from '../components/PropertyPublication/templates/Template1';
@@ -19,12 +24,26 @@ import { PropertyAnalytics } from '../services/analytics';
 import SectionNavigation from '../components/property-publication/SectionNavigation';
 import { useScrollTracking } from '../hooks/useScrollTracking';
 
+// デバイスタイプを判定
+const getDeviceType = () => {
+  const ua = navigator.userAgent;
+  if (/tablet|ipad|playbook|silk/i.test(ua)) return 'tablet';
+  if (/mobile|iphone|ipod|android|blackberry|opera mini|iemobile/i.test(ua)) return 'mobile';
+  return 'desktop';
+};
+
 function PublicPropertyDetail() {
   const { publicationId } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
+
+  // パスワード保護用の状態
+  const [passwordRequired, setPasswordRequired] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordVerified, setPasswordVerified] = useState(false);
 
   // URLクエリパラメータを取得
   const urlParams = new URLSearchParams(window.location.search);
@@ -39,14 +58,19 @@ function PublicPropertyDetail() {
     loadData();
   }, [publicationId]);
 
-  const loadData = async () => {
+  const loadData = async (withPassword = null) => {
     setLoading(true);
     setError(null);
     try {
       const templateParam = urlParams.get('template');
 
+      const params = isPreview ? { preview: true } : {};
+      if (withPassword) {
+        params.password = withPassword;
+      }
+
       const response = await axios.get(`/api/v1/property_publications/${publicationId}/public`, {
-        params: isPreview ? { preview: true } : {}
+        params
       });
 
       // URLパラメータでtemplateが指定されている場合は、それを優先する
@@ -56,11 +80,16 @@ function PublicPropertyDetail() {
       }
 
       setData(responseData);
+      setPasswordRequired(false);
+      setPasswordVerified(withPassword ? true : false);
 
       // Track page view (only for non-preview views)
       if (!isPreview) {
         try {
-          await axios.post(`/api/v1/property_publications/${publicationId}/track_view`);
+          await axios.post(`/api/v1/property_publications/${publicationId}/track_view`, {
+            device_type: getDeviceType(),
+            referrer: document.referrer || null
+          });
         } catch (e) {
           // Silent fail - don't block page load for analytics
           console.log('View tracking skipped');
@@ -69,12 +98,45 @@ function PublicPropertyDetail() {
     } catch (error) {
       console.error('Error loading data:', error);
       if (error.response?.status === 401) {
+        // パスワード保護されているページ
+        if (error.response?.data?.error === 'password_required') {
+          setPasswordRequired(true);
+          setLoading(false);
+          return;
+        }
         setError('プレビューを表示するにはログインが必要です');
+      } else if (error.response?.status === 410) {
+        // 有効期限切れ
+        setError('この物件公開ページの有効期限が切れています');
       } else {
         setError('物件情報の読み込みに失敗しました');
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // パスワード送信ハンドラー
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+
+    try {
+      const response = await axios.post(`/api/v1/property_publications/${publicationId}/verify_password`, {
+        password
+      });
+
+      if (response.data.success) {
+        // パスワード認証成功、データを再取得
+        loadData(password);
+      }
+    } catch (error) {
+      if (error.response?.status === 410) {
+        setError('この物件公開ページの有効期限が切れています');
+        setPasswordRequired(false);
+      } else {
+        setPasswordError('パスワードが正しくありません');
+      }
     }
   };
 
@@ -262,6 +324,60 @@ function PublicPropertyDetail() {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
         <CircularProgress />
+      </Box>
+    );
+  }
+
+  // パスワード入力画面
+  if (passwordRequired && !passwordVerified) {
+    return (
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        bgcolor: 'background.default'
+      }}>
+        <Container maxWidth="sm">
+          <Box
+            component="form"
+            onSubmit={handlePasswordSubmit}
+            sx={{
+              textAlign: 'center',
+              p: 4,
+              bgcolor: 'background.paper',
+              borderRadius: 2,
+              boxShadow: 3
+            }}
+          >
+            <LockIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+            <Typography variant="h5" gutterBottom>
+              パスワードで保護されています
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              このページを閲覧するにはパスワードを入力してください
+            </Typography>
+            <TextField
+              fullWidth
+              type="password"
+              label="パスワード"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              error={!!passwordError}
+              helperText={passwordError}
+              sx={{ mb: 2 }}
+              autoFocus
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              disabled={!password}
+            >
+              確認
+            </Button>
+          </Box>
+        </Container>
       </Box>
     );
   }

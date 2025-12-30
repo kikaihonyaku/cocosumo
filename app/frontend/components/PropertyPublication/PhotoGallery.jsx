@@ -194,7 +194,8 @@ export default function PhotoGallery({ photos = [], publicationId, onPhotoView }
 
   const currentPhoto = photos[currentIndex];
   const imageUrl = currentPhoto.room_photo?.photo_url || currentPhoto.photo_url;
-  const imageAlt = currentPhoto.room_photo?.caption || `写真 ${currentIndex + 1}`;
+  // alt_textを優先、次にcaption、なければデフォルト
+  const imageAlt = currentPhoto.room_photo?.alt_text || currentPhoto.room_photo?.caption || `写真 ${currentIndex + 1}`;
 
   return (
     <Box role="region" aria-label="物件写真ギャラリー">
@@ -395,7 +396,7 @@ export default function PhotoGallery({ photos = [], publicationId, onPhotoView }
               >
                 <img
                   src={photo.room_photo?.photo_url || photo.photo_url}
-                  alt={photo.room_photo?.caption || `サムネイル ${index + 1}`}
+                  alt={photo.room_photo?.alt_text || photo.room_photo?.caption || `サムネイル ${index + 1}`}
                   loading="lazy"
                   style={{
                     width: '100%',

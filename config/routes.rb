@@ -26,6 +26,8 @@ Rails.application.routes.draw do
 
       # Gemini AI
       post 'gemini/process_image', to: 'gemini#process_image'
+      post 'gemini/generate_alt_text', to: 'gemini#generate_alt_text'
+      post 'gemini/bulk_generate_alt_text', to: 'gemini#bulk_generate_alt_text'
 
       # Imagen AI (image editing)
       post 'imagen/edit_image', to: 'imagen#edit_image'
@@ -198,6 +200,12 @@ Rails.application.routes.draw do
       # ページビュー追跡（認証不要）
       post 'property_publications/:publication_id/track_view', to: 'property_publications#track_view'
       post 'property_publications/:publication_id/track_analytics', to: 'property_publications#track_analytics'
+
+      # パスワード検証（認証不要）
+      post 'property_publications/:publication_id/verify_password', to: 'property_publications#verify_password'
+
+      # 詳細分析（認証必要）
+      get 'property_publications/:publication_id/analytics', to: 'property_publications#analytics'
 
       # 物件分析API
       get 'property_analysis', to: 'property_analysis#show'

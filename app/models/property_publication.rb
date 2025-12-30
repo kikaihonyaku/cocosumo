@@ -34,6 +34,8 @@ class PropertyPublication < ApplicationRecord
   scope :draft, -> { where(status: :draft) }
   scope :scheduled_to_publish, -> { where.not(scheduled_publish_at: nil) }
   scope :scheduled_to_unpublish, -> { where.not(scheduled_unpublish_at: nil) }
+  scope :expired, -> { where('expires_at IS NOT NULL AND expires_at < ?', Time.current) }
+  scope :not_expired, -> { where('expires_at IS NULL OR expires_at >= ?', Time.current) }
 
   # Publish the property publication
   def publish!
@@ -43,6 +45,56 @@ class PropertyPublication < ApplicationRecord
   # Unpublish the property publication
   def unpublish!
     update!(status: :draft, published_at: nil)
+  end
+
+  # パスワード保護関連
+  def password_protected?
+    access_password.present?
+  end
+
+  def authenticate_password(password)
+    return true unless password_protected?
+    access_password == password
+  end
+
+  # 有効期限関連
+  def expired?
+    expires_at.present? && expires_at < Time.current
+  end
+
+  def accessible?
+    published? && !expired?
+  end
+
+  # 詳細アナリティクス更新
+  def track_detailed_analytics(device_type: nil, referrer: nil)
+    return unless published?
+
+    # デバイス統計
+    if device_type.present?
+      stats = device_stats || {}
+      stats[device_type] = (stats[device_type] || 0) + 1
+      update_column(:device_stats, stats)
+    end
+
+    # リファラー統計
+    if referrer.present?
+      stats = referrer_stats || {}
+      # リファラーからドメインを抽出
+      domain = begin
+        URI.parse(referrer).host || 'direct'
+      rescue
+        'direct'
+      end
+      stats[domain] = (stats[domain] || 0) + 1
+      update_column(:referrer_stats, stats)
+    end
+
+    # 時間帯統計
+    hour = Time.current.hour.to_s
+    stats = hourly_stats || {}
+    stats[hour] = (stats[hour] || 0) + 1
+    update_column(:hourly_stats, stats)
   end
 
   # Get public URL

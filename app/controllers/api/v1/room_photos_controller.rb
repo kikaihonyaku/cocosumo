@@ -9,7 +9,7 @@ class Api::V1::RoomPhotosController < ApplicationController
     @room_photos = @room.room_photos.with_attached_photo
     render json: @room_photos.as_json(
       methods: [:photo_url],
-      only: [:id, :photo_type, :caption, :display_order, :created_at, :updated_at]
+      only: [:id, :photo_type, :caption, :alt_text, :display_order, :created_at, :updated_at]
     )
   end
 
@@ -17,7 +17,7 @@ class Api::V1::RoomPhotosController < ApplicationController
   def show
     render json: @room_photo.as_json(
       methods: [:photo_url],
-      only: [:id, :photo_type, :caption, :display_order, :created_at, :updated_at]
+      only: [:id, :photo_type, :caption, :alt_text, :display_order, :created_at, :updated_at]
     ).merge(
       building_name: @room.building.name,
       room_name: @room.room_number
@@ -188,6 +188,7 @@ class Api::V1::RoomPhotosController < ApplicationController
       :photo,
       :photo_type,
       :caption,
+      :alt_text,
       :display_order
     )
   end

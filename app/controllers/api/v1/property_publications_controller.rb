@@ -40,7 +40,7 @@ class Api::V1::PropertyPublicationsController < ApplicationController
           only: [:id, :display_order, :comment],
           include: {
             room_photo: {
-              only: [:id, :photo_type, :caption],
+              only: [:id, :photo_type, :caption, :alt_text],
               methods: [:photo_url]
             }
           }
@@ -81,6 +81,32 @@ class Api::V1::PropertyPublicationsController < ApplicationController
     # プレビューモードの場合はログインユーザーのみアクセス可能
     is_preview = params[:preview].present?
 
+    # 有効期限チェック
+    if @property_publication.expired? && !is_preview
+      return render json: { error: 'この物件公開ページの有効期限が切れています' }, status: :gone
+    end
+
+    # パスワード保護チェック（プレビューモードではスキップ）
+    if @property_publication.password_protected? && !is_preview && !current_user
+      # パスワードが提供されているか確認
+      if params[:password].present?
+        # パスワード検証
+        unless @property_publication.authenticate_password(params[:password])
+          return render json: {
+            error: 'invalid_password',
+            message: 'パスワードが正しくありません'
+          }, status: :unauthorized
+        end
+        # パスワード正しい場合は続行
+      else
+        return render json: {
+          error: 'password_required',
+          message: 'この物件公開ページはパスワードで保護されています',
+          password_protected: true
+        }, status: :unauthorized
+      end
+    end
+
     # 公開中か、またはプレビューモードでログイン済みの場合のみ表示
     if @property_publication.published? || (is_preview && current_user)
       # Get host from request
@@ -92,7 +118,7 @@ class Api::V1::PropertyPublicationsController < ApplicationController
             only: [:id, :display_order, :comment],
             include: {
               room_photo: {
-                only: [:id, :photo_type, :caption],
+                only: [:id, :photo_type, :caption, :alt_text],
                 methods: [:photo_url]
               }
             }
@@ -127,6 +153,8 @@ class Api::V1::PropertyPublicationsController < ApplicationController
 
       # Add QR code with host information
       result['qr_code_data_url'] = @property_publication.qr_code_data_url(host: host)
+      # Add expiration info
+      result['expires_at'] = @property_publication.expires_at
 
       render json: result
     else
@@ -135,6 +163,23 @@ class Api::V1::PropertyPublicationsController < ApplicationController
       else
         render json: { error: 'この物件公開ページは公開されていません' }, status: :not_found
       end
+    end
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'この物件公開ページは見つかりませんでした' }, status: :not_found
+  end
+
+  # POST /api/v1/property_publications/:publication_id/verify_password
+  def verify_password
+    @property_publication = PropertyPublication.kept.find_by!(publication_id: params[:publication_id])
+
+    if @property_publication.expired?
+      return render json: { error: 'この物件公開ページの有効期限が切れています' }, status: :gone
+    end
+
+    if @property_publication.authenticate_password(params[:password])
+      render json: { success: true, message: 'パスワードが確認されました' }
+    else
+      render json: { success: false, error: 'パスワードが正しくありません' }, status: :unauthorized
     end
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'この物件公開ページは見つかりませんでした' }, status: :not_found
@@ -351,6 +396,12 @@ class Api::V1::PropertyPublicationsController < ApplicationController
     # Only count views for published pages (not previews)
     if @property_publication.published?
       @property_publication.increment!(:view_count)
+
+      # 詳細アナリティクス追跡
+      @property_publication.track_detailed_analytics(
+        device_type: params[:device_type],
+        referrer: params[:referrer]
+      )
     end
 
     render json: { success: true, view_count: @property_publication.view_count }
@@ -380,6 +431,25 @@ class Api::V1::PropertyPublicationsController < ApplicationController
     end
 
     render json: { success: true }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Not found' }, status: :not_found
+  end
+
+  # GET /api/v1/property_publications/:publication_id/analytics
+  def analytics
+    @property_publication = PropertyPublication.kept.find_by!(publication_id: params[:publication_id])
+
+    render json: {
+      view_count: @property_publication.view_count || 0,
+      max_scroll_depth: @property_publication.max_scroll_depth || 0,
+      avg_session_duration: @property_publication.avg_session_duration || 0,
+      device_stats: @property_publication.device_stats || {},
+      referrer_stats: @property_publication.referrer_stats || {},
+      hourly_stats: @property_publication.hourly_stats || {},
+      published_at: @property_publication.published_at,
+      expires_at: @property_publication.expires_at,
+      password_protected: @property_publication.password_protected?
+    }
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Not found' }, status: :not_found
   end
@@ -455,6 +525,8 @@ class Api::V1::PropertyPublicationsController < ApplicationController
       :scheduled_unpublish_at,
       :primary_color,
       :accent_color,
+      :access_password,
+      :expires_at,
       visible_fields: {}
     )
   end

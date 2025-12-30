@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_29_102719) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_30_040350) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -273,6 +273,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_29_102719) do
     t.integer "avg_session_duration"
     t.string "primary_color"
     t.string "accent_color"
+    t.string "access_password"
+    t.datetime "expires_at"
+    t.jsonb "device_stats", default: {}
+    t.jsonb "referrer_stats", default: {}
+    t.jsonb "hourly_stats", default: {}
     t.index ["discarded_at"], name: "index_property_publications_on_discarded_at"
     t.index ["publication_id"], name: "index_property_publications_on_publication_id", unique: true
     t.index ["room_id"], name: "index_property_publications_on_room_id"
@@ -288,6 +293,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_29_102719) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "source_url"
+    t.text "alt_text"
     t.index ["room_id", "source_url"], name: "index_room_photos_on_room_id_and_source_url", unique: true, where: "(source_url IS NOT NULL)"
     t.index ["room_id"], name: "index_room_photos_on_room_id"
   end

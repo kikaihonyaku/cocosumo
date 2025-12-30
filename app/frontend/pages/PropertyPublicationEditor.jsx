@@ -53,6 +53,7 @@ import VisibleFieldsSelector from '../components/PropertyPublication/VisibleFiel
 import PhotoGallery from '../components/PropertyPublication/PhotoGallery';
 import RichTextEditor from '../components/shared/RichTextEditor';
 import InquiryList from '../components/PropertyPublication/InquiryList';
+import ViewAnalyticsDashboard from '../components/PropertyPublication/ViewAnalyticsDashboard';
 
 function PropertyPublicationEditor() {
   const { roomId, id } = useParams();
@@ -84,7 +85,9 @@ function PropertyPublicationEditor() {
     publication_id: '',
     public_url: '',
     primary_color: '',
-    accent_color: ''
+    accent_color: '',
+    access_password: '',
+    expires_at: ''
   });
   const [room, setRoom] = useState(null);
   const [selectedPhotos, setSelectedPhotos] = useState([]); // [{photo_id: number, comment: string}]
@@ -158,7 +161,9 @@ function PropertyPublicationEditor() {
         template_type: propertyPublication.template_type,
         visible_fields: propertyPublication.visible_fields,
         primary_color: propertyPublication.primary_color,
-        accent_color: propertyPublication.accent_color
+        accent_color: propertyPublication.accent_color,
+        access_password: propertyPublication.access_password,
+        expires_at: propertyPublication.expires_at
       },
       selectedPhotos,
       selectedVrTourIds,
@@ -225,7 +230,9 @@ function PropertyPublicationEditor() {
           template_type: propertyPublication.template_type,
           visible_fields: propertyPublication.visible_fields,
           primary_color: propertyPublication.primary_color || null,
-          accent_color: propertyPublication.accent_color || null
+          accent_color: propertyPublication.accent_color || null,
+          access_password: propertyPublication.access_password || null,
+          expires_at: propertyPublication.expires_at || null
         },
         photos: selectedPhotos,
         vr_tour_ids: selectedVrTourIds,
@@ -256,7 +263,9 @@ function PropertyPublicationEditor() {
           template_type: propertyPublication.template_type,
           visible_fields: propertyPublication.visible_fields,
           primary_color: propertyPublication.primary_color || null,
-          accent_color: propertyPublication.accent_color || null
+          accent_color: propertyPublication.accent_color || null,
+          access_password: propertyPublication.access_password || null,
+          expires_at: propertyPublication.expires_at || null
         },
         photos: selectedPhotos,
         vr_tour_ids: selectedVrTourIds,
@@ -561,6 +570,7 @@ function PropertyPublicationEditor() {
         <Tab label="表示項目" />
         <Tab label="プレビュー" />
         {isEditMode && <Tab label="問い合わせ" />}
+        {isEditMode && <Tab label="分析" />}
       </Tabs>
 
       {/* Content */}
@@ -820,6 +830,46 @@ function PropertyPublicationEditor() {
                       </Button>
                     )}
                   </Box>
+                </Box>
+              </Box>
+            </Paper>
+
+            {/* アクセス制限設定 */}
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>アクセス制限</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Box>
+                  <Typography variant="body2" sx={{ mb: 1 }}>パスワード保護（任意）</Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="text"
+                    value={propertyPublication.access_password || ''}
+                    onChange={(e) => setPropertyPublication({ ...propertyPublication, access_password: e.target.value })}
+                    placeholder="設定するとパスワード入力が必要になります"
+                    helperText="空白の場合は誰でもアクセス可能"
+                  />
+                </Box>
+                <Box>
+                  <Typography variant="body2" sx={{ mb: 1 }}>有効期限（任意）</Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="datetime-local"
+                    value={propertyPublication.expires_at ? new Date(propertyPublication.expires_at).toISOString().slice(0, 16) : ''}
+                    onChange={(e) => setPropertyPublication({ ...propertyPublication, expires_at: e.target.value ? new Date(e.target.value).toISOString() : '' })}
+                    helperText="設定すると指定日時以降はアクセス不可"
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  {propertyPublication.expires_at && (
+                    <Button
+                      size="small"
+                      sx={{ mt: 1 }}
+                      onClick={() => setPropertyPublication({ ...propertyPublication, expires_at: '' })}
+                    >
+                      期限をクリア
+                    </Button>
+                  )}
                 </Box>
               </Box>
             </Paper>
@@ -1124,6 +1174,13 @@ function PropertyPublicationEditor() {
         {activeTab === 5 && isEditMode && (
           <Paper sx={{ p: 3, maxWidth: 900 }}>
             <InquiryList publicationId={id} roomId={roomId} />
+          </Paper>
+        )}
+
+        {/* 分析タブ */}
+        {activeTab === 6 && isEditMode && (
+          <Paper sx={{ p: 3, maxWidth: 1200 }}>
+            <ViewAnalyticsDashboard publicationId={propertyPublication.publication_id} />
           </Paper>
         )}
       </Box>
