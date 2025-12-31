@@ -36,7 +36,8 @@ import {
   TrendingUp as TrendingUpIcon,
   VideoLibrary as VideoLibraryIcon,
   ViewInAr as ViewInArIcon,
-  Chair as ChairIcon
+  Chair as ChairIcon,
+  Campaign as CampaignIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -47,8 +48,10 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [adminMenuAnchor, setAdminMenuAnchor] = useState(null);
   const [contentMenuAnchor, setContentMenuAnchor] = useState(null);
+  const [responseMenuAnchor, setResponseMenuAnchor] = useState(null);
   const [mobileAdminExpanded, setMobileAdminExpanded] = useState(false);
   const [mobileContentExpanded, setMobileContentExpanded] = useState(false);
+  const [mobileResponseExpanded, setMobileResponseExpanded] = useState(false);
   
   const navStyle = ({ isActive }) => ({
     fontWeight: isActive ? "700" : "400",
@@ -94,20 +97,35 @@ export default function Header() {
     setMobileContentExpanded(!mobileContentExpanded);
   };
 
+  const handleResponseMenuOpen = (event) => {
+    setResponseMenuAnchor(event.currentTarget);
+  };
+
+  const handleResponseMenuClose = () => {
+    setResponseMenuAnchor(null);
+  };
+
+  const handleMobileResponseToggle = () => {
+    setMobileResponseExpanded(!mobileResponseExpanded);
+  };
+
   const contentMenuItems = [
     { to: "/vr-tours", label: "VRルームツアー", icon: <ViewInArIcon fontSize="small" /> },
     { to: "/virtual-stagings", label: "バーチャルステージング", icon: <ChairIcon fontSize="small" /> },
     { to: "/admin/publications", label: "公開ページ管理", icon: <WebIcon fontSize="small" /> },
   ];
 
+  const responseMenuItems = [
+    { to: "/admin/inquiries", label: "問い合わせ管理", icon: <EmailIcon fontSize="small" /> },
+    { to: "/analytics/inquiries", label: "問い合わせ分析", icon: <AnalyticsIcon fontSize="small" /> },
+    { to: "/admin/customer-accesses", label: "顧客アクセス管理", icon: <PeopleIcon fontSize="small" /> },
+    { to: "/analytics/customer-accesses", label: "顧客アクセス分析", icon: <TrendingUpIcon fontSize="small" /> },
+  ];
+
   const adminMenuItems = [
     { to: "/admin/stores", label: "店舗管理", icon: <StoreIcon fontSize="small" /> },
     { to: "/admin/suumo-import", label: "SUUMOインポート", icon: <CloudDownloadIcon fontSize="small" /> },
     { to: "/admin/layers", label: "レイヤー管理", icon: <LayersIcon fontSize="small" /> },
-    { to: "/admin/customer-accesses", label: "顧客アクセス管理", icon: <PeopleIcon fontSize="small" /> },
-    { to: "/admin/inquiries", label: "問い合わせ管理", icon: <EmailIcon fontSize="small" /> },
-    { to: "/analytics/inquiries", label: "問い合わせ分析", icon: <AnalyticsIcon fontSize="small" /> },
-    { to: "/analytics/customer-accesses", label: "顧客アクセス分析", icon: <TrendingUpIcon fontSize="small" /> },
   ];
 
   const menuItems = [
@@ -206,6 +224,52 @@ export default function Header() {
                       component={NavLink}
                       to={item.to}
                       onClick={handleContentMenuClose}
+                      sx={{
+                        '&.active': {
+                          bgcolor: 'action.selected',
+                        }
+                      }}
+                    >
+                      <ListItemIcon>{item.icon}</ListItemIcon>
+                      <ListItemText>{item.label}</ListItemText>
+                    </MenuItem>
+                  ))}
+                </Menu>
+                {/* 反響メニュー */}
+                <Button
+                  onClick={handleResponseMenuOpen}
+                  sx={{
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    textTransform: 'none',
+                    '&:hover': {
+                      color: 'white',
+                      bgcolor: 'rgba(255, 255, 255, 0.1)'
+                    }
+                  }}
+                  endIcon={<ExpandMoreIcon />}
+                  startIcon={<CampaignIcon />}
+                >
+                  反響
+                </Button>
+                <Menu
+                  anchorEl={responseMenuAnchor}
+                  open={Boolean(responseMenuAnchor)}
+                  onClose={handleResponseMenuClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'left',
+                  }}
+                >
+                  {responseMenuItems.map((item) => (
+                    <MenuItem
+                      key={item.to}
+                      component={NavLink}
+                      to={item.to}
+                      onClick={handleResponseMenuClose}
                       sx={{
                         '&.active': {
                           bgcolor: 'action.selected',
@@ -360,6 +424,48 @@ export default function Header() {
           <Collapse in={mobileContentExpanded} timeout="auto" unmountOnExit>
             <List component="div" disablePadding>
               {contentMenuItems.map((item) => (
+                <ListItem key={item.to} disablePadding>
+                  <ListItemButton
+                    component={NavLink}
+                    to={item.to}
+                    onClick={handleMobileMenuClose}
+                    sx={{
+                      pl: 4,
+                      '&.active': {
+                        bgcolor: 'rgba(255, 255, 255, 0.2)',
+                      },
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: 'rgba(255, 255, 255, 0.7)', minWidth: 36 }}>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.label}
+                      sx={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          </Collapse>
+
+          {/* 反響メニュー（折りたたみ式） */}
+          <ListItem disablePadding>
+            <ListItemButton onClick={handleMobileResponseToggle}>
+              <ListItemIcon sx={{ color: 'white', minWidth: 36 }}>
+                <CampaignIcon />
+              </ListItemIcon>
+              <ListItemText primary="反響" sx={{ color: 'white' }} />
+              {mobileResponseExpanded ? (
+                <ExpandLessIcon sx={{ color: 'white' }} />
+              ) : (
+                <ExpandMoreIcon sx={{ color: 'white' }} />
+              )}
+            </ListItemButton>
+          </ListItem>
+          <Collapse in={mobileResponseExpanded} timeout="auto" unmountOnExit>
+            <List component="div" disablePadding>
+              {responseMenuItems.map((item) => (
                 <ListItem key={item.to} disablePadding>
                   <ListItemButton
                     component={NavLink}
