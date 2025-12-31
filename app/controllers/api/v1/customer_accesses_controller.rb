@@ -148,6 +148,141 @@ class Api::V1::CustomerAccessesController < ApplicationController
     end
   end
 
+  # GET /api/v1/customer_access_analytics (認証必要)
+  def analytics
+    return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
+
+    # 期間パラメータ（デフォルト: 過去30日）
+    days = (params[:days] || 30).to_i
+    start_date = days.days.ago.beginning_of_day
+
+    # 全顧客アクセス（ユーザーのテナントに紐づく物件のみ）
+    user_publication_ids = PropertyPublication.kept.joins(room: :building)
+                                              .where(buildings: { tenant_id: current_user.tenant_id })
+                                              .pluck(:id)
+
+    base_query = CustomerAccess.where(property_publication_id: user_publication_ids)
+    period_query = base_query.where('customer_accesses.created_at >= ?', start_date)
+
+    # 基本統計
+    total_accesses = base_query.where(status: :active).count
+    total_views = base_query.sum(:view_count)
+    period_views = period_query.sum(:view_count)
+
+    # 前期間の閲覧数
+    previous_period_views = base_query.where(customer_accesses: { created_at: (start_date - days.days)..start_date })
+                                      .sum(:view_count)
+
+    # 平均閲覧数
+    avg_views = total_accesses > 0 ? (total_views.to_f / total_accesses).round(1) : 0
+
+    # ステータス別集計
+    status_breakdown = {
+      active: base_query.where(status: :active).where('expires_at IS NULL OR expires_at > ?', Time.current).count,
+      expired: base_query.where('expires_at IS NOT NULL AND expires_at <= ? AND status != ?', Time.current, CustomerAccess.statuses[:revoked]).count,
+      revoked: base_query.where(status: :revoked).count
+    }
+
+    # 日別閲覧トレンド（access_historyから集計）
+    daily_trend = {}
+    (0..([days, 30].min - 1)).each do |i|
+      date = (Date.today - i.days).to_s
+      daily_trend[date] = 0
+    end
+
+    # access_historyからアクセス日時を抽出して集計
+    base_query.where.not(access_history: []).find_each do |access|
+      access.access_history.each do |entry|
+        accessed_at = entry['accessed_at']
+        next unless accessed_at
+
+        date = Time.parse(accessed_at).to_date.to_s rescue nil
+        if date && daily_trend.key?(date)
+          daily_trend[date] += 1
+        end
+      end
+    end
+
+    # デバイス別集計（access_historyから）
+    device_breakdown = { 'desktop' => 0, 'mobile' => 0, 'tablet' => 0, 'other' => 0 }
+    base_query.where.not(access_history: []).find_each do |access|
+      access.access_history.each do |entry|
+        device_type = entry['device_type'] || 'other'
+        device_type = 'other' unless %w[desktop mobile tablet].include?(device_type)
+        device_breakdown[device_type] += 1
+      end
+    end
+
+    # 物件別ランキング（閲覧数トップ10）
+    top_properties = base_query.joins(:property_publication)
+                               .group(:property_publication_id, 'property_publications.title')
+                               .select('property_publications.title, SUM(customer_accesses.view_count) as total_views, COUNT(*) as access_count')
+                               .order('total_views DESC')
+                               .limit(10)
+                               .map do |row|
+      {
+        id: row.property_publication_id,
+        title: row.title,
+        view_count: row.total_views.to_i,
+        access_count: row.access_count
+      }
+    end
+
+    # 最近アクセスされたリンク（直近5件）
+    recently_accessed = base_query.includes(:property_publication)
+                                  .where.not(last_accessed_at: nil)
+                                  .order(last_accessed_at: :desc)
+                                  .limit(5)
+                                  .map do |access|
+      {
+        id: access.id,
+        customer_name: access.customer_name,
+        property_title: access.property_publication.title,
+        view_count: access.view_count,
+        last_accessed_at: access.last_accessed_at&.strftime('%Y/%m/%d %H:%M'),
+        status: access.status
+      }
+    end
+
+    # まもなく期限切れ（7日以内）
+    expiring_soon = base_query.where(status: :active)
+                              .where('expires_at > ? AND expires_at <= ?', Time.current, 7.days.from_now)
+                              .includes(:property_publication)
+                              .order(:expires_at)
+                              .limit(10)
+                              .map do |access|
+      {
+        id: access.id,
+        customer_name: access.customer_name,
+        property_title: access.property_publication.title,
+        expires_at: access.expires_at&.strftime('%Y/%m/%d'),
+        days_until_expiry: access.days_until_expiry
+      }
+    end
+
+    render json: {
+      period: {
+        days: days,
+        start_date: start_date.to_date,
+        end_date: Date.today
+      },
+      summary: {
+        total_accesses: total_accesses,
+        total_views: total_views,
+        period_views: period_views,
+        avg_views_per_access: avg_views,
+        previous_period_views: previous_period_views,
+        change_percentage: previous_period_views > 0 ? ((period_views - previous_period_views).to_f / previous_period_views * 100).round(1) : nil
+      },
+      status_breakdown: status_breakdown,
+      daily_trend: daily_trend.sort.to_h,
+      device_breakdown: device_breakdown,
+      top_properties: top_properties,
+      recently_accessed: recently_accessed,
+      expiring_soon: expiring_soon
+    }
+  end
+
   # ===== 公開API（認証不要） =====
 
   # GET /api/v1/customer/:access_token

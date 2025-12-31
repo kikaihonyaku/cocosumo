@@ -226,6 +226,9 @@ Rails.application.routes.draw do
         resources :customer_accesses, only: [:index, :create]
       end
 
+      # 顧客アクセス分析API（認証必要）
+      get 'customer_access_analytics', to: 'customer_accesses#analytics'
+
       # 顧客アクセス詳細操作（全一覧 + 個別操作）
       resources :customer_accesses, only: [:index, :show, :update, :destroy] do
         member do

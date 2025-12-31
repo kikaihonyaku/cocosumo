@@ -32,7 +32,8 @@ import {
   Analytics as AnalyticsIcon,
   Web as WebIcon,
   People as PeopleIcon,
-  Email as EmailIcon
+  Email as EmailIcon,
+  TrendingUp as TrendingUpIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -84,6 +85,7 @@ export default function Header() {
     { to: "/admin/customer-accesses", label: "顧客アクセス管理", icon: <PeopleIcon fontSize="small" /> },
     { to: "/admin/inquiries", label: "問い合わせ管理", icon: <EmailIcon fontSize="small" /> },
     { to: "/analytics/inquiries", label: "問い合わせ分析", icon: <AnalyticsIcon fontSize="small" /> },
+    { to: "/analytics/customer-accesses", label: "顧客アクセス分析", icon: <TrendingUpIcon fontSize="small" /> },
   ];
 
   const menuItems = [

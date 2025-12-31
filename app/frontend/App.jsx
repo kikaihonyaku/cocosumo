@@ -37,6 +37,7 @@ import InquiryAnalytics from "./pages/InquiryAnalytics";
 import CustomerPropertyView from "./pages/CustomerPropertyView";
 import CustomerAccessManager from "./pages/admin/CustomerAccessManager";
 import InquiryManager from "./pages/admin/InquiryManager";
+import CustomerAccessAnalytics from "./pages/CustomerAccessAnalytics";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -138,6 +139,7 @@ export default function App() {
             <Route path="/admin/layers" element={<LayerManagement />} />
             <Route path="/admin/suumo-import" element={<SuumoImport />} />
             <Route path="/analytics/inquiries" element={<InquiryAnalytics />} />
+            <Route path="/analytics/customer-accesses" element={<CustomerAccessAnalytics />} />
             <Route path="/admin/publications" element={<PropertyPublicationsManager />} />
             <Route path="/admin/customer-accesses" element={<CustomerAccessManager />} />
             <Route path="/admin/inquiries" element={<InquiryManager />} />
