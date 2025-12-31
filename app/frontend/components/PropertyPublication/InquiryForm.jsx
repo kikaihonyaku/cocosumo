@@ -65,7 +65,7 @@ const isValidPhone = (phone) => {
 // LocalStorage key for form recovery
 const getStorageKey = (publicationId) => `inquiry_form_${publicationId}`;
 
-export default function InquiryForm({ publicationId }) {
+export default function InquiryForm({ publicationId, sourceType = 'public_page' }) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -273,7 +273,9 @@ export default function InquiryForm({ publicationId }) {
       const trackingData = getTrackingData();
       const inquiryData = {
         ...formData,
-        ...trackingData
+        ...trackingData,
+        source_type: sourceType,
+        source_url: window.location.href
       };
 
       await axios.post(`/api/v1/property_publications/${publicationId}/inquiries`, {

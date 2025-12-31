@@ -24,7 +24,11 @@ import {
   ListItemIcon,
   ListItemText,
   Collapse,
-  Divider
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -39,7 +43,11 @@ import {
   Share as ShareIcon,
   OpenInNew as OpenInNewIcon,
   Edit as EditIcon,
-  Download as DownloadIcon
+  Download as DownloadIcon,
+  Lock as LockIcon,
+  Reply as ReplyIcon,
+  Send as SendIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -55,6 +63,24 @@ const getSourceInfo = (source) => {
   return sourceMap[source] || { label: source || '不明', icon: <PublicIcon fontSize="small" />, color: 'default' };
 };
 
+// Source type label mapping
+const getSourceTypeInfo = (sourceType) => {
+  if (sourceType === 'customer_limited') {
+    return { label: '顧客限定', icon: <LockIcon fontSize="small" />, color: 'warning' };
+  }
+  return { label: '公開', icon: <PublicIcon fontSize="small" />, color: 'info' };
+};
+
+// Status label mapping
+const getStatusInfo = (status) => {
+  const statusMap = {
+    unreplied: { label: '未返信', color: 'error' },
+    replied: { label: '返信済み', color: 'success' },
+    no_reply_needed: { label: '返信不要', color: 'default' }
+  };
+  return statusMap[status] || { label: status || '未返信', color: 'error' };
+};
+
 export default function InquiryManager() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -65,6 +91,17 @@ export default function InquiryManager() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [expandedId, setExpandedId] = useState(null);
+
+  // Status menu state
+  const [statusMenuAnchor, setStatusMenuAnchor] = useState(null);
+  const [statusMenuInquiryId, setStatusMenuInquiryId] = useState(null);
+
+  // Reply dialog state
+  const [replyDialogOpen, setReplyDialogOpen] = useState(false);
+  const [replyInquiry, setReplyInquiry] = useState(null);
+  const [replySubject, setReplySubject] = useState('');
+  const [replyBody, setReplyBody] = useState('');
+  const [replySending, setReplySending] = useState(false);
 
   const loadInquiries = useCallback(async () => {
     try {
@@ -127,12 +164,87 @@ export default function InquiryManager() {
 
   const handleOpenPublicPage = (inquiry) => {
     if (inquiry.property_publication?.publication_id) {
-      window.open(`/p/${inquiry.property_publication.publication_id}`, '_blank');
+      window.open(`/property/${inquiry.property_publication.publication_id}`, '_blank');
     }
   };
 
   const handleExportCsv = () => {
     window.open('/api/v1/inquiries/export_csv', '_blank');
+  };
+
+  // Status menu handlers
+  const handleStatusClick = (event, inquiryId) => {
+    event.stopPropagation();
+    setStatusMenuAnchor(event.currentTarget);
+    setStatusMenuInquiryId(inquiryId);
+  };
+
+  const handleStatusMenuClose = () => {
+    setStatusMenuAnchor(null);
+    setStatusMenuInquiryId(null);
+  };
+
+  const handleStatusChange = async (newStatus) => {
+    if (!statusMenuInquiryId) return;
+
+    try {
+      await axios.patch(`/api/v1/inquiries/${statusMenuInquiryId}`, {
+        property_inquiry: { status: newStatus }
+      });
+
+      // Update local state
+      setInquiries(prev => prev.map(inquiry =>
+        inquiry.id === statusMenuInquiryId
+          ? { ...inquiry, status: newStatus }
+          : inquiry
+      ));
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      setError('ステータスの更新に失敗しました');
+    } finally {
+      handleStatusMenuClose();
+    }
+  };
+
+  // Reply dialog handlers
+  const handleOpenReplyDialog = (inquiry) => {
+    setReplyInquiry(inquiry);
+    setReplySubject(`Re: ${inquiry.property_publication?.room?.building?.name || ''} についてのお問い合わせ`);
+    setReplyBody('');
+    setReplyDialogOpen(true);
+  };
+
+  const handleCloseReplyDialog = () => {
+    setReplyDialogOpen(false);
+    setReplyInquiry(null);
+    setReplySubject('');
+    setReplyBody('');
+  };
+
+  const handleSendReply = async () => {
+    if (!replyInquiry || !replySubject.trim() || !replyBody.trim()) return;
+
+    try {
+      setReplySending(true);
+      await axios.post(`/api/v1/inquiries/${replyInquiry.id}/reply`, {
+        subject: replySubject,
+        body: replyBody
+      });
+
+      // Update local state
+      setInquiries(prev => prev.map(inquiry =>
+        inquiry.id === replyInquiry.id
+          ? { ...inquiry, status: 'replied', replied_at: new Date().toISOString() }
+          : inquiry
+      ));
+
+      handleCloseReplyDialog();
+    } catch (err) {
+      console.error('Failed to send reply:', err);
+      setError('返信メールの送信に失敗しました');
+    } finally {
+      setReplySending(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -212,6 +324,8 @@ export default function InquiryManager() {
             <TableHead>
               <TableRow>
                 <TableCell>日時</TableCell>
+                <TableCell>種別</TableCell>
+                <TableCell>ステータス</TableCell>
                 <TableCell>名前</TableCell>
                 <TableCell>連絡先</TableCell>
                 <TableCell>物件</TableCell>
@@ -222,7 +336,7 @@ export default function InquiryManager() {
             <TableBody>
               {paginatedInquiries.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                     <Typography color="text.secondary">
                       {searchQuery ? '検索結果がありません' : '問い合わせがありません'}
                     </Typography>
@@ -231,6 +345,8 @@ export default function InquiryManager() {
               ) : (
                 paginatedInquiries.map((inquiry) => {
                   const sourceInfo = getSourceInfo(inquiry.source);
+                  const sourceTypeInfo = getSourceTypeInfo(inquiry.source_type);
+                  const statusInfo = getStatusInfo(inquiry.status);
                   const isExpanded = expandedId === inquiry.id;
 
                   return (
@@ -244,6 +360,27 @@ export default function InquiryManager() {
                           <Typography variant="body2">
                             {inquiry.formatted_created_at || formatDate(inquiry.created_at)}
                           </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Tooltip title={sourceTypeInfo.label}>
+                            <Chip
+                              size="small"
+                              icon={sourceTypeInfo.icon}
+                              label={sourceTypeInfo.label}
+                              color={sourceTypeInfo.color}
+                              variant="outlined"
+                              sx={{ height: 24 }}
+                            />
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            label={statusInfo.label}
+                            color={statusInfo.color}
+                            onClick={(e) => handleStatusClick(e, inquiry.id)}
+                            sx={{ height: 24, cursor: 'pointer' }}
+                          />
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" fontWeight="medium">
@@ -304,7 +441,7 @@ export default function InquiryManager() {
                         </TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell colSpan={6} sx={{ py: 0, borderBottom: isExpanded ? undefined : 'none' }}>
+                        <TableCell colSpan={8} sx={{ py: 0, borderBottom: isExpanded ? undefined : 'none' }}>
                           <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                             <Box sx={{ py: 2, px: 1 }}>
                               {/* メッセージ */}
@@ -316,6 +453,40 @@ export default function InquiryManager() {
                                   {inquiry.message || '(メッセージなし)'}
                                 </Typography>
                               </Paper>
+
+                              {/* 返信済みの場合、返信内容を表示 */}
+                              {inquiry.status === 'replied' && inquiry.reply_message && (
+                                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'success.50', borderColor: 'success.main' }}>
+                                  <Typography variant="subtitle2" gutterBottom color="success.dark">
+                                    返信内容 ({inquiry.formatted_replied_at || formatDate(inquiry.replied_at)})
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                                    {inquiry.reply_message}
+                                  </Typography>
+                                </Paper>
+                              )}
+
+                              {/* 登録元URL */}
+                              {inquiry.source_url && (
+                                <Box sx={{ mb: 2 }}>
+                                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                    登録元URL
+                                  </Typography>
+                                  <Tooltip title={inquiry.source_url}>
+                                    <Chip
+                                      size="small"
+                                      icon={<LinkIcon fontSize="small" />}
+                                      label={(() => { try { return new URL(inquiry.source_url).pathname; } catch { return inquiry.source_url; } })()}
+                                      variant="outlined"
+                                      sx={{ height: 22, fontSize: '0.7rem', maxWidth: 300 }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.open(inquiry.source_url, '_blank');
+                                      }}
+                                    />
+                                  </Tooltip>
+                                </Box>
+                              )}
 
                               {/* 流入詳細 */}
                               {(inquiry.utm_source || inquiry.utm_medium || inquiry.referrer) && (
@@ -355,7 +526,19 @@ export default function InquiryManager() {
                               )}
 
                               {/* アクションボタン */}
-                              <Box sx={{ display: 'flex', gap: 1 }}>
+                              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  color="primary"
+                                  startIcon={<ReplyIcon />}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenReplyDialog(inquiry);
+                                  }}
+                                >
+                                  返信する
+                                </Button>
                                 <Button
                                   size="small"
                                   variant="outlined"
@@ -387,7 +570,7 @@ export default function InquiryManager() {
                                   href={`mailto:${inquiry.email}`}
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  メールを送信
+                                  メールクライアント
                                 </Button>
                                 {inquiry.phone && (
                                   <Button
@@ -424,6 +607,116 @@ export default function InquiryManager() {
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}件`}
         />
       </Paper>
+
+      {/* Status change menu */}
+      <Menu
+        anchorEl={statusMenuAnchor}
+        open={Boolean(statusMenuAnchor)}
+        onClose={handleStatusMenuClose}
+      >
+        <MenuItem onClick={() => handleStatusChange('unreplied')}>
+          <ListItemIcon>
+            <Chip size="small" label="未返信" color="error" sx={{ height: 20 }} />
+          </ListItemIcon>
+        </MenuItem>
+        <MenuItem onClick={() => handleStatusChange('replied')}>
+          <ListItemIcon>
+            <Chip size="small" label="返信済み" color="success" sx={{ height: 20 }} />
+          </ListItemIcon>
+        </MenuItem>
+        <MenuItem onClick={() => handleStatusChange('no_reply_needed')}>
+          <ListItemIcon>
+            <Chip size="small" label="返信不要" color="default" sx={{ height: 20 }} />
+          </ListItemIcon>
+        </MenuItem>
+      </Menu>
+
+      {/* Reply dialog */}
+      <Dialog
+        open={replyDialogOpen}
+        onClose={handleCloseReplyDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ReplyIcon />
+            問い合わせへの返信
+          </Box>
+          <IconButton onClick={handleCloseReplyDialog} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          {replyInquiry && (
+            <Box>
+              <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  元のお問い合わせ
+                </Typography>
+                <Typography variant="body2" fontWeight="medium">
+                  {replyInquiry.name} 様 ({replyInquiry.email})
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
+                  {replyInquiry.message}
+                </Typography>
+              </Box>
+
+              <TextField
+                fullWidth
+                label="宛先"
+                value={replyInquiry.email}
+                disabled
+                margin="normal"
+                size="small"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              <TextField
+                fullWidth
+                label="件名"
+                value={replySubject}
+                onChange={(e) => setReplySubject(e.target.value)}
+                margin="normal"
+                size="small"
+                required
+              />
+
+              <TextField
+                fullWidth
+                label="本文"
+                value={replyBody}
+                onChange={(e) => setReplyBody(e.target.value)}
+                margin="normal"
+                multiline
+                rows={8}
+                required
+                placeholder="返信内容を入力してください..."
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseReplyDialog}>
+            キャンセル
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSendReply}
+            disabled={replySending || !replySubject.trim() || !replyBody.trim()}
+            startIcon={replySending ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
+          >
+            {replySending ? '送信中...' : '送信'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

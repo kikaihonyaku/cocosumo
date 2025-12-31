@@ -1077,7 +1077,7 @@ export default function CustomerPropertyView() {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             {data.title}についてのお問い合わせ
           </Typography>
-          <InquiryForm publicationId={data.publication_id} />
+          <InquiryForm publicationId={data.publication_id} sourceType="customer_limited" />
         </DialogContent>
       </Dialog>
     </Box>

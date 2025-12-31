@@ -58,8 +58,8 @@ class Api::V1::PropertyInquiriesController < ApplicationController
 
     render json: {
       inquiries: @inquiries.as_json(
-        methods: [:formatted_created_at],
-        only: [:id, :name, :email, :phone, :message, :source, :utm_source, :utm_medium, :utm_campaign, :referrer, :created_at],
+        methods: [:formatted_created_at, :formatted_replied_at],
+        only: [:id, :name, :email, :phone, :message, :source, :source_type, :source_url, :status, :replied_at, :reply_message, :utm_source, :utm_medium, :utm_campaign, :referrer, :created_at],
         include: {
           property_publication: {
             only: [:id, :title, :publication_id],
@@ -232,10 +232,93 @@ class Api::V1::PropertyInquiriesController < ApplicationController
     }
   end
 
+  # PATCH /api/v1/inquiries/:id (認証必要) - ステータス更新
+  def update
+    return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
+
+    @inquiry = PropertyInquiry.find(params[:id])
+
+    # テナント権限チェック
+    unless authorized_for_inquiry?(@inquiry)
+      return render json: { error: 'この問い合わせを編集する権限がありません' }, status: :forbidden
+    end
+
+    if @inquiry.update(update_params)
+      render json: {
+        success: true,
+        inquiry: @inquiry.as_json(
+          methods: [:formatted_created_at, :formatted_replied_at],
+          only: [:id, :name, :email, :phone, :message, :source, :source_type, :source_url, :status, :replied_at, :created_at]
+        )
+      }
+    else
+      render json: { errors: @inquiry.errors.full_messages }, status: :unprocessable_entity
+    end
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: '問い合わせが見つかりませんでした' }, status: :not_found
+  end
+
+  # POST /api/v1/inquiries/:id/reply (認証必要) - 返信メール送信
+  def reply
+    return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
+
+    @inquiry = PropertyInquiry.find(params[:id])
+
+    # テナント権限チェック
+    unless authorized_for_inquiry?(@inquiry)
+      return render json: { error: 'この問い合わせに返信する権限がありません' }, status: :forbidden
+    end
+
+    subject = params[:subject]
+    body = params[:body]
+
+    if subject.blank? || body.blank?
+      return render json: { error: '件名と本文は必須です' }, status: :unprocessable_entity
+    end
+
+    # メール送信
+    PropertyInquiryMailer.reply_to_customer(@inquiry, subject, body).deliver_later
+
+    # ステータス更新
+    @inquiry.update!(
+      status: :replied,
+      replied_at: Time.current,
+      reply_message: body
+    )
+
+    render json: {
+      success: true,
+      message: '返信メールを送信しました',
+      inquiry: @inquiry.as_json(
+        methods: [:formatted_created_at, :formatted_replied_at],
+        only: [:id, :status, :replied_at]
+      )
+    }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: '問い合わせが見つかりませんでした' }, status: :not_found
+  rescue => e
+    Rails.logger.error "Failed to send reply email: #{e.message}"
+    render json: { error: '返信メールの送信に失敗しました' }, status: :internal_server_error
+  end
+
   private
 
+  def authorized_for_inquiry?(inquiry)
+    publication = inquiry.property_publication
+    return false unless publication
+
+    building = publication.room&.building
+    return false unless building
+
+    building.tenant_id == current_user.tenant_id
+  end
+
   def property_inquiry_params
-    params.require(:property_inquiry).permit(:name, :email, :phone, :message, :source, :utm_source, :utm_medium, :utm_campaign, :referrer)
+    params.require(:property_inquiry).permit(:name, :email, :phone, :message, :source, :utm_source, :utm_medium, :utm_campaign, :referrer, :source_type, :source_url)
+  end
+
+  def update_params
+    params.require(:property_inquiry).permit(:status)
   end
 
   def send_notification_emails(property_inquiry)

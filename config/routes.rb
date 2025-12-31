@@ -221,6 +221,13 @@ Rails.application.routes.draw do
       get 'inquiries', to: 'property_inquiries#all'
       get 'inquiries/export_csv', to: 'property_inquiries#export_csv'
 
+      # 問い合わせ個別操作（認証必要）
+      resources :inquiries, only: [:update], controller: 'property_inquiries' do
+        member do
+          post :reply
+        end
+      end
+
       # 顧客アクセス管理（物件公開ページ単位）
       resources :property_publications, only: [] do
         resources :customer_accesses, only: [:index, :create]

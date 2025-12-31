@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_31_024235) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_31_055451) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -256,8 +256,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_31_024235) do
     t.string "utm_medium"
     t.string "utm_campaign"
     t.string "referrer"
+    t.integer "source_type", default: 0
+    t.string "source_url", limit: 500
+    t.integer "status", default: 0
+    t.datetime "replied_at"
+    t.text "reply_message"
     t.index ["created_at"], name: "index_property_inquiries_on_created_at"
     t.index ["property_publication_id"], name: "index_property_inquiries_on_property_publication_id"
+    t.index ["source_type"], name: "index_property_inquiries_on_source_type"
+    t.index ["status"], name: "index_property_inquiries_on_status"
   end
 
   create_table "property_publication_photos", force: :cascade do |t|

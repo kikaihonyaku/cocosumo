@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    }
+    .content {
+      background: #f8f9fa;
+      padding: 20px;
+      border: 1px solid #e9ecef;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+    }
+    .message-box {
+      background: white;
+      border: 1px solid #dee2e6;
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      margin: 15px 0;
+    }
+    .footer {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e9ecef;
+      font-size: 12px;
+      color: #6c757d;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1><%= @building.name %></h1>
+  </div>
+
+  <div class="content">
+    <p><%= @inquiry.name %> 様</p>
+
+    <p>
+      お問い合わせいただきありがとうございます。<br>
+      以下の通りご返信いたします。
+    </p>
+
+    <div class="message-box">
+      <%= simple_format(@body) %>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p style="margin-top: 10px;">CoCoスモ - 不動産物件管理システム</p>
+  </div>
+</body>
+</html>

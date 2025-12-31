@@ -33,10 +33,34 @@ class PropertyInquiryMailer < ApplicationMailer
     )
   end
 
+  # 顧客への返信メール
+  def reply_to_customer(property_inquiry, subject, body)
+    @inquiry = property_inquiry
+    @body = body
+    @publication = property_inquiry.property_publication
+    @room = @publication.room
+    @building = @room.building
+
+    # 返信元アドレス（管理者のメールアドレス）
+    reply_from = @building.tenant&.user&.email
+    reply_from = default_from if reply_from.blank?
+
+    mail(
+      to: @inquiry.email,
+      from: reply_from,
+      reply_to: reply_from,
+      subject: subject
+    )
+  end
+
   private
 
   def property_public_url(publication)
     host = ENV.fetch('APP_HOST', 'https://cocosumo.space')
     "#{host}/property/#{publication.publication_id}"
+  end
+
+  def default_from
+    ENV.fetch('MAILER_FROM_ADDRESS', 'noreply@cocosumo.space')
   end
 end
