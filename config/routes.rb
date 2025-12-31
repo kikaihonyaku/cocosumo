@@ -218,6 +218,7 @@ Rails.application.routes.draw do
 
       # 問い合わせ分析API（認証必要）
       get 'inquiry_analytics', to: 'property_inquiries#analytics'
+      get 'inquiries', to: 'property_inquiries#all'
       get 'inquiries/export_csv', to: 'property_inquiries#export_csv'
 
       # 顧客アクセス管理（物件公開ページ単位）

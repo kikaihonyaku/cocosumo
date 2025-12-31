@@ -42,6 +42,41 @@ class Api::V1::PropertyInquiriesController < ApplicationController
     render json: { error: '物件公開ページが見つかりませんでした' }, status: :not_found
   end
 
+  # GET /api/v1/inquiries (認証必要) - 全問い合わせ一覧
+  def all
+    return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
+
+    # ユーザーのテナントに紐づく物件のみ
+    user_publication_ids = PropertyPublication.kept.joins(room: :building)
+                                              .where(buildings: { tenant_id: current_user.tenant_id })
+                                              .pluck(:id)
+
+    @inquiries = PropertyInquiry.where(property_publication_id: user_publication_ids)
+                                .includes(property_publication: { room: :building })
+                                .order(created_at: :desc)
+                                .limit(500)
+
+    render json: {
+      inquiries: @inquiries.as_json(
+        methods: [:formatted_created_at],
+        only: [:id, :name, :email, :phone, :message, :source, :utm_source, :utm_medium, :utm_campaign, :referrer, :created_at],
+        include: {
+          property_publication: {
+            only: [:id, :title, :publication_id],
+            include: {
+              room: {
+                only: [:id, :room_number],
+                include: {
+                  building: { only: [:id, :name, :address] }
+                }
+              }
+            }
+          }
+        }
+      )
+    }
+  end
+
   # GET /api/v1/inquiries/export_csv (認証必要)
   def export_csv
     return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user

@@ -36,6 +36,7 @@ import BlogDetail from "./pages/BlogDetail";
 import InquiryAnalytics from "./pages/InquiryAnalytics";
 import CustomerPropertyView from "./pages/CustomerPropertyView";
 import CustomerAccessManager from "./pages/admin/CustomerAccessManager";
+import InquiryManager from "./pages/admin/InquiryManager";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -139,6 +140,7 @@ export default function App() {
             <Route path="/analytics/inquiries" element={<InquiryAnalytics />} />
             <Route path="/admin/publications" element={<PropertyPublicationsManager />} />
             <Route path="/admin/customer-accesses" element={<CustomerAccessManager />} />
+            <Route path="/admin/inquiries" element={<InquiryManager />} />
             <Route path="/buildings" element={<Buildings />} />
             <Route path="/buildings/new" element={<BuildingForm />} />
             <Route path="/buildings/:id/edit" element={<BuildingForm />} />

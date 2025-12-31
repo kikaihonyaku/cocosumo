@@ -31,7 +31,8 @@ import {
   Store as StoreIcon,
   Analytics as AnalyticsIcon,
   Web as WebIcon,
-  People as PeopleIcon
+  People as PeopleIcon,
+  Email as EmailIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -81,6 +82,7 @@ export default function Header() {
     { to: "/admin/layers", label: "レイヤー管理", icon: <LayersIcon fontSize="small" /> },
     { to: "/admin/publications", label: "公開ページ管理", icon: <WebIcon fontSize="small" /> },
     { to: "/admin/customer-accesses", label: "顧客アクセス管理", icon: <PeopleIcon fontSize="small" /> },
+    { to: "/admin/inquiries", label: "問い合わせ管理", icon: <EmailIcon fontSize="small" /> },
     { to: "/analytics/inquiries", label: "問い合わせ分析", icon: <AnalyticsIcon fontSize="small" /> },
   ];
 
