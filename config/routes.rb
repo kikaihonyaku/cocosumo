@@ -220,6 +220,32 @@ Rails.application.routes.draw do
       get 'inquiry_analytics', to: 'property_inquiries#analytics'
       get 'inquiries/export_csv', to: 'property_inquiries#export_csv'
 
+      # 顧客アクセス管理（物件公開ページ単位）
+      resources :property_publications, only: [] do
+        resources :customer_accesses, only: [:index, :create]
+      end
+
+      # 顧客アクセス詳細操作
+      resources :customer_accesses, only: [:show, :update, :destroy] do
+        member do
+          post :revoke
+          post :extend_expiry
+        end
+      end
+
+      # 顧客向け公開API（認証不要）
+      get 'customer/:access_token', to: 'customer_accesses#show_public'
+      post 'customer/:access_token/verify_access', to: 'customer_accesses#verify_access'
+      post 'customer/:access_token/track_view', to: 'customer_accesses#track_view'
+
+      # 顧客専用経路
+      get 'customer/:access_token/routes', to: 'customer_accesses#customer_routes'
+      post 'customer/:access_token/routes/preview', to: 'customer_accesses#preview_customer_route'
+      post 'customer/:access_token/routes', to: 'customer_accesses#create_customer_route'
+      delete 'customer/:access_token/routes/:route_id', to: 'customer_accesses#destroy_customer_route'
+      post 'customer/:access_token/routes/:route_id/recalculate', to: 'customer_accesses#recalculate_customer_route'
+      get 'customer/:access_token/routes/:route_id/streetview_points', to: 'customer_accesses#customer_route_streetview_points'
+
       # ブログ記事API（認証不要）
       resources :blog_posts, only: [:index] do
         collection do

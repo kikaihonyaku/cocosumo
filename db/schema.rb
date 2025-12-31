@@ -10,9 +10,8 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_30_040350) do
-  # PostGIS creates topology schema automatically, so we use execute with IF NOT EXISTS
-  execute "CREATE SCHEMA IF NOT EXISTS topology"
+ActiveRecord::Schema[8.0].define(version: 2025_12_31_010215) do
+  create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
@@ -162,6 +161,49 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_30_040350) do
     t.index ["store_id"], name: "index_buildings_on_store_id"
     t.index ["tenant_id", "external_key"], name: "index_buildings_on_tenant_id_and_external_key", unique: true, where: "(external_key IS NOT NULL)"
     t.index ["tenant_id"], name: "index_buildings_on_tenant_id"
+  end
+
+  create_table "customer_accesses", force: :cascade do |t|
+    t.bigint "property_publication_id", null: false
+    t.string "access_token", null: false
+    t.string "customer_name", null: false
+    t.string "customer_email", null: false
+    t.string "customer_phone"
+    t.string "password_digest"
+    t.datetime "expires_at"
+    t.integer "status", default: 0, null: false
+    t.text "notes"
+    t.integer "view_count", default: 0, null: false
+    t.datetime "last_accessed_at"
+    t.datetime "first_accessed_at"
+    t.jsonb "access_history", default: []
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["access_token"], name: "index_customer_accesses_on_access_token", unique: true
+    t.index ["customer_email"], name: "index_customer_accesses_on_customer_email"
+    t.index ["property_publication_id", "status"], name: "index_customer_accesses_on_property_publication_id_and_status"
+    t.index ["property_publication_id"], name: "index_customer_accesses_on_property_publication_id"
+  end
+
+  create_table "customer_routes", force: :cascade do |t|
+    t.bigint "customer_access_id", null: false
+    t.string "name", null: false
+    t.string "destination_name"
+    t.string "destination_address"
+    t.decimal "destination_lat", precision: 10, scale: 7
+    t.decimal "destination_lng", precision: 10, scale: 7
+    t.decimal "origin_lat", precision: 10, scale: 7
+    t.decimal "origin_lng", precision: 10, scale: 7
+    t.string "travel_mode", default: "walking"
+    t.integer "distance_meters"
+    t.integer "duration_seconds"
+    t.text "encoded_polyline"
+    t.boolean "calculated", default: false
+    t.integer "display_order", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_access_id", "display_order"], name: "index_customer_routes_on_customer_access_id_and_display_order"
+    t.index ["customer_access_id"], name: "index_customer_routes_on_customer_access_id"
   end
 
   create_table "map_layers", force: :cascade do |t|
@@ -499,6 +541,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_30_040350) do
   add_foreign_key "building_routes", "tenants"
   add_foreign_key "buildings", "stores"
   add_foreign_key "buildings", "tenants"
+  add_foreign_key "customer_accesses", "property_publications"
+  add_foreign_key "customer_routes", "customer_accesses"
   add_foreign_key "map_layers", "tenants"
   add_foreign_key "owners", "buildings"
   add_foreign_key "owners", "tenants"

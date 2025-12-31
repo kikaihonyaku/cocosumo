@@ -34,6 +34,7 @@ import StoreManagement from "./pages/admin/StoreManagement";
 import BlogList from "./pages/BlogList";
 import BlogDetail from "./pages/BlogDetail";
 import InquiryAnalytics from "./pages/InquiryAnalytics";
+import CustomerPropertyView from "./pages/CustomerPropertyView";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -119,6 +120,8 @@ export default function App() {
           <Route path="/embed/vr/:publicId" element={<EmbedVrTour />} />
           {/* 物件公開ページ（publication_idで識別） */}
           <Route path="/property/:publicationId" element={<PublicPropertyDetail />} />
+          {/* 顧客向け限定公開ページ */}
+          <Route path="/customer/:accessToken" element={<CustomerPropertyView />} />
           {/* ブログページ */}
           <Route path="/blog" element={<BlogList />} />
           <Route path="/blog/:publicId" element={<BlogDetail />} />

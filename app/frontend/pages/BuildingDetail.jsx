@@ -655,6 +655,7 @@ export default function BuildingDetail() {
                   onFullscreenSlideshow={handleFullscreenSlideshow}
                   externalRouteAddMode={routeMapPickMode}
                   onExternalRouteAddModeCancel={() => setRouteMapPickMode(false)}
+                  chatRightOffset={50}
                 />
               </Box>
 
@@ -887,6 +888,7 @@ export default function BuildingDetail() {
                   onFullscreenSlideshow={handleFullscreenSlideshow}
                   externalRouteAddMode={routeMapPickMode}
                   onExternalRouteAddModeCancel={() => setRouteMapPickMode(false)}
+                  chatRightOffset={50}
                 />
               </Paper>
 

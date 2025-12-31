@@ -20,7 +20,7 @@ import {
   Maximize as MaximizeIcon,
 } from '@mui/icons-material';
 
-export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenChange, onAddressesFound }) {
+export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenChange, onAddressesFound, rightOffset = 0 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
@@ -338,10 +338,10 @@ export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenCha
       sx={{
         position: 'absolute',
         bottom: 16,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: 'calc(100% - 32px)',
-        maxWidth: 1200,
+        left: 16,
+        right: 16 + rightOffset,
+        width: 'auto',
+        maxWidth: rightOffset > 0 ? 'none' : 1200,
         zIndex: 10,
       }}
     >

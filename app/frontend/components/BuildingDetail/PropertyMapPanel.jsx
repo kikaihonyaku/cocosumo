@@ -61,6 +61,9 @@ export default function PropertyMapPanel({
   // 外部からの経路追加モード制御
   externalRouteAddMode = false,
   onExternalRouteAddModeCancel = null,
+  // 顧客向け表示オプション
+  hideHeader = false, // ヘッダーを非表示
+  chatRightOffset = 0, // チャット入力欄の右オフセット（ペグマン対応）
 }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -996,59 +999,61 @@ export default function PropertyMapPanel({
   return (
     <Box sx={{ height: '100%', width: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
       {/* 地図ヘッダー */}
-      <Box sx={{
-        px: 2,
-        py: 1,
-        bgcolor: 'background.paper',
-        borderBottom: '1px solid #e0e0e0',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexShrink: 0,
-      }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <MapIcon color="action" />
-          <Typography variant="subtitle2" fontWeight={600}>
-            物件位置
-          </Typography>
-        </Box>
-
-        {/* 位置編集・住所検索・ストリートビューボタン（モバイル時は非表示） */}
-        {!isMobile && (
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={editingLocation ? <CheckIcon /> : <EditIcon />}
-              onClick={handleLocationEdit}
-              color={editingLocation ? "success" : "primary"}
-              disabled={!mapLoaded}
-            >
-              {editingLocation ? '完了' : '位置編集'}
-            </Button>
-
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => setAddressSearchOpen(true)}
-              disabled={!mapLoaded}
-            >
-              住所検索
-            </Button>
-
-            <Button
-              variant={streetViewVisible ? "contained" : "outlined"}
-              size="small"
-              startIcon={<StreetviewIcon />}
-              onClick={toggleStreetView}
-              disabled={!mapLoaded}
-              color={streetViewVisible ? "primary" : "inherit"}
-            >
-              ストリートビュー
-            </Button>
+      {!hideHeader && (
+        <Box sx={{
+          px: 2,
+          py: 1,
+          bgcolor: 'background.paper',
+          borderBottom: '1px solid #e0e0e0',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexShrink: 0,
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <MapIcon color="action" />
+            <Typography variant="subtitle2" fontWeight={600}>
+              物件位置
+            </Typography>
           </Box>
-        )}
-      </Box>
+
+          {/* 位置編集・住所検索・ストリートビューボタン（モバイル時は非表示） */}
+          {!isMobile && (
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={editingLocation ? <CheckIcon /> : <EditIcon />}
+                onClick={handleLocationEdit}
+                color={editingLocation ? "success" : "primary"}
+                disabled={!mapLoaded}
+              >
+                {editingLocation ? '完了' : '位置編集'}
+              </Button>
+
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setAddressSearchOpen(true)}
+                disabled={!mapLoaded}
+              >
+                住所検索
+              </Button>
+
+              <Button
+                variant={streetViewVisible ? "contained" : "outlined"}
+                size="small"
+                startIcon={<StreetviewIcon />}
+                onClick={toggleStreetView}
+                disabled={!mapLoaded}
+                color={streetViewVisible ? "primary" : "inherit"}
+              >
+                ストリートビュー
+              </Button>
+            </Box>
+          )}
+        </Box>
+      )}
 
       {/* 地図・ストリートビューコンテナ */}
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -1532,6 +1537,7 @@ export default function PropertyMapPanel({
           onPlaceClick={onPlaceClick}
           onWidgetTokenChange={onWidgetTokenChange}
           onAddressesFound={handleAddressesFound}
+          rightOffset={chatRightOffset}
         />
       )}
     </Box>

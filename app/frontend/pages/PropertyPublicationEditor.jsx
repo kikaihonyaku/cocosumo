@@ -54,6 +54,7 @@ import PhotoGallery from '../components/PropertyPublication/PhotoGallery';
 import RichTextEditor from '../components/shared/RichTextEditor';
 import InquiryList from '../components/PropertyPublication/InquiryList';
 import ViewAnalyticsDashboard from '../components/PropertyPublication/ViewAnalyticsDashboard';
+import CustomerAccessPanel from '../components/CustomerAccess/CustomerAccessPanel';
 import { getRoomTypeLabel } from '../utils/formatters';
 
 function PropertyPublicationEditor() {
@@ -553,6 +554,7 @@ function PropertyPublicationEditor() {
         <Tab label="コンテンツ" />
         <Tab label="表示項目" />
         <Tab label="プレビュー" />
+        {isEditMode && <Tab label="顧客アクセス" />}
         {isEditMode && <Tab label="問い合わせ" />}
         {isEditMode && <Tab label="分析" />}
       </Tabs>
@@ -1154,15 +1156,22 @@ function PropertyPublicationEditor() {
           </Box>
         )}
 
-        {/* Tab 5: Inquiries (Edit mode only) */}
+        {/* Tab 5: Customer Access (Edit mode only) */}
         {activeTab === 5 && isEditMode && (
+          <Paper sx={{ p: 3, maxWidth: 600 }}>
+            <CustomerAccessPanel publicationId={id} />
+          </Paper>
+        )}
+
+        {/* Tab 6: Inquiries (Edit mode only) */}
+        {activeTab === 6 && isEditMode && (
           <Paper sx={{ p: 3, maxWidth: 900 }}>
             <InquiryList publicationId={id} roomId={roomId} />
           </Paper>
         )}
 
-        {/* 分析タブ */}
-        {activeTab === 6 && isEditMode && (
+        {/* Tab 7: 分析タブ */}
+        {activeTab === 7 && isEditMode && (
           <Paper sx={{ p: 3, maxWidth: 1200 }}>
             <ViewAnalyticsDashboard publicationId={propertyPublication.publication_id} />
           </Paper>
