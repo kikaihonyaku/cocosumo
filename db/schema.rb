@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_31_010215) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_31_024235) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -179,6 +179,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_31_010215) do
     t.jsonb "access_history", default: []
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "customer_message"
     t.index ["access_token"], name: "index_customer_accesses_on_access_token", unique: true
     t.index ["customer_email"], name: "index_customer_accesses_on_customer_email"
     t.index ["property_publication_id", "status"], name: "index_customer_accesses_on_property_publication_id_and_status"

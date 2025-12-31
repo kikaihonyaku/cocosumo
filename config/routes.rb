@@ -225,8 +225,8 @@ Rails.application.routes.draw do
         resources :customer_accesses, only: [:index, :create]
       end
 
-      # 顧客アクセス詳細操作
-      resources :customer_accesses, only: [:show, :update, :destroy] do
+      # 顧客アクセス詳細操作（全一覧 + 個別操作）
+      resources :customer_accesses, only: [:index, :show, :update, :destroy] do
         member do
           post :revoke
           post :extend_expiry

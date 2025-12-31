@@ -30,6 +30,7 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, onC
     password: '',
     expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14日後
     notes: '',
+    customer_message: '',
     send_notification: false
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -79,7 +80,8 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, onC
           customer_phone: formData.customer_phone.trim() || null,
           password: usePassword && formData.password ? formData.password : null,
           expires_at: formData.expires_at?.toISOString() || null,
-          notes: formData.notes.trim() || null
+          notes: formData.notes.trim() || null,
+          customer_message: formData.customer_message.trim() || null
         },
         send_notification: formData.send_notification,
         raw_password: usePassword && formData.password ? formData.password : null
@@ -119,6 +121,7 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, onC
       password: '',
       expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
       notes: '',
+      customer_message: '',
       send_notification: false
     });
     setUsePassword(false);
@@ -238,6 +241,17 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, onC
             multiline
             rows={2}
             placeholder="反響経路や備考などを記入"
+          />
+
+          <TextField
+            label="お客様への申し送り事項（任意）"
+            value={formData.customer_message}
+            onChange={handleChange('customer_message')}
+            fullWidth
+            multiline
+            rows={3}
+            placeholder="お客様ページに表示するメッセージを入力&#10;例: ご質問がございましたらお気軽にご連絡ください。"
+            helperText="顧客向けページのヘッダーに表示されます"
           />
 
           <FormControlLabel

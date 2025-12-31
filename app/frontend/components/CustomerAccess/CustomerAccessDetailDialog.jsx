@@ -30,25 +30,46 @@ import {
   AccessTime as AccessTimeIcon,
   DevicesOther as DevicesIcon,
   Close as CloseIcon,
-  QrCode as QrCodeIcon
+  QrCode as QrCodeIcon,
+  Message as MessageIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
-export default function CustomerAccessDetailDialog({ open, onClose, accessId, onUpdate }) {
+export default function CustomerAccessDetailDialog({
+  open,
+  onClose,
+  accessId,
+  onUpdate,
+  // Alternative props for pre-loaded data
+  customerAccess,
+  onUpdated
+}) {
   const [access, setAccess] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Normalize callback prop names
+  const handleUpdate = onUpdate || onUpdated;
+
   useEffect(() => {
-    if (open && accessId) {
-      loadAccessDetails();
+    if (open) {
+      if (customerAccess) {
+        // Use pre-loaded data
+        setAccess(customerAccess);
+        setLoading(false);
+      } else if (accessId) {
+        loadAccessDetails();
+      }
     }
-  }, [open, accessId]);
+  }, [open, accessId, customerAccess]);
 
   const loadAccessDetails = async () => {
+    const id = accessId || customerAccess?.id;
+    if (!id) return;
+
     try {
       setLoading(true);
-      const response = await axios.get(`/api/v1/customer_accesses/${accessId}`);
+      const response = await axios.get(`/api/v1/customer_accesses/${id}`);
       setAccess(response.data);
       setError(null);
     } catch (err) {
@@ -77,7 +98,7 @@ export default function CustomerAccessDetailDialog({ open, onClose, accessId, on
     try {
       await axios.post(`/api/v1/customer_accesses/${access.id}/revoke`);
       loadAccessDetails();
-      onUpdate?.();
+      handleUpdate?.();
     } catch (err) {
       console.error('Failed to revoke access:', err);
       alert('アクセス権の取り消しに失敗しました');
@@ -94,7 +115,7 @@ export default function CustomerAccessDetailDialog({ open, onClose, accessId, on
         expires_at: newExpiry.toISOString()
       });
       loadAccessDetails();
-      onUpdate?.();
+      handleUpdate?.();
       alert('有効期限を延長しました');
     } catch (err) {
       console.error('Failed to extend expiry:', err);
@@ -288,10 +309,23 @@ export default function CustomerAccessDetailDialog({ open, onClose, accessId, on
               </Paper>
             )}
 
+            {/* お客様への申し送り事項 */}
+            {access.customer_message && (
+              <Paper variant="outlined" sx={{ p: 2, bgcolor: 'primary.50', borderColor: 'primary.200' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                  <MessageIcon fontSize="small" color="primary" />
+                  <Typography variant="subtitle2" color="primary.main">お客様への申し送り事項</Typography>
+                </Box>
+                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                  {access.customer_message}
+                </Typography>
+              </Paper>
+            )}
+
             {/* メモ */}
             {access.notes && (
               <Paper variant="outlined" sx={{ p: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>メモ</Typography>
+                <Typography variant="subtitle2" gutterBottom>メモ（管理用）</Typography>
                 <Typography variant="body2" color="text.secondary">
                   {access.notes}
                 </Typography>

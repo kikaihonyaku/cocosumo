@@ -398,6 +398,32 @@ export default function CustomerPropertyView() {
         daysUntilExpiry={customer_access?.days_until_expiry}
       />
 
+      {/* 申し送り事項 */}
+      {customer_access?.customer_message && (
+        <Box sx={{ px: { xs: 2, md: 3 }, pt: { xs: 2, md: 3 } }}>
+          <Paper
+            sx={{
+              p: 2,
+              bgcolor: 'info.50',
+              borderLeft: 4,
+              borderColor: 'info.main',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+              <PersonIcon color="info" sx={{ mt: 0.5 }} />
+              <Box>
+                <Typography variant="subtitle2" color="info.main" gutterBottom>
+                  担当者からのメッセージ
+                </Typography>
+                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                  {customer_access.customer_message}
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
+        </Box>
+      )}
+
       {/* メインコンテンツ */}
       <Box sx={{ p: { xs: 2, md: 3 } }}>
         {/* タイトルセクション */}
@@ -791,77 +817,171 @@ export default function CustomerPropertyView() {
               バーチャルコンテンツ
             </Typography>
 
-            {/* VRツアー */}
-            {property_publication_vr_tours && property_publication_vr_tours.length > 0 && (
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                  VRルームツアー
-                </Typography>
-                <Grid container spacing={2}>
-                  {property_publication_vr_tours.map((item) => (
-                    <Grid item xs={12} sm={6} md={4} key={item.vr_tour?.id}>
-                      <Card variant="outlined">
-                        <CardContent>
-                          <Typography variant="subtitle2" fontWeight="bold">
-                            {item.vr_tour?.title}
-                          </Typography>
-                          {item.vr_tour?.description && (
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                              {item.vr_tour.description}
-                            </Typography>
-                          )}
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<OpenInNewIcon />}
-                            href={`/vr/${item.vr_tour?.public_id}`}
-                            target="_blank"
+            <Grid container spacing={2}>
+              {/* VRツアー */}
+              {property_publication_vr_tours?.map((item) => (
+                <Grid item xs={6} sm={6} md={4} lg={4} key={`vr-${item.vr_tour?.id}`}>
+                  <Card
+                    variant="outlined"
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: 2,
+                      },
+                    }}
+                  >
+                    <CardActionArea
+                      href={`/vr/${item.vr_tour?.public_id}`}
+                      target="_blank"
+                      sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
+                    >
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          paddingTop: '56.25%',
+                          bgcolor: 'grey.200',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {item.vr_tour?.thumbnail_url ? (
+                          <Box
+                            component="img"
+                            src={item.vr_tour.thumbnail_url}
+                            alt={item.vr_tour?.title}
+                            sx={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                            }}
+                          />
+                        ) : (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
                           >
-                            VRツアーを見る
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
+                            <ViewInArIcon sx={{ fontSize: 40, color: 'grey.400' }} />
+                          </Box>
+                        )}
+                        <Chip
+                          label="VRツアー"
+                          size="small"
+                          color="primary"
+                          sx={{
+                            position: 'absolute',
+                            top: 8,
+                            left: 8,
+                            fontSize: '0.7rem',
+                            height: 22,
+                          }}
+                        />
+                      </Box>
+                      <CardContent sx={{ py: 1, px: 1.5 }}>
+                        <Typography variant="body2" fontWeight="bold" noWrap>
+                          {item.vr_tour?.title}
+                        </Typography>
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
                 </Grid>
-              </Box>
-            )}
+              ))}
 
-            {/* バーチャルステージング */}
-            {property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0 && (
-              <Box>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                  バーチャルステージング
-                </Typography>
-                <Grid container spacing={2}>
-                  {property_publication_virtual_stagings.map((item) => (
-                    <Grid item xs={12} sm={6} md={4} key={item.virtual_staging?.id}>
-                      <Card variant="outlined">
-                        <CardContent>
-                          <Typography variant="subtitle2" fontWeight="bold">
-                            {item.virtual_staging?.title}
-                          </Typography>
-                          {item.virtual_staging?.description && (
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                              {item.virtual_staging.description}
-                            </Typography>
-                          )}
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<OpenInNewIcon />}
-                            href={`/virtual-staging/${item.virtual_staging?.public_id}`}
-                            target="_blank"
+              {/* バーチャルステージング */}
+              {property_publication_virtual_stagings?.map((item) => (
+                <Grid item xs={6} sm={6} md={4} lg={4} key={`staging-${item.virtual_staging?.id}`}>
+                  <Card
+                    variant="outlined"
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: 2,
+                      },
+                    }}
+                  >
+                    <CardActionArea
+                      href={`/virtual-staging/${item.virtual_staging?.public_id}`}
+                      target="_blank"
+                      sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
+                    >
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          paddingTop: '56.25%',
+                          bgcolor: 'grey.200',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {item.virtual_staging?.after_photo_url ? (
+                          <Box
+                            component="img"
+                            src={item.virtual_staging.after_photo_url}
+                            alt={item.virtual_staging?.title}
+                            sx={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                            }}
+                          />
+                        ) : (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
                           >
-                            ステージングを見る
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
+                            <ImageIcon sx={{ fontSize: 40, color: 'grey.400' }} />
+                          </Box>
+                        )}
+                        <Chip
+                          label="ステージング"
+                          size="small"
+                          color="secondary"
+                          sx={{
+                            position: 'absolute',
+                            top: 8,
+                            left: 8,
+                            fontSize: '0.7rem',
+                            height: 22,
+                          }}
+                        />
+                      </Box>
+                      <CardContent sx={{ py: 1, px: 1.5 }}>
+                        <Typography variant="body2" fontWeight="bold" noWrap>
+                          {item.virtual_staging?.title}
+                        </Typography>
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
                 </Grid>
-              </Box>
-            )}
+              ))}
+            </Grid>
           </Paper>
         )}
 

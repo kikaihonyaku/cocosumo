@@ -1,19 +1,47 @@
 class Api::V1::CustomerAccessesController < ApplicationController
   skip_before_action :verify_authenticity_token
-  before_action :require_login, except: [:show_public, :verify_access, :track_view]
-  before_action :set_property_publication, only: [:index, :create]
+  before_action :require_login, except: [:show_public, :verify_access, :track_view,
+                                         :customer_routes, :preview_customer_route, :create_customer_route,
+                                         :destroy_customer_route, :recalculate_customer_route,
+                                         :customer_route_streetview_points]
+  before_action :set_property_publication, only: [:create]
   before_action :set_customer_access, only: [:show, :update, :destroy, :revoke, :extend_expiry]
 
-  # GET /api/v1/property_publications/:property_publication_id/customer_accesses
+  # GET /api/v1/customer_accesses
+  # 全顧客アクセス一覧（管理画面用）
   def index
-    @customer_accesses = @property_publication.customer_accesses.recent
+    if params[:property_publication_id]
+      # 物件公開ページ単位のアクセス一覧
+      @property_publication = PropertyPublication.kept.find(params[:property_publication_id])
+      @customer_accesses = @property_publication.customer_accesses.recent
+    else
+      # 全アクセス一覧
+      @customer_accesses = CustomerAccess.includes(property_publication: { room: :building })
+                                         .recent
+                                         .limit(500)
+    end
 
-    render json: @customer_accesses.as_json(
-      only: [:id, :access_token, :customer_name, :customer_email, :customer_phone,
-             :status, :expires_at, :view_count, :last_accessed_at, :first_accessed_at,
-             :notes, :created_at],
-      methods: [:public_url, :accessible?, :formatted_expires_at, :days_until_expiry]
-    )
+    render json: {
+      customer_accesses: @customer_accesses.as_json(
+        only: [:id, :access_token, :customer_name, :customer_email, :customer_phone,
+               :status, :expires_at, :view_count, :last_accessed_at, :first_accessed_at,
+               :notes, :customer_message, :created_at],
+        methods: [:public_url, :accessible?, :formatted_expires_at, :days_until_expiry],
+        include: {
+          property_publication: {
+            only: [:id, :title, :publication_id],
+            include: {
+              room: {
+                only: [:id, :room_number],
+                include: {
+                  building: { only: [:id, :name, :address] }
+                }
+              }
+            }
+          }
+        }
+      )
+    }
   end
 
   # GET /api/v1/customer_accesses/:id
@@ -21,7 +49,7 @@ class Api::V1::CustomerAccessesController < ApplicationController
     render json: @customer_access.as_json(
       only: [:id, :access_token, :customer_name, :customer_email, :customer_phone,
              :status, :expires_at, :view_count, :last_accessed_at, :first_accessed_at,
-             :access_history, :notes, :created_at, :updated_at],
+             :access_history, :notes, :customer_message, :created_at, :updated_at],
       methods: [:public_url, :accessible?, :formatted_expires_at, :days_until_expiry],
       include: {
         property_publication: {
@@ -165,7 +193,8 @@ class Api::V1::CustomerAccessesController < ApplicationController
       customer_name: @customer_access.customer_name,
       expires_at: @customer_access.expires_at,
       formatted_expires_at: @customer_access.formatted_expires_at,
-      days_until_expiry: @customer_access.days_until_expiry
+      days_until_expiry: @customer_access.days_until_expiry,
+      customer_message: @customer_access.customer_message
     }
 
     # 顧客専用経路を追加
@@ -431,7 +460,8 @@ class Api::V1::CustomerAccessesController < ApplicationController
       :customer_phone,
       :password,
       :expires_at,
-      :notes
+      :notes,
+      :customer_message
     )
   end
 
@@ -441,7 +471,8 @@ class Api::V1::CustomerAccessesController < ApplicationController
       :customer_email,
       :customer_phone,
       :expires_at,
-      :notes
+      :notes,
+      :customer_message
     )
   end
 
