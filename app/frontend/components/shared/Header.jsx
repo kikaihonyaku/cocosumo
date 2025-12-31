@@ -97,13 +97,13 @@ export default function Header() {
   const contentMenuItems = [
     { to: "/vr-tours", label: "VRルームツアー", icon: <ViewInArIcon fontSize="small" /> },
     { to: "/virtual-stagings", label: "バーチャルステージング", icon: <ChairIcon fontSize="small" /> },
+    { to: "/admin/publications", label: "公開ページ管理", icon: <WebIcon fontSize="small" /> },
   ];
 
   const adminMenuItems = [
     { to: "/admin/stores", label: "店舗管理", icon: <StoreIcon fontSize="small" /> },
     { to: "/admin/suumo-import", label: "SUUMOインポート", icon: <CloudDownloadIcon fontSize="small" /> },
     { to: "/admin/layers", label: "レイヤー管理", icon: <LayersIcon fontSize="small" /> },
-    { to: "/admin/publications", label: "公開ページ管理", icon: <WebIcon fontSize="small" /> },
     { to: "/admin/customer-accesses", label: "顧客アクセス管理", icon: <PeopleIcon fontSize="small" /> },
     { to: "/admin/inquiries", label: "問い合わせ管理", icon: <EmailIcon fontSize="small" /> },
     { to: "/analytics/inquiries", label: "問い合わせ分析", icon: <AnalyticsIcon fontSize="small" /> },
