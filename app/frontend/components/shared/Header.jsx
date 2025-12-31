@@ -95,7 +95,7 @@ export default function Header() {
   };
 
   const contentMenuItems = [
-    { to: "/vr-tours", label: "VRツアー管理", icon: <ViewInArIcon fontSize="small" /> },
+    { to: "/vr-tours", label: "VRルームツアー", icon: <ViewInArIcon fontSize="small" /> },
     { to: "/virtual-stagings", label: "バーチャルステージング", icon: <ChairIcon fontSize="small" /> },
   ];
 
