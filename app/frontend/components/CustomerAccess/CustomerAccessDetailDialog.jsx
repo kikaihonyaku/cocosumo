@@ -17,7 +17,10 @@ import {
   CircularProgress,
   Alert,
   Tooltip,
-  Grid
+  Grid,
+  TextField,
+  InputAdornment,
+  Collapse
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -25,13 +28,17 @@ import {
   Phone as PhoneIcon,
   Schedule as ScheduleIcon,
   Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
   ContentCopy as CopyIcon,
   Block as BlockIcon,
   AccessTime as AccessTimeIcon,
   DevicesOther as DevicesIcon,
   Close as CloseIcon,
   QrCode as QrCodeIcon,
-  Message as MessageIcon
+  Message as MessageIcon,
+  Lock as LockIcon,
+  LockOpen as LockOpenIcon,
+  Key as KeyIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -47,6 +54,13 @@ export default function CustomerAccessDetailDialog({
   const [access, setAccess] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // パスワード管理
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
 
   // Normalize callback prop names
   const handleUpdate = onUpdate || onUpdated;
@@ -121,6 +135,60 @@ export default function CustomerAccessDetailDialog({
       console.error('Failed to extend expiry:', err);
       alert('有効期限の延長に失敗しました');
     }
+  };
+
+  // パスワード設定
+  const handleSetPassword = async () => {
+    if (!access) return;
+
+    if (newPassword.length < 6) {
+      setPasswordError('パスワードは6文字以上で入力してください');
+      return;
+    }
+
+    try {
+      setSavingPassword(true);
+      setPasswordError('');
+      await axios.post(`/api/v1/customer_accesses/${access.id}/set_password`, {
+        password: newPassword
+      });
+      setAccess(prev => ({ ...prev, 'password_protected?': true }));
+      setShowPasswordForm(false);
+      setNewPassword('');
+      handleUpdate?.();
+      alert('パスワードを設定しました');
+    } catch (err) {
+      console.error('Failed to set password:', err);
+      setPasswordError(err.response?.data?.error || 'パスワードの設定に失敗しました');
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  // パスワード解除
+  const handleRemovePassword = async () => {
+    if (!access) return;
+    if (!confirm('パスワード保護を解除しますか？誰でもURLを知っていればアクセスできるようになります。')) return;
+
+    try {
+      setSavingPassword(true);
+      await axios.post(`/api/v1/customer_accesses/${access.id}/remove_password`);
+      setAccess(prev => ({ ...prev, 'password_protected?': false }));
+      handleUpdate?.();
+      alert('パスワード保護を解除しました');
+    } catch (err) {
+      console.error('Failed to remove password:', err);
+      alert('パスワード保護の解除に失敗しました');
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  // パスワードフォームをリセット
+  const handleCancelPasswordForm = () => {
+    setShowPasswordForm(false);
+    setNewPassword('');
+    setPasswordError('');
   };
 
   const getStatusChip = () => {
@@ -234,6 +302,123 @@ export default function CustomerAccessDetailDialog({
                   </IconButton>
                 </Tooltip>
               </Box>
+            </Paper>
+
+            {/* パスワード保護 */}
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {access['password_protected?'] ? (
+                    <LockIcon fontSize="small" color="success" />
+                  ) : (
+                    <LockOpenIcon fontSize="small" color="action" />
+                  )}
+                  <Typography variant="subtitle2">パスワード保護</Typography>
+                </Box>
+                <Chip
+                  label={access['password_protected?'] ? '有効' : '無効'}
+                  size="small"
+                  color={access['password_protected?'] ? 'success' : 'default'}
+                  variant="outlined"
+                />
+              </Box>
+
+              {access['password_protected?'] ? (
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                    このページはパスワードで保護されています
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<KeyIcon />}
+                      onClick={() => setShowPasswordForm(true)}
+                      disabled={savingPassword}
+                    >
+                      パスワード変更
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="warning"
+                      startIcon={<LockOpenIcon />}
+                      onClick={handleRemovePassword}
+                      disabled={savingPassword}
+                    >
+                      保護を解除
+                    </Button>
+                  </Box>
+                </Box>
+              ) : (
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                    URLを知っている人は誰でもアクセスできます
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<LockIcon />}
+                    onClick={() => setShowPasswordForm(true)}
+                    disabled={savingPassword}
+                  >
+                    パスワードを設定
+                  </Button>
+                </Box>
+              )}
+
+              {/* パスワード入力フォーム */}
+              <Collapse in={showPasswordForm}>
+                <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+                  <Typography variant="body2" fontWeight="medium" gutterBottom>
+                    {access['password_protected?'] ? '新しいパスワード' : 'パスワードを設定'}
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type={showPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="6文字以上"
+                    error={!!passwordError}
+                    helperText={passwordError}
+                    disabled={savingPassword}
+                    sx={{ mb: 1 }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            size="small"
+                            onClick={() => setShowPassword(!showPassword)}
+                            edge="end"
+                          >
+                            {showPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }}
+                  />
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      onClick={handleSetPassword}
+                      disabled={savingPassword || newPassword.length < 6}
+                      startIcon={savingPassword ? <CircularProgress size={16} /> : null}
+                    >
+                      {savingPassword ? '保存中...' : '保存'}
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="text"
+                      onClick={handleCancelPasswordForm}
+                      disabled={savingPassword}
+                    >
+                      キャンセル
+                    </Button>
+                  </Box>
+                </Box>
+              </Collapse>
             </Paper>
 
             {/* 有効期限・統計 */}

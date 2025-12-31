@@ -63,6 +63,7 @@ function PublicPropertyDetail() {
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordVerified, setPasswordVerified] = useState(false);
+  const [verifyingPassword, setVerifyingPassword] = useState(false);
 
   // オンライン/オフライン状態
   const { isOnline, wasOffline } = useOnlineStatus();
@@ -169,6 +170,7 @@ function PublicPropertyDetail() {
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     setPasswordError('');
+    setVerifyingPassword(true);
 
     try {
       const response = await axios.post(`/api/v1/property_publications/${publicationId}/verify_password`, {
@@ -178,14 +180,21 @@ function PublicPropertyDetail() {
       if (response.data.success) {
         // パスワード認証成功、データを再取得
         loadData(password);
+      } else {
+        setPasswordError('パスワードが正しくありません');
+        setVerifyingPassword(false);
       }
     } catch (error) {
+      console.error('Password verification error:', error);
       if (error.response?.status === 410) {
         setError('この物件公開ページの有効期限が切れています');
         setPasswordRequired(false);
-      } else {
+      } else if (error.response?.status === 401) {
         setPasswordError('パスワードが正しくありません');
+      } else {
+        setPasswordError('認証中にエラーが発生しました。もう一度お試しください。');
       }
+      setVerifyingPassword(false);
     }
   };
 
@@ -507,14 +516,16 @@ function PublicPropertyDetail() {
               helperText={passwordError}
               sx={{ mb: 2 }}
               autoFocus
+              disabled={verifyingPassword}
             />
             <Button
               type="submit"
               variant="contained"
               fullWidth
-              disabled={!password}
+              disabled={!password || verifyingPassword}
+              startIcon={verifyingPassword ? <CircularProgress size={20} color="inherit" /> : null}
             >
-              確認
+              {verifyingPassword ? '確認中...' : '確認'}
             </Button>
           </Box>
         </Container>

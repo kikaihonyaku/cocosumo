@@ -5,7 +5,7 @@ class Api::V1::CustomerAccessesController < ApplicationController
                                          :destroy_customer_route, :recalculate_customer_route,
                                          :customer_route_streetview_points]
   before_action :set_property_publication, only: [:create]
-  before_action :set_customer_access, only: [:show, :update, :destroy, :revoke, :extend_expiry]
+  before_action :set_customer_access, only: [:show, :update, :destroy, :revoke, :extend_expiry, :set_password, :remove_password]
 
   # GET /api/v1/customer_accesses
   # 全顧客アクセス一覧（管理画面用）
@@ -57,7 +57,7 @@ class Api::V1::CustomerAccessesController < ApplicationController
       only: [:id, :access_token, :customer_name, :customer_email, :customer_phone,
              :status, :expires_at, :view_count, :last_accessed_at, :first_accessed_at,
              :access_history, :notes, :customer_message, :created_at, :updated_at],
-      methods: [:public_url, :accessible?, :formatted_expires_at, :days_until_expiry],
+      methods: [:public_url, :accessible?, :formatted_expires_at, :days_until_expiry, :password_protected?],
       include: {
         property_publication: {
           only: [:id, :title, :publication_id],
@@ -141,6 +141,48 @@ class Api::V1::CustomerAccessesController < ApplicationController
         message: "有効期限を#{new_expiry.strftime('%Y年%m月%d日')}まで延長しました",
         customer_access: @customer_access.as_json(
           methods: [:accessible?, :formatted_expires_at, :days_until_expiry]
+        )
+      }
+    else
+      render json: { errors: @customer_access.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  # POST /api/v1/customer_accesses/:id/set_password
+  def set_password
+    password = params[:password]
+
+    if password.blank?
+      return render json: { error: 'パスワードを入力してください' }, status: :unprocessable_entity
+    end
+
+    if password.length < 6
+      return render json: { error: 'パスワードは6文字以上で入力してください' }, status: :unprocessable_entity
+    end
+
+    @customer_access.password = password
+    if @customer_access.save
+      render json: {
+        success: true,
+        message: 'パスワードを設定しました',
+        customer_access: @customer_access.as_json(
+          methods: [:password_protected?]
+        )
+      }
+    else
+      render json: { errors: @customer_access.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  # POST /api/v1/customer_accesses/:id/remove_password
+  def remove_password
+    @customer_access.password_digest = nil
+    if @customer_access.save
+      render json: {
+        success: true,
+        message: 'パスワード保護を解除しました',
+        customer_access: @customer_access.as_json(
+          methods: [:password_protected?]
         )
       }
     else

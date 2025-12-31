@@ -30,9 +30,14 @@ class CustomerAccess < ApplicationRecord
   scope :by_email, ->(email) { where(customer_email: email) }
   scope :recent, -> { order(created_at: :desc) }
 
+  # パスワード保護されているか
+  def password_protected?
+    password_digest.present?
+  end
+
   # パスワード認証（bcrypt使用）
   def authenticate_password(password)
-    return true unless password_digest.present?
+    return true unless password_protected?
     authenticate(password)
   end
 

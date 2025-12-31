@@ -241,6 +241,8 @@ Rails.application.routes.draw do
         member do
           post :revoke
           post :extend_expiry
+          post :set_password
+          post :remove_password
         end
       end
 

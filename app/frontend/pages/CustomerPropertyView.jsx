@@ -72,6 +72,7 @@ export default function CustomerPropertyView() {
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [verifyingPassword, setVerifyingPassword] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [activeSection, setActiveSection] = useState('info');
 
@@ -100,6 +101,7 @@ export default function CustomerPropertyView() {
       const response = await axios.get(`/api/v1/customer/${accessToken}`, { params });
       setData(response.data);
       setPasswordRequired(false);
+      setVerifyingPassword(false);
 
       // 顧客経路を設定
       if (response.data.customer_routes) {
@@ -119,14 +121,19 @@ export default function CustomerPropertyView() {
           setPasswordError('パスワードが正しくありません');
         }
       } else if (err.response?.status === 410) {
+        setPasswordRequired(false);
         setError('このページの有効期限が切れています');
       } else if (err.response?.status === 403) {
+        setPasswordRequired(false);
         setError('このページへのアクセスは取り消されています');
       } else if (err.response?.status === 404) {
-        setError('ページが見つかりませんでした');
+        setPasswordRequired(false);
+        setError(err.response.data.error || 'ページが見つかりませんでした');
       } else {
+        setPasswordRequired(false);
         setError('データの読み込みに失敗しました');
       }
+      setVerifyingPassword(false);
     } finally {
       setLoading(false);
     }
@@ -151,6 +158,7 @@ export default function CustomerPropertyView() {
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     setPasswordError('');
+    setVerifyingPassword(true);
     loadData(password);
   };
 
@@ -316,12 +324,14 @@ export default function CustomerPropertyView() {
               error={!!passwordError}
               helperText={passwordError}
               sx={{ mb: 2 }}
+              disabled={verifyingPassword}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
+                      disabled={verifyingPassword}
                     >
                       {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                     </IconButton>
@@ -333,9 +343,10 @@ export default function CustomerPropertyView() {
               fullWidth
               variant="contained"
               type="submit"
-              disabled={!password}
+              disabled={!password || verifyingPassword}
+              startIcon={verifyingPassword ? <CircularProgress size={20} color="inherit" /> : null}
             >
-              確認
+              {verifyingPassword ? '確認中...' : '確認'}
             </Button>
           </form>
         </Paper>
