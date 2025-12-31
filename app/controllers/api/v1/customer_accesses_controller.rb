@@ -11,37 +11,44 @@ class Api::V1::CustomerAccessesController < ApplicationController
   # 全顧客アクセス一覧（管理画面用）
   def index
     if params[:property_publication_id]
-      # 物件公開ページ単位のアクセス一覧
+      # 物件公開ページ単位のアクセス一覧（配列を直接返す）
       @property_publication = PropertyPublication.kept.find(params[:property_publication_id])
       @customer_accesses = @property_publication.customer_accesses.recent
-    else
-      # 全アクセス一覧
-      @customer_accesses = CustomerAccess.includes(property_publication: { room: :building })
-                                         .recent
-                                         .limit(500)
-    end
 
-    render json: {
-      customer_accesses: @customer_accesses.as_json(
+      render json: @customer_accesses.as_json(
         only: [:id, :access_token, :customer_name, :customer_email, :customer_phone,
                :status, :expires_at, :view_count, :last_accessed_at, :first_accessed_at,
                :notes, :customer_message, :created_at],
-        methods: [:public_url, :accessible?, :formatted_expires_at, :days_until_expiry],
-        include: {
-          property_publication: {
-            only: [:id, :title, :publication_id],
-            include: {
-              room: {
-                only: [:id, :room_number],
-                include: {
-                  building: { only: [:id, :name, :address] }
+        methods: [:public_url, :accessible?, :formatted_expires_at, :days_until_expiry]
+      )
+    else
+      # 全アクセス一覧（管理画面用、オブジェクトで返す）
+      @customer_accesses = CustomerAccess.includes(property_publication: { room: :building })
+                                         .recent
+                                         .limit(500)
+
+      render json: {
+        customer_accesses: @customer_accesses.as_json(
+          only: [:id, :access_token, :customer_name, :customer_email, :customer_phone,
+                 :status, :expires_at, :view_count, :last_accessed_at, :first_accessed_at,
+                 :notes, :customer_message, :created_at],
+          methods: [:public_url, :accessible?, :formatted_expires_at, :days_until_expiry],
+          include: {
+            property_publication: {
+              only: [:id, :title, :publication_id],
+              include: {
+                room: {
+                  only: [:id, :room_number],
+                  include: {
+                    building: { only: [:id, :name, :address] }
+                  }
                 }
               }
             }
           }
-        }
-      )
-    }
+        )
+      }
+    end
   end
 
   # GET /api/v1/customer_accesses/:id

@@ -27,11 +27,11 @@ class Api::V1::PropertyInquiriesController < ApplicationController
     render json: { error: 'この物件公開ページは見つかりませんでした' }, status: :not_found
   end
 
-  # GET /api/v1/property_publications/:property_publication_id/inquiries (認証必要)
+  # GET /api/v1/property_publications/:id/inquiries (認証必要)
   def index
     return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
 
-    @property_publication = PropertyPublication.kept.find(params[:property_publication_id])
+    @property_publication = PropertyPublication.kept.find(params[:property_publication_publication_id])
     @property_inquiries = @property_publication.property_inquiries.recent
 
     render json: @property_inquiries.as_json(
@@ -46,9 +46,9 @@ class Api::V1::PropertyInquiriesController < ApplicationController
   def export_csv
     return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
 
-    # ユーザーに紐づく物件のみ
+    # ユーザーのテナントに紐づく物件のみ
     user_publication_ids = PropertyPublication.kept.joins(room: :building)
-                                              .where(buildings: { user_id: current_user.id })
+                                              .where(buildings: { tenant_id: current_user.tenant_id })
                                               .pluck(:id)
 
     inquiries = PropertyInquiry.where(property_publication_id: user_publication_ids)
@@ -99,27 +99,27 @@ class Api::V1::PropertyInquiriesController < ApplicationController
     days = (params[:days] || 30).to_i
     start_date = days.days.ago.beginning_of_day
 
-    # 全問い合わせ（ユーザーに紐づく物件のみ）
+    # 全問い合わせ（ユーザーのテナントに紐づく物件のみ）
     user_publication_ids = PropertyPublication.kept.joins(room: :building)
-                                              .where(buildings: { user_id: current_user.id })
+                                              .where(buildings: { tenant_id: current_user.tenant_id })
                                               .pluck(:id)
 
     base_query = PropertyInquiry.where(property_publication_id: user_publication_ids)
-    period_query = base_query.where('created_at >= ?', start_date)
+    period_query = base_query.where('property_inquiries.created_at >= ?', start_date)
 
     # 基本統計
     total_count = period_query.count
-    previous_period_count = base_query.where(created_at: (start_date - days.days)..start_date).count
+    previous_period_count = base_query.where(property_inquiries: { created_at: (start_date - days.days)..start_date }).count
 
     # ソース別集計
     source_breakdown = period_query.group(:source).count.transform_keys { |k| k || 'unknown' }
 
     # 日別推移（過去30日）
-    daily_trend = period_query.group("DATE(created_at)").count.transform_keys(&:to_s)
+    daily_trend = period_query.group("DATE(property_inquiries.created_at)").count.transform_keys(&:to_s)
 
     # 週別推移（過去12週）
-    weekly_trend = base_query.where('created_at >= ?', 12.weeks.ago)
-                             .group("DATE_TRUNC('week', created_at)")
+    weekly_trend = base_query.where('property_inquiries.created_at >= ?', 12.weeks.ago)
+                             .group("DATE_TRUNC('week', property_inquiries.created_at)")
                              .count
                              .transform_keys { |k| k.to_date.to_s }
 
@@ -164,7 +164,7 @@ class Api::V1::PropertyInquiriesController < ApplicationController
 
     # 最新の問い合わせ（5件）
     recent_inquiries = period_query.includes(:property_publication)
-                                   .order(created_at: :desc)
+                                   .order('property_inquiries.created_at DESC')
                                    .limit(5)
                                    .map do |inquiry|
       {
