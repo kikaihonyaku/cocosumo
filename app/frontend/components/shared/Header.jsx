@@ -171,7 +171,7 @@ export default function Header() {
                     {item.label}
                   </NavLink>
                 ))}
-                {/* コンテンツ管理メニュー */}
+                {/* コンテンツメニュー */}
                 <Button
                   onClick={handleContentMenuOpen}
                   sx={{
@@ -185,7 +185,7 @@ export default function Header() {
                   endIcon={<ExpandMoreIcon />}
                   startIcon={<VideoLibraryIcon />}
                 >
-                  コンテンツ管理
+                  コンテンツ
                 </Button>
                 <Menu
                   anchorEl={contentMenuAnchor}
@@ -343,13 +343,13 @@ export default function Header() {
             </ListItem>
           ))}
 
-          {/* コンテンツ管理メニュー（折りたたみ式） */}
+          {/* コンテンツメニュー（折りたたみ式） */}
           <ListItem disablePadding>
             <ListItemButton onClick={handleMobileContentToggle}>
               <ListItemIcon sx={{ color: 'white', minWidth: 36 }}>
                 <VideoLibraryIcon />
               </ListItemIcon>
-              <ListItemText primary="コンテンツ管理" sx={{ color: 'white' }} />
+              <ListItemText primary="コンテンツ" sx={{ color: 'white' }} />
               {mobileContentExpanded ? (
                 <ExpandLessIcon sx={{ color: 'white' }} />
               ) : (
