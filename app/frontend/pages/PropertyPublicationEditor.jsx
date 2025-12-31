@@ -413,21 +413,21 @@ function PropertyPublicationEditor() {
         borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
         borderRadius: '12px 12px 0 0',
       }}>
-        <Toolbar variant="dense" sx={{ minHeight: '52px', py: 1 }}>
+        <Toolbar variant="dense" sx={{ minHeight: 52 }}>
           <IconButton
             edge="start"
-            onClick={() => navigate(`/room/${roomId}`)}
-            sx={{ mr: 2, color: 'white' }}
+            onClick={() => navigate(-1)}
+            sx={{ mr: 1, color: 'white' }}
           >
             <ArrowBackIcon />
           </IconButton>
 
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
-              {isEditMode ? '物件公開ページ編集' : '物件公開ページ作成'}
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+              {isEditMode ? '公開ページ編集' : '公開ページ作成'}
             </Typography>
             {room && (
-              <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
+              <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.85rem' }}>
                 {room.building?.name} - {room.room_number}号室
               </Typography>
             )}
@@ -547,7 +547,15 @@ function PropertyPublicationEditor() {
         onChange={(e, newValue) => setActiveTab(newValue)}
         variant="scrollable"
         scrollButtons="auto"
-        sx={{ px: 2, pt: 1 }}
+        sx={{
+          px: 1,
+          minHeight: 36,
+          '& .MuiTab-root': {
+            minHeight: 36,
+            py: 0.5,
+            fontSize: '0.85rem',
+          }
+        }}
       >
         <Tab label="基本情報" />
         <Tab label="画像選択" />
