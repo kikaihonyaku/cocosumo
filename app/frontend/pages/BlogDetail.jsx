@@ -303,6 +303,50 @@ export default function BlogDetail() {
             </div>
           </div>
 
+          {/* 前後の記事リンク */}
+          {(post.prev_post || post.next_post) && (
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* 次の記事（新しい記事）- 左側 */}
+              <div className="md:col-start-1">
+                {post.prev_post && (
+                  <Link
+                    to={`/blog/${post.prev_post.public_id}`}
+                    className="block bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow p-5 group"
+                  >
+                    <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                      <svg className="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                      次の記事
+                    </div>
+                    <p className="text-gray-900 font-medium line-clamp-2 group-hover:text-blue-600 transition-colors">
+                      {post.prev_post.title}
+                    </p>
+                  </Link>
+                )}
+              </div>
+              {/* 前の記事（古い記事）- 右側 */}
+              <div className="md:col-start-2">
+                {post.next_post && (
+                  <Link
+                    to={`/blog/${post.next_post.public_id}`}
+                    className="block bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow p-5 group text-right"
+                  >
+                    <div className="flex items-center justify-end gap-2 text-sm text-gray-500 mb-2">
+                      前の記事
+                      <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-900 font-medium line-clamp-2 group-hover:text-blue-600 transition-colors">
+                      {post.next_post.title}
+                    </p>
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* フッターナビゲーション */}
           <div className="mt-12 flex flex-col sm:flex-row justify-between items-center gap-4">
             <Link

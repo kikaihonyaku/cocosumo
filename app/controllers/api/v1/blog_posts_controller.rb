@@ -41,9 +41,22 @@ class Api::V1::BlogPostsController < ApplicationController
   def show_public
     @blog_post = BlogPost.published.find_by!(public_id: params[:public_id])
 
+    # 前後の記事を取得（published_atで並び替え）
+    prev_post = BlogPost.published
+                        .where("published_at > ?", @blog_post.published_at)
+                        .order(published_at: :asc)
+                        .first
+    next_post = BlogPost.published
+                        .where("published_at < ?", @blog_post.published_at)
+                        .order(published_at: :desc)
+                        .first
+
     render json: @blog_post.as_json(
       only: [:id, :public_id, :title, :summary, :content, :thumbnail_url, :published_at, :commit_hash],
       methods: [:public_url]
+    ).merge(
+      prev_post: prev_post&.as_json(only: [:public_id, :title]),
+      next_post: next_post&.as_json(only: [:public_id, :title])
     )
   rescue ActiveRecord::RecordNotFound
     render json: { error: '記事が見つかりませんでした' }, status: :not_found
