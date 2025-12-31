@@ -33,7 +33,10 @@ import {
   Web as WebIcon,
   People as PeopleIcon,
   Email as EmailIcon,
-  TrendingUp as TrendingUpIcon
+  TrendingUp as TrendingUpIcon,
+  VideoLibrary as VideoLibraryIcon,
+  ViewInAr as ViewInArIcon,
+  Chair as ChairIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -43,7 +46,9 @@ export default function Header() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [adminMenuAnchor, setAdminMenuAnchor] = useState(null);
+  const [contentMenuAnchor, setContentMenuAnchor] = useState(null);
   const [mobileAdminExpanded, setMobileAdminExpanded] = useState(false);
+  const [mobileContentExpanded, setMobileContentExpanded] = useState(false);
   
   const navStyle = ({ isActive }) => ({
     fontWeight: isActive ? "700" : "400",
@@ -77,6 +82,23 @@ export default function Header() {
     setMobileAdminExpanded(!mobileAdminExpanded);
   };
 
+  const handleContentMenuOpen = (event) => {
+    setContentMenuAnchor(event.currentTarget);
+  };
+
+  const handleContentMenuClose = () => {
+    setContentMenuAnchor(null);
+  };
+
+  const handleMobileContentToggle = () => {
+    setMobileContentExpanded(!mobileContentExpanded);
+  };
+
+  const contentMenuItems = [
+    { to: "/vr-tours", label: "VRツアー管理", icon: <ViewInArIcon fontSize="small" /> },
+    { to: "/virtual-stagings", label: "バーチャルステージング", icon: <ChairIcon fontSize="small" /> },
+  ];
+
   const adminMenuItems = [
     { to: "/admin/stores", label: "店舗管理", icon: <StoreIcon fontSize="small" /> },
     { to: "/admin/suumo-import", label: "SUUMOインポート", icon: <CloudDownloadIcon fontSize="small" /> },
@@ -91,8 +113,6 @@ export default function Header() {
   const menuItems = [
     { to: "/home", label: "ホーム", end: false },
     { to: "/map", label: "物件管理" },
-    { to: "/vr-tours", label: "VRツアー管理" },
-    { to: "/virtual-stagings", label: "バーチャルステージング" },
   ];
 
   return (
@@ -151,6 +171,52 @@ export default function Header() {
                     {item.label}
                   </NavLink>
                 ))}
+                {/* コンテンツ管理メニュー */}
+                <Button
+                  onClick={handleContentMenuOpen}
+                  sx={{
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    textTransform: 'none',
+                    '&:hover': {
+                      color: 'white',
+                      bgcolor: 'rgba(255, 255, 255, 0.1)'
+                    }
+                  }}
+                  endIcon={<ExpandMoreIcon />}
+                  startIcon={<VideoLibraryIcon />}
+                >
+                  コンテンツ管理
+                </Button>
+                <Menu
+                  anchorEl={contentMenuAnchor}
+                  open={Boolean(contentMenuAnchor)}
+                  onClose={handleContentMenuClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'left',
+                  }}
+                >
+                  {contentMenuItems.map((item) => (
+                    <MenuItem
+                      key={item.to}
+                      component={NavLink}
+                      to={item.to}
+                      onClick={handleContentMenuClose}
+                      sx={{
+                        '&.active': {
+                          bgcolor: 'action.selected',
+                        }
+                      }}
+                    >
+                      <ListItemIcon>{item.icon}</ListItemIcon>
+                      <ListItemText>{item.label}</ListItemText>
+                    </MenuItem>
+                  ))}
+                </Menu>
                 {/* 管理者メニュー */}
                 <Button
                   onClick={handleAdminMenuOpen}
@@ -276,6 +342,48 @@ export default function Header() {
               </ListItemButton>
             </ListItem>
           ))}
+
+          {/* コンテンツ管理メニュー（折りたたみ式） */}
+          <ListItem disablePadding>
+            <ListItemButton onClick={handleMobileContentToggle}>
+              <ListItemIcon sx={{ color: 'white', minWidth: 36 }}>
+                <VideoLibraryIcon />
+              </ListItemIcon>
+              <ListItemText primary="コンテンツ管理" sx={{ color: 'white' }} />
+              {mobileContentExpanded ? (
+                <ExpandLessIcon sx={{ color: 'white' }} />
+              ) : (
+                <ExpandMoreIcon sx={{ color: 'white' }} />
+              )}
+            </ListItemButton>
+          </ListItem>
+          <Collapse in={mobileContentExpanded} timeout="auto" unmountOnExit>
+            <List component="div" disablePadding>
+              {contentMenuItems.map((item) => (
+                <ListItem key={item.to} disablePadding>
+                  <ListItemButton
+                    component={NavLink}
+                    to={item.to}
+                    onClick={handleMobileMenuClose}
+                    sx={{
+                      pl: 4,
+                      '&.active': {
+                        bgcolor: 'rgba(255, 255, 255, 0.2)',
+                      },
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: 'rgba(255, 255, 255, 0.7)', minWidth: 36 }}>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.label}
+                      sx={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          </Collapse>
 
           {/* 管理者メニュー（折りたたみ式） */}
           <ListItem disablePadding>
