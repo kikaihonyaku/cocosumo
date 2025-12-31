@@ -125,7 +125,15 @@ const AiStagingDialog = ({
       abortControllerRef.current = new AbortController();
 
       // Before画像を取得してBase64に変換
-      const imageResponse = await fetch(beforePhoto.photo_url);
+      // CORS回避のため、プロキシエンドポイントを使用
+      const proxyUrl = `/api/v1/rooms/${roomId}/room_photos/${beforePhoto.id}/proxy`;
+      const imageResponse = await fetch(proxyUrl, {
+        credentials: 'include',
+        signal: abortControllerRef.current.signal,
+      });
+      if (!imageResponse.ok) {
+        throw new Error('画像の取得に失敗しました');
+      }
       const imageBlob = await imageResponse.blob();
 
       // プロンプトを構築
