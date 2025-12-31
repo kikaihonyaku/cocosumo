@@ -216,7 +216,7 @@ class Api::V1::CustomerAccessesController < ApplicationController
     # 物件別ランキング（閲覧数トップ10）
     top_properties = base_query.joins(:property_publication)
                                .group(:property_publication_id, 'property_publications.title')
-                               .select('property_publications.title, SUM(customer_accesses.view_count) as total_views, COUNT(*) as access_count')
+                               .select('customer_accesses.property_publication_id, property_publications.title, SUM(customer_accesses.view_count) as total_views, COUNT(*) as access_count')
                                .order('total_views DESC')
                                .limit(10)
                                .map do |row|
