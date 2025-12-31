@@ -3,7 +3,7 @@ class Api::V1::PropertyInquiriesController < ApplicationController
 
   # POST /api/v1/property_publications/:publication_id/inquiries
   def create
-    @property_publication = PropertyPublication.kept.find_by!(publication_id: params[:publication_id])
+    @property_publication = PropertyPublication.kept.find_by!(publication_id: params[:property_publication_publication_id])
 
     unless @property_publication.published?
       render json: { error: 'この物件公開ページは公開されていません' }, status: :not_found

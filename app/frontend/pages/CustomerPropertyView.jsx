@@ -23,7 +23,10 @@ import {
   Link,
   useMediaQuery,
   useTheme,
-  Tooltip
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent
 } from '@mui/material';
 import {
   Lock as LockIcon,
@@ -45,13 +48,16 @@ import {
   PlayArrow as PlayArrowIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  Close as CloseIcon,
+  Email as EmailIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import CustomerHeader from '../components/CustomerAccess/CustomerHeader';
 import PhotoGallery from '../components/PropertyPublication/PhotoGallery';
 import PropertyMapPanel from '../components/BuildingDetail/PropertyMapPanel';
 import CustomerRouteDialog from '../components/CustomerAccess/CustomerRouteDialog';
+import InquiryForm from '../components/PropertyPublication/InquiryForm';
 import { getRoomTypeLabel } from '../utils/formatters';
 
 export default function CustomerPropertyView() {
@@ -77,6 +83,9 @@ export default function CustomerPropertyView() {
   const [customerRoutes, setCustomerRoutes] = useState([]);
   const [isRouteDialogOpen, setIsRouteDialogOpen] = useState(false);
   const [deletingRouteId, setDeletingRouteId] = useState(null);
+
+  // お問い合わせダイアログ
+  const [inquiryDialogOpen, setInquiryDialogOpen] = useState(false);
 
   const loadData = useCallback(async (withPassword = null) => {
     try {
@@ -1006,6 +1015,8 @@ export default function CustomerPropertyView() {
                 variant="contained"
                 color="primary"
                 size="large"
+                startIcon={<EmailIcon />}
+                onClick={() => setInquiryDialogOpen(true)}
               >
                 お問い合わせ
               </Button>
@@ -1045,6 +1056,30 @@ export default function CustomerPropertyView() {
         buildingLocation={building ? { lat: building.latitude, lng: building.longitude } : null}
         onCreated={handleRouteCreated}
       />
+
+      {/* お問い合わせダイアログ */}
+      <Dialog
+        open={inquiryDialogOpen}
+        onClose={() => setInquiryDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <EmailIcon color="primary" />
+            お問い合わせ
+          </Box>
+          <IconButton onClick={() => setInquiryDialogOpen(false)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {data.title}についてのお問い合わせ
+          </Typography>
+          <InquiryForm publicationId={data.publication_id} />
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }
