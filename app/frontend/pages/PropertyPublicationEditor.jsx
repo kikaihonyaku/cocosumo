@@ -664,14 +664,6 @@ function PropertyPublicationEditor() {
                       }
                     />
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<OpenInNewIcon />}
-                        onClick={() => window.open('https://suumo.jp/chintai/jnc_000092620118/?bc=100395360648', '_blank')}
-                      >
-                        サンプル
-                      </Button>
                       {isEditMode && propertyPublication.publication_id && (
                         <Button
                           variant="contained"
@@ -701,14 +693,6 @@ function PropertyPublicationEditor() {
                       }
                     />
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<OpenInNewIcon />}
-                        onClick={() => window.open('https://www.roomspot.net/rent/1139288674810000284493/', '_blank')}
-                      >
-                        サンプル
-                      </Button>
                       {isEditMode && propertyPublication.publication_id && (
                         <Button
                           variant="contained"
@@ -730,22 +714,14 @@ function PropertyPublicationEditor() {
                       control={<Radio />}
                       label={
                         <Box>
-                          <Typography variant="body1" fontWeight="bold">テンプレート3</Typography>
+                          <Typography variant="body1" fontWeight="bold">テンプレート3（H-Sys風）</Typography>
                           <Typography variant="caption" color="text.secondary">
-                            サンプル: H-Sys風デザイン
+                            シンプルなレイアウト
                           </Typography>
                         </Box>
                       }
                     />
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<OpenInNewIcon />}
-                        onClick={() => window.open('https://www.h-sys.jp/chintai/detail-690a5b9951464927a166209b/', '_blank')}
-                      >
-                        サンプル
-                      </Button>
                       {isEditMode && propertyPublication.publication_id && (
                         <Button
                           variant="contained"
