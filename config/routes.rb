@@ -119,6 +119,11 @@ Rails.application.routes.draw do
 
       # 部屋詳細・更新・削除はスタンドアロン
       resources :rooms, only: [:show, :update, :destroy] do
+        member do
+          post :upload_floorplan
+          delete :delete_floorplan
+        end
+
         # 部屋写真管理
         resources :room_photos do
           member do

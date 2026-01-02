@@ -28,6 +28,7 @@ import {
 import IconButton from "@mui/material/IconButton";
 import muiTheme from '../theme/muiTheme';
 import RoomInfoPanel from "../components/RoomDetail/RoomInfoPanel";
+import RoomFloorplanPanel from "../components/RoomDetail/RoomFloorplanPanel";
 import RoomPhotosPanel from "../components/RoomDetail/RoomPhotosPanel";
 import RoomVRTourPanel from "../components/RoomDetail/RoomVRTourPanel";
 import RoomVirtualStagingPanel from "../components/RoomDetail/RoomVirtualStagingPanel";
@@ -391,14 +392,32 @@ export default function RoomDetail() {
 
             {/* 写真タブ */}
             <Box sx={{ display: mobileActiveTab === 1 ? 'flex' : 'none', flex: 1, overflow: 'hidden', flexDirection: 'column' }}>
-              <RoomPhotosPanel
-                roomId={room.id}
-                buildingId={room.building?.id}
-                buildingName={room.building?.name}
-                roomNumber={room.room_number}
-                onPhotosUpdate={handlePhotosUpdate}
-                isMobile={true}
-              />
+              <Box sx={{ overflow: 'auto', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                {/* 募集図面セクション */}
+                <RoomFloorplanPanel
+                  roomId={room.id}
+                  floorplanPdfUrl={room.floorplan_pdf_url}
+                  floorplanPdfFilename={room.floorplan_pdf_filename}
+                  onFloorplanUpdate={(url, filename) => {
+                    setRoom(prev => ({
+                      ...prev,
+                      floorplan_pdf_url: url,
+                      floorplan_pdf_filename: filename,
+                    }));
+                  }}
+                />
+                {/* 部屋写真 */}
+                <Box sx={{ flex: 1, minHeight: 400 }}>
+                  <RoomPhotosPanel
+                    roomId={room.id}
+                    buildingId={room.building?.id}
+                    buildingName={room.building?.name}
+                    roomNumber={room.room_number}
+                    onPhotosUpdate={handlePhotosUpdate}
+                    isMobile={true}
+                  />
+                </Box>
+              </Box>
             </Box>
 
             {/* バーチャルステージングタブ */}
@@ -495,24 +514,46 @@ export default function RoomDetail() {
               />
             )}
 
-            {/* 中央カラム: 部屋写真 */}
-            <Paper elevation={3} sx={{
+            {/* 中央カラム: 募集図面・部屋写真 */}
+            <Box sx={{
               flex: 1,
               minWidth: 0,
-              borderRadius: 2,
-              overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
-              minHeight: 800,
+              gap: 2,
             }}>
-              <RoomPhotosPanel
+              {/* 募集図面セクション */}
+              <RoomFloorplanPanel
                 roomId={room.id}
-                buildingId={room.building?.id}
-                buildingName={room.building?.name}
-                roomNumber={room.room_number}
-                onPhotosUpdate={handlePhotosUpdate}
+                floorplanPdfUrl={room.floorplan_pdf_url}
+                floorplanPdfFilename={room.floorplan_pdf_filename}
+                onFloorplanUpdate={(url, filename) => {
+                  setRoom(prev => ({
+                    ...prev,
+                    floorplan_pdf_url: url,
+                    floorplan_pdf_filename: filename,
+                  }));
+                }}
               />
-            </Paper>
+
+              {/* 部屋写真セクション */}
+              <Paper elevation={3} sx={{
+                flex: 1,
+                borderRadius: 2,
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 600,
+              }}>
+                <RoomPhotosPanel
+                  roomId={room.id}
+                  buildingId={room.building?.id}
+                  buildingName={room.building?.name}
+                  roomNumber={room.room_number}
+                  onPhotosUpdate={handlePhotosUpdate}
+                />
+              </Paper>
+            </Box>
 
             {/* 右スプリッタ */}
             {isLgUp && (

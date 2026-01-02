@@ -1,7 +1,7 @@
 class Api::V1::RoomsController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
-  before_action :set_room, only: [:show, :update, :destroy]
+  before_action :set_room, only: [:show, :update, :destroy, :upload_floorplan, :delete_floorplan]
 
   # GET /api/v1/rooms
   def index
@@ -17,7 +17,7 @@ class Api::V1::RoomsController < ApplicationController
 
   # GET /api/v1/rooms/:id
   def show
-    render json: @room.as_json(
+    room_json = @room.as_json(
       include: {
         building: {},
         room_photos: {},
@@ -25,6 +25,18 @@ class Api::V1::RoomsController < ApplicationController
       },
       methods: [:status_label, :room_type_label]
     )
+
+    # 募集図面PDFのURLを追加
+    if @room.floorplan_pdf.attached?
+      room_json['floorplan_pdf_url'] = if Rails.env.production?
+        @room.floorplan_pdf.url
+      else
+        Rails.application.routes.url_helpers.rails_blob_path(@room.floorplan_pdf, only_path: true)
+      end
+      room_json['floorplan_pdf_filename'] = @room.floorplan_pdf.filename.to_s
+    end
+
+    render json: room_json
   end
 
   # POST /api/v1/buildings/:building_id/rooms
@@ -54,6 +66,47 @@ class Api::V1::RoomsController < ApplicationController
   def destroy
     @room.destroy
     head :no_content
+  end
+
+  # POST /api/v1/rooms/:id/upload_floorplan
+  def upload_floorplan
+    unless params[:file].present?
+      return render json: { error: 'ファイルが指定されていません' }, status: :bad_request
+    end
+
+    # PDFファイルのみ許可
+    unless params[:file].content_type == 'application/pdf'
+      return render json: { error: 'PDFファイルのみアップロード可能です' }, status: :unprocessable_entity
+    end
+
+    @room.floorplan_pdf.attach(params[:file])
+
+    if @room.floorplan_pdf.attached?
+      floorplan_url = if Rails.env.production?
+        @room.floorplan_pdf.url
+      else
+        Rails.application.routes.url_helpers.rails_blob_path(@room.floorplan_pdf, only_path: true)
+      end
+
+      render json: {
+        success: true,
+        message: '募集図面をアップロードしました',
+        floorplan_pdf_url: floorplan_url,
+        floorplan_pdf_filename: @room.floorplan_pdf.filename.to_s
+      }
+    else
+      render json: { error: 'アップロードに失敗しました' }, status: :unprocessable_entity
+    end
+  end
+
+  # DELETE /api/v1/rooms/:id/delete_floorplan
+  def delete_floorplan
+    if @room.floorplan_pdf.attached?
+      @room.floorplan_pdf.purge
+      render json: { success: true, message: '募集図面を削除しました' }
+    else
+      render json: { error: '募集図面が存在しません' }, status: :not_found
+    end
   end
 
   private

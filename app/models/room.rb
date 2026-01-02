@@ -7,6 +7,9 @@ class Room < ApplicationRecord
   has_many :virtual_stagings, dependent: :destroy
   has_many :property_publications, dependent: :destroy
 
+  # Active Storage
+  has_one_attached :floorplan_pdf
+
   # Validations
   validates :room_number, presence: true
   validates :floor, presence: true, numericality: { only_integer: true }
