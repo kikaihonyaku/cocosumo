@@ -573,8 +573,10 @@ function PropertyPublicationEditor() {
         {/* Tab 0: Basic Info */}
         {activeTab === 0 && (
           <Box sx={{ display: 'flex', gap: 3, maxWidth: 1400 }}>
+            {/* 左ペイン */}
+            <Box sx={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
             {/* 基本情報カード */}
-            <Paper sx={{ p: 3, flex: 1 }}>
+            <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
                 基本情報
               </Typography>
@@ -611,7 +613,7 @@ function PropertyPublicationEditor() {
             </Paper>
 
             {/* テンプレート選択カード */}
-            <Paper sx={{ p: 3, flex: 1 }}>
+            <Paper sx={{ p: 3 }}>
               <FormControl component="fieldset" sx={{ width: '100%' }}>
               <FormLabel component="legend" sx={{ mb: 2, fontWeight: 'bold' }}>
                 テンプレート選択
@@ -740,9 +742,12 @@ function PropertyPublicationEditor() {
               </RadioGroup>
             </FormControl>
             </Paper>
+            </Box>
 
+            {/* 右ペイン */}
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
             {/* カラーカスタマイズ */}
-            <Paper sx={{ p: 3, flex: 1 }}>
+            <Paper sx={{ p: 3 }}>
               <FormLabel component="legend" sx={{ mb: 2, fontWeight: 'bold' }}>
                 カラーカスタマイズ（オプション）
               </FormLabel>
@@ -844,6 +849,7 @@ function PropertyPublicationEditor() {
                 </Box>
               </Box>
             </Paper>
+            </Box>
           </Box>
         )}
 
