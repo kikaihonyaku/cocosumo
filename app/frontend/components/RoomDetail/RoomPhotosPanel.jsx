@@ -35,6 +35,8 @@ import {
   ArrowForwardIos as ArrowForwardIosIcon,
   Apartment as ApartmentIcon,
   Warning as WarningIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -69,8 +71,24 @@ export default function RoomPhotosPanel({
   isMaximized,
   onToggleMaximize,
   isMobile = false,
+  expanded: controlledExpanded,
+  onExpandedChange,
 }) {
   const [photos, setPhotos] = useState([]);
+
+  // 親から制御される場合はcontrolledExpanded、そうでなければローカルステート
+  const [localExpanded, setLocalExpanded] = useState(true);
+  const isControlled = controlledExpanded !== undefined;
+  const expanded = isControlled ? controlledExpanded : localExpanded;
+
+  const handleExpandToggle = () => {
+    const newExpanded = !expanded;
+    if (isControlled) {
+      onExpandedChange?.(newExpanded);
+    } else {
+      setLocalExpanded(newExpanded);
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [bulkUploadDialogOpen, setBulkUploadDialogOpen] = useState(false);
@@ -415,9 +433,12 @@ export default function RoomPhotosPanel({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: '1px solid #e0e0e0',
+          cursor: 'pointer',
+          borderBottom: expanded ? '1px solid #e0e0e0' : 'none',
+          '&:hover': { bgcolor: 'action.hover' },
           flexShrink: 0,
         }}
+        onClick={handleExpandToggle}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <PhotoLibraryIcon color="action" />
@@ -430,7 +451,8 @@ export default function RoomPhotosPanel({
           <Tooltip title="写真を追加">
             <IconButton
               size="small"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 setBulkUploadCategory(selectedCategory !== 'all' ? selectedCategory : 'interior');
                 setBulkUploadDialogOpen(true);
               }}
@@ -438,10 +460,12 @@ export default function RoomPhotosPanel({
               <AddIcon fontSize="small" />
             </IconButton>
           </Tooltip>
+          {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
         </Box>
       </Box>
 
       {/* コンテンツ */}
+      {expanded && (
         <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {/* カテゴリタブ */}
         <Box sx={{ px: 2, py: 1, borderBottom: '1px solid #e0e0e0', flexShrink: 0 }}>
@@ -636,6 +660,7 @@ export default function RoomPhotosPanel({
         )}
       </Box>
       </Box>
+      )}
 
       {/* 写真アップロードダイアログ */}
       <Dialog
