@@ -38,6 +38,7 @@ import CustomerPropertyView from "./pages/CustomerPropertyView";
 import CustomerAccessManager from "./pages/admin/CustomerAccessManager";
 import InquiryManager from "./pages/admin/InquiryManager";
 import CustomerAccessAnalytics from "./pages/CustomerAccessAnalytics";
+import SalesPresentation from "./pages/SalesPresentation";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -125,6 +126,8 @@ export default function App() {
           <Route path="/property/:publicationId" element={<PublicPropertyDetail />} />
           {/* 顧客向け限定公開ページ */}
           <Route path="/customer/:accessToken" element={<CustomerPropertyView />} />
+          {/* 営業プレゼンページ */}
+          <Route path="/present/:accessToken" element={<SalesPresentation />} />
           {/* ブログページ */}
           <Route path="/blog" element={<BlogList />} />
           <Route path="/blog/:publicId" element={<BlogDetail />} />

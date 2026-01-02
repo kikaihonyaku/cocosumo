@@ -55,6 +55,7 @@ import RichTextEditor from '../components/shared/RichTextEditor';
 import InquiryList from '../components/PropertyPublication/InquiryList';
 import ViewAnalyticsDashboard from '../components/PropertyPublication/ViewAnalyticsDashboard';
 import CustomerAccessPanel from '../components/CustomerAccess/CustomerAccessPanel';
+import PresentationAccessPanel from '../components/SalesPresentation/PresentationAccessPanel';
 import { getRoomTypeLabel } from '../utils/formatters';
 
 function PropertyPublicationEditor() {
@@ -1164,11 +1165,16 @@ function PropertyPublicationEditor() {
           </Box>
         )}
 
-        {/* Tab 5: Customer Access (Edit mode only) */}
+        {/* Tab 5: Customer Access & Presentation (Edit mode only) */}
         {activeTab === 5 && isEditMode && (
-          <Paper sx={{ p: 3, maxWidth: 600 }}>
-            <CustomerAccessPanel publicationId={id} />
-          </Paper>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, maxWidth: 800 }}>
+            <Paper sx={{ p: 3 }}>
+              <CustomerAccessPanel publicationId={id} />
+            </Paper>
+            <Paper sx={{ p: 3 }}>
+              <PresentationAccessPanel publicationId={id} />
+            </Paper>
+          </Box>
         )}
 
         {/* Tab 6: Inquiries (Edit mode only) */}

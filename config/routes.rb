@@ -259,6 +259,26 @@ Rails.application.routes.draw do
       post 'customer/:access_token/routes/:route_id/recalculate', to: 'customer_accesses#recalculate_customer_route'
       get 'customer/:access_token/routes/:route_id/streetview_points', to: 'customer_accesses#customer_route_streetview_points'
 
+      # プレゼンアクセス管理（物件公開ページ単位）
+      resources :property_publications, only: [] do
+        resources :presentation_accesses, only: [:index, :create]
+      end
+
+      # プレゼンアクセス詳細操作
+      resources :presentation_accesses, only: [:show, :update, :destroy] do
+        member do
+          post :revoke
+          post :set_password
+          post :remove_password
+        end
+      end
+
+      # プレゼン公開API（認証不要）
+      get 'present/:access_token', to: 'presentation_accesses#show_public'
+      post 'present/:access_token/verify_access', to: 'presentation_accesses#verify_access'
+      post 'present/:access_token/track_view', to: 'presentation_accesses#track_view'
+      post 'present/:access_token/track_step', to: 'presentation_accesses#track_step'
+
       # ブログ記事API（認証不要）
       resources :blog_posts, only: [:index] do
         collection do

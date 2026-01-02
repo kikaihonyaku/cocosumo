@@ -11,6 +11,7 @@ class PropertyPublication < ApplicationRecord
   has_many :virtual_stagings, through: :property_publication_virtual_stagings
   has_many :property_inquiries, dependent: :destroy
   has_many :customer_accesses, dependent: :destroy
+  has_many :presentation_accesses, dependent: :destroy
 
   # Delegations for easier access
   delegate :building, to: :room

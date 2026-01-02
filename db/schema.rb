@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_31_055451) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_02_080127) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -241,6 +241,26 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_31_055451) do
     t.datetime "updated_at", null: false
     t.index ["building_id"], name: "index_owners_on_building_id"
     t.index ["tenant_id"], name: "index_owners_on_tenant_id"
+  end
+
+  create_table "presentation_accesses", force: :cascade do |t|
+    t.bigint "property_publication_id", null: false
+    t.string "access_token", null: false
+    t.string "title"
+    t.string "password_digest"
+    t.datetime "expires_at"
+    t.integer "status", default: 0, null: false
+    t.text "notes"
+    t.jsonb "step_config", default: {}
+    t.integer "view_count", default: 0, null: false
+    t.datetime "last_accessed_at"
+    t.datetime "first_accessed_at"
+    t.jsonb "access_history", default: []
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["access_token"], name: "index_presentation_accesses_on_access_token", unique: true
+    t.index ["property_publication_id", "status"], name: "idx_on_property_publication_id_status_d30092d266"
+    t.index ["property_publication_id"], name: "index_presentation_accesses_on_property_publication_id"
   end
 
   create_table "property_inquiries", force: :cascade do |t|
@@ -554,6 +574,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_31_055451) do
   add_foreign_key "map_layers", "tenants"
   add_foreign_key "owners", "buildings"
   add_foreign_key "owners", "tenants"
+  add_foreign_key "presentation_accesses", "property_publications"
   add_foreign_key "property_inquiries", "property_publications"
   add_foreign_key "property_publication_photos", "property_publications"
   add_foreign_key "property_publication_photos", "room_photos"
