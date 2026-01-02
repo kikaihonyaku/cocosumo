@@ -139,6 +139,7 @@ export default function RoomFloorplanPanel({
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
+        flexShrink: 0,
       }}
     >
       {/* ヘッダー */}
