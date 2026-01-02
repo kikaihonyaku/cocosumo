@@ -220,7 +220,7 @@ export default function RoomFloorplanPanel({
             <Box
               sx={{
                 width: '100%',
-                height: 1000,
+                height: 400,
                 bgcolor: '#f5f5f5',
                 borderRadius: 1,
                 overflow: 'hidden',
