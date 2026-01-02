@@ -127,6 +127,54 @@ export default function RoomDetail() {
     setHasUnsavedChanges(hasChanges);
   };
 
+  // AI解析で抽出されたデータを部屋情報に適用
+  const handleRoomDataExtracted = async (extractedData) => {
+    setSaving(true);
+    try {
+      // room_typeの変換（フロントエンドのenum値に変換）
+      const roomTypeMapping = {
+        'studio': 'studio',
+        '1K': 'one_bedroom',
+        '1DK': 'one_dk',
+        '1LDK': 'one_ldk',
+        '2K': 'two_bedroom',
+        '2DK': 'two_dk',
+        '2LDK': 'two_ldk',
+        '3K': 'three_bedroom',
+        '3DK': 'three_dk',
+        '3LDK': 'three_ldk',
+        'other': 'other',
+      };
+
+      const dataToSave = { ...extractedData };
+      if (dataToSave.room_type && roomTypeMapping[dataToSave.room_type]) {
+        dataToSave.room_type = roomTypeMapping[dataToSave.room_type];
+      }
+
+      const response = await fetch(`/api/v1/rooms/${id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ room: dataToSave }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRoom(prev => ({ ...prev, ...data }));
+        showSnackbar(`${Object.keys(extractedData).length}項目の部屋情報を更新しました`, 'success');
+      } else {
+        showSnackbar('部屋情報の更新に失敗しました', 'error');
+      }
+    } catch (err) {
+      console.error('更新エラー:', err);
+      showSnackbar('ネットワークエラーが発生しました', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
@@ -405,6 +453,7 @@ export default function RoomDetail() {
                       floorplan_pdf_filename: filename,
                     }));
                   }}
+                  onRoomDataExtracted={handleRoomDataExtracted}
                 />
                 {/* 部屋写真 */}
                 <RoomPhotosPanel
@@ -532,6 +581,7 @@ export default function RoomDetail() {
                     floorplan_pdf_filename: filename,
                   }));
                 }}
+                onRoomDataExtracted={handleRoomDataExtracted}
               />
 
               {/* 部屋写真セクション */}

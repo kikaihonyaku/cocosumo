@@ -7,6 +7,18 @@ import {
   CircularProgress,
   Tooltip,
   Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableBody,
+  TableRow,
+  TableCell,
+  Chip,
+  Alert,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import {
   Description as DescriptionIcon,
@@ -16,13 +28,50 @@ import {
   Download as DownloadIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  AutoAwesome as AutoAwesomeIcon,
+  Check as CheckIcon,
 } from '@mui/icons-material';
+
+// 間取りタイプのラベル
+const ROOM_TYPE_LABELS = {
+  'studio': 'ワンルーム',
+  '1K': '1K',
+  '1DK': '1DK',
+  '1LDK': '1LDK',
+  '2K': '2K',
+  '2DK': '2DK',
+  '2LDK': '2LDK',
+  '3K': '3K',
+  '3DK': '3DK',
+  '3LDK': '3LDK',
+  'other': 'その他',
+};
+
+// フィールドラベル
+const FIELD_LABELS = {
+  room_type: '間取り',
+  area: '専有面積',
+  rent: '賃料',
+  management_fee: '管理費・共益費',
+  deposit: '敷金',
+  key_money: '礼金',
+  direction: '向き',
+  floor: '階数',
+  facilities: '設備',
+  parking_fee: '駐車場料金',
+  available_date: '入居可能日',
+  pets_allowed: 'ペット可',
+  guarantor_required: '保証人',
+  two_person_allowed: '二人入居可',
+  description: '物件説明',
+};
 
 export default function RoomFloorplanPanel({
   roomId,
   floorplanPdfUrl,
   floorplanPdfFilename,
   onFloorplanUpdate,
+  onRoomDataExtracted,
   expanded: controlledExpanded,
   onExpandedChange,
 }) {
@@ -30,6 +79,13 @@ export default function RoomFloorplanPanel({
   const [deleting, setDeleting] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
+
+  // AI解析関連
+  const [analyzing, setAnalyzing] = useState(false);
+  const [extractedData, setExtractedData] = useState(null);
+  const [analysisDialogOpen, setAnalysisDialogOpen] = useState(false);
+  const [analysisError, setAnalysisError] = useState(null);
+  const [selectedFields, setSelectedFields] = useState({});
 
   // 親から制御される場合はcontrolledExpanded、そうでなければローカルステート
   const [localExpanded, setLocalExpanded] = useState(true);
@@ -130,6 +186,113 @@ export default function RoomFloorplanPanel({
     e.preventDefault();
     setDragActive(false);
   };
+
+  // AI解析を実行
+  const handleAnalyze = async () => {
+    setAnalyzing(true);
+    setAnalysisError(null);
+
+    try {
+      const response = await fetch(`/api/v1/rooms/${roomId}/analyze_floorplan`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setExtractedData(data.extracted_data);
+        // 初期状態で全フィールドを選択
+        const initialSelected = {};
+        Object.keys(data.extracted_data).forEach(key => {
+          if (data.extracted_data[key] !== null && FIELD_LABELS[key]) {
+            initialSelected[key] = true;
+          }
+        });
+        setSelectedFields(initialSelected);
+        setAnalysisDialogOpen(true);
+      } else {
+        setAnalysisError(data.error || '解析に失敗しました');
+        setAnalysisDialogOpen(true);
+      }
+    } catch (err) {
+      console.error('Analysis error:', err);
+      setAnalysisError('ネットワークエラーが発生しました');
+      setAnalysisDialogOpen(true);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  // フィールド選択の切り替え
+  const handleFieldToggle = (field) => {
+    setSelectedFields(prev => ({
+      ...prev,
+      [field]: !prev[field],
+    }));
+  };
+
+  // 全選択/全解除
+  const handleSelectAll = (selectAll) => {
+    const newSelected = {};
+    Object.keys(extractedData || {}).forEach(key => {
+      if (extractedData[key] !== null && FIELD_LABELS[key]) {
+        newSelected[key] = selectAll;
+      }
+    });
+    setSelectedFields(newSelected);
+  };
+
+  // 選択したデータを適用
+  const handleApplyData = () => {
+    if (!extractedData || !onRoomDataExtracted) return;
+
+    const dataToApply = {};
+    Object.keys(selectedFields).forEach(key => {
+      if (selectedFields[key] && extractedData[key] !== null) {
+        dataToApply[key] = extractedData[key];
+      }
+    });
+
+    onRoomDataExtracted(dataToApply);
+    setAnalysisDialogOpen(false);
+  };
+
+  // 値を表示用にフォーマット
+  const formatValue = (key, value) => {
+    if (value === null || value === undefined) return '-';
+
+    switch (key) {
+      case 'room_type':
+        return ROOM_TYPE_LABELS[value] || value;
+      case 'area':
+        return `${value} ㎡`;
+      case 'rent':
+      case 'management_fee':
+      case 'deposit':
+      case 'key_money':
+      case 'parking_fee':
+        return value === 0 ? 'なし' : `${value.toLocaleString()} 円`;
+      case 'floor':
+        return `${value} 階`;
+      case 'pets_allowed':
+      case 'two_person_allowed':
+        return value ? '可' : '不可';
+      case 'guarantor_required':
+        return value ? '必要' : '不要';
+      default:
+        return String(value);
+    }
+  };
+
+  // 選択されているフィールド数を取得
+  const selectedCount = Object.values(selectedFields).filter(Boolean).length;
+  const totalFields = Object.keys(extractedData || {}).filter(
+    key => extractedData[key] !== null && FIELD_LABELS[key]
+  ).length;
 
   return (
     <Paper
@@ -283,25 +446,120 @@ export default function RoomFloorplanPanel({
             onChange={handleFileInputChange}
           />
 
-          {/* ファイル名表示と差し替えボタン */}
+          {/* ファイル名表示とアクションボタン */}
           {floorplanPdfUrl && (
-            <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
               <Typography variant="caption" color="text.secondary">
                 ファイル名: {floorplanPdfFilename}
               </Typography>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={uploading ? <CircularProgress size={16} /> : <CloudUploadIcon />}
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-              >
-                {uploading ? 'アップロード中...' : '差し替え'}
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="contained"
+                  size="small"
+                  color="secondary"
+                  startIcon={analyzing ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+                  onClick={handleAnalyze}
+                  disabled={analyzing}
+                >
+                  {analyzing ? '解析中...' : 'AI解析'}
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={uploading ? <CircularProgress size={16} /> : <CloudUploadIcon />}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? 'アップロード中...' : '差し替え'}
+                </Button>
+              </Box>
             </Box>
           )}
         </Box>
       )}
+
+      {/* AI解析結果ダイアログ */}
+      <Dialog
+        open={analysisDialogOpen}
+        onClose={() => setAnalysisDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AutoAwesomeIcon color="secondary" />
+          募集図面 AI解析結果
+        </DialogTitle>
+        <DialogContent>
+          {analysisError ? (
+            <Alert severity="error" sx={{ mt: 1 }}>
+              {analysisError}
+            </Alert>
+          ) : extractedData ? (
+            <>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                適用したい項目にチェックを入れて「適用」ボタンを押してください。
+              </Alert>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  {selectedCount} / {totalFields} 項目選択中
+                </Typography>
+                <Box>
+                  <Button size="small" onClick={() => handleSelectAll(true)}>全選択</Button>
+                  <Button size="small" onClick={() => handleSelectAll(false)}>全解除</Button>
+                </Box>
+              </Box>
+              <Table size="small">
+                <TableBody>
+                  {Object.entries(FIELD_LABELS).map(([key, label]) => {
+                    const value = extractedData[key];
+                    if (value === null || value === undefined) return null;
+                    return (
+                      <TableRow key={key} hover>
+                        <TableCell padding="checkbox" sx={{ width: 40 }}>
+                          <Checkbox
+                            checked={!!selectedFields[key]}
+                            onChange={() => handleFieldToggle(key)}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 500, width: 120 }}>
+                          {label}
+                        </TableCell>
+                        <TableCell>
+                          {key === 'facilities' ? (
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                              {String(value).split(',').map((item, i) => (
+                                <Chip key={i} label={item.trim()} size="small" variant="outlined" />
+                              ))}
+                            </Box>
+                          ) : (
+                            formatValue(key, value)
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </>
+          ) : null}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAnalysisDialogOpen(false)}>
+            キャンセル
+          </Button>
+          {extractedData && !analysisError && (
+            <Button
+              variant="contained"
+              onClick={handleApplyData}
+              disabled={selectedCount === 0}
+              startIcon={<CheckIcon />}
+            >
+              選択した項目を適用
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 }
