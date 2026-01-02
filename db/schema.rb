@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_02_080127) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_02_094032) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -349,10 +349,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_02_080127) do
     t.jsonb "device_stats", default: {}
     t.jsonb "referrer_stats", default: {}
     t.jsonb "hourly_stats", default: {}
+    t.bigint "created_by_id"
+    t.bigint "updated_by_id"
+    t.index ["created_by_id"], name: "index_property_publications_on_created_by_id"
     t.index ["discarded_at"], name: "index_property_publications_on_discarded_at"
     t.index ["publication_id"], name: "index_property_publications_on_publication_id", unique: true
     t.index ["room_id"], name: "index_property_publications_on_room_id"
     t.index ["status"], name: "index_property_publications_on_status"
+    t.index ["updated_by_id"], name: "index_property_publications_on_updated_by_id"
   end
 
   create_table "room_photos", force: :cascade do |t|
@@ -519,11 +523,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_02_080127) do
     t.datetime "updated_at", null: false
     t.string "public_id"
     t.json "annotations", default: []
+    t.bigint "created_by_id"
+    t.bigint "updated_by_id"
     t.index ["after_photo_id"], name: "index_virtual_stagings_on_after_photo_id"
     t.index ["before_photo_id"], name: "index_virtual_stagings_on_before_photo_id"
+    t.index ["created_by_id"], name: "index_virtual_stagings_on_created_by_id"
     t.index ["public_id"], name: "index_virtual_stagings_on_public_id", unique: true
     t.index ["room_id"], name: "index_virtual_stagings_on_room_id"
     t.index ["status"], name: "index_virtual_stagings_on_status"
+    t.index ["updated_by_id"], name: "index_virtual_stagings_on_updated_by_id"
   end
 
   create_table "vr_scenes", force: :cascade do |t|
@@ -554,9 +562,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_02_080127) do
     t.datetime "updated_at", null: false
     t.integer "minimap_room_photo_id"
     t.string "public_id"
+    t.bigint "created_by_id"
+    t.bigint "updated_by_id"
+    t.index ["created_by_id"], name: "index_vr_tours_on_created_by_id"
     t.index ["minimap_room_photo_id"], name: "index_vr_tours_on_minimap_room_photo_id"
     t.index ["public_id"], name: "index_vr_tours_on_public_id", unique: true
     t.index ["room_id"], name: "index_vr_tours_on_room_id"
+    t.index ["updated_by_id"], name: "index_vr_tours_on_updated_by_id"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -583,6 +595,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_02_080127) do
   add_foreign_key "property_publication_vr_tours", "property_publications"
   add_foreign_key "property_publication_vr_tours", "vr_tours"
   add_foreign_key "property_publications", "rooms"
+  add_foreign_key "property_publications", "users", column: "created_by_id"
+  add_foreign_key "property_publications", "users", column: "updated_by_id"
   add_foreign_key "room_photos", "rooms"
   add_foreign_key "rooms", "buildings"
   add_foreign_key "school_districts", "map_layers"
@@ -594,9 +608,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_02_080127) do
   add_foreign_key "virtual_stagings", "room_photos", column: "after_photo_id"
   add_foreign_key "virtual_stagings", "room_photos", column: "before_photo_id"
   add_foreign_key "virtual_stagings", "rooms"
+  add_foreign_key "virtual_stagings", "users", column: "created_by_id"
+  add_foreign_key "virtual_stagings", "users", column: "updated_by_id"
   add_foreign_key "vr_scenes", "room_photos"
   add_foreign_key "vr_scenes", "virtual_stagings"
   add_foreign_key "vr_scenes", "vr_tours"
   add_foreign_key "vr_tours", "room_photos", column: "minimap_room_photo_id"
   add_foreign_key "vr_tours", "rooms"
+  add_foreign_key "vr_tours", "users", column: "created_by_id"
+  add_foreign_key "vr_tours", "users", column: "updated_by_id"
 end

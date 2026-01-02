@@ -19,7 +19,6 @@ import {
 import {
   MoreVert as MoreVertIcon,
   Public as PublicIcon,
-  PublicOff as PublicOffIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as VisibilityIcon,
@@ -28,6 +27,26 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  const yy = String(date.getFullYear()).slice(-2);
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  return `${yy}/${mm}`;
+};
+
+const formatDateFull = (dateStr, userName) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  const userPart = userName ? `（${userName}）` : '';
+  return `${yyyy}/${mm}/${dd} ${hh}:${min}${userPart}`;
+};
 
 export default function PropertyPublicationList({ roomId }) {
   const navigate = useNavigate();
@@ -170,10 +189,11 @@ export default function PropertyPublicationList({ roomId }) {
         >
           <TableHead>
             <TableRow>
-              <TableCell sx={{ width: '45%' }}>タイトル</TableCell>
-              <TableCell sx={{ width: '25%' }}>状態</TableCell>
-              <TableCell sx={{ width: '20%' }}>公開操作</TableCell>
-              <TableCell sx={{ width: '10%' }} align="center">操作</TableCell>
+              <TableCell sx={{ width: '35%' }}>タイトル</TableCell>
+              <TableCell sx={{ width: '20%' }}>状態</TableCell>
+              <TableCell sx={{ width: '15%' }}>作成日</TableCell>
+              <TableCell sx={{ width: '15%' }}>更新日</TableCell>
+              <TableCell sx={{ width: '15%' }} align="center">操作</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -210,25 +230,14 @@ export default function PropertyPublicationList({ roomId }) {
                   </Tooltip>
                 </TableCell>
                 <TableCell>
-                  {publication.status === 'published' ? (
-                    <Tooltip title="非公開にする">
-                      <IconButton
-                        size="small"
-                        onClick={(e) => handleTogglePublish(publication, e)}
-                      >
-                        <PublicOffIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  ) : (
-                    <Tooltip title="公開する">
-                      <IconButton
-                        size="small"
-                        onClick={(e) => handleTogglePublish(publication, e)}
-                      >
-                        <PublicIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  )}
+                  <Tooltip title={formatDateFull(publication.created_at, publication.created_by?.name)} placement="top">
+                    <Typography variant="body2">{formatDate(publication.created_at)}</Typography>
+                  </Tooltip>
+                </TableCell>
+                <TableCell>
+                  <Tooltip title={formatDateFull(publication.updated_at, publication.updated_by?.name)} placement="top">
+                    <Typography variant="body2">{formatDate(publication.updated_at)}</Typography>
+                  </Tooltip>
                 </TableCell>
                 <TableCell align="center">
                   <IconButton

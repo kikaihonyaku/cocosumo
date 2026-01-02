@@ -26,6 +26,26 @@ import {
   Description as DraftIcon
 } from "@mui/icons-material";
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  const yy = String(date.getFullYear()).slice(-2);
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  return `${yy}/${mm}`;
+};
+
+const formatDateFull = (dateStr, userName) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  const userPart = userName ? `（${userName}）` : '';
+  return `${yyyy}/${mm}/${dd} ${hh}:${min}${userPart}`;
+};
+
 export default function VirtualStagingList({ roomId }) {
   const navigate = useNavigate();
   const [virtualStagings, setVirtualStagings] = useState([]);
@@ -160,8 +180,10 @@ export default function VirtualStagingList({ roomId }) {
         >
           <TableHead>
             <TableRow>
-              <TableCell sx={{ width: '50%' }}>タイトル</TableCell>
-              <TableCell sx={{ width: '35%' }}>状態</TableCell>
+              <TableCell sx={{ width: '35%' }}>タイトル</TableCell>
+              <TableCell sx={{ width: '20%' }}>状態</TableCell>
+              <TableCell sx={{ width: '15%' }}>作成日</TableCell>
+              <TableCell sx={{ width: '15%' }}>更新日</TableCell>
               <TableCell sx={{ width: '15%' }} align="center">操作</TableCell>
             </TableRow>
           </TableHead>
@@ -196,6 +218,16 @@ export default function VirtualStagingList({ roomId }) {
                       icon={staging.status === 'published' ? <PublicIcon /> : <DraftIcon />}
                       sx={{ maxWidth: '100%' }}
                     />
+                  </Tooltip>
+                </TableCell>
+                <TableCell>
+                  <Tooltip title={formatDateFull(staging.created_at, staging.created_by?.name)} placement="top">
+                    <Typography variant="body2">{formatDate(staging.created_at)}</Typography>
+                  </Tooltip>
+                </TableCell>
+                <TableCell>
+                  <Tooltip title={formatDateFull(staging.updated_at, staging.updated_by?.name)} placement="top">
+                    <Typography variant="body2">{formatDate(staging.updated_at)}</Typography>
                   </Tooltip>
                 </TableCell>
                 <TableCell align="center">

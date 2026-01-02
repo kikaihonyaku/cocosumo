@@ -4,6 +4,8 @@ class VrTour < ApplicationRecord
   has_many :vr_scenes, dependent: :destroy
   has_one_attached :minimap_image
   belongs_to :minimap_room_photo, class_name: 'RoomPhoto', optional: true
+  belongs_to :created_by, class_name: 'User', optional: true
+  belongs_to :updated_by, class_name: 'User', optional: true
 
   # Validations
   validates :title, presence: true

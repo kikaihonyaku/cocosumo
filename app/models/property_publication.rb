@@ -12,6 +12,8 @@ class PropertyPublication < ApplicationRecord
   has_many :property_inquiries, dependent: :destroy
   has_many :customer_accesses, dependent: :destroy
   has_many :presentation_accesses, dependent: :destroy
+  belongs_to :created_by, class_name: 'User', optional: true
+  belongs_to :updated_by, class_name: 'User', optional: true
 
   # Delegations for easier access
   delegate :building, to: :room

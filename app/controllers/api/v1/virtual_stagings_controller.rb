@@ -9,9 +9,13 @@ class Api::V1::VirtualStagingsController < ApplicationController
   def index
     if params[:room_id]
       # 部屋単位の一覧
-      @virtual_stagings = @room.virtual_stagings.includes(:before_photo, :after_photo)
+      @virtual_stagings = @room.virtual_stagings.includes(:before_photo, :after_photo, :created_by, :updated_by)
       render json: @virtual_stagings.as_json(
-        only: [:id, :title, :description, :status],
+        only: [:id, :title, :description, :status, :created_at, :updated_at],
+        include: {
+          created_by: { only: [:id, :name] },
+          updated_by: { only: [:id, :name] }
+        },
         methods: [:before_photo_url, :after_photo_url, :thumbnail_url]
       )
     else
@@ -90,6 +94,8 @@ class Api::V1::VirtualStagingsController < ApplicationController
   # POST /api/v1/rooms/:room_id/virtual_stagings
   def create
     @virtual_staging = @room.virtual_stagings.build(virtual_staging_params)
+    @virtual_staging.created_by = current_user
+    @virtual_staging.updated_by = current_user
 
     if @virtual_staging.save
       render json: @virtual_staging.as_json(methods: [:before_photo_url, :after_photo_url]), status: :created
@@ -100,7 +106,7 @@ class Api::V1::VirtualStagingsController < ApplicationController
 
   # PATCH/PUT /api/v1/rooms/:room_id/virtual_stagings/:id
   def update
-    if @virtual_staging.update(virtual_staging_params)
+    if @virtual_staging.update(virtual_staging_params.merge(updated_by: current_user))
       render json: @virtual_staging.as_json(
         include: {
           room: {

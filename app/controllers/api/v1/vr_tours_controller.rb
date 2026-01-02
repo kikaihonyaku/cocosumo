@@ -9,13 +9,15 @@ class Api::V1::VrToursController < ApplicationController
   def index
     if params[:room_id]
       # 部屋単位の一覧
-      @vr_tours = @room.vr_tours.includes(:vr_scenes)
+      @vr_tours = @room.vr_tours.includes(:vr_scenes, :created_by, :updated_by)
       render json: @vr_tours.as_json(
-        only: [:id, :title, :description, :status],
+        only: [:id, :title, :description, :status, :created_at, :updated_at],
         include: {
           vr_scenes: {
             methods: [:photo_url, :virtual_staging_scene?, :before_photo_url, :after_photo_url]
-          }
+          },
+          created_by: { only: [:id, :name] },
+          updated_by: { only: [:id, :name] }
         },
         methods: [:thumbnail_url, :scenes_count]
       )
@@ -86,6 +88,8 @@ class Api::V1::VrToursController < ApplicationController
   # POST /api/v1/rooms/:room_id/vr_tours
   def create
     @vr_tour = @room.vr_tours.build(vr_tour_params)
+    @vr_tour.created_by = current_user
+    @vr_tour.updated_by = current_user
 
     if @vr_tour.save
       render json: @vr_tour, status: :created
@@ -96,7 +100,7 @@ class Api::V1::VrToursController < ApplicationController
 
   # PATCH/PUT /api/v1/rooms/:room_id/vr_tours/:id
   def update
-    if @vr_tour.update(vr_tour_params)
+    if @vr_tour.update(vr_tour_params.merge(updated_by: current_user))
       render json: @vr_tour.as_json(
         include: {
           room: {

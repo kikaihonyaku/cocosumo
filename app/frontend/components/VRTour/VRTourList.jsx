@@ -26,6 +26,26 @@ import {
   Description as DraftIcon
 } from "@mui/icons-material";
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  const yy = String(date.getFullYear()).slice(-2);
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  return `${yy}/${mm}`;
+};
+
+const formatDateFull = (dateStr, userName) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  const userPart = userName ? `（${userName}）` : '';
+  return `${yyyy}/${mm}/${dd} ${hh}:${min}${userPart}`;
+};
+
 export default function VRTourList({ roomId }) {
   const navigate = useNavigate();
   const [vrTours, setVrTours] = useState([]);
@@ -160,10 +180,12 @@ export default function VRTourList({ roomId }) {
         >
           <TableHead>
             <TableRow>
-              <TableCell sx={{ width: '45%' }}>タイトル</TableCell>
-              <TableCell sx={{ width: '25%' }}>シーン数</TableCell>
-              <TableCell sx={{ width: '20%' }}>状態</TableCell>
-              <TableCell sx={{ width: '10%' }} align="center">操作</TableCell>
+              <TableCell sx={{ width: '25%' }}>タイトル</TableCell>
+              <TableCell sx={{ width: '15%' }}>シーン数</TableCell>
+              <TableCell sx={{ width: '15%' }}>状態</TableCell>
+              <TableCell sx={{ width: '15%' }}>作成日</TableCell>
+              <TableCell sx={{ width: '15%' }}>更新日</TableCell>
+              <TableCell sx={{ width: '15%' }} align="center">操作</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -202,6 +224,16 @@ export default function VRTourList({ roomId }) {
                       icon={tour.status === 'published' ? <PublicIcon /> : <DraftIcon />}
                       sx={{ maxWidth: '100%' }}
                     />
+                  </Tooltip>
+                </TableCell>
+                <TableCell>
+                  <Tooltip title={formatDateFull(tour.created_at, tour.created_by?.name)} placement="top">
+                    <Typography variant="body2">{formatDate(tour.created_at)}</Typography>
+                  </Tooltip>
+                </TableCell>
+                <TableCell>
+                  <Tooltip title={formatDateFull(tour.updated_at, tour.updated_by?.name)} placement="top">
+                    <Typography variant="body2">{formatDate(tour.updated_at)}</Typography>
                   </Tooltip>
                 </TableCell>
                 <TableCell align="center">

@@ -9,8 +9,12 @@ class Api::V1::PropertyPublicationsController < ApplicationController
   def index
     if params[:room_id]
       # 部屋単位の一覧
-      @property_publications = @room.property_publications.kept
+      @property_publications = @room.property_publications.kept.includes(:created_by, :updated_by)
       render json: @property_publications.as_json(
+        include: {
+          created_by: { only: [:id, :name] },
+          updated_by: { only: [:id, :name] }
+        },
         methods: [:thumbnail_url, :public_url]
       )
     else
@@ -205,6 +209,8 @@ class Api::V1::PropertyPublicationsController < ApplicationController
   # POST /api/v1/rooms/:room_id/property_publications
   def create
     @property_publication = @room.property_publications.build(property_publication_params)
+    @property_publication.created_by = current_user
+    @property_publication.updated_by = current_user
 
     ActiveRecord::Base.transaction do
       if @property_publication.save
@@ -259,7 +265,7 @@ class Api::V1::PropertyPublicationsController < ApplicationController
   # PATCH/PUT /api/v1/rooms/:room_id/property_publications/:id
   def update
     ActiveRecord::Base.transaction do
-      if @property_publication.update(property_publication_params)
+      if @property_publication.update(property_publication_params.merge(updated_by: current_user))
         # 写真の関連付けを更新（新形式）
         if params[:photos]
           @property_publication.property_publication_photos.destroy_all
