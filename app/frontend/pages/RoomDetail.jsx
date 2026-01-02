@@ -407,16 +407,14 @@ export default function RoomDetail() {
                   }}
                 />
                 {/* 部屋写真 */}
-                <Box sx={{ flex: 1, minHeight: 400 }}>
-                  <RoomPhotosPanel
-                    roomId={room.id}
-                    buildingId={room.building?.id}
-                    buildingName={room.building?.name}
-                    roomNumber={room.room_number}
-                    onPhotosUpdate={handlePhotosUpdate}
-                    isMobile={true}
-                  />
-                </Box>
+                <RoomPhotosPanel
+                  roomId={room.id}
+                  buildingId={room.building?.id}
+                  buildingName={room.building?.name}
+                  roomNumber={room.room_number}
+                  onPhotosUpdate={handlePhotosUpdate}
+                  isMobile={true}
+                />
               </Box>
             </Box>
 
@@ -537,22 +535,13 @@ export default function RoomDetail() {
               />
 
               {/* 部屋写真セクション */}
-              <Paper elevation={3} sx={{
-                flex: 1,
-                borderRadius: 2,
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                minHeight: 600,
-              }}>
-                <RoomPhotosPanel
-                  roomId={room.id}
-                  buildingId={room.building?.id}
-                  buildingName={room.building?.name}
-                  roomNumber={room.room_number}
-                  onPhotosUpdate={handlePhotosUpdate}
-                />
-              </Paper>
+              <RoomPhotosPanel
+                roomId={room.id}
+                buildingId={room.building?.id}
+                buildingName={room.building?.name}
+                roomNumber={room.room_number}
+                onPhotosUpdate={handlePhotosUpdate}
+              />
             </Box>
 
             {/* 右スプリッタ */}

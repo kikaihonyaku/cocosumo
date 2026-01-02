@@ -18,6 +18,7 @@ import {
   FormControl,
   InputLabel,
   Alert,
+  Paper,
 } from '@mui/material';
 import {
   PhotoLibrary as PhotoLibraryIcon,
@@ -424,7 +425,16 @@ export default function RoomPhotosPanel({
   }, [previewDialogOpen, selectedPhoto, photos, selectedCategory]);
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Paper
+      elevation={3}
+      sx={{
+        borderRadius: 2,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        ...(expanded ? { flex: 1, minHeight: 600 } : {}),
+      }}
+    >
       {/* ヘッダー */}
       <Box
         sx={{
@@ -1026,6 +1036,6 @@ export default function RoomPhotosPanel({
           )}
         </DialogActions>
       </Dialog>
-    </Box>
+    </Paper>
   );
 }
