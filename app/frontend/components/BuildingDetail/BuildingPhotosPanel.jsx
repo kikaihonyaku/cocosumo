@@ -503,7 +503,11 @@ export default function BuildingPhotosPanel({
         ) : (
           <Box sx={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+            gridTemplateColumns: isMobile
+              ? 'repeat(2, 1fr)'
+              : isMaximized
+                ? 'repeat(4, 1fr)'
+                : 'repeat(auto-fill, minmax(120px, 1fr))',
             gap: 1.5,
             overflow: 'auto',
             height: '100%',
@@ -784,15 +788,15 @@ export default function BuildingPhotosPanel({
                     transform: 'translateY(-50%)',
                     bgcolor: 'rgba(0,0,0,0.5)',
                     color: 'white',
-                    width: 48,
-                    height: 48,
+                    width: isMobile ? 56 : 48,
+                    height: isMobile ? 56 : 48,
                     '&:hover': {
                       bgcolor: 'rgba(0,0,0,0.7)',
                     },
                     zIndex: 1,
                   }}
                 >
-                  <ArrowBackIosIcon sx={{ ml: 0.5, fontSize: 24 }} />
+                  <ArrowBackIosIcon sx={{ ml: 0.5, fontSize: isMobile ? 28 : 24 }} />
                 </IconButton>
               )}
 
@@ -820,15 +824,15 @@ export default function BuildingPhotosPanel({
                     transform: 'translateY(-50%)',
                     bgcolor: 'rgba(0,0,0,0.5)',
                     color: 'white',
-                    width: 48,
-                    height: 48,
+                    width: isMobile ? 56 : 48,
+                    height: isMobile ? 56 : 48,
                     '&:hover': {
                       bgcolor: 'rgba(0,0,0,0.7)',
                     },
                     zIndex: 1,
                   }}
                 >
-                  <ArrowForwardIosIcon sx={{ fontSize: 24 }} />
+                  <ArrowForwardIosIcon sx={{ fontSize: isMobile ? 28 : 24 }} />
                 </IconButton>
               )}
             </>

@@ -92,6 +92,7 @@ export default function BuildingDetail() {
   const isMdUp = useMediaQuery(muiTheme.breakpoints.up('md'));
   const isLgUp = useMediaQuery(muiTheme.breakpoints.up('lg'));
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md')); // 960px未満（スマホ・小タブレット）
+  const isSmallMobile = useMediaQuery(muiTheme.breakpoints.down('sm')); // 600px未満
 
   // データ取得
   useEffect(() => {
@@ -551,38 +552,38 @@ export default function BuildingDetail() {
               >
                 <Tab
                   icon={<BusinessIcon />}
-                  label="建物"
+                  label={isSmallMobile ? undefined : "建物"}
                   id="mobile-tab-0"
                   aria-controls="mobile-tabpanel-0"
-                  sx={{ minHeight: 64 }}
+                  sx={{ minHeight: isSmallMobile ? 56 : 64, minWidth: isSmallMobile ? 56 : 80 }}
                 />
                 <Tab
                   icon={<PhotoLibraryIcon />}
-                  label="外観"
+                  label={isSmallMobile ? undefined : "外観"}
                   id="mobile-tab-1"
                   aria-controls="mobile-tabpanel-1"
-                  sx={{ minHeight: 64 }}
+                  sx={{ minHeight: isSmallMobile ? 56 : 64, minWidth: isSmallMobile ? 56 : 80 }}
                 />
                 <Tab
                   icon={<MapIcon />}
-                  label="地図"
+                  label={isSmallMobile ? undefined : "地図"}
                   id="mobile-tab-2"
                   aria-controls="mobile-tabpanel-2"
-                  sx={{ minHeight: 64 }}
+                  sx={{ minHeight: isSmallMobile ? 56 : 64, minWidth: isSmallMobile ? 56 : 80 }}
                 />
                 <Tab
                   icon={<RouteIcon />}
-                  label="経路"
+                  label={isSmallMobile ? undefined : "経路"}
                   id="mobile-tab-3"
                   aria-controls="mobile-tabpanel-3"
-                  sx={{ minHeight: 64 }}
+                  sx={{ minHeight: isSmallMobile ? 56 : 64, minWidth: isSmallMobile ? 56 : 80 }}
                 />
                 <Tab
                   icon={<HomeIcon />}
-                  label="部屋"
+                  label={isSmallMobile ? undefined : "部屋"}
                   id="mobile-tab-4"
                   aria-controls="mobile-tabpanel-4"
-                  sx={{ minHeight: 64 }}
+                  sx={{ minHeight: isSmallMobile ? 56 : 64, minWidth: isSmallMobile ? 56 : 80 }}
                 />
               </Tabs>
             </Paper>
@@ -704,6 +705,7 @@ export default function BuildingDetail() {
                   propertyId={id}
                   rooms={rooms}
                   onRoomsUpdate={handleRoomUpdate}
+                  isMobile={true}
                 />
               </Box>
             </Box>

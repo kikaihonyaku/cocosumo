@@ -32,6 +32,8 @@ import {
   FormControlLabel,
   Checkbox,
   InputAdornment,
+  Card,
+  CardContent,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -44,6 +46,7 @@ import {
   HourglassEmpty as HourglassEmptyIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  MeetingRoom as MeetingRoomIcon,
 } from '@mui/icons-material';
 import { getRoomTypeLabel } from '../../utils/formatters';
 
@@ -53,6 +56,7 @@ export default function RoomsPanel({
   onRoomsUpdate,
   expanded: controlledExpanded,
   onExpandedChange,
+  isMobile = false,
 }) {
   const navigate = useNavigate();
   const [roomDialogOpen, setRoomDialogOpen] = useState(false);
@@ -368,7 +372,59 @@ export default function RoomsPanel({
               最初の部屋を追加
             </Button>
           </Box>
+        ) : isMobile ? (
+          // モバイル用カード形式
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, p: 2 }}>
+            {rooms.map((room) => {
+              const statusInfo = getStatusInfo(room.status);
+              const roomNumber = room.room_number || '-';
+              const roomTypeLabel = getRoomTypeLabel(room.room_type);
+
+              return (
+                <Card
+                  key={room.id}
+                  variant="outlined"
+                  sx={{ cursor: 'pointer' }}
+                  onClick={() => handleRoomClick(room)}
+                >
+                  <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                          <MeetingRoomIcon fontSize="small" color="action" />
+                          <Typography variant="subtitle2" fontWeight={600} noWrap>
+                            {roomNumber}号室
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {roomTypeLabel}
+                          </Typography>
+                          <Chip
+                            label={statusInfo.name}
+                            size="small"
+                            color={statusInfo.color}
+                            sx={{ height: 20, fontSize: '0.7rem' }}
+                          />
+                        </Box>
+                      </Box>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMenuOpen(e, room);
+                        }}
+                      >
+                        <MoreVertIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </Box>
         ) : (
+          // デスクトップ用テーブル形式
           <TableContainer>
             <Table
               size="small"

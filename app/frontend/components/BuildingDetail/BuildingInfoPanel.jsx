@@ -278,7 +278,7 @@ export default function BuildingInfoPanel({
 
       {/* コンテンツ */}
       {expanded && (
-        <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 2 }}>
+        <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 2, pb: isMobile ? 10 : 2 }}>
         <Stack spacing={3}>
 
         {/* 基本情報 */}
@@ -416,7 +416,7 @@ export default function BuildingInfoPanel({
               InputLabelProps={{ shrink: true }}
             />
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2 }}>
               <TextField
                 label="構造"
                 value={formData.structure || ''}
