@@ -352,7 +352,7 @@ function PublicPropertyDetail() {
         }
 
         // 設備情報
-        if (room.facilities && room.facilities.length > 0) {
+        if (Array.isArray(room.facilities) && room.facilities.length > 0) {
           realEstateListing.amenityFeature = room.facilities.map(facility => ({
             '@type': 'LocationFeatureSpecification',
             'name': facility,

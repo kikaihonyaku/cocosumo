@@ -173,7 +173,7 @@ export function generatePropertySchema(property, options = {}) {
   }
 
   // Facilities/Amenities
-  if (room?.facilities?.length > 0) {
+  if (Array.isArray(room?.facilities) && room.facilities.length > 0) {
     schema.amenityFeature = room.facilities.map(facility => ({
       '@type': 'LocationFeatureSpecification',
       name: facility,
