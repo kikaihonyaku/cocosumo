@@ -19,6 +19,8 @@ import {
   Alert,
   Checkbox,
   FormControlLabel,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Description as DescriptionIcon,
@@ -77,6 +79,9 @@ export default function RoomFloorplanPanel({
   expanded: controlledExpanded,
   onExpandedChange,
 }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
@@ -575,6 +580,7 @@ export default function RoomFloorplanPanel({
         onClose={() => setAnalysisDialogOpen(false)}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <AutoAwesomeIcon color="secondary" />

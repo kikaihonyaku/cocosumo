@@ -80,7 +80,7 @@ export default function RoomVRTourPanel({
       {/* コンテンツ */}
       {expanded && (
         <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-          <VRTourList roomId={roomId} />
+          <VRTourList roomId={roomId} isMobile={isMobile} />
         </Box>
       )}
     </Box>

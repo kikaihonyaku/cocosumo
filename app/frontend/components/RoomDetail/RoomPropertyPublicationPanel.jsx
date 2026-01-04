@@ -80,7 +80,7 @@ export default function RoomPropertyPublicationPanel({
       {/* コンテンツ */}
       {expanded && (
         <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-          <PropertyPublicationList roomId={roomId} />
+          <PropertyPublicationList roomId={roomId} isMobile={isMobile} />
         </Box>
       )}
     </Box>

@@ -80,7 +80,7 @@ export default function RoomVirtualStagingPanel({
       {/* コンテンツ */}
       {expanded && (
         <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-          <VirtualStagingList roomId={roomId} />
+          <VirtualStagingList roomId={roomId} isMobile={isMobile} />
         </Box>
       )}
     </Box>

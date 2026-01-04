@@ -15,7 +15,9 @@ import {
   Alert,
   Tooltip,
   Menu,
-  MenuItem
+  MenuItem,
+  Card,
+  CardContent,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -23,7 +25,8 @@ import {
   Visibility as VisibilityIcon,
   MoreVert as MoreVertIcon,
   Public as PublicIcon,
-  Description as DraftIcon
+  Description as DraftIcon,
+  CompareArrows as CompareArrowsIcon,
 } from "@mui/icons-material";
 
 const formatDate = (dateStr) => {
@@ -46,7 +49,7 @@ const formatDateFull = (dateStr, userName) => {
   return `${yyyy}/${mm}/${dd} ${hh}:${min}${userPart}`;
 };
 
-export default function VirtualStagingList({ roomId }) {
+export default function VirtualStagingList({ roomId, isMobile = false }) {
   const navigate = useNavigate();
   const [virtualStagings, setVirtualStagings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -165,72 +168,37 @@ export default function VirtualStagingList({ roomId }) {
 
   return (
     <>
-      <TableContainer>
-        <Table
-          size="small"
-          stickyHeader
-          sx={{
-            tableLayout: 'fixed',
-            '& .MuiTableCell-root': {
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }
-          }}
-        >
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ width: '35%' }}>タイトル</TableCell>
-              <TableCell sx={{ width: '20%' }}>状態</TableCell>
-              <TableCell sx={{ width: '15%' }}>作成日</TableCell>
-              <TableCell sx={{ width: '15%' }}>更新日</TableCell>
-              <TableCell sx={{ width: '15%' }} align="center">操作</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {virtualStagings.map((staging) => (
-              <TableRow
-                key={staging.id}
-                hover
-                onClick={() => handleRowClick(staging)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <TableCell>
-                  <Tooltip title={staging.title || '-'} placement="top">
-                    <Typography variant="body2" fontWeight="500" noWrap>
-                      {staging.title || '-'}
-                    </Typography>
-                  </Tooltip>
-                  {staging.description && (
-                    <Tooltip title={staging.description} placement="top">
-                      <Typography variant="caption" color="text.secondary" noWrap>
-                        {staging.description}
+      {isMobile ? (
+        // モバイル用カード形式
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, p: 2 }}>
+          {virtualStagings.map((staging) => (
+            <Card
+              key={staging.id}
+              variant="outlined"
+              sx={{ cursor: 'pointer' }}
+              onClick={() => handleRowClick(staging)}
+            >
+              <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                      <CompareArrowsIcon fontSize="small" color="action" />
+                      <Typography variant="subtitle2" fontWeight={600} noWrap>
+                        {staging.title || '無題のステージング'}
                       </Typography>
-                    </Tooltip>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Tooltip title={staging.status === 'published' ? '公開' : '下書き'} placement="top">
-                    <Chip
-                      label={staging.status === 'published' ? '公開' : '下書き'}
-                      size="small"
-                      color={staging.status === 'published' ? 'success' : 'default'}
-                      icon={staging.status === 'published' ? <PublicIcon /> : <DraftIcon />}
-                      sx={{ maxWidth: '100%' }}
-                    />
-                  </Tooltip>
-                </TableCell>
-                <TableCell>
-                  <Tooltip title={formatDateFull(staging.created_at, staging.created_by?.name)} placement="top">
-                    <Typography variant="body2">{formatDate(staging.created_at)}</Typography>
-                  </Tooltip>
-                </TableCell>
-                <TableCell>
-                  <Tooltip title={formatDateFull(staging.updated_at, staging.updated_by?.name)} placement="top">
-                    <Typography variant="body2">{formatDate(staging.updated_at)}</Typography>
-                  </Tooltip>
-                </TableCell>
-                <TableCell align="center">
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                      <Chip
+                        label={staging.status === 'published' ? '公開' : '下書き'}
+                        size="small"
+                        color={staging.status === 'published' ? 'success' : 'default'}
+                        sx={{ height: 20, fontSize: '0.7rem' }}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        更新: {formatDate(staging.updated_at)}
+                      </Typography>
+                    </Box>
+                  </Box>
                   <IconButton
                     size="small"
                     onClick={(e) => {
@@ -238,14 +206,97 @@ export default function VirtualStagingList({ roomId }) {
                       handleMenuOpen(e, staging);
                     }}
                   >
-                    <MoreVertIcon />
+                    <MoreVertIcon fontSize="small" />
                   </IconButton>
-                </TableCell>
+                </Box>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
+      ) : (
+        // デスクトップ用テーブル形式
+        <TableContainer>
+          <Table
+            size="small"
+            stickyHeader
+            sx={{
+              tableLayout: 'fixed',
+              '& .MuiTableCell-root': {
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }
+            }}
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ width: '35%' }}>タイトル</TableCell>
+                <TableCell sx={{ width: '20%' }}>状態</TableCell>
+                <TableCell sx={{ width: '15%' }}>作成日</TableCell>
+                <TableCell sx={{ width: '15%' }}>更新日</TableCell>
+                <TableCell sx={{ width: '15%' }} align="center">操作</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {virtualStagings.map((staging) => (
+                <TableRow
+                  key={staging.id}
+                  hover
+                  onClick={() => handleRowClick(staging)}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  <TableCell>
+                    <Tooltip title={staging.title || '-'} placement="top">
+                      <Typography variant="body2" fontWeight="500" noWrap>
+                        {staging.title || '-'}
+                      </Typography>
+                    </Tooltip>
+                    {staging.description && (
+                      <Tooltip title={staging.description} placement="top">
+                        <Typography variant="caption" color="text.secondary" noWrap>
+                          {staging.description}
+                        </Typography>
+                      </Tooltip>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title={staging.status === 'published' ? '公開' : '下書き'} placement="top">
+                      <Chip
+                        label={staging.status === 'published' ? '公開' : '下書き'}
+                        size="small"
+                        color={staging.status === 'published' ? 'success' : 'default'}
+                        icon={staging.status === 'published' ? <PublicIcon /> : <DraftIcon />}
+                        sx={{ maxWidth: '100%' }}
+                      />
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title={formatDateFull(staging.created_at, staging.created_by?.name)} placement="top">
+                      <Typography variant="body2">{formatDate(staging.created_at)}</Typography>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title={formatDateFull(staging.updated_at, staging.updated_by?.name)} placement="top">
+                      <Typography variant="body2">{formatDate(staging.updated_at)}</Typography>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell align="center">
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMenuOpen(e, staging);
+                      }}
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       {/* アクションメニュー */}
       <Menu

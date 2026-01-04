@@ -39,6 +39,7 @@ export default function RoomDetail() {
   const navigate = useNavigate();
   const isLgUp = useMediaQuery(muiTheme.breakpoints.up('lg'));
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md')); // 960px未満（スマホ・小タブレット）
+  const isSmallMobile = useMediaQuery(muiTheme.breakpoints.down('sm')); // 600px未満（小画面スマホ）
 
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -389,38 +390,38 @@ export default function RoomDetail() {
             >
               <Tab
                 icon={<HomeIcon />}
-                label="部屋"
+                label={isSmallMobile ? undefined : "部屋"}
                 id="mobile-tab-0"
                 aria-controls="mobile-tabpanel-0"
-                sx={{ minHeight: 64 }}
+                sx={{ minHeight: isSmallMobile ? 56 : 64, minWidth: isSmallMobile ? 56 : 80 }}
               />
               <Tab
                 icon={<PhotoLibraryIcon />}
-                label="写真"
+                label={isSmallMobile ? undefined : "写真"}
                 id="mobile-tab-1"
                 aria-controls="mobile-tabpanel-1"
-                sx={{ minHeight: 64 }}
+                sx={{ minHeight: isSmallMobile ? 56 : 64, minWidth: isSmallMobile ? 56 : 80 }}
               />
               <Tab
                 icon={<VrpanoIcon />}
-                label="VR"
+                label={isSmallMobile ? undefined : "VR"}
                 id="mobile-tab-2"
                 aria-controls="mobile-tabpanel-2"
-                sx={{ minHeight: 64 }}
+                sx={{ minHeight: isSmallMobile ? 56 : 64, minWidth: isSmallMobile ? 56 : 80 }}
               />
               <Tab
                 icon={<CompareArrowsIcon />}
-                label="VS"
+                label={isSmallMobile ? undefined : "VS"}
                 id="mobile-tab-3"
                 aria-controls="mobile-tabpanel-3"
-                sx={{ minHeight: 64 }}
+                sx={{ minHeight: isSmallMobile ? 56 : 64, minWidth: isSmallMobile ? 56 : 80 }}
               />
               <Tab
                 icon={<ArticleIcon />}
-                label="公開"
+                label={isSmallMobile ? undefined : "公開"}
                 id="mobile-tab-4"
                 aria-controls="mobile-tabpanel-4"
-                sx={{ minHeight: 64 }}
+                sx={{ minHeight: isSmallMobile ? 56 : 64, minWidth: isSmallMobile ? 56 : 80 }}
               />
             </Tabs>
           </Paper>

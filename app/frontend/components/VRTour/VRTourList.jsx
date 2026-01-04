@@ -15,7 +15,10 @@ import {
   Alert,
   Tooltip,
   Menu,
-  MenuItem
+  MenuItem,
+  Card,
+  CardContent,
+  CardActions,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -23,7 +26,8 @@ import {
   Visibility as VisibilityIcon,
   MoreVert as MoreVertIcon,
   Public as PublicIcon,
-  Description as DraftIcon
+  Description as DraftIcon,
+  Vrpano as VrpanoIcon,
 } from "@mui/icons-material";
 
 const formatDate = (dateStr) => {
@@ -46,7 +50,7 @@ const formatDateFull = (dateStr, userName) => {
   return `${yyyy}/${mm}/${dd} ${hh}:${min}${userPart}`;
 };
 
-export default function VRTourList({ roomId }) {
+export default function VRTourList({ roomId, isMobile = false }) {
   const navigate = useNavigate();
   const [vrTours, setVrTours] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -165,78 +169,40 @@ export default function VRTourList({ roomId }) {
 
   return (
     <>
-      <TableContainer>
-        <Table
-          size="small"
-          stickyHeader
-          sx={{
-            tableLayout: 'fixed',
-            '& .MuiTableCell-root': {
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }
-          }}
-        >
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ width: '25%' }}>タイトル</TableCell>
-              <TableCell sx={{ width: '15%' }}>シーン数</TableCell>
-              <TableCell sx={{ width: '15%' }}>状態</TableCell>
-              <TableCell sx={{ width: '15%' }}>作成日</TableCell>
-              <TableCell sx={{ width: '15%' }}>更新日</TableCell>
-              <TableCell sx={{ width: '15%' }} align="center">操作</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {vrTours.map((tour) => (
-              <TableRow
-                key={tour.id}
-                hover
-                onClick={() => handleRowClick(tour)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <TableCell>
-                  <Tooltip title={tour.title || '-'} placement="top">
-                    <Typography variant="body2" fontWeight="500" noWrap>
-                      {tour.title || '-'}
-                    </Typography>
-                  </Tooltip>
-                  {tour.description && (
-                    <Tooltip title={tour.description} placement="top">
-                      <Typography variant="caption" color="text.secondary" noWrap>
-                        {tour.description}
+      {isMobile ? (
+        // モバイル用カード形式
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, p: 2 }}>
+          {vrTours.map((tour) => (
+            <Card
+              key={tour.id}
+              variant="outlined"
+              sx={{ cursor: 'pointer' }}
+              onClick={() => handleRowClick(tour)}
+            >
+              <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                      <VrpanoIcon fontSize="small" color="action" />
+                      <Typography variant="subtitle2" fontWeight={600} noWrap>
+                        {tour.title || '無題のツアー'}
                       </Typography>
-                    </Tooltip>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">
-                    {tour.vr_scenes?.length || 0}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Tooltip title={tour.status === 'published' ? '公開' : '下書き'} placement="top">
-                    <Chip
-                      label={tour.status === 'published' ? '公開' : '下書き'}
-                      size="small"
-                      color={tour.status === 'published' ? 'success' : 'default'}
-                      icon={tour.status === 'published' ? <PublicIcon /> : <DraftIcon />}
-                      sx={{ maxWidth: '100%' }}
-                    />
-                  </Tooltip>
-                </TableCell>
-                <TableCell>
-                  <Tooltip title={formatDateFull(tour.created_at, tour.created_by?.name)} placement="top">
-                    <Typography variant="body2">{formatDate(tour.created_at)}</Typography>
-                  </Tooltip>
-                </TableCell>
-                <TableCell>
-                  <Tooltip title={formatDateFull(tour.updated_at, tour.updated_by?.name)} placement="top">
-                    <Typography variant="body2">{formatDate(tour.updated_at)}</Typography>
-                  </Tooltip>
-                </TableCell>
-                <TableCell align="center">
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                      <Chip
+                        label={tour.status === 'published' ? '公開' : '下書き'}
+                        size="small"
+                        color={tour.status === 'published' ? 'success' : 'default'}
+                        sx={{ height: 20, fontSize: '0.7rem' }}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        {tour.vr_scenes?.length || 0}シーン
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        更新: {formatDate(tour.updated_at)}
+                      </Typography>
+                    </Box>
+                  </Box>
                   <IconButton
                     size="small"
                     onClick={(e) => {
@@ -244,14 +210,103 @@ export default function VRTourList({ roomId }) {
                       handleMenuOpen(e, tour);
                     }}
                   >
-                    <MoreVertIcon />
+                    <MoreVertIcon fontSize="small" />
                   </IconButton>
-                </TableCell>
+                </Box>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
+      ) : (
+        // デスクトップ用テーブル形式
+        <TableContainer>
+          <Table
+            size="small"
+            stickyHeader
+            sx={{
+              tableLayout: 'fixed',
+              '& .MuiTableCell-root': {
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }
+            }}
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ width: '25%' }}>タイトル</TableCell>
+                <TableCell sx={{ width: '15%' }}>シーン数</TableCell>
+                <TableCell sx={{ width: '15%' }}>状態</TableCell>
+                <TableCell sx={{ width: '15%' }}>作成日</TableCell>
+                <TableCell sx={{ width: '15%' }}>更新日</TableCell>
+                <TableCell sx={{ width: '15%' }} align="center">操作</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {vrTours.map((tour) => (
+                <TableRow
+                  key={tour.id}
+                  hover
+                  onClick={() => handleRowClick(tour)}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  <TableCell>
+                    <Tooltip title={tour.title || '-'} placement="top">
+                      <Typography variant="body2" fontWeight="500" noWrap>
+                        {tour.title || '-'}
+                      </Typography>
+                    </Tooltip>
+                    {tour.description && (
+                      <Tooltip title={tour.description} placement="top">
+                        <Typography variant="caption" color="text.secondary" noWrap>
+                          {tour.description}
+                        </Typography>
+                      </Tooltip>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {tour.vr_scenes?.length || 0}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title={tour.status === 'published' ? '公開' : '下書き'} placement="top">
+                      <Chip
+                        label={tour.status === 'published' ? '公開' : '下書き'}
+                        size="small"
+                        color={tour.status === 'published' ? 'success' : 'default'}
+                        icon={tour.status === 'published' ? <PublicIcon /> : <DraftIcon />}
+                        sx={{ maxWidth: '100%' }}
+                      />
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title={formatDateFull(tour.created_at, tour.created_by?.name)} placement="top">
+                      <Typography variant="body2">{formatDate(tour.created_at)}</Typography>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title={formatDateFull(tour.updated_at, tour.updated_by?.name)} placement="top">
+                      <Typography variant="body2">{formatDate(tour.updated_at)}</Typography>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell align="center">
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMenuOpen(e, tour);
+                      }}
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       {/* アクションメニュー */}
       <Menu

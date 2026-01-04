@@ -14,7 +14,9 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Tooltip
+  Tooltip,
+  Card,
+  CardContent
 } from '@mui/material';
 import {
   MoreVert as MoreVertIcon,
@@ -23,7 +25,8 @@ import {
   Delete as DeleteIcon,
   Visibility as VisibilityIcon,
   Description as DraftIcon,
-  ContentCopy as ContentCopyIcon
+  ContentCopy as ContentCopyIcon,
+  Article as ArticleIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -48,7 +51,7 @@ const formatDateFull = (dateStr, userName) => {
   return `${yyyy}/${mm}/${dd} ${hh}:${min}${userPart}`;
 };
 
-export default function PropertyPublicationList({ roomId }) {
+export default function PropertyPublicationList({ roomId, isMobile = false }) {
   const navigate = useNavigate();
   const [propertyPublications, setPropertyPublications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -174,72 +177,37 @@ export default function PropertyPublicationList({ roomId }) {
 
   return (
     <>
-      <TableContainer>
-        <Table
-          size="small"
-          stickyHeader
-          sx={{
-            tableLayout: 'fixed',
-            '& .MuiTableCell-root': {
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }
-          }}
-        >
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ width: '35%' }}>タイトル</TableCell>
-              <TableCell sx={{ width: '20%' }}>状態</TableCell>
-              <TableCell sx={{ width: '15%' }}>作成日</TableCell>
-              <TableCell sx={{ width: '15%' }}>更新日</TableCell>
-              <TableCell sx={{ width: '15%' }} align="center">操作</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {propertyPublications.map((publication) => (
-              <TableRow
-                key={publication.id}
-                hover
-                onClick={() => handleRowClick(publication)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <TableCell>
-                  <Tooltip title={publication.title || '-'} placement="top">
-                    <Typography variant="body2" fontWeight="500" noWrap>
-                      {publication.title || '-'}
-                    </Typography>
-                  </Tooltip>
-                  {publication.catch_copy && (
-                    <Tooltip title={publication.catch_copy} placement="top">
-                      <Typography variant="caption" color="text.secondary" noWrap>
-                        {publication.catch_copy}
+      {isMobile ? (
+        // モバイル用カード形式
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, p: 2 }}>
+          {propertyPublications.map((publication) => (
+            <Card
+              key={publication.id}
+              variant="outlined"
+              sx={{ cursor: 'pointer' }}
+              onClick={() => handleRowClick(publication)}
+            >
+              <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                      <ArticleIcon fontSize="small" color="action" />
+                      <Typography variant="subtitle2" fontWeight={600} noWrap>
+                        {publication.title || '無題のページ'}
                       </Typography>
-                    </Tooltip>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Tooltip title={publication.status === 'published' ? '公開中' : '下書き'} placement="top">
-                    <Chip
-                      label={publication.status === 'published' ? '公開中' : '下書き'}
-                      size="small"
-                      color={publication.status === 'published' ? 'success' : 'default'}
-                      icon={publication.status === 'published' ? <PublicIcon /> : <DraftIcon />}
-                      sx={{ maxWidth: '100%' }}
-                    />
-                  </Tooltip>
-                </TableCell>
-                <TableCell>
-                  <Tooltip title={formatDateFull(publication.created_at, publication.created_by?.name)} placement="top">
-                    <Typography variant="body2">{formatDate(publication.created_at)}</Typography>
-                  </Tooltip>
-                </TableCell>
-                <TableCell>
-                  <Tooltip title={formatDateFull(publication.updated_at, publication.updated_by?.name)} placement="top">
-                    <Typography variant="body2">{formatDate(publication.updated_at)}</Typography>
-                  </Tooltip>
-                </TableCell>
-                <TableCell align="center">
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                      <Chip
+                        label={publication.status === 'published' ? '公開中' : '下書き'}
+                        size="small"
+                        color={publication.status === 'published' ? 'success' : 'default'}
+                        sx={{ height: 20, fontSize: '0.7rem' }}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        更新: {formatDate(publication.updated_at)}
+                      </Typography>
+                    </Box>
+                  </Box>
                   <IconButton
                     size="small"
                     onClick={(e) => {
@@ -247,14 +215,97 @@ export default function PropertyPublicationList({ roomId }) {
                       handleMenuOpen(e, publication);
                     }}
                   >
-                    <MoreVertIcon />
+                    <MoreVertIcon fontSize="small" />
                   </IconButton>
-                </TableCell>
+                </Box>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
+      ) : (
+        // デスクトップ用テーブル形式
+        <TableContainer>
+          <Table
+            size="small"
+            stickyHeader
+            sx={{
+              tableLayout: 'fixed',
+              '& .MuiTableCell-root': {
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }
+            }}
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ width: '35%' }}>タイトル</TableCell>
+                <TableCell sx={{ width: '20%' }}>状態</TableCell>
+                <TableCell sx={{ width: '15%' }}>作成日</TableCell>
+                <TableCell sx={{ width: '15%' }}>更新日</TableCell>
+                <TableCell sx={{ width: '15%' }} align="center">操作</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {propertyPublications.map((publication) => (
+                <TableRow
+                  key={publication.id}
+                  hover
+                  onClick={() => handleRowClick(publication)}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  <TableCell>
+                    <Tooltip title={publication.title || '-'} placement="top">
+                      <Typography variant="body2" fontWeight="500" noWrap>
+                        {publication.title || '-'}
+                      </Typography>
+                    </Tooltip>
+                    {publication.catch_copy && (
+                      <Tooltip title={publication.catch_copy} placement="top">
+                        <Typography variant="caption" color="text.secondary" noWrap>
+                          {publication.catch_copy}
+                        </Typography>
+                      </Tooltip>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title={publication.status === 'published' ? '公開中' : '下書き'} placement="top">
+                      <Chip
+                        label={publication.status === 'published' ? '公開中' : '下書き'}
+                        size="small"
+                        color={publication.status === 'published' ? 'success' : 'default'}
+                        icon={publication.status === 'published' ? <PublicIcon /> : <DraftIcon />}
+                        sx={{ maxWidth: '100%' }}
+                      />
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title={formatDateFull(publication.created_at, publication.created_by?.name)} placement="top">
+                      <Typography variant="body2">{formatDate(publication.created_at)}</Typography>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title={formatDateFull(publication.updated_at, publication.updated_by?.name)} placement="top">
+                      <Typography variant="body2">{formatDate(publication.updated_at)}</Typography>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell align="center">
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMenuOpen(e, publication);
+                      }}
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       {/* アクションメニュー */}
       <Menu

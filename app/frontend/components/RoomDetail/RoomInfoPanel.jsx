@@ -198,6 +198,10 @@ export default function RoomInfoPanel({
           alignItems: 'center',
           borderBottom: '1px solid #e0e0e0',
           flexShrink: 0,
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          bgcolor: 'background.paper',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -235,7 +239,7 @@ export default function RoomInfoPanel({
       </Box>
 
       {/* コンテンツ */}
-      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 2 }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 2, pb: isMobile ? 10 : 2 }}>
         <Stack spacing={3}>
 
         {/* 基本情報 */}
@@ -244,7 +248,7 @@ export default function RoomInfoPanel({
             基本情報
           </Typography>
           <Stack spacing={2}>
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2 }}>
               <TextField
                 label="部屋番号"
                 value={formData.room_number || ''}
@@ -271,7 +275,7 @@ export default function RoomInfoPanel({
               </FormControl>
             </Box>
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2 }}>
               <TextField
                 label="階数"
                 type="number"
@@ -299,7 +303,7 @@ export default function RoomInfoPanel({
               />
             </Box>
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2 }}>
               <FormControl sx={{ flex: 1 }} size="small">
                 <InputLabel>間取り</InputLabel>
                 <Select
@@ -352,7 +356,7 @@ export default function RoomInfoPanel({
             賃貸情報
           </Typography>
           <Stack spacing={2}>
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2 }}>
               <TextField
                 label="賃料"
                 type="number"
@@ -382,7 +386,7 @@ export default function RoomInfoPanel({
               />
             </Box>
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2 }}>
               <TextField
                 label="敷金"
                 type="number"
@@ -412,7 +416,7 @@ export default function RoomInfoPanel({
               />
             </Box>
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2 }}>
               <TextField
                 label="更新料"
                 type="number"
