@@ -402,15 +402,15 @@ export default function RoomDetail() {
                 sx={{ minHeight: 64 }}
               />
               <Tab
-                icon={<CompareArrowsIcon />}
-                label="VS"
+                icon={<VrpanoIcon />}
+                label="VR"
                 id="mobile-tab-2"
                 aria-controls="mobile-tabpanel-2"
                 sx={{ minHeight: 64 }}
               />
               <Tab
-                icon={<VrpanoIcon />}
-                label="VR"
+                icon={<CompareArrowsIcon />}
+                label="VS"
                 id="mobile-tab-3"
                 aria-controls="mobile-tabpanel-3"
                 sx={{ minHeight: 64 }}
@@ -469,17 +469,17 @@ export default function RoomDetail() {
               </Box>
             </Box>
 
-            {/* バーチャルステージングタブ */}
+            {/* VRツアータブ */}
             <Box sx={{ display: mobileActiveTab === 2 ? 'flex' : 'none', flex: 1, overflow: 'auto', flexDirection: 'column' }}>
-              <RoomVirtualStagingPanel
+              <RoomVRTourPanel
                 roomId={room.id}
                 isMobile={true}
               />
             </Box>
 
-            {/* VRツアータブ */}
+            {/* バーチャルステージングタブ */}
             <Box sx={{ display: mobileActiveTab === 3 ? 'flex' : 'none', flex: 1, overflow: 'auto', flexDirection: 'column' }}>
-              <RoomVRTourPanel
+              <RoomVirtualStagingPanel
                 roomId={room.id}
                 isMobile={true}
               />
