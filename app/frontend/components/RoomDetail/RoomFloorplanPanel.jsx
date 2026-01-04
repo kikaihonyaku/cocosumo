@@ -611,6 +611,10 @@ export default function RoomFloorplanPanel({
                             checked={!!selectedFields[key]}
                             onChange={() => handleFieldToggle(key)}
                             size="small"
+                            sx={{
+                              color: '#9e9e9e',
+                              '&.Mui-checked': { color: '#1976d2' }
+                            }}
                           />
                         </TableCell>
                         <TableCell sx={{ fontWeight: 500, width: 120 }}>
