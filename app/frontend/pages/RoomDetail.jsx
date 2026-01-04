@@ -446,11 +446,13 @@ export default function RoomDetail() {
                   roomId={room.id}
                   floorplanPdfUrl={room.floorplan_pdf_url}
                   floorplanPdfFilename={room.floorplan_pdf_filename}
-                  onFloorplanUpdate={(url, filename) => {
+                  floorplanThumbnailUrl={room.floorplan_thumbnail_url}
+                  onFloorplanUpdate={(url, filename, thumbnailUrl) => {
                     setRoom(prev => ({
                       ...prev,
                       floorplan_pdf_url: url,
                       floorplan_pdf_filename: filename,
+                      floorplan_thumbnail_url: thumbnailUrl,
                     }));
                   }}
                   onRoomDataExtracted={handleRoomDataExtracted}
@@ -574,11 +576,13 @@ export default function RoomDetail() {
                 roomId={room.id}
                 floorplanPdfUrl={room.floorplan_pdf_url}
                 floorplanPdfFilename={room.floorplan_pdf_filename}
-                onFloorplanUpdate={(url, filename) => {
+                floorplanThumbnailUrl={room.floorplan_thumbnail_url}
+                onFloorplanUpdate={(url, filename, thumbnailUrl) => {
                   setRoom(prev => ({
                     ...prev,
                     floorplan_pdf_url: url,
                     floorplan_pdf_filename: filename,
+                    floorplan_thumbnail_url: thumbnailUrl,
                   }));
                 }}
                 onRoomDataExtracted={handleRoomDataExtracted}

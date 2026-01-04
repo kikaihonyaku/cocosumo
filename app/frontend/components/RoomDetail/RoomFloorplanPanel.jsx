@@ -70,6 +70,7 @@ export default function RoomFloorplanPanel({
   roomId,
   floorplanPdfUrl,
   floorplanPdfFilename,
+  floorplanThumbnailUrl,
   onFloorplanUpdate,
   onRoomDataExtracted,
   expanded: controlledExpanded,
@@ -123,7 +124,7 @@ export default function RoomFloorplanPanel({
 
       if (response.ok) {
         const data = await response.json();
-        onFloorplanUpdate?.(data.floorplan_pdf_url, data.floorplan_pdf_filename);
+        onFloorplanUpdate?.(data.floorplan_pdf_url, data.floorplan_pdf_filename, data.floorplan_thumbnail_url);
       } else {
         const error = await response.json();
         alert(error.error || 'アップロードに失敗しました');
@@ -147,7 +148,7 @@ export default function RoomFloorplanPanel({
       });
 
       if (response.ok) {
-        onFloorplanUpdate?.(null, null);
+        onFloorplanUpdate?.(null, null, null);
       } else {
         const error = await response.json();
         alert(error.error || '削除に失敗しました');
@@ -378,24 +379,67 @@ export default function RoomFloorplanPanel({
       {/* コンテンツ */}
       {expanded && (
         <Box sx={{ p: 2 }}>
-          {/* PDFプレビューまたはアップロードエリア */}
+          {/* PDFサムネイルまたはアップロードエリア */}
           {floorplanPdfUrl ? (
             <Box
               sx={{
                 width: '100%',
-                height: 400,
                 bgcolor: '#f5f5f5',
                 borderRadius: 1,
                 overflow: 'hidden',
+                cursor: 'pointer',
+                position: 'relative',
+                '&:hover': {
+                  '& .overlay': {
+                    opacity: 1,
+                  },
+                },
               }}
+              onClick={() => window.open(floorplanPdfUrl, '_blank')}
             >
-              <embed
-                src={floorplanPdfUrl}
-                type="application/pdf"
-                width="100%"
-                height="100%"
-                style={{ border: 'none' }}
-              />
+              {floorplanThumbnailUrl ? (
+                <img
+                  src={floorplanThumbnailUrl}
+                  alt="募集図面"
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    display: 'block',
+                  }}
+                />
+              ) : (
+                // サムネイルがない場合は従来のPDF埋め込み
+                <Box sx={{ height: 400 }}>
+                  <embed
+                    src={floorplanPdfUrl}
+                    type="application/pdf"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 'none' }}
+                  />
+                </Box>
+              )}
+              {/* ホバー時のオーバーレイ */}
+              <Box
+                className="overlay"
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  bgcolor: 'rgba(0, 0, 0, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: 0,
+                  transition: 'opacity 0.2s',
+                }}
+              >
+                <Typography variant="h6" sx={{ color: 'white' }}>
+                  クリックでPDFを開く
+                </Typography>
+              </Box>
             </Box>
           ) : (
             <Box

@@ -9,6 +9,7 @@ class Room < ApplicationRecord
 
   # Active Storage
   has_one_attached :floorplan_pdf
+  has_one_attached :floorplan_thumbnail
 
   # Validations
   validates :room_number, presence: true

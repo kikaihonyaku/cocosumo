@@ -36,6 +36,15 @@ class Api::V1::RoomsController < ApplicationController
       room_json['floorplan_pdf_filename'] = @room.floorplan_pdf.filename.to_s
     end
 
+    # 募集図面サムネイルのURLを追加
+    if @room.floorplan_thumbnail.attached?
+      room_json['floorplan_thumbnail_url'] = if Rails.env.production?
+        @room.floorplan_thumbnail.url
+      else
+        Rails.application.routes.url_helpers.rails_blob_path(@room.floorplan_thumbnail, only_path: true)
+      end
+    end
+
     render json: room_json
   end
 
@@ -82,17 +91,30 @@ class Api::V1::RoomsController < ApplicationController
     @room.floorplan_pdf.attach(params[:file])
 
     if @room.floorplan_pdf.attached?
+      # PDFの1ページ目からサムネイル画像を生成
+      generate_floorplan_thumbnail
+
       floorplan_url = if Rails.env.production?
         @room.floorplan_pdf.url
       else
         Rails.application.routes.url_helpers.rails_blob_path(@room.floorplan_pdf, only_path: true)
       end
 
+      thumbnail_url = nil
+      if @room.floorplan_thumbnail.attached?
+        thumbnail_url = if Rails.env.production?
+          @room.floorplan_thumbnail.url
+        else
+          Rails.application.routes.url_helpers.rails_blob_path(@room.floorplan_thumbnail, only_path: true)
+        end
+      end
+
       render json: {
         success: true,
         message: '募集図面をアップロードしました',
         floorplan_pdf_url: floorplan_url,
-        floorplan_pdf_filename: @room.floorplan_pdf.filename.to_s
+        floorplan_pdf_filename: @room.floorplan_pdf.filename.to_s,
+        floorplan_thumbnail_url: thumbnail_url
       }
     else
       render json: { error: 'アップロードに失敗しました' }, status: :unprocessable_entity
@@ -103,6 +125,7 @@ class Api::V1::RoomsController < ApplicationController
   def delete_floorplan
     if @room.floorplan_pdf.attached?
       @room.floorplan_pdf.purge
+      @room.floorplan_thumbnail.purge if @room.floorplan_thumbnail.attached?
       render json: { success: true, message: '募集図面を削除しました' }
     else
       render json: { error: '募集図面が存在しません' }, status: :not_found
@@ -304,6 +327,50 @@ class Api::V1::RoomsController < ApplicationController
   def require_login
     unless current_user
       render json: { error: '認証が必要です' }, status: :unauthorized
+    end
+  end
+
+  # PDFの1ページ目からサムネイル画像を生成
+  def generate_floorplan_thumbnail
+    return unless @room.floorplan_pdf.attached?
+
+    begin
+      # PDFファイルを一時ファイルとしてダウンロード
+      pdf_tempfile = Tempfile.new(['floorplan', '.pdf'])
+      pdf_tempfile.binmode
+      pdf_tempfile.write(@room.floorplan_pdf.download)
+      pdf_tempfile.rewind
+
+      # MiniMagickでPDFの1ページ目を画像に変換
+      image = MiniMagick::Image.open(pdf_tempfile.path + '[0]') # [0]は1ページ目
+      image.format 'png'
+      image.density 150  # 解像度を上げて高品質に
+      image.quality 90
+
+      # 画像サイズを調整（最大幅800px）
+      image.resize '800x>'
+
+      # サムネイルを一時ファイルに保存
+      thumbnail_tempfile = Tempfile.new(['thumbnail', '.png'])
+      image.write(thumbnail_tempfile.path)
+
+      # Active Storageにアタッチ
+      @room.floorplan_thumbnail.attach(
+        io: File.open(thumbnail_tempfile.path),
+        filename: "floorplan_thumbnail_#{@room.id}.png",
+        content_type: 'image/png'
+      )
+
+      # 一時ファイルをクリーンアップ
+      pdf_tempfile.close
+      pdf_tempfile.unlink
+      thumbnail_tempfile.close
+      thumbnail_tempfile.unlink
+
+      Rails.logger.info("Floorplan thumbnail generated for room #{@room.id}")
+    rescue StandardError => e
+      Rails.logger.error("Failed to generate floorplan thumbnail: #{e.message}")
+      # サムネイル生成に失敗してもPDFアップロード自体は成功させる
     end
   end
 end
