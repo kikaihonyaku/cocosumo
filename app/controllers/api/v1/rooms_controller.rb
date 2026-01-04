@@ -1,7 +1,7 @@
 class Api::V1::RoomsController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
-  before_action :set_room, only: [:show, :update, :destroy, :upload_floorplan, :delete_floorplan, :analyze_floorplan]
+  before_action :set_room, only: [:show, :update, :destroy, :upload_floorplan, :delete_floorplan, :analyze_floorplan, :regenerate_floorplan_thumbnail]
 
   # GET /api/v1/rooms
   def index
@@ -289,6 +289,36 @@ class Api::V1::RoomsController < ApplicationController
     end
   end
 
+  # POST /api/v1/rooms/:id/regenerate_floorplan_thumbnail
+  # 既存PDFからサムネイルを再生成
+  def regenerate_floorplan_thumbnail
+    unless @room.floorplan_pdf.attached?
+      return render json: { error: '募集図面がアップロードされていません' }, status: :bad_request
+    end
+
+    # 既存のサムネイルを削除
+    @room.floorplan_thumbnail.purge if @room.floorplan_thumbnail.attached?
+
+    # サムネイルを再生成
+    generate_floorplan_thumbnail
+
+    if @room.floorplan_thumbnail.attached?
+      thumbnail_url = if Rails.env.production?
+        @room.floorplan_thumbnail.url
+      else
+        Rails.application.routes.url_helpers.rails_blob_path(@room.floorplan_thumbnail, only_path: true)
+      end
+
+      render json: {
+        success: true,
+        message: 'サムネイルを再生成しました',
+        floorplan_thumbnail_url: thumbnail_url
+      }
+    else
+      render json: { error: 'サムネイルの生成に失敗しました' }, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def set_room
@@ -341,35 +371,47 @@ class Api::V1::RoomsController < ApplicationController
       pdf_tempfile.write(@room.floorplan_pdf.download)
       pdf_tempfile.rewind
 
-      # MiniMagickでPDFの1ページ目を画像に変換
-      image = MiniMagick::Image.open(pdf_tempfile.path + '[0]') # [0]は1ページ目
-      image.format 'png'
-      image.density 150  # 解像度を上げて高品質に
-      image.quality 90
-
-      # 画像サイズを調整（最大幅800px）
-      image.resize '800x>'
-
-      # サムネイルを一時ファイルに保存
+      # サムネイル用の一時ファイル
       thumbnail_tempfile = Tempfile.new(['thumbnail', '.png'])
-      image.write(thumbnail_tempfile.path)
 
-      # Active Storageにアタッチ
-      @room.floorplan_thumbnail.attach(
-        io: File.open(thumbnail_tempfile.path),
-        filename: "floorplan_thumbnail_#{@room.id}.png",
-        content_type: 'image/png'
+      # ImageMagickのconvertコマンドで直接変換（より確実な方法）
+      # -density: 入力解像度（高めに設定）
+      # -quality: 出力品質
+      # -flatten: 透明背景を白に
+      # -resize: 最大幅800px
+      # [0]: 1ページ目のみ
+      system(
+        'convert',
+        '-density', '150',
+        '-quality', '90',
+        '-background', 'white',
+        '-flatten',
+        "#{pdf_tempfile.path}[0]",
+        '-resize', '800x>',
+        thumbnail_tempfile.path
       )
+
+      # ファイルが生成されたか確認
+      if File.exist?(thumbnail_tempfile.path) && File.size(thumbnail_tempfile.path) > 0
+        # Active Storageにアタッチ
+        @room.floorplan_thumbnail.attach(
+          io: File.open(thumbnail_tempfile.path),
+          filename: "floorplan_thumbnail_#{@room.id}.png",
+          content_type: 'image/png'
+        )
+        Rails.logger.info("Floorplan thumbnail generated for room #{@room.id}")
+      else
+        Rails.logger.error("Thumbnail file was not generated properly")
+      end
 
       # 一時ファイルをクリーンアップ
       pdf_tempfile.close
       pdf_tempfile.unlink
       thumbnail_tempfile.close
       thumbnail_tempfile.unlink
-
-      Rails.logger.info("Floorplan thumbnail generated for room #{@room.id}")
     rescue StandardError => e
       Rails.logger.error("Failed to generate floorplan thumbnail: #{e.message}")
+      Rails.logger.error(e.backtrace.first(5).join("\n"))
       # サムネイル生成に失敗してもPDFアップロード自体は成功させる
     end
   end

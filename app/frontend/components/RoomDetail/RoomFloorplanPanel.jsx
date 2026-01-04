@@ -30,6 +30,7 @@ import {
   ExpandLess as ExpandLessIcon,
   AutoAwesome as AutoAwesomeIcon,
   Check as CheckIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 
 // 間取りタイプのラベル
@@ -78,6 +79,7 @@ export default function RoomFloorplanPanel({
 }) {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -186,6 +188,33 @@ export default function RoomFloorplanPanel({
   const handleDragLeave = (e) => {
     e.preventDefault();
     setDragActive(false);
+  };
+
+  // サムネイルを再生成
+  const handleRegenerateThumbnail = async () => {
+    setRegenerating(true);
+    try {
+      const response = await fetch(`/api/v1/rooms/${roomId}/regenerate_floorplan_thumbnail`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        onFloorplanUpdate?.(floorplanPdfUrl, floorplanPdfFilename, data.floorplan_thumbnail_url);
+      } else {
+        const error = await response.json();
+        alert(error.error || 'サムネイルの再生成に失敗しました');
+      }
+    } catch (err) {
+      console.error('Regenerate thumbnail error:', err);
+      alert('ネットワークエラーが発生しました');
+    } finally {
+      setRegenerating(false);
+    }
   };
 
   // AI解析を実行
@@ -381,23 +410,24 @@ export default function RoomFloorplanPanel({
         <Box sx={{ p: 2 }}>
           {/* PDFサムネイルまたはアップロードエリア */}
           {floorplanPdfUrl ? (
-            <Box
-              sx={{
-                width: '100%',
-                bgcolor: '#f5f5f5',
-                borderRadius: 1,
-                overflow: 'hidden',
-                cursor: 'pointer',
-                position: 'relative',
-                '&:hover': {
-                  '& .overlay': {
-                    opacity: 1,
+            floorplanThumbnailUrl ? (
+              // サムネイルがある場合：クリックでPDFを開く
+              <Box
+                sx={{
+                  width: '100%',
+                  bgcolor: '#f5f5f5',
+                  borderRadius: 1,
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  '&:hover': {
+                    '& .overlay': {
+                      opacity: 1,
+                    },
                   },
-                },
-              }}
-              onClick={() => window.open(floorplanPdfUrl, '_blank')}
-            >
-              {floorplanThumbnailUrl ? (
+                }}
+                onClick={() => window.open(floorplanPdfUrl, '_blank')}
+              >
                 <img
                   src={floorplanThumbnailUrl}
                   alt="募集図面"
@@ -407,40 +437,57 @@ export default function RoomFloorplanPanel({
                     display: 'block',
                   }}
                 />
-              ) : (
-                // サムネイルがない場合は従来のPDF埋め込み
-                <Box sx={{ height: 400 }}>
-                  <embed
-                    src={floorplanPdfUrl}
-                    type="application/pdf"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 'none' }}
-                  />
+                {/* ホバー時のオーバーレイ */}
+                <Box
+                  className="overlay"
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    bgcolor: 'rgba(0, 0, 0, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: 0,
+                    transition: 'opacity 0.2s',
+                  }}
+                >
+                  <Typography variant="h6" sx={{ color: 'white' }}>
+                    クリックでPDFを開く
+                  </Typography>
                 </Box>
-              )}
-              {/* ホバー時のオーバーレイ */}
+              </Box>
+            ) : (
+              // サムネイルがない場合：サムネイル生成を促す表示
               <Box
-                className="overlay"
                 sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  bgcolor: 'rgba(0, 0, 0, 0.3)',
+                  width: '100%',
+                  height: 200,
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  opacity: 0,
-                  transition: 'opacity 0.2s',
+                  bgcolor: '#fafafa',
+                  borderRadius: 1,
                 }}
               >
-                <Typography variant="h6" sx={{ color: 'white' }}>
-                  クリックでPDFを開く
+                <DescriptionIcon sx={{ fontSize: 48, color: 'grey.400', mb: 1 }} />
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {floorplanPdfFilename}
                 </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={regenerating ? <CircularProgress size={16} /> : <RefreshIcon />}
+                  onClick={handleRegenerateThumbnail}
+                  disabled={regenerating}
+                >
+                  {regenerating ? '生成中...' : 'サムネイルを生成'}
+                </Button>
               </Box>
-            </Box>
+            )
           ) : (
             <Box
               onDrop={handleDrop}

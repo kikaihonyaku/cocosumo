@@ -123,6 +123,7 @@ Rails.application.routes.draw do
           post :upload_floorplan
           delete :delete_floorplan
           post :analyze_floorplan
+          post :regenerate_floorplan_thumbnail
         end
 
         # 部屋写真管理
