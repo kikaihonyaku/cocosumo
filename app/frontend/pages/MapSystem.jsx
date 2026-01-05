@@ -21,7 +21,7 @@ import Header from "../components/shared/Header";
 import MapContainer from "../components/MapSystem/MapContainer";
 import LeftPanel from "../components/MapSystem/LeftPanel/LeftPanel";
 import PropertyTable from "../components/MapSystem/BottomPanel/PropertyTable";
-import BuildingFormModal from "../components/MapSystem/BuildingFormModal";
+import FloorplanRegistrationModal from "../components/MapSystem/FloorplanRegistrationModal";
 import SearchModal from "../components/MapSystem/LeftPanel/SearchModal";
 import { usePropertyFilter } from "../hooks/usePropertyFilter";
 import { getRoomTypeLabel } from "../utils/formatters";
@@ -1078,7 +1078,7 @@ export default function MapSystem() {
         </Box>
 
         {/* 物件新規登録モーダル */}
-        <BuildingFormModal
+        <FloorplanRegistrationModal
           isOpen={buildingFormModalOpen}
           onClose={() => {
             setBuildingFormModalOpen(false);

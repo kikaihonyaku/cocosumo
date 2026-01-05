@@ -44,6 +44,13 @@ Rails.application.routes.draw do
 
       # 物件管理
       resources :buildings do
+        # 募集図面からの物件登録
+        collection do
+          post :analyze_floorplan
+          post :find_similar
+          post :register_from_floorplan
+        end
+
         resources :photos, only: [:index, :create, :destroy, :show, :update], controller: 'building_photos' do
           member do
             post :replace
