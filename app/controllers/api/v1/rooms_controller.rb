@@ -150,6 +150,7 @@ class Api::V1::RoomsController < ApplicationController
         このPDFは賃貸物件の募集図面です。以下の情報を抽出してJSON形式で出力してください。
 
         抽出する項目:
+        - room_number: 部屋番号（例: 101, 201, A-101など。建物内での部屋を識別する番号・記号）
         - room_type: 間取り（以下のいずれか: studio, 1K, 1DK, 1LDK, 2K, 2DK, 2LDK, 3K, 3DK, 3LDK, other）
         - area: 専有面積（数値のみ、単位なし、㎡）
         - rent: 賃料（数値のみ、単位なし、円）
@@ -176,6 +177,7 @@ class Api::V1::RoomsController < ApplicationController
 
         出力例:
         {
+          "room_number": "301",
           "room_type": "1LDK",
           "area": 45.5,
           "rent": 85000,

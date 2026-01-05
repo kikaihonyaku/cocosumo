@@ -52,6 +52,7 @@ const ROOM_TYPE_LABELS = {
 
 // フィールドラベル
 const FIELD_LABELS = {
+  room_number: '部屋番号',
   room_type: '間取り',
   area: '専有面積',
   rent: '賃料',
