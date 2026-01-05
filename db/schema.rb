@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_02_094032) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_05_210106) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -207,6 +207,29 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_02_094032) do
     t.index ["customer_access_id"], name: "index_customer_routes_on_customer_access_id"
   end
 
+  create_table "facilities", force: :cascade do |t|
+    t.string "code", null: false
+    t.string "name", null: false
+    t.string "category", null: false
+    t.integer "display_order", default: 0
+    t.boolean "is_popular", default: false
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_facilities_on_category"
+    t.index ["code"], name: "index_facilities_on_code", unique: true
+    t.index ["is_popular", "display_order"], name: "index_facilities_on_is_popular_and_display_order"
+  end
+
+  create_table "facility_synonyms", force: :cascade do |t|
+    t.bigint "facility_id", null: false
+    t.string "synonym", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["facility_id"], name: "index_facility_synonyms_on_facility_id"
+    t.index ["synonym"], name: "index_facility_synonyms_on_synonym", unique: true
+  end
+
   create_table "map_layers", force: :cascade do |t|
     t.integer "tenant_id", null: false
     t.string "name", null: false
@@ -359,6 +382,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_02_094032) do
     t.index ["updated_by_id"], name: "index_property_publications_on_updated_by_id"
   end
 
+  create_table "room_facilities", force: :cascade do |t|
+    t.bigint "room_id", null: false
+    t.bigint "facility_id", null: false
+    t.string "raw_text"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["facility_id"], name: "index_room_facilities_on_facility_id"
+    t.index ["room_id", "facility_id"], name: "index_room_facilities_on_room_id_and_facility_id", unique: true
+    t.index ["room_id"], name: "index_room_facilities_on_room_id"
+  end
+
   create_table "room_photos", force: :cascade do |t|
     t.integer "room_id", null: false
     t.string "photo_type"
@@ -486,6 +520,20 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_02_094032) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "unmatched_facilities", force: :cascade do |t|
+    t.bigint "room_id", null: false
+    t.string "raw_text", null: false
+    t.integer "occurrence_count", default: 1
+    t.string "status", default: "pending"
+    t.bigint "mapped_to_facility_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["mapped_to_facility_id"], name: "index_unmatched_facilities_on_mapped_to_facility_id"
+    t.index ["raw_text"], name: "index_unmatched_facilities_on_raw_text"
+    t.index ["room_id"], name: "index_unmatched_facilities_on_room_id"
+    t.index ["status", "occurrence_count"], name: "index_unmatched_facilities_on_status_and_occurrence_count"
+  end
+
   create_table "users", force: :cascade do |t|
     t.integer "tenant_id", null: false
     t.string "email"
@@ -583,6 +631,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_02_094032) do
   add_foreign_key "buildings", "tenants"
   add_foreign_key "customer_accesses", "property_publications"
   add_foreign_key "customer_routes", "customer_accesses"
+  add_foreign_key "facility_synonyms", "facilities"
   add_foreign_key "map_layers", "tenants"
   add_foreign_key "owners", "buildings"
   add_foreign_key "owners", "tenants"
@@ -597,11 +646,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_02_094032) do
   add_foreign_key "property_publications", "rooms"
   add_foreign_key "property_publications", "users", column: "created_by_id"
   add_foreign_key "property_publications", "users", column: "updated_by_id"
+  add_foreign_key "room_facilities", "facilities"
+  add_foreign_key "room_facilities", "rooms"
   add_foreign_key "room_photos", "rooms"
   add_foreign_key "rooms", "buildings"
   add_foreign_key "school_districts", "map_layers"
   add_foreign_key "stores", "tenants"
   add_foreign_key "suumo_import_histories", "tenants"
+  add_foreign_key "unmatched_facilities", "facilities", column: "mapped_to_facility_id"
+  add_foreign_key "unmatched_facilities", "rooms"
   add_foreign_key "users", "tenants"
   add_foreign_key "virtual_staging_variations", "room_photos", column: "after_photo_id"
   add_foreign_key "virtual_staging_variations", "virtual_stagings"

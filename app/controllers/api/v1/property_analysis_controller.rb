@@ -5,7 +5,7 @@ class Api::V1::PropertyAnalysisController < ApplicationController
   # GET /api/v1/property_analysis
   # 全物件データを返す（GISフィルタは適用しない - ピン表示用）
   def show
-    buildings = current_tenant.buildings.kept.includes(:rooms, :building_photos)
+    buildings = current_tenant.buildings.kept.includes(:building_photos, rooms: { room_facilities: :facility })
 
     # ベース検索条件のみ適用（GISは含まない）
     buildings = apply_base_filters(buildings)
@@ -17,7 +17,9 @@ class Api::V1::PropertyAnalysisController < ApplicationController
     properties_json = buildings.map do |building|
       building_data = building.as_json(methods: [:room_cnt, :free_cnt, :latitude, :longitude, :exterior_photo_count, :thumbnail_url])
       building_data['rooms'] = building.rooms.map do |room|
-        room.as_json(only: [:id, :rent, :area, :room_type, :status, :floor, :room_number])
+        room_data = room.as_json(only: [:id, :rent, :area, :room_type, :status, :floor, :room_number])
+        room_data['facility_codes'] = room.room_facilities.map { |rf| rf.facility.code }
+        room_data
       end
       building_data
     end
@@ -106,6 +108,26 @@ class Api::V1::PropertyAnalysisController < ApplicationController
         buildings = buildings.where(suumo_imported_at: nil)
       elsif !external_import_bool && !own_registration_bool
         buildings = buildings.none
+      end
+    end
+
+    # 設備フィルタ（指定された全ての設備を持つ部屋がある建物のみ）
+    if params[:facilities].present?
+      facility_codes = Array(params[:facilities])
+      if facility_codes.any?
+        buildings = buildings.where(
+          'buildings.id IN (
+            SELECT r.building_id
+            FROM rooms r
+            INNER JOIN room_facilities rf ON rf.room_id = r.id
+            INNER JOIN facilities f ON f.id = rf.facility_id
+            WHERE f.code IN (?)
+            GROUP BY r.building_id
+            HAVING COUNT(DISTINCT f.code) >= ?
+          )',
+          facility_codes,
+          facility_codes.length
+        )
       end
     end
 

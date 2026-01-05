@@ -143,3 +143,6 @@ puts "一般ユーザー - Email: member@example.com / Password: password123"
 # ブログ記事のシードデータを読み込み
 puts "\n"
 load Rails.root.join('db/seeds/blog_posts.rb')
+
+# 設備マスタのシードデータを読み込み
+load Rails.root.join('db/seeds/facilities.rb')

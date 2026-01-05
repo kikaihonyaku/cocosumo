@@ -6,6 +6,9 @@ class Room < ApplicationRecord
   has_many :vr_tours, dependent: :destroy
   has_many :virtual_stagings, dependent: :destroy
   has_many :property_publications, dependent: :destroy
+  has_many :room_facilities, dependent: :destroy
+  has_many :matched_facilities, through: :room_facilities, source: :facility
+  has_many :unmatched_facilities, dependent: :destroy
 
   # Active Storage
   has_one_attached :floorplan_pdf
@@ -62,5 +65,15 @@ class Room < ApplicationRecord
     when 'other' then 'その他'
     else room_type
     end
+  end
+
+  # 設備コードの配列を返す
+  def facility_codes
+    matched_facilities.pluck(:code)
+  end
+
+  # 設備名の配列を返す
+  def facility_names
+    matched_facilities.pluck(:name)
   end
 end

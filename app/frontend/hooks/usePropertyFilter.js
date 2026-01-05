@@ -16,6 +16,7 @@ import {
  * @param {Array} filters.roomTypes - ['1K', '1LDK', ...] 間取り
  * @param {Array} filters.areaRange - [min, max] 面積範囲
  * @param {Array} filters.ageRange - [min, max] 築年数範囲
+ * @param {Array} filters.facilities - ['air_conditioner', 'auto_lock', ...] 設備コード
  * @param {Object} rangeSelections - 棒グラフ選択状態
  * @param {Array} rangeSelections.selectedRentRanges - 賃料範囲選択
  * @param {Array} rangeSelections.selectedAreaRanges - 面積範囲選択
@@ -53,6 +54,7 @@ export function usePropertyFilter(allProperties, filters, rangeSelections, geoFi
     filters?.roomTypes,
     filters?.areaRange,
     filters?.ageRange,
+    filters?.facilities,
     rangeSelections?.selectedRentRanges,
     rangeSelections?.selectedAreaRanges,
     rangeSelections?.selectedAgeRanges,
@@ -104,6 +106,7 @@ export function usePropertyFilter(allProperties, filters, rangeSelections, geoFi
     filters?.roomTypes,
     filters?.areaRange,
     filters?.ageRange,
+    filters?.facilities,
     rangeSelections?.selectedRentRanges,
     rangeSelections?.selectedAreaRanges,
     rangeSelections?.selectedAgeRanges,

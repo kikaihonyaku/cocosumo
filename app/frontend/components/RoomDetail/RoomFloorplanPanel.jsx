@@ -61,7 +61,7 @@ const FIELD_LABELS = {
   key_money: '礼金',
   direction: '向き',
   floor: '階数',
-  facilities: '設備',
+  facility_codes: '設備',
   parking_fee: '駐車場料金',
   available_date: '入居可能日',
   pets_allowed: 'ペット可',
@@ -628,11 +628,25 @@ export default function RoomFloorplanPanel({
                           {label}
                         </TableCell>
                         <TableCell>
-                          {key === 'facilities' ? (
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                              {String(value).split(',').map((item, i) => (
-                                <Chip key={i} label={item.trim()} size="small" variant="outlined" />
-                              ))}
+                          {key === 'facility_codes' ? (
+                            <Box>
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                {(extractedData.normalized_facilities || []).map((item, i) => (
+                                  <Chip key={i} label={item} size="small" color="primary" variant="outlined" />
+                                ))}
+                              </Box>
+                              {extractedData.unmatched_facilities && extractedData.unmatched_facilities.length > 0 && (
+                                <Box sx={{ mt: 1 }}>
+                                  <Typography variant="caption" color="text.secondary">
+                                    未登録の設備:
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                    {extractedData.unmatched_facilities.map((item, i) => (
+                                      <Chip key={i} label={item} size="small" variant="outlined" color="warning" />
+                                    ))}
+                                  </Box>
+                                </Box>
+                              )}
                             </Box>
                           ) : (
                             formatValue(key, value)

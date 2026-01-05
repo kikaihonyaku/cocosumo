@@ -39,6 +39,9 @@ Rails.application.routes.draw do
         end
       end
 
+      # 設備マスタ
+      resources :facilities, only: [:index]
+
       # 物件管理
       resources :buildings do
         resources :photos, only: [:index, :create, :destroy, :show, :update], controller: 'building_photos' do

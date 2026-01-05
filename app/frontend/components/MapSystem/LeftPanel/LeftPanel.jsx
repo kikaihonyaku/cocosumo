@@ -56,6 +56,10 @@ export default function LeftPanel({
   stores = [],
   // 検索実行状態
   hasSearched = false,
+  // 設備関連
+  facilitiesMaster = {},
+  facilitiesCategories = {},
+  popularFacilities = [],
 }) {
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [expanded, setExpanded] = useState({
@@ -342,6 +346,10 @@ export default function LeftPanel({
                     onAgeRangeToggle={onAgeRangeToggle}
                     // 検索実行状態
                     hasSearched={hasSearched}
+                    // 設備関連
+                    facilitiesMaster={facilitiesMaster}
+                    facilitiesCategories={facilitiesCategories}
+                    popularFacilities={popularFacilities}
                   />
                 </Box>
               )}

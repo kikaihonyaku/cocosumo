@@ -12,8 +12,10 @@ import {
 import {
   Clear as ClearIcon,
   FilterList as FilterListIcon,
+  MoreHoriz as MoreHorizIcon,
 } from '@mui/icons-material';
 import DistributionBarChart from './DistributionBarChart';
+import FacilitySelectDialog from './FacilitySelectDialog';
 
 // 間取りタイプ定義
 const ROOM_TYPES = [
@@ -81,7 +83,13 @@ export default function AdvancedSearchTab({
   onAgeRangeToggle,
   // 検索実行状態
   hasSearched = false,
+  // 設備関連
+  facilitiesMaster = {},
+  facilitiesCategories = {},
+  popularFacilities = [],
 }) {
+  // 設備選択ダイアログの状態
+  const [facilityDialogOpen, setFacilityDialogOpen] = useState(false);
   // ローカルステートでスライダー値を管理（ドラッグ中のパフォーマンス向上のため）
   const [localRentRange, setLocalRentRange] = useState(filters.rentRange);
   const [localAreaRange, setLocalAreaRange] = useState(filters.areaRange);
@@ -117,6 +125,22 @@ export default function AdvancedSearchTab({
 
   const handleAgeChangeCommitted = useCallback((event, newValue) => {
     const newFilters = { ...filters, ageRange: newValue };
+    onFiltersChange(newFilters);
+  }, [filters, onFiltersChange]);
+
+  // 設備チップの選択（フロントエンドフィルタにより即座に反映）
+  const handleFacilityToggle = useCallback((facilityCode) => {
+    const currentFacilities = filters.facilities || [];
+    const newFacilities = currentFacilities.includes(facilityCode)
+      ? currentFacilities.filter(f => f !== facilityCode)
+      : [...currentFacilities, facilityCode];
+    const newFilters = { ...filters, facilities: newFacilities };
+    onFiltersChange(newFilters);
+  }, [filters, onFiltersChange]);
+
+  // 設備選択ダイアログからの選択反映
+  const handleFacilitiesChange = useCallback((newFacilities) => {
+    const newFilters = { ...filters, facilities: newFacilities };
     onFiltersChange(newFilters);
   }, [filters, onFiltersChange]);
 
@@ -404,6 +428,65 @@ export default function AdvancedSearchTab({
         </Box>
       </Box>
 
+      {/* 設備 */}
+      <Box>
+        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+          設備
+        </Typography>
+        {/* 人気設備チップ */}
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+          {popularFacilities.map((facility) => {
+            const isSelected = (filters.facilities || []).includes(facility.code);
+            return (
+              <Chip
+                key={facility.code}
+                label={facility.name}
+                size="small"
+                onClick={() => handleFacilityToggle(facility.code)}
+                sx={{
+                  bgcolor: isSelected ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                  color: 'white',
+                  border: isSelected ? '2px solid white' : '1px solid rgba(255, 255, 255, 0.3)',
+                  fontSize: '0.7rem',
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  },
+                }}
+              />
+            );
+          })}
+        </Box>
+        {/* その他の設備を選択ボタン */}
+        <Button
+          variant="text"
+          size="small"
+          startIcon={<MoreHorizIcon />}
+          onClick={() => setFacilityDialogOpen(true)}
+          sx={{
+            color: 'rgba(255, 255, 255, 0.8)',
+            fontSize: '0.75rem',
+            '&:hover': {
+              bgcolor: 'rgba(255, 255, 255, 0.1)',
+            },
+          }}
+        >
+          その他の設備を選択
+          {(filters.facilities || []).length > 0 && (
+            <Chip
+              label={`${(filters.facilities || []).length}件`}
+              size="small"
+              sx={{
+                ml: 1,
+                height: 18,
+                fontSize: '0.65rem',
+                bgcolor: 'rgba(255, 255, 255, 0.2)',
+                color: 'white',
+              }}
+            />
+          )}
+        </Button>
+      </Box>
+
       {/* 面積スライダー */}
       <Box>
         <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
@@ -525,6 +608,16 @@ export default function AdvancedSearchTab({
           条件をリセット
         </Button>
       </Box>
+
+      {/* 設備選択ダイアログ */}
+      <FacilitySelectDialog
+        open={facilityDialogOpen}
+        onClose={() => setFacilityDialogOpen(false)}
+        facilities={facilitiesMaster}
+        categories={facilitiesCategories}
+        selected={filters.facilities || []}
+        onSelectionChange={handleFacilitiesChange}
+      />
     </Box>
   );
 }

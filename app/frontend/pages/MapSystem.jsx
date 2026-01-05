@@ -56,6 +56,10 @@ export default function MapSystem() {
   const [mapControllers, setMapControllers] = useState(null);
   const [availableLayers, setAvailableLayers] = useState([]);
   const [stores, setStores] = useState([]);
+  // 設備マスタ
+  const [facilitiesMaster, setFacilitiesMaster] = useState({});
+  const [facilitiesCategories, setFacilitiesCategories] = useState({});
+  const [popularFacilities, setPopularFacilities] = useState([]);
 
   // 詳細検索関連のステート
   const [leftPanelActiveTab, setLeftPanelActiveTab] = useState(0);
@@ -64,6 +68,7 @@ export default function MapSystem() {
     roomTypes: [],
     areaRange: [0, 200],
     ageRange: [0, 40],
+    facilities: [],
   });
   const [geoFilter, setGeoFilter] = useState({
     type: null,  // 'circle' | 'polygon' | null
@@ -113,6 +118,7 @@ export default function MapSystem() {
   useEffect(() => {
     fetchMapLayers();
     fetchStores();
+    fetchFacilities();
   }, []);
 
   // 店舗一覧の取得
@@ -128,6 +134,24 @@ export default function MapSystem() {
       }
     } catch (err) {
       console.error('店舗取得エラー:', err);
+    }
+  };
+
+  // 設備マスタの取得
+  const fetchFacilities = async () => {
+    try {
+      const response = await fetch('/api/v1/facilities', {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setFacilitiesMaster(data.facilities || {});
+        setFacilitiesCategories(data.categories || {});
+        setPopularFacilities(data.popular || []);
+      }
+    } catch (err) {
+      console.error('設備マスタ取得エラー:', err);
     }
   };
 
@@ -297,6 +321,7 @@ export default function MapSystem() {
       roomTypes: [],
       areaRange: [0, 200],
       ageRange: [0, 40],
+      facilities: [],
     };
     setAdvancedSearchFilters(defaultFilters);
     setGeoFilter({ type: null, circle: null, polygon: null });
@@ -571,6 +596,10 @@ export default function MapSystem() {
               stores={stores}
               // 検索実行状態
               hasSearched={hasSearched}
+              // 設備関連
+              facilitiesMaster={facilitiesMaster}
+              facilitiesCategories={facilitiesCategories}
+              popularFacilities={popularFacilities}
             />
             {/* 上部エリア（地図 + 右ペイン） */}
             <Box

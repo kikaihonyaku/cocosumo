@@ -56,6 +56,7 @@ function matchesRangeSelection(value, ranges) {
  * @param {Array} filters.roomTypes - ['1K', '1LDK', ...]
  * @param {Array} filters.areaRange - [min, max]
  * @param {Array} filters.ageRange - [min, max]
+ * @param {Array} filters.facilities - ['air_conditioner', 'auto_lock', ...] 設備コード
  * @param {Object} rangeSelections - 棒グラフ選択
  * @param {Array} rangeSelections.selectedRentRanges
  * @param {Array} rangeSelections.selectedAreaRanges
@@ -71,7 +72,8 @@ export function filterRooms(rooms, filters, rangeSelections = {}) {
     rentRange = [0, RENT_MAX_THRESHOLD],
     roomTypes = [],
     areaRange = [0, 200],
-    ageRange = [0, AGE_MAX_THRESHOLD]
+    ageRange = [0, AGE_MAX_THRESHOLD],
+    facilities = []
   } = filters || {};
 
   const {
@@ -128,6 +130,13 @@ export function filterRooms(rooms, filters, rangeSelections = {}) {
         if (!matchesRangeSelection(age, selectedAgeRanges)) return false;
       }
       // 築年数不明の場合は含める（バックエンドと同じ）
+    }
+
+    // 設備フィルタ（指定された全ての設備を持つ部屋のみ）
+    if (facilities.length > 0) {
+      const roomFacilities = room.facility_codes || [];
+      const hasAllFacilities = facilities.every(f => roomFacilities.includes(f));
+      if (!hasAllFacilities) return false;
     }
 
     return true;

@@ -64,10 +64,16 @@ class Api::V1::RoomsController < ApplicationController
 
   # PATCH/PUT /api/v1/rooms/:id
   def update
-    if @room.update(room_params)
-      render json: @room
-    else
-      render json: { errors: @room.errors.full_messages }, status: :unprocessable_entity
+    Room.transaction do
+      if @room.update(room_params)
+        # facility_codesが渡された場合、room_facilitiesを更新
+        if params[:room][:facility_codes].present?
+          update_room_facilities(params[:room][:facility_codes])
+        end
+        render json: @room
+      else
+        render json: { errors: @room.errors.full_messages }, status: :unprocessable_entity
+      end
     end
   end
 
@@ -268,6 +274,19 @@ class Api::V1::RoomsController < ApplicationController
         extracted_data['available_date_note'] = '即入居可'
       end
 
+      # 設備の正規化処理
+      if extracted_data['facilities'].present?
+        normalizer = FacilityNormalizer.new
+        facility_result = normalizer.normalize(extracted_data['facilities'])
+
+        # マッチした設備のコードリストを追加
+        extracted_data['facility_codes'] = facility_result[:matched].map { |m| m[:facility].code }
+        # 表示用に正規化済み設備名リストを追加
+        extracted_data['normalized_facilities'] = facility_result[:matched].map { |m| m[:facility].name }
+        # 未マッチ設備を追加
+        extracted_data['unmatched_facilities'] = facility_result[:unmatched]
+      end
+
       render json: {
         success: true,
         extracted_data: extracted_data,
@@ -359,6 +378,20 @@ class Api::V1::RoomsController < ApplicationController
   def require_login
     unless current_user
       render json: { error: '認証が必要です' }, status: :unauthorized
+    end
+  end
+
+  # facility_codesから部屋の設備を更新
+  def update_room_facilities(facility_codes)
+    # 既存のroom_facilitiesを削除
+    @room.room_facilities.destroy_all
+
+    # 設備コードから設備を取得して登録
+    Array(facility_codes).each do |code|
+      facility = Facility.find_by(code: code)
+      next unless facility
+
+      @room.room_facilities.create!(facility: facility)
     end
   end
 
