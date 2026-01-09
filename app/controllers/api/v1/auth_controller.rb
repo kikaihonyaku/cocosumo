@@ -23,7 +23,16 @@ class Api::V1::AuthController < ApplicationController
 
   # POST /api/v1/auth/login - ログイン
   def login
-    user = User.find_by(email: params[:email])
+    # サブドメインからテナントが解決された場合、そのテナント内でユーザーを検索
+    if @resolved_tenant
+      user = @resolved_tenant.users.find_by(email: params[:email])
+    else
+      # サブドメインが無い場合はエラー
+      return render json: {
+        success: false,
+        error: 'テナントを特定できません。正しいURLからアクセスしてください。'
+      }, status: :bad_request
+    end
 
     # ユーザーが存在しない場合
     unless user
