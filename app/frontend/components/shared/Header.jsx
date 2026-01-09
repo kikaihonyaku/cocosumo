@@ -212,7 +212,7 @@ export default function Header() {
                 <MenuIcon />
               </IconButton>
               <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <Link to="/" style={{ textDecoration: "none", fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center' }}>
+                <Link to="/home" style={{ textDecoration: "none", fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center' }}>
                   <img src="/cocosumo-logo_blue.png" alt="CoCoスモ" style={{ height: '28px', width: 'auto' }} />
                 </Link>
               </Box>
@@ -221,7 +221,7 @@ export default function Header() {
           ) : (
             // デスクトップ表示
             <>
-              <Link to="/" style={{ textDecoration: "none", fontWeight: 700, marginRight: "1.5rem", color: 'white', display: 'flex', alignItems: 'center' }}>
+              <Link to="/home" style={{ textDecoration: "none", fontWeight: 700, marginRight: "1.5rem", color: 'white', display: 'flex', alignItems: 'center' }}>
                 <img src="/cocosumo-logo_blue.png" alt="CoCoスモ" style={{ height: '28px', width: 'auto' }} />
               </Link>
             </>
