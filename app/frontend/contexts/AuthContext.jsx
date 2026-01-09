@@ -12,6 +12,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [tenant, setTenant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -56,14 +57,17 @@ export const AuthProvider = ({ children }) => {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
+        setTenant(data.tenant);
         setIsAuthenticated(true);
       } else {
         setUser(null);
+        setTenant(null);
         setIsAuthenticated(false);
       }
     } catch (error) {
       console.error('認証状態確認エラー:', error);
       setUser(null);
+      setTenant(null);
       setIsAuthenticated(false);
     } finally {
       setLoading(false);
@@ -117,6 +121,7 @@ export const AuthProvider = ({ children }) => {
       console.error('ログアウトエラー:', error);
     } finally {
       setUser(null);
+      setTenant(null);
       setIsAuthenticated(false);
     }
   };
@@ -149,6 +154,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    tenant,
     isAuthenticated,
     loading,
     login,

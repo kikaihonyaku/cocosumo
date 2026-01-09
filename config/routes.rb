@@ -24,6 +24,8 @@ Rails.application.routes.draw do
       post 'auth/login', to: 'auth#login'
       post 'auth/logout', to: 'auth#logout'
       post 'auth/change_password', to: 'auth#change_password'
+      get 'auth/profile', to: 'auth#profile'
+      patch 'auth/profile', to: 'auth#update_profile'
 
       # Gemini AI
       post 'gemini/process_image', to: 'gemini#process_image'
@@ -126,7 +128,11 @@ Rails.application.routes.draw do
 
       # 管理者用API
       namespace :admin do
-        resources :users
+        resources :users do
+          member do
+            post :unlock
+          end
+        end
 
         resources :map_layers do
           member do

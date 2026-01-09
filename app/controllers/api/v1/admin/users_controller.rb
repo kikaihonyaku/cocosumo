@@ -11,12 +11,18 @@ class Api::V1::Admin::UsersController < ApplicationController
     @users = @users.where(role: params[:role]) if params[:role].present?
     @users = @users.where('name ILIKE ? OR email ILIKE ?', "%#{params[:search]}%", "%#{params[:search]}%") if params[:search].present?
 
-    render json: @users.as_json(only: [:id, :name, :email, :role, :created_at, :auth_provider])
+    render json: @users.as_json(
+      only: [:id, :name, :email, :role, :created_at, :auth_provider, :phone, :position, :employee_code, :active, :last_login_at, :locked_at],
+      include: { store: { only: [:id, :name] } }
+    )
   end
 
   # GET /api/v1/admin/users/:id
   def show
-    render json: @user.as_json(only: [:id, :name, :email, :role, :created_at, :auth_provider])
+    render json: @user.as_json(
+      only: [:id, :name, :email, :role, :created_at, :auth_provider, :phone, :position, :employee_code, :active, :last_login_at, :locked_at, :store_id],
+      include: { store: { only: [:id, :name] } }
+    )
   end
 
   # POST /api/v1/admin/users
@@ -81,6 +87,14 @@ class Api::V1::Admin::UsersController < ApplicationController
   end
 
   def user_params
-    params.permit(:name, :email, :password, :role)
+    params.permit(:name, :email, :password, :role, :phone, :position, :employee_code, :active, :store_id)
+  end
+
+  # POST /api/v1/admin/users/:id/unlock - アカウントロック解除
+  def unlock
+    @user = current_tenant.users.find(params[:id])
+    @user.unlock!
+    AdminAuditLog.log_action(current_user, 'update', @user, changes: { locked_at: [nil, nil] })
+    render json: { success: true, message: 'アカウントのロックを解除しました' }
   end
 end

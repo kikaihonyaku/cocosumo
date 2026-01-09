@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_09_195313) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_09_202147) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -570,6 +570,20 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_09_195313) do
     t.string "auth_uid"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "phone"
+    t.string "avatar_url"
+    t.boolean "active", default: true, null: false
+    t.datetime "last_login_at"
+    t.bigint "store_id"
+    t.string "position"
+    t.string "employee_code"
+    t.jsonb "notification_settings", default: {}
+    t.datetime "password_changed_at"
+    t.integer "failed_login_count", default: 0, null: false
+    t.datetime "locked_at"
+    t.index ["active"], name: "index_users_on_active"
+    t.index ["employee_code"], name: "index_users_on_employee_code"
+    t.index ["store_id"], name: "index_users_on_store_id"
     t.index ["tenant_id"], name: "index_users_on_tenant_id"
   end
 
@@ -684,6 +698,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_09_195313) do
   add_foreign_key "tenants", "users", column: "created_by_id"
   add_foreign_key "unmatched_facilities", "facilities", column: "mapped_to_facility_id"
   add_foreign_key "unmatched_facilities", "rooms"
+  add_foreign_key "users", "stores"
   add_foreign_key "users", "tenants"
   add_foreign_key "virtual_staging_variations", "room_photos", column: "after_photo_id"
   add_foreign_key "virtual_staging_variations", "virtual_stagings"

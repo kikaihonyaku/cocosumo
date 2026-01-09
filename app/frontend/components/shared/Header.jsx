@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
@@ -42,13 +42,15 @@ import {
   SupervisorAccount as SupervisorAccountIcon,
   Lock as LockIcon,
   Logout as LogoutIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  Settings as SettingsIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import ChangePasswordDialog from "./ChangePasswordDialog";
 
 export default function Header() {
-  const { user, logout } = useAuth();
+  const { user, tenant, logout } = useAuth();
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -137,6 +139,11 @@ export default function Header() {
   const handleLogoutFromMenu = async () => {
     handleUserMenuClose();
     await logout();
+  };
+
+  const handleProfileOpen = () => {
+    handleUserMenuClose();
+    navigate('/profile');
   };
 
   const contentMenuItems = [
@@ -402,18 +409,25 @@ export default function Header() {
                       horizontal: 'right',
                     }}
                   >
-                    <MenuItem disabled>
-                      <Typography variant="body2" color="text.secondary">
-                        {user.auth_provider === 'google' ? 'Google認証' : user.code}
-                      </Typography>
-                    </MenuItem>
+                    {tenant && (
+                      <MenuItem disabled>
+                        <Typography variant="body2" color="text.secondary">
+                          {tenant.name}
+                        </Typography>
+                      </MenuItem>
+                    )}
                     <Divider />
+                    <MenuItem onClick={handleProfileOpen}>
+                      <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
+                      <ListItemText>プロフィール設定</ListItemText>
+                    </MenuItem>
                     {user.auth_provider !== 'google' && (
                       <MenuItem onClick={handleChangePasswordOpen}>
                         <ListItemIcon><LockIcon fontSize="small" /></ListItemIcon>
                         <ListItemText>パスワード変更</ListItemText>
                       </MenuItem>
                     )}
+                    <Divider />
                     <MenuItem onClick={handleLogoutFromMenu}>
                       <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
                       <ListItemText>ログアウト</ListItemText>
@@ -607,12 +621,34 @@ export default function Header() {
           <>
             <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.3)', my: 2 }} />
             <Box sx={{ p: 2 }}>
+              {tenant && (
+                <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', mb: 1, display: 'block' }}>
+                  {tenant.name}
+                </Typography>
+              )}
               <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', mb: 1 }}>
                 {user.name}
               </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', mb: 2, display: 'block' }}>
-                ({user.auth_provider === 'google' ? 'Google認証' : user.code})
-              </Typography>
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={() => {
+                  handleMobileMenuClose();
+                  navigate('/profile');
+                }}
+                startIcon={<SettingsIcon />}
+                sx={{
+                  color: 'white',
+                  borderColor: 'white',
+                  mb: 1,
+                  '&:hover': {
+                    borderColor: 'white',
+                    bgcolor: 'rgba(255, 255, 255, 0.1)'
+                  }
+                }}
+              >
+                プロフィール設定
+              </Button>
               {user.auth_provider !== 'google' && (
                 <Button
                   variant="outlined"

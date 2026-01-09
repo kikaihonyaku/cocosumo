@@ -58,6 +58,13 @@ export const adminUsersApi = {
   create: (data) => apiClient.post('/admin/users', data),
   update: (id, data) => apiClient.patch(`/admin/users/${id}`, data),
   delete: (id) => apiClient.delete(`/admin/users/${id}`),
+  unlock: (id) => apiClient.post(`/admin/users/${id}/unlock`),
+};
+
+// Stores API
+export const storesApi = {
+  list: (params) => apiClient.get('/stores', { params }),
+  get: (id) => apiClient.get(`/stores/${id}`),
 };
 
 export default apiClient;

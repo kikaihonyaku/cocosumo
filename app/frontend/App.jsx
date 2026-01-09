@@ -43,6 +43,7 @@ import CustomerAccessAnalytics from "./pages/CustomerAccessAnalytics";
 import SalesPresentation from "./pages/SalesPresentation";
 import TenantManagement from "./pages/super_admin/TenantManagement";
 import UserManagement from "./pages/admin/UserManagement";
+import ProfileSettings from "./pages/ProfileSettings";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -159,6 +160,7 @@ export default function App() {
           {/* 認証が必要なページ */}
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route path="/home" element={<Home />} />
+            <Route path="/profile" element={<ProfileSettings />} />
             <Route path="/map" element={<MapSystem />} />
             <Route path="/vr-tours" element={<VrTours />} />
             <Route path="/virtual-stagings" element={<VirtualStagings />} />
