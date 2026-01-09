@@ -98,8 +98,7 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, onC
         onCreated?.();
 
         // 成功メッセージとURLを表示
-        const accessUrl = `${window.location.origin}${response.data.customer_access.public_url}`;
-        alert(`顧客アクセス権を発行しました。\n\nURL: ${accessUrl}`);
+        alert(`顧客アクセス権を発行しました。\n\nURL: ${response.data.customer_access.public_url}`);
       }
     } catch (err) {
       console.error('Failed to create customer access:', err);

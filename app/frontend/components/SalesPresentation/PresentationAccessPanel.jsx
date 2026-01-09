@@ -71,9 +71,8 @@ export default function PresentationAccessPanel({ publicationId, onAccessCreated
   };
 
   const handleCopyUrl = async (access) => {
-    const url = `${window.location.origin}${access.public_url}`;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(access.public_url);
       alert('URLをコピーしました');
     } catch (err) {
       console.error('Failed to copy URL:', err);
@@ -82,8 +81,7 @@ export default function PresentationAccessPanel({ publicationId, onAccessCreated
   };
 
   const handleOpenUrl = (access) => {
-    const url = `${window.location.origin}${access.public_url}`;
-    window.open(url, '_blank');
+    window.open(access.public_url, '_blank');
     handleMenuClose();
   };
 

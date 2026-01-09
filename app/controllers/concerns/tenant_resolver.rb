@@ -28,5 +28,6 @@ module TenantResolver
   def store_request_info
     Thread.current[:request_ip] = request.remote_ip
     Thread.current[:request_user_agent] = request.user_agent
+    Thread.current[:request_base_url] = "#{request.protocol}#{request.host_with_port}"
   end
 end

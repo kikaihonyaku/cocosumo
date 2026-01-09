@@ -104,11 +104,24 @@ class PropertyPublication < ApplicationRecord
   # Get public URL
   def public_url
     return nil unless published?
-    # Use path instead of url to avoid host requirement
-    "/property/#{publication_id}"
+    base_url = Thread.current[:request_base_url] || tenant_base_url
+    "#{base_url}/property/#{publication_id}"
   rescue => e
     Rails.logger.error "Error generating public_url: #{e.message}"
     nil
+  end
+
+  # テナント対応のベースURL（リクエストコンテキストがない場合のフォールバック）
+  def tenant_base_url
+    base_domain = ENV.fetch('APP_BASE_DOMAIN', 'cocosumo.space')
+    protocol = Rails.env.production? ? 'https' : (ENV['APP_PROTOCOL'] || 'http')
+    subdomain = tenant&.subdomain
+
+    if subdomain.present?
+      "#{protocol}://#{subdomain}.#{base_domain}"
+    else
+      "#{protocol}://#{base_domain}"
+    end
   end
 
   # Get QR code data URL

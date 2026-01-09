@@ -62,7 +62,7 @@ export default function PresentationAccessDialog({ open, onClose, publicationId,
       );
 
       if (response.data.success) {
-        const accessUrl = `${window.location.origin}${response.data.presentation_access.public_url}`;
+        const accessUrl = response.data.presentation_access.public_url;
 
         // クリップボードにコピー
         try {

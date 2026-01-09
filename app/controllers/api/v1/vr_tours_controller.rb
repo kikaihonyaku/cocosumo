@@ -59,7 +59,7 @@ class Api::V1::VrToursController < ApplicationController
           }
         }
       }
-    }, methods: [:initial_scene, :minimap_image_url])
+    }, methods: [:initial_scene, :minimap_image_url, :public_url])
   end
 
   # GET /vr/:public_id (公開用、認証不要)
@@ -145,7 +145,8 @@ class Api::V1::VrToursController < ApplicationController
               }
             }
           }
-        }
+        },
+        methods: [:public_url]
       )
     }
   end
@@ -166,7 +167,8 @@ class Api::V1::VrToursController < ApplicationController
               }
             }
           }
-        }
+        },
+        methods: [:public_url]
       )
     }
   end

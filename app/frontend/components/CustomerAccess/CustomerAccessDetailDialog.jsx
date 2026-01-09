@@ -96,9 +96,8 @@ export default function CustomerAccessDetailDialog({
 
   const handleCopyUrl = async () => {
     if (!access) return;
-    const url = `${window.location.origin}${access.public_url}`;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(access.public_url);
       alert('URLをコピーしました');
     } catch (err) {
       console.error('Failed to copy URL:', err);
@@ -294,7 +293,7 @@ export default function CustomerAccessDetailDialog({
                     fontFamily: 'monospace'
                   }}
                 >
-                  {window.location.origin}{access.public_url}
+                  {access.public_url}
                 </Typography>
                 <Tooltip title="URLをコピー">
                   <IconButton size="small" onClick={handleCopyUrl}>

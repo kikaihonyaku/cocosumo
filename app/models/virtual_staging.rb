@@ -37,6 +37,31 @@ class VirtualStaging < ApplicationRecord
     before_photo_url
   end
 
+  # 公開URL生成
+  def public_url
+    return nil unless published?
+    base_url = Thread.current[:request_base_url] || tenant_base_url
+    "#{base_url}/virtual-staging/#{public_id}"
+  end
+
+  # テナント情報
+  def tenant
+    room&.building&.tenant
+  end
+
+  # テナント対応のベースURL（リクエストコンテキストがない場合のフォールバック）
+  def tenant_base_url
+    base_domain = ENV.fetch('APP_BASE_DOMAIN', 'cocosumo.space')
+    protocol = Rails.env.production? ? 'https' : (ENV['APP_PROTOCOL'] || 'http')
+    subdomain = tenant&.subdomain
+
+    if subdomain.present?
+      "#{protocol}://#{subdomain}.#{base_domain}"
+    else
+      "#{protocol}://#{base_domain}"
+    end
+  end
+
   private
 
   def generate_public_id

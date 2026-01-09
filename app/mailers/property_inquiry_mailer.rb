@@ -56,8 +56,9 @@ class PropertyInquiryMailer < ApplicationMailer
   private
 
   def property_public_url(publication)
-    host = ENV.fetch('APP_HOST', 'https://cocosumo.space')
-    "#{host}/property/#{publication.publication_id}"
+    tenant = publication.tenant
+    base_url = tenant_base_url(tenant)
+    "#{base_url}/property/#{publication.publication_id}"
   end
 
   def default_from

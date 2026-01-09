@@ -18,7 +18,8 @@ class CustomerAccessMailer < ApplicationMailer
   private
 
   def customer_access_url(customer_access)
-    host = ENV.fetch('APP_HOST', 'https://cocosumo.space')
-    "#{host}/customer/#{customer_access.access_token}"
+    tenant = customer_access.tenant
+    base_url = tenant_base_url(tenant)
+    "#{base_url}/customer/#{customer_access.access_token}"
   end
 end

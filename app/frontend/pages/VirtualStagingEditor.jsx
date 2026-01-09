@@ -217,9 +217,10 @@ const VirtualStagingEditor = () => {
   };
 
   const handleCopyUrl = () => {
-    const publicUrl = `${window.location.origin}/virtual-staging/${virtualStaging.public_id}`;
-    navigator.clipboard.writeText(publicUrl);
-    showSnackbar('URLをコピーしました', 'success');
+    if (virtualStaging.public_url) {
+      navigator.clipboard.writeText(virtualStaging.public_url);
+      showSnackbar('URLをコピーしました', 'success');
+    }
   };
 
   const showSnackbar = (message, severity = 'success') => {
@@ -323,7 +324,7 @@ const VirtualStagingEditor = () => {
               <>
                 <Box sx={{ mr: { xs: 0.5, md: 1 } }}>
                   <SharePanel
-                    publicUrl={`${window.location.origin}/virtual-staging/${virtualStaging.public_id}`}
+                    publicUrl={virtualStaging.public_url}
                     title={virtualStaging.title}
                     variant="icon"
                   />
@@ -596,7 +597,7 @@ const VirtualStagingEditor = () => {
             このバーチャルステージングを公開しますか？
           </Typography>
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            公開URL: {window.location.origin}/virtual-staging/{virtualStaging.public_id}
+            公開URL: {virtualStaging.public_url || `${window.location.origin}/virtual-staging/${virtualStaging.public_id}`}
           </Typography>
           <Box sx={{ mt: 2 }}>
             <Typography variant="subtitle2">タイトル:</Typography>

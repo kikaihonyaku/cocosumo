@@ -60,7 +60,7 @@ class Api::V1::VirtualStagingsController < ApplicationController
           methods: [:after_photo_url]
         }
       },
-      methods: [:before_photo_url, :after_photo_url]
+      methods: [:before_photo_url, :after_photo_url, :public_url]
     )
   end
 
@@ -152,7 +152,7 @@ class Api::V1::VirtualStagingsController < ApplicationController
             }
           }
         },
-        methods: [:before_photo_url, :after_photo_url]
+        methods: [:before_photo_url, :after_photo_url, :public_url]
       )
     }
   end
@@ -174,7 +174,7 @@ class Api::V1::VirtualStagingsController < ApplicationController
             }
           }
         },
-        methods: [:before_photo_url, :after_photo_url]
+        methods: [:before_photo_url, :after_photo_url, :public_url]
       )
     }
   end
