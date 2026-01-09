@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_05_210106) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_07_221536) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -61,6 +61,25 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_05_210106) do
     t.index ["location"], name: "index_address_points_on_location", using: :gist
     t.index ["map_layer_id", "prefecture", "city"], name: "index_address_points_on_map_layer_id_and_prefecture_and_city"
     t.index ["map_layer_id"], name: "index_address_points_on_map_layer_id"
+  end
+
+  create_table "admin_audit_logs", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "tenant_id"
+    t.string "action", null: false
+    t.string "resource_type"
+    t.bigint "resource_id"
+    t.jsonb "changes", default: {}
+    t.jsonb "metadata", default: {}
+    t.string "ip_address"
+    t.string "user_agent"
+    t.datetime "created_at", null: false
+    t.index ["action"], name: "index_admin_audit_logs_on_action"
+    t.index ["resource_type", "resource_id"], name: "index_admin_audit_logs_on_resource_type_and_resource_id"
+    t.index ["tenant_id", "created_at"], name: "index_admin_audit_logs_on_tenant_id_and_created_at"
+    t.index ["tenant_id"], name: "index_admin_audit_logs_on_tenant_id"
+    t.index ["user_id", "created_at"], name: "index_admin_audit_logs_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_admin_audit_logs_on_user_id"
   end
 
   create_table "ai_generated_images", force: :cascade do |t|
@@ -518,6 +537,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_05_210106) do
     t.text "settings"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "status", default: 0, null: false
+    t.string "plan", default: "basic"
+    t.integer "max_users", default: 10
+    t.integer "max_buildings", default: 100
+    t.bigint "created_by_id"
+    t.datetime "suspended_at"
+    t.text "suspended_reason"
+    t.index ["status"], name: "index_tenants_on_status"
   end
 
   create_table "unmatched_facilities", force: :cascade do |t|
@@ -622,6 +649,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_05_210106) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "address_points", "map_layers"
+  add_foreign_key "admin_audit_logs", "tenants"
+  add_foreign_key "admin_audit_logs", "users"
   add_foreign_key "ai_generated_images", "room_photos"
   add_foreign_key "ai_generated_images", "rooms"
   add_foreign_key "building_photos", "buildings"
@@ -653,6 +682,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_05_210106) do
   add_foreign_key "school_districts", "map_layers"
   add_foreign_key "stores", "tenants"
   add_foreign_key "suumo_import_histories", "tenants"
+  add_foreign_key "tenants", "users", column: "created_by_id"
   add_foreign_key "unmatched_facilities", "facilities", column: "mapped_to_facility_id"
   add_foreign_key "unmatched_facilities", "rooms"
   add_foreign_key "users", "tenants"

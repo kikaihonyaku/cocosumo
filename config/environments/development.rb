@@ -74,4 +74,8 @@ Rails.application.configure do
   config.hosts << "cocosumo.space"
   config.hosts << "www.cocosumo.space"  # www も使うなら追加
   config.hosts << "beta.cocosumo.space"
+
+  # サブドメイン方式のテナント識別用
+  # lvh.me は 127.0.0.1 に解決されるため追加設定不要
+  config.hosts << ".lvh.me"
 end

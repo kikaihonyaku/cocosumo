@@ -37,7 +37,9 @@ import {
   VideoLibrary as VideoLibraryIcon,
   ViewInAr as ViewInArIcon,
   Chair as ChairIcon,
-  Campaign as CampaignIcon
+  Campaign as CampaignIcon,
+  Business as BusinessIcon,
+  SupervisorAccount as SupervisorAccountIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -122,11 +124,25 @@ export default function Header() {
     { to: "/analytics/customer-accesses", label: "顧客アクセス分析", icon: <TrendingUpIcon fontSize="small" /> },
   ];
 
-  const adminMenuItems = [
-    { to: "/admin/stores", label: "店舗管理", icon: <StoreIcon fontSize="small" /> },
-    { to: "/admin/suumo-import", label: "SUUMOインポート", icon: <CloudDownloadIcon fontSize="small" /> },
-    { to: "/admin/layers", label: "レイヤー管理", icon: <LayersIcon fontSize="small" /> },
-  ];
+  // 管理者メニュー（roleに応じて動的に生成）
+  const getAdminMenuItems = () => {
+    const items = [
+      { to: "/admin/users", label: "ユーザー管理", icon: <SupervisorAccountIcon fontSize="small" />, minRole: 'admin' },
+      { to: "/admin/stores", label: "店舗管理", icon: <StoreIcon fontSize="small" />, minRole: 'admin' },
+      { to: "/admin/suumo-import", label: "SUUMOインポート", icon: <CloudDownloadIcon fontSize="small" />, minRole: 'admin' },
+      { to: "/admin/layers", label: "レイヤー管理", icon: <LayersIcon fontSize="small" />, minRole: 'admin' },
+      { to: "/super-admin/tenants", label: "テナント管理", icon: <BusinessIcon fontSize="small" />, minRole: 'super_admin' },
+    ];
+
+    return items.filter(item => {
+      if (item.minRole === 'super_admin') {
+        return user?.role === 'super_admin';
+      }
+      return user?.role === 'admin' || user?.role === 'super_admin';
+    });
+  };
+
+  const adminMenuItems = getAdminMenuItems();
 
   const menuItems = [
     { to: "/home", label: "ホーム", end: false },

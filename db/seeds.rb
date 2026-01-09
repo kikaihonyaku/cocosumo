@@ -18,6 +18,15 @@ tenant = Tenant.create!(
 puts "✓ テナント作成完了: #{tenant.name}"
 
 # ユーザー作成
+super_admin_user = User.create!(
+  tenant: tenant,
+  email: "superadmin@example.com",
+  name: "スーパー管理者",
+  password: "password123",
+  password_confirmation: "password123",
+  role: :super_admin
+)
+
 admin_user = User.create!(
   tenant: tenant,
   email: "admin@example.com",
@@ -137,6 +146,7 @@ puts "建物: #{Building.count}件"
 puts "部屋: #{Room.count}件"
 puts "VRツアー: #{VrTour.count}件"
 puts "\nログイン情報:"
+puts "スーパー管理者 - Email: superadmin@example.com / Password: password123"
 puts "管理者 - Email: admin@example.com / Password: password123"
 puts "一般ユーザー - Email: member@example.com / Password: password123"
 

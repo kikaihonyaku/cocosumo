@@ -108,8 +108,25 @@ Rails.application.routes.draw do
         end
       end
 
+      # スーパー管理者用API
+      namespace :super_admin do
+        resources :tenants do
+          member do
+            post :suspend
+            post :reactivate
+            post :impersonate
+          end
+          collection do
+            get :dashboard
+            post :stop_impersonation
+          end
+        end
+      end
+
       # 管理者用API
       namespace :admin do
+        resources :users
+
         resources :map_layers do
           member do
             post :append_features    # フィーチャー追加

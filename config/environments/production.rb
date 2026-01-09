@@ -93,6 +93,7 @@ Rails.application.configure do
   # Cloudflare Tunnel 経由でアクセスするホストを許可
   config.hosts << "cocosumo.space"
   config.hosts << "www.cocosumo.space"  # www も使うなら追加
+  config.hosts << ".cocosumo.space"     # サブドメイン方式のテナント識別用
   config.hosts << "localhost"
   config.hosts << "0.0.0.0"
 

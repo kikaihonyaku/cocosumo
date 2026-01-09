@@ -4,7 +4,9 @@ import { ThemeProvider } from "@mui/material/styles";
 import { CssBaseline, useMediaQuery, Box, CircularProgress } from "@mui/material";
 import muiTheme from "./theme/muiTheme";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { TenantProvider } from "./contexts/TenantContext";
 import Header from "./components/shared/Header";
+import ImpersonationBanner from "./components/shared/ImpersonationBanner";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
@@ -39,6 +41,8 @@ import CustomerAccessManager from "./pages/admin/CustomerAccessManager";
 import InquiryManager from "./pages/admin/InquiryManager";
 import CustomerAccessAnalytics from "./pages/CustomerAccessAnalytics";
 import SalesPresentation from "./pages/SalesPresentation";
+import TenantManagement from "./pages/super_admin/TenantManagement";
+import UserManagement from "./pages/admin/UserManagement";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -58,6 +62,24 @@ function ProtectedRoute({ children }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  return children;
+}
+
+// スーパー管理者権限が必要なルートを保護するコンポーネント
+function SuperAdminRoute({ children }) {
+  const { user } = useAuth();
+  if (user?.role !== 'super_admin') {
+    return <Navigate to="/home" replace />;
+  }
+  return children;
+}
+
+// 管理者権限が必要なルートを保護するコンポーネント
+function AdminRoute({ children }) {
+  const { user } = useAuth();
+  if (user?.role !== 'admin' && user?.role !== 'super_admin') {
+    return <Navigate to="/home" replace />;
+  }
   return children;
 }
 
@@ -96,6 +118,7 @@ function Layout() {
 
   return (
     <div style={{ fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif" }}>
+      <ImpersonationBanner />
       <Header />
 
       <main style={{ padding: "1.25rem" }}>
@@ -114,7 +137,8 @@ export default function App() {
     <ThemeProvider theme={muiTheme}>
       <CssBaseline />
       <AuthProvider>
-        <Routes>
+        <TenantProvider>
+          <Routes>
           {/* 公開ページ */}
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
@@ -164,8 +188,15 @@ export default function App() {
             <Route path="/room/:roomId/virtual-staging/:id/viewer" element={<VirtualStagingViewer />} />
             <Route path="/room/:roomId/property-publication/new" element={<PropertyPublicationEditor />} />
             <Route path="/room/:roomId/property-publication/:id/edit" element={<PropertyPublicationEditor />} />
+
+            {/* スーパー管理者用ルート */}
+            <Route path="/super-admin/tenants" element={<SuperAdminRoute><TenantManagement /></SuperAdminRoute>} />
+
+            {/* 管理者用ルート */}
+            <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
           </Route>
         </Routes>
+        </TenantProvider>
       </AuthProvider>
     </ThemeProvider>
   );

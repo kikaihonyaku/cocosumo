@@ -4,7 +4,7 @@ class Api::V1::AuthController < ApplicationController
 
   # GET /api/v1/auth/me - 現在のユーザー情報取得
   def me
-    render json: {
+    response_data = {
       user: {
         id: current_user.id,
         email: current_user.email,
@@ -12,8 +12,13 @@ class Api::V1::AuthController < ApplicationController
         role: current_user.role,
         tenant_id: current_user.tenant_id,
         auth_provider: current_user.auth_provider
-      }
+      },
+      tenant: current_tenant&.as_json(only: [:id, :name, :subdomain, :status]),
+      impersonating: impersonating?,
+      original_tenant: original_tenant&.as_json(only: [:id, :name, :subdomain])
     }
+
+    render json: response_data
   end
 
   # POST /api/v1/auth/login - ログイン
