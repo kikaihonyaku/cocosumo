@@ -17,35 +17,7 @@ class Api::V1::RoomsController < ApplicationController
 
   # GET /api/v1/rooms/:id
   def show
-    room_json = @room.as_json(
-      include: {
-        building: {},
-        room_photos: {},
-        vr_tours: {}
-      },
-      methods: [:status_label, :room_type_label, :facility_codes, :facility_names]
-    )
-
-    # 募集図面PDFのURLを追加
-    if @room.floorplan_pdf.attached?
-      room_json['floorplan_pdf_url'] = if Rails.env.production?
-        @room.floorplan_pdf.url
-      else
-        Rails.application.routes.url_helpers.rails_blob_path(@room.floorplan_pdf, only_path: true)
-      end
-      room_json['floorplan_pdf_filename'] = @room.floorplan_pdf.filename.to_s
-    end
-
-    # 募集図面サムネイルのURLを追加
-    if @room.floorplan_thumbnail.attached?
-      room_json['floorplan_thumbnail_url'] = if Rails.env.production?
-        @room.floorplan_thumbnail.url
-      else
-        Rails.application.routes.url_helpers.rails_blob_path(@room.floorplan_thumbnail, only_path: true)
-      end
-    end
-
-    render json: room_json
+    render json: room_with_attachments
   end
 
   # POST /api/v1/buildings/:building_id/rooms
@@ -70,7 +42,7 @@ class Api::V1::RoomsController < ApplicationController
         if params[:room][:facility_codes].present?
           update_room_facilities(params[:room][:facility_codes])
         end
-        render json: @room
+        render json: room_with_attachments
       else
         render json: { errors: @room.errors.full_messages }, status: :unprocessable_entity
       end
@@ -341,6 +313,39 @@ class Api::V1::RoomsController < ApplicationController
   end
 
   private
+
+  # 部屋情報に添付ファイル（図面等）のURLを含めたJSONを構築
+  def room_with_attachments
+    room_json = @room.as_json(
+      include: {
+        building: {},
+        room_photos: {},
+        vr_tours: {}
+      },
+      methods: [:status_label, :room_type_label, :facility_codes, :facility_names]
+    )
+
+    # 募集図面PDFのURLを追加
+    if @room.floorplan_pdf.attached?
+      room_json['floorplan_pdf_url'] = if Rails.env.production?
+        @room.floorplan_pdf.url
+      else
+        Rails.application.routes.url_helpers.rails_blob_path(@room.floorplan_pdf, only_path: true)
+      end
+      room_json['floorplan_pdf_filename'] = @room.floorplan_pdf.filename.to_s
+    end
+
+    # 募集図面サムネイルのURLを追加
+    if @room.floorplan_thumbnail.attached?
+      room_json['floorplan_thumbnail_url'] = if Rails.env.production?
+        @room.floorplan_thumbnail.url
+      else
+        Rails.application.routes.url_helpers.rails_blob_path(@room.floorplan_thumbnail, only_path: true)
+      end
+    end
+
+    room_json
+  end
 
   def set_room
     @room = Room.joins(:building).where(buildings: { tenant_id: current_tenant.id }).find(params[:id])
