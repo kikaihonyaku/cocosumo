@@ -252,9 +252,10 @@ class Api::V1::PresentationAccessesController < ApplicationController
         ),
         room: room.as_json(
           only: [:id, :room_number, :floor, :room_type, :area, :rent, :management_fee,
-                 :deposit, :key_money, :renewal_fee, :parking_fee, :facilities, :notes,
+                 :deposit, :key_money, :renewal_fee, :parking_fee, :notes,
                  :direction, :available_date, :guarantor_required, :pets_allowed,
-                 :two_person_allowed, :office_use_allowed]
+                 :two_person_allowed, :office_use_allowed],
+          methods: [:facility_names]
         ),
         building: building.as_json(
           only: [:id, :name, :address, :building_type, :structure, :built_year,

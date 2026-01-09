@@ -56,9 +56,6 @@ class FacilityNormalizer
           unmatched.increment!(:occurrence_count)
         end
       end
-
-      # 後方互換性のため元のテキストも保持
-      room.update_column(:facilities, facilities_text) if facilities_text.present?
     end
 
     result

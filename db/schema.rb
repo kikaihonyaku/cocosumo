@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_07_221536) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_09_193112) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -440,7 +440,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_07_221536) do
     t.decimal "management_fee"
     t.decimal "deposit"
     t.decimal "key_money"
-    t.text "facilities"
     t.string "tenant_name"
     t.string "tenant_phone"
     t.date "contract_start_date"

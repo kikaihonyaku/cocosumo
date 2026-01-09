@@ -169,16 +169,16 @@ export default function FacilitySelectDialog({
               sx={{ '&:before': { display: 'none' } }}
             >
               <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
+                expandIcon={<ExpandMoreIcon sx={{ color: 'text.secondary' }} />}
                 sx={{
-                  bgcolor: selectedCount > 0 ? 'primary.50' : 'inherit',
+                  bgcolor: selectedCount > 0 ? 'primary.light' : 'grey.100',
                   borderBottom: '1px solid',
                   borderColor: 'divider',
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.primary' }}>
                   {CATEGORY_ICONS[categoryCode]}
-                  <Typography>{categoryLabel}</Typography>
+                  <Typography color="text.primary">{categoryLabel}</Typography>
                   {selectedCount > 0 && (
                     <Chip
                       label={selectedCount}
@@ -189,7 +189,7 @@ export default function FacilitySelectDialog({
                   )}
                 </Box>
               </AccordionSummary>
-              <AccordionDetails sx={{ pt: 1 }}>
+              <AccordionDetails sx={{ pt: 1, bgcolor: 'background.paper' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
                   <Button
                     size="small"
@@ -209,10 +209,22 @@ export default function FacilitySelectDialog({
                           checked={localSelected.includes(facility.code)}
                           onChange={() => handleToggle(facility.code)}
                           size="small"
+                          sx={{
+                            color: 'grey.500',
+                            '&.Mui-checked': {
+                              color: 'primary.main',
+                            },
+                          }}
                         />
                       }
                       label={facility.name}
-                      sx={{ width: '50%', m: 0 }}
+                      sx={{
+                        width: '50%',
+                        m: 0,
+                        '& .MuiFormControlLabel-label': {
+                          color: 'text.primary',
+                        },
+                      }}
                     />
                   ))}
                 </Box>

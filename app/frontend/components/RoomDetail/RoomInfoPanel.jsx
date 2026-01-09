@@ -20,12 +20,19 @@ import {
   Checkbox,
   IconButton,
   Tooltip,
+  Autocomplete,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
 import {
   Home as HomeIcon,
   CalendarToday as CalendarIcon,
   Delete as DeleteIcon,
   Save as SaveIcon,
+  ExpandMore as ExpandMoreIcon,
+  CheckBox as CheckBoxIcon,
+  CheckBoxOutlineBlank as CheckBoxOutlineBlankIcon,
 } from '@mui/icons-material';
 
 export default function RoomInfoPanel({
@@ -61,6 +68,12 @@ export default function RoomInfoPanel({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // 設備マスタ関連
+  const [facilitiesMaster, setFacilitiesMaster] = useState({});
+  const [categories, setCategories] = useState({});
+  const [selectedFacilityCodes, setSelectedFacilityCodes] = useState([]);
+  const [facilitiesLoading, setFacilitiesLoading] = useState(true);
+
   useEffect(() => {
     if (room) {
       setFormData({
@@ -86,8 +99,32 @@ export default function RoomInfoPanel({
         two_person_allowed: room.two_person_allowed || false,
         office_use_allowed: room.office_use_allowed || false,
       });
+      // 設備コードを設定
+      setSelectedFacilityCodes(room.facility_codes || []);
     }
   }, [room]);
+
+  // 設備マスタを取得
+  useEffect(() => {
+    const fetchFacilities = async () => {
+      try {
+        const response = await fetch('/api/v1/facilities', {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setFacilitiesMaster(data.facilities);
+          setCategories(data.categories);
+        }
+      } catch (err) {
+        console.error('設備マスタの取得に失敗:', err);
+      } finally {
+        setFacilitiesLoading(false);
+      }
+    };
+    fetchFacilities();
+  }, []);
 
   const handleChange = (field) => (event) => {
     let value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
@@ -106,8 +143,29 @@ export default function RoomInfoPanel({
   };
 
   const handleSubmit = () => {
-    onSave(formData);
+    // formDataにfacility_codesを含める
+    onSave({ ...formData, facility_codes: selectedFacilityCodes });
     setHasUnsavedChanges(false);
+  };
+
+  // 設備の選択・解除
+  const handleFacilityToggle = (code) => {
+    setSelectedFacilityCodes(prev => {
+      const newCodes = prev.includes(code)
+        ? prev.filter(c => c !== code)
+        : [...prev, code];
+      setHasUnsavedChanges(true);
+      return newCodes;
+    });
+  };
+
+  // 設備コードから設備名を取得
+  const getFacilityName = (code) => {
+    for (const category of Object.keys(facilitiesMaster)) {
+      const facility = facilitiesMaster[category]?.find(f => f.code === code);
+      if (facility) return facility.name;
+    }
+    return code;
   };
 
   // 未保存の変更を親コンポーネントに通知
@@ -541,19 +599,79 @@ export default function RoomInfoPanel({
           <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1.5, fontSize: '0.875rem' }}>
             設備情報
           </Typography>
-          <Stack spacing={2}>
-            <TextField
-              fullWidth
-              label="設備・特記事項"
-              multiline
-              rows={3}
-              value={formData.facilities || ''}
-              onChange={handleChange('facilities')}
-              variant="outlined"
-              size="small"
-              placeholder="例: エアコン、バストイレ別、フローリングなど"
-            />
-          </Stack>
+
+          {/* 選択済み設備の表示 */}
+          {selectedFacilityCodes.length > 0 && (
+            <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {selectedFacilityCodes.map(code => (
+                <Chip
+                  key={code}
+                  label={getFacilityName(code)}
+                  size="small"
+                  onDelete={() => handleFacilityToggle(code)}
+                  color="primary"
+                  variant="outlined"
+                />
+              ))}
+            </Box>
+          )}
+
+          {facilitiesLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : (
+            <Box sx={{ maxHeight: 300, overflow: 'auto', border: '1px solid #e0e0e0', borderRadius: 1 }}>
+              {Object.keys(facilitiesMaster).map(category => (
+                <Accordion
+                  key={category}
+                  disableGutters
+                  elevation={0}
+                  sx={{
+                    '&:before': { display: 'none' },
+                    borderBottom: '1px solid #e0e0e0',
+                    '&:last-child': { borderBottom: 'none' },
+                  }}
+                >
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon sx={{ color: 'text.secondary' }} />}
+                    sx={{
+                      minHeight: 40,
+                      bgcolor: 'grey.50',
+                      '& .MuiAccordionSummary-content': { my: 0.5 },
+                    }}
+                  >
+                    <Typography variant="body2" fontWeight={500} color="text.primary">
+                      {categories[category] || category}
+                      {facilitiesMaster[category]?.some(f => selectedFacilityCodes.includes(f.code)) && (
+                        <Chip
+                          size="small"
+                          label={facilitiesMaster[category].filter(f => selectedFacilityCodes.includes(f.code)).length}
+                          sx={{ ml: 1, height: 18, fontSize: '0.7rem' }}
+                          color="primary"
+                        />
+                      )}
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ pt: 0, pb: 1 }}>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {facilitiesMaster[category]?.map(facility => (
+                        <Chip
+                          key={facility.code}
+                          label={facility.name}
+                          size="small"
+                          onClick={() => handleFacilityToggle(facility.code)}
+                          color={selectedFacilityCodes.includes(facility.code) ? 'primary' : 'default'}
+                          variant={selectedFacilityCodes.includes(facility.code) ? 'filled' : 'outlined'}
+                          sx={{ cursor: 'pointer' }}
+                        />
+                      ))}
+                    </Box>
+                  </AccordionDetails>
+                </Accordion>
+              ))}
+            </Box>
+          )}
         </Box>
 
         {/* 入居者情報 */}

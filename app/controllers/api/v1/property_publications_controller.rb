@@ -66,7 +66,8 @@ class Api::V1::PropertyPublicationsController < ApplicationController
           }
         },
         room: {
-          only: [:id, :room_number, :floor, :room_type, :area, :rent, :management_fee, :deposit, :key_money, :status, :description, :facilities],
+          only: [:id, :room_number, :floor, :room_type, :area, :rent, :management_fee, :deposit, :key_money, :status, :description],
+          methods: [:facility_names],
           include: {
             building: {
               only: [:id, :name, :address, :building_type, :structure, :built_year, :floors, :latitude, :longitude]
@@ -152,7 +153,8 @@ class Api::V1::PropertyPublicationsController < ApplicationController
             }
           },
           room: {
-            only: [:id, :room_number, :floor, :room_type, :area, :rent, :management_fee, :deposit, :key_money, :description, :facilities],
+            only: [:id, :room_number, :floor, :room_type, :area, :rent, :management_fee, :deposit, :key_money, :description],
+            methods: [:facility_names],
             include: {
               building: {
                 only: [:id, :name, :address, :building_type, :structure, :built_year, :floors, :latitude, :longitude]

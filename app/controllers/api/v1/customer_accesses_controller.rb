@@ -690,7 +690,8 @@ class Api::V1::CustomerAccessesController < ApplicationController
         },
         room: {
           only: [:id, :room_number, :floor, :room_type, :area, :rent, :management_fee,
-                 :deposit, :key_money, :description, :facilities, :available_date],
+                 :deposit, :key_money, :description, :available_date],
+          methods: [:facility_names],
           include: {
             building: {
               only: [:id, :name, :address, :building_type, :structure, :built_year,

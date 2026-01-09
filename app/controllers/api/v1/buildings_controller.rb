@@ -526,8 +526,7 @@ class Api::V1::BuildingsController < ApplicationController
         pets_allowed: room_data[:pets_allowed],
         guarantor_required: room_data[:guarantor_required],
         two_person_allowed: room_data[:two_person_allowed],
-        description: room_data[:description],
-        facilities: room_data[:facilities]
+        description: room_data[:description]
       )
 
       unless @room.save

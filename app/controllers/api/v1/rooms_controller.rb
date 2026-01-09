@@ -23,7 +23,7 @@ class Api::V1::RoomsController < ApplicationController
         room_photos: {},
         vr_tours: {}
       },
-      methods: [:status_label, :room_type_label]
+      methods: [:status_label, :room_type_label, :facility_codes, :facility_names]
     )
 
     # 募集図面PDFのURLを追加
@@ -358,7 +358,6 @@ class Api::V1::RoomsController < ApplicationController
       :key_money,
       :status,
       :description,
-      :facilities,
       :tenant_name,
       :tenant_phone,
       :contract_start_date,
