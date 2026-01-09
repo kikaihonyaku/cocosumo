@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_09_193112) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_09_195313) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -69,7 +69,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_09_193112) do
     t.string "action", null: false
     t.string "resource_type"
     t.bigint "resource_id"
-    t.jsonb "changes", default: {}
+    t.jsonb "changes_data", default: {}
     t.jsonb "metadata", default: {}
     t.string "ip_address"
     t.string "user_agent"

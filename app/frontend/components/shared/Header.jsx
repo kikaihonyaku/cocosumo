@@ -39,9 +39,13 @@ import {
   Chair as ChairIcon,
   Campaign as CampaignIcon,
   Business as BusinessIcon,
-  SupervisorAccount as SupervisorAccountIcon
+  SupervisorAccount as SupervisorAccountIcon,
+  Lock as LockIcon,
+  Logout as LogoutIcon,
+  Person as PersonIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
+import ChangePasswordDialog from "./ChangePasswordDialog";
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -54,6 +58,8 @@ export default function Header() {
   const [mobileAdminExpanded, setMobileAdminExpanded] = useState(false);
   const [mobileContentExpanded, setMobileContentExpanded] = useState(false);
   const [mobileResponseExpanded, setMobileResponseExpanded] = useState(false);
+  const [userMenuAnchor, setUserMenuAnchor] = useState(null);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   
   const navStyle = ({ isActive }) => ({
     fontWeight: isActive ? "700" : "400",
@@ -109,6 +115,28 @@ export default function Header() {
 
   const handleMobileResponseToggle = () => {
     setMobileResponseExpanded(!mobileResponseExpanded);
+  };
+
+  const handleUserMenuOpen = (event) => {
+    setUserMenuAnchor(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setUserMenuAnchor(null);
+  };
+
+  const handleChangePasswordOpen = () => {
+    handleUserMenuClose();
+    setChangePasswordOpen(true);
+  };
+
+  const handleChangePasswordClose = () => {
+    setChangePasswordOpen(false);
+  };
+
+  const handleLogoutFromMenu = async () => {
+    handleUserMenuClose();
+    await logout();
   };
 
   const contentMenuItems = [
@@ -346,26 +374,51 @@ export default function Header() {
               </Box>
 
               {user && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Typography variant="body2" sx={{ color: 'white' }}>
-                    {user.name} ({user.auth_provider === 'google' ? 'Google' : user.code})
-                  </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={handleLogout}
-                    sx={{ 
-                      minWidth: 'auto',
+                    onClick={handleUserMenuOpen}
+                    sx={{
                       color: 'white',
-                      borderColor: 'white',
+                      textTransform: 'none',
                       '&:hover': {
-                        borderColor: 'white',
                         bgcolor: 'rgba(255, 255, 255, 0.1)'
                       }
                     }}
+                    startIcon={<PersonIcon />}
+                    endIcon={<ExpandMoreIcon />}
                   >
-                    ログアウト
+                    {user.name}
                   </Button>
+                  <Menu
+                    anchorEl={userMenuAnchor}
+                    open={Boolean(userMenuAnchor)}
+                    onClose={handleUserMenuClose}
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'right',
+                    }}
+                    transformOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right',
+                    }}
+                  >
+                    <MenuItem disabled>
+                      <Typography variant="body2" color="text.secondary">
+                        {user.auth_provider === 'google' ? 'Google認証' : user.code}
+                      </Typography>
+                    </MenuItem>
+                    <Divider />
+                    {user.auth_provider !== 'google' && (
+                      <MenuItem onClick={handleChangePasswordOpen}>
+                        <ListItemIcon><LockIcon fontSize="small" /></ListItemIcon>
+                        <ListItemText>パスワード変更</ListItemText>
+                      </MenuItem>
+                    )}
+                    <MenuItem onClick={handleLogoutFromMenu}>
+                      <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
+                      <ListItemText>ログアウト</ListItemText>
+                    </MenuItem>
+                  </Menu>
                 </Box>
               )}
             </>
@@ -554,17 +607,40 @@ export default function Header() {
           <>
             <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.3)', my: 2 }} />
             <Box sx={{ p: 2 }}>
-              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', mb: 2 }}>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', mb: 1 }}>
                 {user.name}
               </Typography>
               <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', mb: 2, display: 'block' }}>
-                ({user.auth_provider === 'google' ? 'Google' : user.code})
+                ({user.auth_provider === 'google' ? 'Google認証' : user.code})
               </Typography>
+              {user.auth_provider !== 'google' && (
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  onClick={() => {
+                    handleMobileMenuClose();
+                    setChangePasswordOpen(true);
+                  }}
+                  startIcon={<LockIcon />}
+                  sx={{
+                    color: 'white',
+                    borderColor: 'white',
+                    mb: 1,
+                    '&:hover': {
+                      borderColor: 'white',
+                      bgcolor: 'rgba(255, 255, 255, 0.1)'
+                    }
+                  }}
+                >
+                  パスワード変更
+                </Button>
+              )}
               <Button
                 variant="outlined"
                 fullWidth
                 onClick={handleLogout}
-                sx={{ 
+                startIcon={<LogoutIcon />}
+                sx={{
                   color: 'white',
                   borderColor: 'white',
                   '&:hover': {
@@ -579,6 +655,12 @@ export default function Header() {
           </>
         )}
       </Drawer>
+
+      {/* パスワード変更ダイアログ */}
+      <ChangePasswordDialog
+        open={changePasswordOpen}
+        onClose={handleChangePasswordClose}
+      />
     </>
   );
 }

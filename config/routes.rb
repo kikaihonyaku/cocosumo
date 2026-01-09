@@ -23,6 +23,7 @@ Rails.application.routes.draw do
       get 'auth/me', to: 'auth#me'
       post 'auth/login', to: 'auth#login'
       post 'auth/logout', to: 'auth#logout'
+      post 'auth/change_password', to: 'auth#change_password'
 
       # Gemini AI
       post 'gemini/process_image', to: 'gemini#process_image'

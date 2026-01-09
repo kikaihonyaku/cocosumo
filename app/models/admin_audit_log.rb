@@ -25,7 +25,7 @@ class AdminAuditLog < ApplicationRecord
       action: action,
       resource_type: resource&.class&.name,
       resource_id: resource&.id,
-      changes: extra_data[:changes] || {},
+      changes_data: extra_data[:changes] || {},
       metadata: extra_data.except(:changes),
       ip_address: Thread.current[:request_ip],
       user_agent: Thread.current[:request_user_agent]
