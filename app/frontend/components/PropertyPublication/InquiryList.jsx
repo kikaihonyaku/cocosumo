@@ -12,7 +12,9 @@ import {
   Alert,
   IconButton,
   Collapse,
-  Tooltip
+  Tooltip,
+  Button,
+  Stack
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -23,9 +25,14 @@ import {
   Search as SearchIcon,
   Share as ShareIcon,
   Link as LinkIcon,
-  Campaign as CampaignIcon
+  Campaign as CampaignIcon,
+  PersonAdd as PersonAddIcon,
+  Person as PersonIcon,
+  Key as KeyIcon,
+  CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import CustomerAccessDialog from '../CustomerAccess/CustomerAccessDialog';
 
 // Source label mapping
 const getSourceInfo = (source) => {
@@ -39,11 +46,22 @@ const getSourceInfo = (source) => {
   return sourceMap[source] || { label: source || '不明', icon: <PublicIcon fontSize="small" />, color: 'default' };
 };
 
+// Channel label mapping
+const getChannelInfo = (channel) => {
+  const channelMap = {
+    channel_web_form: { label: 'Webフォーム', color: 'primary' },
+    channel_line: { label: 'LINE', color: 'success' }
+  };
+  return channelMap[channel] || { label: channel || 'Web', color: 'default' };
+};
+
 export default function InquiryList({ publicationId, roomId }) {
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
+  const [accessDialogOpen, setAccessDialogOpen] = useState(false);
+  const [selectedInquiry, setSelectedInquiry] = useState(null);
 
   useEffect(() => {
     loadInquiries();
@@ -71,6 +89,21 @@ export default function InquiryList({ publicationId, roomId }) {
 
   const handleToggleExpand = (id) => {
     setExpandedId(expandedId === id ? null : id);
+  };
+
+  const handleOpenAccessDialog = (inquiry, e) => {
+    e.stopPropagation();
+    setSelectedInquiry(inquiry);
+    setAccessDialogOpen(true);
+  };
+
+  const handleCloseAccessDialog = () => {
+    setAccessDialogOpen(false);
+    setSelectedInquiry(null);
+  };
+
+  const handleAccessCreated = () => {
+    loadInquiries(); // リロードして新しいアクセスを反映
   };
 
   if (loading) {
@@ -108,7 +141,10 @@ export default function InquiryList({ publicationId, roomId }) {
       <List sx={{ p: 0 }}>
         {inquiries.map((inquiry, index) => {
           const sourceInfo = getSourceInfo(inquiry.source);
+          const channelInfo = getChannelInfo(inquiry.channel);
           const isExpanded = expandedId === inquiry.id;
+          const hasExistingAccess = inquiry.customer_accesses && inquiry.customer_accesses.length > 0;
+          const customer = inquiry.customer;
 
           return (
             <Paper key={inquiry.id} sx={{ mb: 1.5 }} variant="outlined">
@@ -146,6 +182,32 @@ export default function InquiryList({ publicationId, roomId }) {
                             color="success"
                             variant="filled"
                             sx={{ height: 24, maxWidth: 100, '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' } }}
+                          />
+                        </Tooltip>
+                      )}
+                      {/* 顧客情報バッジ */}
+                      {customer && customer.has_other_inquiries && (
+                        <Tooltip title={`この顧客は他に${customer.inquiry_count - 1}件の問い合わせがあります`}>
+                          <Chip
+                            size="small"
+                            icon={<PersonIcon fontSize="small" />}
+                            label={`${customer.inquiry_count}件`}
+                            color="warning"
+                            variant="filled"
+                            sx={{ height: 24 }}
+                          />
+                        </Tooltip>
+                      )}
+                      {/* 顧客アクセス発行済みバッジ */}
+                      {hasExistingAccess && (
+                        <Tooltip title="顧客アクセスを発行済み">
+                          <Chip
+                            size="small"
+                            icon={<KeyIcon fontSize="small" />}
+                            label="発行済"
+                            color="info"
+                            variant="outlined"
+                            sx={{ height: 24 }}
                           />
                         </Tooltip>
                       )}
@@ -194,6 +256,66 @@ export default function InquiryList({ publicationId, roomId }) {
                     </Typography>
                   </Paper>
 
+                  {/* Customer Accesses Section */}
+                  <Box sx={{ mt: 2 }}>
+                    {hasExistingAccess ? (
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                          発行済み顧客アクセス
+                        </Typography>
+                        <Stack spacing={1}>
+                          {inquiry.customer_accesses.map((access) => (
+                            <Paper key={access.id} variant="outlined" sx={{ p: 1.5, bgcolor: 'background.default' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <KeyIcon fontSize="small" color="primary" />
+                                  <Typography variant="body2">
+                                    {access.created_at}に発行
+                                  </Typography>
+                                  <Chip
+                                    size="small"
+                                    label={access.status === 'active' ? '有効' : access.status === 'expired' ? '期限切れ' : '取消済'}
+                                    color={access.status === 'active' ? 'success' : 'default'}
+                                    sx={{ height: 20 }}
+                                  />
+                                  {access.view_count > 0 && (
+                                    <Typography variant="caption" color="text.secondary">
+                                      閲覧: {access.view_count}回
+                                    </Typography>
+                                  )}
+                                </Box>
+                                {access.expires_at && (
+                                  <Typography variant="caption" color="text.secondary">
+                                    期限: {access.expires_at}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </Paper>
+                          ))}
+                        </Stack>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<PersonAddIcon />}
+                          onClick={(e) => handleOpenAccessDialog(inquiry, e)}
+                          sx={{ mt: 1.5 }}
+                        >
+                          追加で発行
+                        </Button>
+                      </Box>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={<PersonAddIcon />}
+                        onClick={(e) => handleOpenAccessDialog(inquiry, e)}
+                        color="primary"
+                      >
+                        顧客アクセスを発行
+                      </Button>
+                    )}
+                  </Box>
+
                   {/* Source Details */}
                   {(inquiry.utm_source || inquiry.utm_medium || inquiry.referrer) && (
                     <Box sx={{ mt: 2 }}>
@@ -236,6 +358,15 @@ export default function InquiryList({ publicationId, roomId }) {
           );
         })}
       </List>
+
+      {/* Customer Access Dialog */}
+      <CustomerAccessDialog
+        open={accessDialogOpen}
+        onClose={handleCloseAccessDialog}
+        publicationId={publicationId}
+        inquiry={selectedInquiry}
+        onCreated={handleAccessCreated}
+      />
     </Box>
   );
 }

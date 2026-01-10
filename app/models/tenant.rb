@@ -4,6 +4,7 @@ class Tenant < ApplicationRecord
   has_many :buildings, dependent: :destroy
   has_many :stores, dependent: :destroy
   has_many :map_layers, dependent: :destroy
+  has_many :customers, dependent: :destroy
   has_many :admin_audit_logs
   belongs_to :created_by, class_name: 'User', optional: true
 

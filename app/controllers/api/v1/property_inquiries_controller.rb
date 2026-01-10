@@ -32,12 +32,11 @@ class Api::V1::PropertyInquiriesController < ApplicationController
     return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
 
     @property_publication = PropertyPublication.kept.find(params[:property_publication_publication_id])
-    @property_inquiries = @property_publication.property_inquiries.recent
+    @property_inquiries = @property_publication.property_inquiries
+                                               .includes(:customer, :customer_accesses)
+                                               .recent
 
-    render json: @property_inquiries.as_json(
-      methods: [:formatted_created_at],
-      only: [:id, :name, :email, :phone, :message, :source, :utm_source, :utm_medium, :utm_campaign, :referrer, :created_at]
-    )
+    render json: @property_inquiries.map { |inquiry| inquiry_with_customer_json(inquiry) }
   rescue ActiveRecord::RecordNotFound
     render json: { error: '物件公開ページが見つかりませんでした' }, status: :not_found
   end
@@ -52,28 +51,12 @@ class Api::V1::PropertyInquiriesController < ApplicationController
                                               .pluck(:id)
 
     @inquiries = PropertyInquiry.where(property_publication_id: user_publication_ids)
-                                .includes(property_publication: { room: :building })
+                                .includes(:customer, :customer_accesses, property_publication: { room: :building })
                                 .order(created_at: :desc)
                                 .limit(500)
 
     render json: {
-      inquiries: @inquiries.as_json(
-        methods: [:formatted_created_at, :formatted_replied_at],
-        only: [:id, :name, :email, :phone, :message, :source, :source_type, :source_url, :status, :replied_at, :reply_message, :utm_source, :utm_medium, :utm_campaign, :referrer, :created_at],
-        include: {
-          property_publication: {
-            only: [:id, :title, :publication_id],
-            include: {
-              room: {
-                only: [:id, :room_number],
-                include: {
-                  building: { only: [:id, :name, :address] }
-                }
-              }
-            }
-          }
-        }
-      )
+      inquiries: @inquiries.map { |inquiry| inquiry_with_publication_json(inquiry) }
     }
   end
 
@@ -330,5 +313,79 @@ class Api::V1::PropertyInquiriesController < ApplicationController
   rescue => e
     # メール送信エラーはログに記録するが、レスポンスには影響させない
     Rails.logger.error "Failed to send inquiry notification emails: #{e.message}"
+  end
+
+  # 問い合わせJSON（顧客・アクセス情報含む）
+  def inquiry_with_customer_json(inquiry)
+    {
+      id: inquiry.id,
+      name: inquiry.name,
+      email: inquiry.email,
+      phone: inquiry.phone,
+      message: inquiry.message,
+      source: inquiry.source,
+      source_type: inquiry.source_type,
+      channel: inquiry.channel,
+      status: inquiry.status,
+      utm_source: inquiry.utm_source,
+      utm_medium: inquiry.utm_medium,
+      utm_campaign: inquiry.utm_campaign,
+      referrer: inquiry.referrer,
+      created_at: inquiry.created_at,
+      formatted_created_at: inquiry.formatted_created_at,
+      formatted_replied_at: inquiry.formatted_replied_at,
+      customer: customer_summary_json(inquiry.customer),
+      customer_accesses: inquiry.customer_accesses.map { |access| access_summary_json(access) }
+    }
+  end
+
+  # 問い合わせJSON（物件情報含む版）
+  def inquiry_with_publication_json(inquiry)
+    publication = inquiry.property_publication
+    room = publication&.room
+    building = room&.building
+
+    inquiry_with_customer_json(inquiry).merge(
+      source_url: inquiry.source_url,
+      replied_at: inquiry.replied_at,
+      reply_message: inquiry.reply_message,
+      property_publication: {
+        id: publication&.id,
+        title: publication&.title,
+        publication_id: publication&.publication_id,
+        room: room ? {
+          id: room.id,
+          room_number: room.room_number,
+          building: building ? {
+            id: building.id,
+            name: building.name,
+            address: building.address
+          } : nil
+        } : nil
+      }
+    )
+  end
+
+  def customer_summary_json(customer)
+    return nil unless customer
+
+    {
+      id: customer.id,
+      name: customer.name,
+      inquiry_count: customer.property_inquiries.size,
+      has_other_inquiries: customer.property_inquiries.size > 1,
+      has_line: customer.line_user_id.present?
+    }
+  end
+
+  def access_summary_json(access)
+    {
+      id: access.id,
+      access_token: access.access_token,
+      status: access.status,
+      expires_at: access.formatted_expires_at,
+      view_count: access.view_count,
+      created_at: access.created_at.strftime('%Y/%m/%d')
+    }
   end
 end

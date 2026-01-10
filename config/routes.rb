@@ -287,6 +287,14 @@ Rails.application.routes.draw do
         end
       end
 
+      # 顧客管理（認証必要）
+      resources :customers, only: [:index, :show, :update, :destroy] do
+        member do
+          get :inquiries
+          get :accesses
+        end
+      end
+
       # 顧客向け公開API（認証不要）
       get 'customer/:access_token', to: 'customer_accesses#show_public'
       post 'customer/:access_token/verify_access', to: 'customer_accesses#verify_access'

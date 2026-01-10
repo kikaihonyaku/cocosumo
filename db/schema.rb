@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_09_202147) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_10_092925) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -199,8 +199,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_09_202147) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "customer_message"
+    t.bigint "customer_id"
+    t.bigint "property_inquiry_id"
     t.index ["access_token"], name: "index_customer_accesses_on_access_token", unique: true
     t.index ["customer_email"], name: "index_customer_accesses_on_customer_email"
+    t.index ["customer_id"], name: "index_customer_accesses_on_customer_id"
+    t.index ["property_inquiry_id"], name: "index_customer_accesses_on_property_inquiry_id"
     t.index ["property_publication_id", "status"], name: "index_customer_accesses_on_property_publication_id_and_status"
     t.index ["property_publication_id"], name: "index_customer_accesses_on_property_publication_id"
   end
@@ -224,6 +228,22 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_09_202147) do
     t.datetime "updated_at", null: false
     t.index ["customer_access_id", "display_order"], name: "index_customer_routes_on_customer_access_id_and_display_order"
     t.index ["customer_access_id"], name: "index_customer_routes_on_customer_access_id"
+  end
+
+  create_table "customers", force: :cascade do |t|
+    t.bigint "tenant_id", null: false
+    t.string "email"
+    t.string "line_user_id"
+    t.string "name", null: false
+    t.string "phone"
+    t.text "notes"
+    t.integer "status", default: 0, null: false
+    t.datetime "last_contacted_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tenant_id", "email"], name: "index_customers_on_tenant_id_and_email", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
+    t.index ["tenant_id", "line_user_id"], name: "index_customers_on_tenant_id_and_line_user_id", unique: true, where: "(line_user_id IS NOT NULL)"
+    t.index ["tenant_id"], name: "index_customers_on_tenant_id"
   end
 
   create_table "facilities", force: :cascade do |t|
@@ -323,7 +343,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_09_202147) do
     t.integer "status", default: 0
     t.datetime "replied_at"
     t.text "reply_message"
+    t.bigint "customer_id"
+    t.integer "channel", default: 0, null: false
+    t.index ["channel"], name: "index_property_inquiries_on_channel"
     t.index ["created_at"], name: "index_property_inquiries_on_created_at"
+    t.index ["customer_id"], name: "index_property_inquiries_on_customer_id"
     t.index ["property_publication_id"], name: "index_property_inquiries_on_property_publication_id"
     t.index ["source_type"], name: "index_property_inquiries_on_source_type"
     t.index ["status"], name: "index_property_inquiries_on_status"
@@ -671,13 +695,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_09_202147) do
   add_foreign_key "building_routes", "tenants"
   add_foreign_key "buildings", "stores"
   add_foreign_key "buildings", "tenants"
+  add_foreign_key "customer_accesses", "customers"
+  add_foreign_key "customer_accesses", "property_inquiries"
   add_foreign_key "customer_accesses", "property_publications"
   add_foreign_key "customer_routes", "customer_accesses"
+  add_foreign_key "customers", "tenants"
   add_foreign_key "facility_synonyms", "facilities"
   add_foreign_key "map_layers", "tenants"
   add_foreign_key "owners", "buildings"
   add_foreign_key "owners", "tenants"
   add_foreign_key "presentation_accesses", "property_publications"
+  add_foreign_key "property_inquiries", "customers"
   add_foreign_key "property_inquiries", "property_publications"
   add_foreign_key "property_publication_photos", "property_publications"
   add_foreign_key "property_publication_photos", "room_photos"

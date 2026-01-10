@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -13,16 +13,18 @@ import {
   Alert,
   InputAdornment,
   IconButton,
-  Collapse
+  Collapse,
+  Chip
 } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
-  PersonAdd as PersonAddIcon
+  PersonAdd as PersonAddIcon,
+  Email as EmailIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
-export default function CustomerAccessDialog({ open, onClose, publicationId, onCreated }) {
+export default function CustomerAccessDialog({ open, onClose, publicationId, inquiry, onCreated }) {
   const [formData, setFormData] = useState({
     customer_name: '',
     customer_email: '',
@@ -38,6 +40,19 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, onC
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
+
+  // 問い合わせから作成する場合、データを事前入力
+  useEffect(() => {
+    if (inquiry && open) {
+      setFormData(prev => ({
+        ...prev,
+        customer_name: inquiry.name || '',
+        customer_email: inquiry.email || '',
+        customer_phone: inquiry.phone || '',
+        notes: inquiry.id ? `問い合わせID: ${inquiry.id} からの発行` : ''
+      }));
+    }
+  }, [inquiry, open]);
 
   const handleChange = (field) => (event) => {
     const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
@@ -81,7 +96,9 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, onC
           password: usePassword && formData.password ? formData.password : null,
           expires_at: formData.expires_at?.toISOString() || null,
           notes: formData.notes.trim() || null,
-          customer_message: formData.customer_message.trim() || null
+          customer_message: formData.customer_message.trim() || null,
+          // 問い合わせからの発行の場合、property_inquiry_idを送信
+          property_inquiry_id: inquiry?.id || null
         },
         send_notification: formData.send_notification,
         raw_password: usePassword && formData.password ? formData.password : null
@@ -135,12 +152,27 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, onC
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <PersonAddIcon color="primary" />
         顧客アクセス権の発行
+        {inquiry && (
+          <Chip
+            size="small"
+            icon={<EmailIcon fontSize="small" />}
+            label="問い合わせから発行"
+            color="info"
+            sx={{ ml: 1 }}
+          />
+        )}
       </DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
           {error && (
             <Alert severity="error" onClose={() => setError(null)}>
               {error}
+            </Alert>
+          )}
+
+          {inquiry && (
+            <Alert severity="info" sx={{ py: 0.5 }}>
+              問い合わせ「{inquiry.name}」({inquiry.formatted_created_at})から顧客アクセスを発行します
             </Alert>
           )}
 

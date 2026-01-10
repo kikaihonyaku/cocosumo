@@ -44,6 +44,8 @@ import SalesPresentation from "./pages/SalesPresentation";
 import TenantManagement from "./pages/super_admin/TenantManagement";
 import UserManagement from "./pages/admin/UserManagement";
 import ProfileSettings from "./pages/ProfileSettings";
+import CustomerList from "./pages/CustomerList";
+import CustomerDetail from "./pages/CustomerDetail";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -172,6 +174,8 @@ export default function App() {
             <Route path="/admin/publications" element={<PropertyPublicationsManager />} />
             <Route path="/admin/customer-accesses" element={<CustomerAccessManager />} />
             <Route path="/admin/inquiries" element={<InquiryManager />} />
+            <Route path="/customers" element={<CustomerList />} />
+            <Route path="/customers/:id" element={<CustomerDetail />} />
             <Route path="/buildings" element={<Buildings />} />
             <Route path="/buildings/new" element={<BuildingForm />} />
             <Route path="/buildings/:id/edit" element={<BuildingForm />} />

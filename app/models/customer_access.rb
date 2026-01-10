@@ -4,6 +4,8 @@ class CustomerAccess < ApplicationRecord
 
   # Associations
   belongs_to :property_publication
+  belongs_to :customer, optional: true
+  belongs_to :property_inquiry, optional: true
   has_many :customer_routes, dependent: :destroy
 
   # Delegations
@@ -19,6 +21,7 @@ class CustomerAccess < ApplicationRecord
 
   # Callbacks
   before_validation :generate_access_token, on: :create
+  before_validation :link_customer_from_inquiry
 
   # Enums
   enum :status, { active: 0, revoked: 1, expired: 2 }, default: :active
@@ -128,6 +131,13 @@ class CustomerAccess < ApplicationRecord
     loop do
       self.access_token = SecureRandom.urlsafe_base64(16)
       break unless CustomerAccess.exists?(access_token: access_token)
+    end
+  end
+
+  # 問い合わせから作成時に顧客も自動リンク
+  def link_customer_from_inquiry
+    if property_inquiry.present? && customer.blank?
+      self.customer = property_inquiry.customer
     end
   end
 end

@@ -645,7 +645,8 @@ class Api::V1::CustomerAccessesController < ApplicationController
       :password,
       :expires_at,
       :notes,
-      :customer_message
+      :customer_message,
+      :property_inquiry_id
     )
   end
 

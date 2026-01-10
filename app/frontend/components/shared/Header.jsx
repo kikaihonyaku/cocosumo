@@ -153,6 +153,7 @@ export default function Header() {
   ];
 
   const responseMenuItems = [
+    { to: "/customers", label: "顧客管理", icon: <PersonIcon fontSize="small" /> },
     { to: "/admin/inquiries", label: "問い合わせ管理", icon: <EmailIcon fontSize="small" /> },
     { to: "/analytics/inquiries", label: "問い合わせ分析", icon: <AnalyticsIcon fontSize="small" /> },
     { to: "/admin/customer-accesses", label: "顧客アクセス管理", icon: <PeopleIcon fontSize="small" /> },
