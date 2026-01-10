@@ -630,12 +630,12 @@ export default function CustomerPropertyView() {
               display: 'flex',
               flexDirection: isMobile ? 'column' : 'row',
               gap: 2,
-              height: isMobile ? 'auto' : 500,
+              height: isMobile ? 'auto' : 650,
             }}>
               {/* 地図エリア */}
               <Box sx={{
                 flex: isMobile ? 'none' : '1 1 0',
-                height: isMobile ? 450 : '100%',
+                height: isMobile ? 500 : '100%',
                 minWidth: 0,
               }}>
                 <PropertyMapPanel
@@ -804,17 +804,26 @@ export default function CustomerPropertyView() {
               border: '1px solid',
               borderColor: 'rgba(25, 118, 210, 0.12)',
             }}>
-              <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2 }}>
-                <Box sx={{ flex: 1 }}>
+              <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2, flexWrap: 'wrap' }}>
+                <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
+                  <Typography variant="subtitle2" color="primary.dark" gutterBottom fontWeight="bold">
+                    周辺施設を表示する
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    地図左上の「地図オプション」から、周辺のコンビニ・病院・スーパー・学校・公園などを地図上に表示できます。
+                    各施設をクリックすると詳細情報が確認できます。
+                  </Typography>
+                </Box>
+                <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
                   <Typography variant="subtitle2" color="primary.dark" gutterBottom fontWeight="bold">
                     周辺情報について質問する
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    地図下のチャット欄から、周辺のスーパーや学校、病院などの施設について質問できます。
+                    地図下のチャット欄から、周辺施設について質問できます。
                     「近くにコンビニはありますか？」「最寄りの小学校までの距離は？」などお気軽にお聞きください。
                   </Typography>
                 </Box>
-                <Box sx={{ flex: 1 }}>
+                <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
                   <Typography variant="subtitle2" color="primary.dark" gutterBottom fontWeight="bold">
                     経路を追加する
                   </Typography>
