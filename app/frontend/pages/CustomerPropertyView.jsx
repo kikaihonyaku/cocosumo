@@ -20,7 +20,7 @@ import {
   Card,
   CardContent,
   CardActionArea,
-  Link,
+  Container,
   useMediaQuery,
   useTheme,
   Tooltip,
@@ -301,12 +301,35 @@ export default function CustomerPropertyView() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'grey.100',
+        background: 'linear-gradient(135deg, #e3f2fd 0%, #e8eaf6 50%, #f3e5f5 100%)',
         p: 2
       }}>
-        <Paper sx={{ p: 4, maxWidth: 400, width: '100%', textAlign: 'center' }}>
-          <LockIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-          <Typography variant="h5" gutterBottom>
+        <Paper
+          elevation={8}
+          sx={{
+            p: { xs: 4, sm: 5 },
+            maxWidth: 420,
+            width: '100%',
+            textAlign: 'center',
+            borderRadius: 4
+          }}
+        >
+          <Box
+            sx={{
+              width: 72,
+              height: 72,
+              bgcolor: 'primary.50',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              mb: 3
+            }}
+          >
+            <LockIcon sx={{ fontSize: 36, color: 'primary.main' }} />
+          </Box>
+          <Typography variant="h5" fontWeight="bold" gutterBottom>
             パスワードで保護されています
           </Typography>
           {customerName && (
@@ -343,8 +366,10 @@ export default function CustomerPropertyView() {
               fullWidth
               variant="contained"
               type="submit"
+              size="large"
               disabled={!password || verifyingPassword}
               startIcon={verifyingPassword ? <CircularProgress size={20} color="inherit" /> : null}
+              sx={{ py: 1.5, borderRadius: 2 }}
             >
               {verifyingPassword ? '確認中...' : '確認'}
             </Button>
@@ -360,10 +385,15 @@ export default function CustomerPropertyView() {
       <Box sx={{
         minHeight: '100vh',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #f8fafc 0%, #e3f2fd 100%)'
       }}>
-        <CircularProgress />
+        <CircularProgress size={48} />
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 2, fontSize: '1rem' }}>
+          読み込み中...
+        </Typography>
       </Box>
     );
   }
@@ -376,14 +406,38 @@ export default function CustomerPropertyView() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'grey.100',
+        background: 'linear-gradient(135deg, #f8fafc 0%, #e3f2fd 100%)',
         p: 2
       }}>
-        <Paper sx={{ p: 4, maxWidth: 400, width: '100%', textAlign: 'center' }}>
-          <Alert severity="error" sx={{ mb: 2 }}>
+        <Paper
+          elevation={8}
+          sx={{
+            p: { xs: 4, sm: 5 },
+            maxWidth: 420,
+            width: '100%',
+            textAlign: 'center',
+            borderRadius: 4
+          }}
+        >
+          <Box
+            sx={{
+              width: 72,
+              height: 72,
+              bgcolor: 'error.50',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              mb: 3
+            }}
+          >
+            <CloseIcon sx={{ fontSize: 36, color: 'error.main' }} />
+          </Box>
+          <Alert severity="error" sx={{ mb: 3, fontSize: '0.95rem' }}>
             {error}
           </Alert>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body1" color="text.secondary" sx={{ fontSize: '0.95rem' }}>
             お問い合わせは担当者までご連絡ください。
           </Typography>
         </Paper>
@@ -409,7 +463,7 @@ export default function CustomerPropertyView() {
   const canAddMoreRoutes = customerRoutes.length < MAX_CUSTOMER_ROUTES;
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
+    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #e3f2fd 100%)' }}>
       {/* 顧客向けヘッダー */}
       <CustomerHeader
         customerName={customer_access?.customer_name}
@@ -420,41 +474,55 @@ export default function CustomerPropertyView() {
 
       {/* 申し送り事項 */}
       {customer_access?.customer_message && (
-        <Box sx={{ px: { xs: 2, md: 3 }, pt: { xs: 2, md: 3 } }}>
+        <Container maxWidth="lg" sx={{ pt: { xs: 2, md: 3 } }}>
           <Paper
             sx={{
               p: 2,
               bgcolor: 'info.50',
               borderLeft: 4,
               borderColor: 'info.main',
+              borderRadius: 2,
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-              <PersonIcon color="info" sx={{ mt: 0.5 }} />
-              <Box>
-                <Typography variant="subtitle2" color="info.main" gutterBottom>
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  bgcolor: 'info.100',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                <PersonIcon sx={{ color: 'info.main' }} />
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="subtitle1" color="info.main" fontWeight="bold" gutterBottom sx={{ fontSize: '1rem' }}>
                   担当者からのメッセージ
                 </Typography>
-                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', fontSize: '0.95rem' }}>
                   {customer_access.customer_message}
                 </Typography>
               </Box>
             </Box>
           </Paper>
-        </Box>
+        </Container>
       )}
 
       {/* メインコンテンツ */}
-      <Box sx={{ p: { xs: 2, md: 3 } }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 } }}>
         {/* タイトルセクション */}
-        <Paper sx={{ p: 3, mb: 3 }}>
+        <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, mb: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
           <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: 2 }}>
             <Box sx={{ flex: 1 }}>
-              <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold', mb: 1 }}>
+              <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold', mb: 1, fontSize: { xs: '1.75rem', md: '2.25rem' } }}>
                 {data.title}
               </Typography>
               {data.catch_copy && (
-                <Typography variant="h6" color="primary" gutterBottom>
+                <Typography variant="h6" color="primary" fontWeight="medium" gutterBottom sx={{ fontSize: { xs: '1.1rem', md: '1.25rem' } }}>
                   {data.catch_copy}
                 </Typography>
               )}
@@ -514,8 +582,8 @@ export default function CustomerPropertyView() {
         }}>
           {/* 写真ギャラリー */}
           {property_publication_photos && property_publication_photos.length > 0 && (
-            <Paper sx={{ p: 3, flex: isMobile ? 'none' : '1 1 60%', minWidth: 0 }}>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, flex: isMobile ? 'none' : '1 1 60%', minWidth: 0, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: '1.35rem' }}>
                 <ImageIcon color="primary" />
                 写真
               </Typography>
@@ -524,8 +592,8 @@ export default function CustomerPropertyView() {
           )}
 
           {/* 物件詳細 */}
-          <Paper sx={{ p: 3, flex: isMobile ? 'none' : '1 1 40%', minWidth: 0 }}>
-            <Typography variant="h6" gutterBottom>
+          <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, flex: isMobile ? 'none' : '1 1 40%', minWidth: 0, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ fontSize: '1.35rem' }}>
               物件詳細
             </Typography>
 
@@ -619,8 +687,8 @@ export default function CustomerPropertyView() {
 
         {/* 地図・周辺情報・アクセス */}
         {building?.latitude && building?.longitude && (
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, mb: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: '1.35rem' }}>
               <MapIcon color="primary" />
               地図・周辺情報
             </Typography>
@@ -661,7 +729,7 @@ export default function CustomerPropertyView() {
                 flexDirection: 'column',
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, flexShrink: 0 }}>
-                  <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="subtitle1" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <DirectionsIcon color="primary" />
                     アクセス情報
                   </Typography>
@@ -806,28 +874,28 @@ export default function CustomerPropertyView() {
             }}>
               <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2, flexWrap: 'wrap' }}>
                 <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-                  <Typography variant="subtitle2" color="primary.dark" gutterBottom fontWeight="bold">
+                  <Typography variant="subtitle2" color="primary.dark" gutterBottom fontWeight="bold" sx={{ fontSize: '0.95rem' }}>
                     周辺施設を表示する
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem', lineHeight: 1.6 }}>
                     地図左上の「地図オプション」から、周辺のコンビニ・病院・スーパー・学校・公園などを地図上に表示できます。
                     各施設をクリックすると詳細情報が確認できます。
                   </Typography>
                 </Box>
                 <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-                  <Typography variant="subtitle2" color="primary.dark" gutterBottom fontWeight="bold">
+                  <Typography variant="subtitle2" color="primary.dark" gutterBottom fontWeight="bold" sx={{ fontSize: '0.95rem' }}>
                     周辺情報について質問する
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem', lineHeight: 1.6 }}>
                     地図下のチャット欄から、周辺施設について質問できます。
                     「近くにコンビニはありますか？」「最寄りの小学校までの距離は？」などお気軽にお聞きください。
                   </Typography>
                 </Box>
                 <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-                  <Typography variant="subtitle2" color="primary.dark" gutterBottom fontWeight="bold">
+                  <Typography variant="subtitle2" color="primary.dark" gutterBottom fontWeight="bold" sx={{ fontSize: '0.95rem' }}>
                     経路を追加する
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem', lineHeight: 1.6 }}>
                     よく行く場所（職場、学校など）への経路を最大4件まで追加できます。
                     「追加」ボタンから目的地を設定すると、ルートと所要時間が表示されます。
                   </Typography>
@@ -840,11 +908,23 @@ export default function CustomerPropertyView() {
         {/* VRツアー・バーチャルステージング */}
         {((property_publication_vr_tours && property_publication_vr_tours.length > 0) ||
           (property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0)) && (
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <ViewInArIcon color="primary" />
-              バーチャルコンテンツ
-            </Typography>
+          <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, mb: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+              <Box sx={{
+                width: 44,
+                height: 44,
+                bgcolor: 'primary.50',
+                borderRadius: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <ViewInArIcon sx={{ color: 'primary.main', fontSize: 26 }} />
+              </Box>
+              <Typography variant="h6" fontWeight="bold" sx={{ fontSize: '1.35rem' }}>
+                バーチャルコンテンツ
+              </Typography>
+            </Box>
 
             <Grid container spacing={2}>
               {/* VRツアー */}
@@ -1015,7 +1095,13 @@ export default function CustomerPropertyView() {
         )}
 
         {/* お問い合わせ・QRコード */}
-        <Paper sx={{ p: 3, mb: 3 }}>
+        <Paper elevation={0} sx={{
+          p: { xs: 3, md: 4 },
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'divider',
+          background: 'linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%)'
+        }}>
           <Box sx={{
             display: 'flex',
             flexDirection: isMobile ? 'column' : 'row',
@@ -1024,10 +1110,24 @@ export default function CustomerPropertyView() {
           }}>
             {/* お問い合わせ */}
             <Box sx={{ flex: 1 }}>
-              <Typography variant="h6" gutterBottom>
-                ご質問・ご内見希望
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                <Box sx={{
+                  width: 44,
+                  height: 44,
+                  bgcolor: 'white',
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: 1
+                }}>
+                  <EmailIcon sx={{ color: 'primary.main', fontSize: 26 }} />
+                </Box>
+                <Typography variant="h6" fontWeight="bold" sx={{ fontSize: '1.35rem' }}>
+                  ご質問・ご内見希望
+                </Typography>
+              </Box>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 2, fontSize: '1rem' }}>
                 この物件についてのご質問やご内見のご希望がございましたら、
                 お気軽にお問い合わせください。
               </Typography>
@@ -1037,6 +1137,7 @@ export default function CustomerPropertyView() {
                 size="large"
                 startIcon={<EmailIcon />}
                 onClick={() => setInquiryDialogOpen(true)}
+                sx={{ borderRadius: 2, px: 3 }}
               >
                 お問い合わせ
               </Button>
@@ -1044,7 +1145,14 @@ export default function CustomerPropertyView() {
 
             {/* QRコード */}
             {data.qr_code_data_url && (
-              <Box sx={{ textAlign: 'center', flexShrink: 0 }}>
+              <Box sx={{
+                textAlign: 'center',
+                flexShrink: 0,
+                p: 2,
+                bgcolor: 'white',
+                borderRadius: 2,
+                boxShadow: 1
+              }}>
                 <Typography variant="caption" color="text.secondary" gutterBottom display="block">
                   このページのQRコード
                 </Typography>
@@ -1057,15 +1165,22 @@ export default function CustomerPropertyView() {
             )}
           </Box>
         </Paper>
-      </Box>
+      </Container>
 
       {/* フッター */}
-      <Box sx={{ bgcolor: 'grey.900', color: 'grey.300', py: 3, mt: 4 }}>
-        <Box sx={{ px: 3, textAlign: 'center' }}>
-          <Typography variant="body2">
-            &copy; {new Date().getFullYear()} CoCoスモ
-          </Typography>
-        </Box>
+      <Box sx={{
+        bgcolor: 'grey.900',
+        color: 'grey.300',
+        py: 4,
+        mt: 0
+      }}>
+        <Container maxWidth="lg">
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="body2" sx={{ opacity: 0.8 }}>
+              &copy; {new Date().getFullYear()} CoCoスモ
+            </Typography>
+          </Box>
+        </Container>
       </Box>
 
       {/* 経路追加ダイアログ */}
