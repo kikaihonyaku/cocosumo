@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_10_092925) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_10_103100) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -209,6 +209,27 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_10_092925) do
     t.index ["property_publication_id"], name: "index_customer_accesses_on_property_publication_id"
   end
 
+  create_table "customer_activities", force: :cascade do |t|
+    t.bigint "customer_id", null: false
+    t.bigint "user_id"
+    t.integer "activity_type", default: 0, null: false
+    t.integer "direction", default: 0, null: false
+    t.string "subject"
+    t.text "content"
+    t.bigint "property_inquiry_id"
+    t.bigint "customer_access_id"
+    t.bigint "property_publication_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["activity_type"], name: "index_customer_activities_on_activity_type"
+    t.index ["customer_access_id"], name: "index_customer_activities_on_customer_access_id"
+    t.index ["customer_id", "created_at"], name: "index_customer_activities_on_customer_id_and_created_at"
+    t.index ["customer_id"], name: "index_customer_activities_on_customer_id"
+    t.index ["property_inquiry_id"], name: "index_customer_activities_on_property_inquiry_id"
+    t.index ["property_publication_id"], name: "index_customer_activities_on_property_publication_id"
+    t.index ["user_id"], name: "index_customer_activities_on_user_id"
+  end
+
   create_table "customer_routes", force: :cascade do |t|
     t.bigint "customer_access_id", null: false
     t.string "name", null: false
@@ -241,6 +262,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_10_092925) do
     t.datetime "last_contacted_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "deal_status", default: 0, null: false
+    t.datetime "deal_status_changed_at"
+    t.bigint "assigned_user_id"
+    t.string "lost_reason"
+    t.date "expected_move_date"
+    t.integer "budget_min"
+    t.integer "budget_max"
+    t.jsonb "preferred_areas", default: []
+    t.text "requirements"
+    t.integer "priority", default: 1, null: false
+    t.index ["assigned_user_id"], name: "index_customers_on_assigned_user_id"
+    t.index ["deal_status"], name: "index_customers_on_deal_status"
+    t.index ["priority"], name: "index_customers_on_priority"
     t.index ["tenant_id", "email"], name: "index_customers_on_tenant_id_and_email", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
     t.index ["tenant_id", "line_user_id"], name: "index_customers_on_tenant_id_and_line_user_id", unique: true, where: "(line_user_id IS NOT NULL)"
     t.index ["tenant_id"], name: "index_customers_on_tenant_id"
@@ -698,8 +732,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_10_092925) do
   add_foreign_key "customer_accesses", "customers"
   add_foreign_key "customer_accesses", "property_inquiries"
   add_foreign_key "customer_accesses", "property_publications"
+  add_foreign_key "customer_activities", "customer_accesses"
+  add_foreign_key "customer_activities", "customers"
+  add_foreign_key "customer_activities", "property_inquiries"
+  add_foreign_key "customer_activities", "property_publications"
+  add_foreign_key "customer_activities", "users"
   add_foreign_key "customer_routes", "customer_accesses"
   add_foreign_key "customers", "tenants"
+  add_foreign_key "customers", "users", column: "assigned_user_id"
   add_foreign_key "facility_synonyms", "facilities"
   add_foreign_key "map_layers", "tenants"
   add_foreign_key "owners", "buildings"

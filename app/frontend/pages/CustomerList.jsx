@@ -33,7 +33,10 @@ import {
   QuestionAnswer as QuestionAnswerIcon,
   Key as KeyIcon,
   Visibility as VisibilityIcon,
-  Chat as ChatIcon
+  Chat as ChatIcon,
+  Flag as FlagIcon,
+  PriorityHigh as PriorityHighIcon,
+  Warning as WarningIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -44,6 +47,33 @@ const getStatusInfo = (status) => {
     archived: { label: 'アーカイブ', color: 'default' }
   };
   return statusMap[status] || { label: status || 'アクティブ', color: 'success' };
+};
+
+// Deal status mapping
+const DEAL_STATUS_MAP = {
+  new_inquiry: { label: '新規反響', color: 'info' },
+  contacting: { label: '対応中', color: 'primary' },
+  viewing_scheduled: { label: '内見予約', color: 'secondary' },
+  viewing_done: { label: '内見済', color: 'warning' },
+  application: { label: '申込', color: 'success' },
+  contracted: { label: '成約', color: 'success' },
+  lost: { label: '失注', color: 'error' }
+};
+
+const getDealStatusInfo = (status) => {
+  return DEAL_STATUS_MAP[status] || { label: status, color: 'default' };
+};
+
+// Priority mapping
+const PRIORITY_MAP = {
+  low: { label: '低', color: 'default', icon: null },
+  normal: { label: '通常', color: 'default', icon: null },
+  high: { label: '高', color: 'warning', icon: <PriorityHighIcon fontSize="small" /> },
+  urgent: { label: '緊急', color: 'error', icon: <WarningIcon fontSize="small" /> }
+};
+
+const getPriorityInfo = (priority) => {
+  return PRIORITY_MAP[priority] || PRIORITY_MAP.normal;
 };
 
 export default function CustomerList() {
@@ -59,6 +89,9 @@ export default function CustomerList() {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [dealStatusFilter, setDealStatusFilter] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('');
+  const [activeOnly, setActiveOnly] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
 
@@ -72,6 +105,9 @@ export default function CustomerList() {
       params.append('per_page', rowsPerPage);
       if (searchQuery) params.append('query', searchQuery);
       if (statusFilter) params.append('status', statusFilter);
+      if (dealStatusFilter) params.append('deal_status', dealStatusFilter);
+      if (priorityFilter) params.append('priority', priorityFilter);
+      if (activeOnly) params.append('active_only', 'true');
 
       const response = await axios.get(`/api/v1/customers?${params.toString()}`);
       setCustomers(response.data.customers);
@@ -86,7 +122,7 @@ export default function CustomerList() {
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage, searchQuery, statusFilter]);
+  }, [page, rowsPerPage, searchQuery, statusFilter, dealStatusFilter, priorityFilter, activeOnly]);
 
   useEffect(() => {
     loadCustomers();
@@ -99,6 +135,16 @@ export default function CustomerList() {
 
   const handleStatusFilterChange = (e) => {
     setStatusFilter(e.target.value);
+    setPage(0);
+  };
+
+  const handleDealStatusFilterChange = (e) => {
+    setDealStatusFilter(e.target.value);
+    setPage(0);
+  };
+
+  const handlePriorityFilterChange = (e) => {
+    setPriorityFilter(e.target.value);
     setPage(0);
   };
 
@@ -172,12 +218,43 @@ export default function CustomerList() {
               )
             }}
           />
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>ステータス</InputLabel>
+          <FormControl size="small" sx={{ minWidth: 130 }}>
+            <InputLabel>商談ステータス</InputLabel>
+            <Select
+              value={dealStatusFilter}
+              onChange={handleDealStatusFilterChange}
+              label="商談ステータス"
+            >
+              <MenuItem value="">すべて</MenuItem>
+              <MenuItem value="new_inquiry">新規反響</MenuItem>
+              <MenuItem value="contacting">対応中</MenuItem>
+              <MenuItem value="viewing_scheduled">内見予約</MenuItem>
+              <MenuItem value="viewing_done">内見済</MenuItem>
+              <MenuItem value="application">申込</MenuItem>
+              <MenuItem value="contracted">成約</MenuItem>
+              <MenuItem value="lost">失注</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 100 }}>
+            <InputLabel>優先度</InputLabel>
+            <Select
+              value={priorityFilter}
+              onChange={handlePriorityFilterChange}
+              label="優先度"
+            >
+              <MenuItem value="">すべて</MenuItem>
+              <MenuItem value="urgent">緊急</MenuItem>
+              <MenuItem value="high">高</MenuItem>
+              <MenuItem value="normal">通常</MenuItem>
+              <MenuItem value="low">低</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>顧客状態</InputLabel>
             <Select
               value={statusFilter}
               onChange={handleStatusFilterChange}
-              label="ステータス"
+              label="顧客状態"
             >
               <MenuItem value="">すべて</MenuItem>
               <MenuItem value="active">アクティブ</MenuItem>
@@ -193,11 +270,11 @@ export default function CustomerList() {
           <TableHead>
             <TableRow sx={{ bgcolor: 'grey.100' }}>
               <TableCell sx={{ fontWeight: 600 }}>顧客名</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>商談ステータス</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>連絡先</TableCell>
               <TableCell sx={{ fontWeight: 600 }} align="center">問い合わせ</TableCell>
               <TableCell sx={{ fontWeight: 600 }} align="center">アクセス権</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>最終問い合わせ</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>登録日</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>最終連絡</TableCell>
               <TableCell sx={{ fontWeight: 600 }} align="center">操作</TableCell>
             </TableRow>
           </TableHead>
@@ -213,6 +290,8 @@ export default function CustomerList() {
             ) : (
               customers.map((customer) => {
                 const statusInfo = getStatusInfo(customer.status);
+                const dealStatusInfo = getDealStatusInfo(customer.deal_status);
+                const priorityInfo = getPriorityInfo(customer.priority);
                 return (
                   <TableRow
                     key={customer.id}
@@ -230,13 +309,36 @@ export default function CustomerList() {
                             <ChatIcon fontSize="small" color="success" />
                           </Tooltip>
                         )}
-                        <Chip
-                          size="small"
-                          label={statusInfo.label}
-                          color={statusInfo.color}
-                          sx={{ height: 20, fontSize: '0.7rem' }}
-                        />
+                        {(customer.priority === 'high' || customer.priority === 'urgent') && (
+                          <Tooltip title={`優先度: ${customer.priority_label || priorityInfo.label}`}>
+                            <Chip
+                              size="small"
+                              icon={priorityInfo.icon}
+                              label={customer.priority_label || priorityInfo.label}
+                              color={priorityInfo.color}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Tooltip>
+                        )}
+                        {customer.status === 'archived' && (
+                          <Chip
+                            size="small"
+                            label={statusInfo.label}
+                            color={statusInfo.color}
+                            variant="outlined"
+                            sx={{ height: 20, fontSize: '0.7rem' }}
+                          />
+                        )}
                       </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        icon={<FlagIcon fontSize="small" />}
+                        label={customer.deal_status_label || dealStatusInfo.label}
+                        size="small"
+                        color={dealStatusInfo.color}
+                        sx={{ height: 24 }}
+                      />
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -274,12 +376,7 @@ export default function CustomerList() {
                     </TableCell>
                     <TableCell>
                       <Typography variant="caption" color="text.secondary">
-                        {customer.last_inquiry_at || '-'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="caption" color="text.secondary">
-                        {customer.created_at}
+                        {customer.last_contacted_at || customer.last_inquiry_at || '-'}
                       </Typography>
                     </TableCell>
                     <TableCell align="center">

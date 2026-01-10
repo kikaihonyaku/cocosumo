@@ -292,7 +292,9 @@ Rails.application.routes.draw do
         member do
           get :inquiries
           get :accesses
+          post :change_status
         end
+        resources :activities, controller: 'customer_activities', only: [:index, :create, :update, :destroy]
       end
 
       # 顧客向け公開API（認証不要）
