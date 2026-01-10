@@ -160,9 +160,7 @@ class Api::V1::PresentationAccessesController < ApplicationController
 
     @property_publication = @presentation_access.property_publication
 
-    unless @property_publication.published?
-      return render json: { error: "この物件公開ページは現在公開されていません" }, status: :not_found
-    end
+    # プレゼンURLは公開状態に関係なくアクセス可能（限定公開用途のため）
 
     render json: build_presentation_data(@presentation_access)
 

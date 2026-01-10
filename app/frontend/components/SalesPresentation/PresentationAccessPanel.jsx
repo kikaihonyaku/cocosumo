@@ -167,6 +167,10 @@ export default function PresentationAccessPanel({ publicationId, onAccessCreated
         営業説明用のプレゼンURLを発行できます。進行順が固定されたUIで、Zoom/対面/LINE共有で即使えます。
       </Typography>
 
+      <Alert severity="info" sx={{ mb: 2 }}>
+        プレゼンURLは公開ページの公開状態に関係なくアクセス可能です。URLを知っている人は閲覧できます。
+      </Alert>
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}

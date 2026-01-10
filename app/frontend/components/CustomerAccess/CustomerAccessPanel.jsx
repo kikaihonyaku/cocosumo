@@ -179,6 +179,10 @@ export default function CustomerAccessPanel({ publicationId, onAccessCreated }) 
         </Button>
       </Box>
 
+      <Alert severity="warning" sx={{ mb: 2 }}>
+        顧客アクセスURLは公開ページが公開状態の場合のみアクセス可能です。非公開にするとアクセスできなくなります。
+      </Alert>
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
