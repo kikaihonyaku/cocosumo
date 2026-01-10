@@ -470,6 +470,8 @@ export default function CustomerPropertyView() {
         expiresAt={customer_access?.expires_at}
         formattedExpiresAt={customer_access?.formatted_expires_at}
         daysUntilExpiry={customer_access?.days_until_expiry}
+        propertyTitle={data.title}
+        tenantName={building?.tenant?.name}
       />
 
       {/* 申し送り事項 */}

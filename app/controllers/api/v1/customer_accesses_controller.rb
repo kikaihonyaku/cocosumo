@@ -695,7 +695,12 @@ class Api::V1::CustomerAccessesController < ApplicationController
           include: {
             building: {
               only: [:id, :name, :address, :building_type, :structure, :built_year,
-                     :floors, :latitude, :longitude, :postcode]
+                     :floors, :latitude, :longitude, :postcode],
+              include: {
+                tenant: {
+                  only: [:id, :name]
+                }
+              }
             }
           }
         }

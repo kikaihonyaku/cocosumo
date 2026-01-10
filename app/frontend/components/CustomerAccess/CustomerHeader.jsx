@@ -10,7 +10,9 @@ export default function CustomerHeader({
   customerName,
   expiresAt,
   formattedExpiresAt,
-  daysUntilExpiry
+  daysUntilExpiry,
+  propertyTitle,
+  tenantName
 }) {
   const getExpiryColor = () => {
     if (daysUntilExpiry === null || daysUntilExpiry === undefined) return 'default';
@@ -19,14 +21,25 @@ export default function CustomerHeader({
     return 'success';
   };
 
+  // 表示するタイトルを決定
+  const displayTitle = propertyTitle || 'CoCoスモ';
+  const hasSubtitle = tenantName && propertyTitle;
+
   return (
     <AppBar position="static" sx={{ bgcolor: 'primary.main' }}>
       <Toolbar sx={{ justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <HomeIcon />
-          <Typography variant="h6" component="h1" sx={{ fontWeight: 600 }}>
-            CoCoスモ
-          </Typography>
+          <Box>
+            <Typography variant="h6" component="h1" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+              {displayTitle}
+            </Typography>
+            {hasSubtitle && (
+              <Typography variant="caption" sx={{ opacity: 0.85, display: 'block' }}>
+                {tenantName}
+              </Typography>
+            )}
+          </Box>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
