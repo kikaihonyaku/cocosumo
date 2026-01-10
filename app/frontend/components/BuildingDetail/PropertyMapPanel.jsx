@@ -17,6 +17,13 @@ import {
   Select,
   MenuItem,
   Fab,
+  Collapse,
+  Chip,
+  Divider,
+  FormControlLabel,
+  Checkbox,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   MyLocation as MyLocationIcon,
@@ -34,8 +41,110 @@ import {
   SkipPrevious as SkipPreviousIcon,
   SkipNext as SkipNextIcon,
   OpenInFull as OpenInFullIcon,
+  LocalConvenienceStore as LocalConvenienceStoreIcon,
+  LocalHospital as LocalHospitalIcon,
+  ShoppingCart as ShoppingCartIcon,
+  School as SchoolIcon,
+  Park as ParkIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  Layers as LayersIcon,
+  Place as PlaceIcon,
+  Info as InfoIcon,
+  ChildCare as ChildCareIcon,
+  AccountBalance as AccountBalanceIcon,
+  LocalPostOffice as LocalPostOfficeIcon,
+  Apartment as ApartmentIcon,
 } from '@mui/icons-material';
 import MapChatWidget from './MapChatWidget';
+
+// SVGマーカーアイコンを生成するヘルパー関数
+const createSvgMarkerIcon = (svgPath, color, size = 32) => {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="11" fill="${color}" stroke="white" stroke-width="2"/>
+      <g transform="scale(0.5) translate(12, 12)" fill="white">
+        <path d="${svgPath}"/>
+      </g>
+    </svg>
+  `;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+};
+
+// 周辺施設カテゴリ定義
+const NEARBY_FACILITY_CATEGORIES = [
+  {
+    id: 'convenience_store',
+    label: 'コンビニ',
+    placeType: 'convenience_store',
+    Icon: LocalConvenienceStoreIcon,
+    markerColor: '#FF6B6B',
+    svgPath: 'M19.5,3.5L18,2l-1.5,1.5L15,2l-1.5,1.5L12,2l-1.5,1.5L9,2L7.5,3.5L6,2v14H3v3c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V2L19.5,3.5z M19,19H5V5h14V19z M9,7h2v2H9V7z M12,7h2v2h-2V7z M15,7h2v2h-2V7z',
+  },
+  {
+    id: 'hospital',
+    label: '病院',
+    placeType: 'hospital',
+    Icon: LocalHospitalIcon,
+    markerColor: '#4ECDC4',
+    svgPath: 'M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z',
+  },
+  {
+    id: 'supermarket',
+    label: 'スーパー',
+    placeType: 'supermarket',
+    Icon: ShoppingCartIcon,
+    markerColor: '#45B7D1',
+    svgPath: 'M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z',
+  },
+  {
+    id: 'kindergarten',
+    label: '幼稚園・保育園',
+    placeType: 'preschool',
+    Icon: ChildCareIcon,
+    markerColor: '#FF69B4',
+    svgPath: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z',
+  },
+  {
+    id: 'school',
+    label: '小学校・中学校',
+    placeType: 'school',
+    Icon: SchoolIcon,
+    markerColor: '#96CEB4',
+    svgPath: 'M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z',
+  },
+  {
+    id: 'park',
+    label: '公園',
+    placeType: 'park',
+    Icon: ParkIcon,
+    markerColor: '#FFD700',
+    svgPath: 'M17 12h2L12 2 5 12h2l-3 9h7v-5h2v5h7l-3-9z',
+  },
+  {
+    id: 'bank_post',
+    label: '銀行・郵便局',
+    placeType: 'bank',
+    placeTypes: ['bank', 'post_office'],
+    Icon: LocalPostOfficeIcon,
+    markerColor: '#9370DB',
+    svgPath: 'M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z',
+  },
+  {
+    id: 'government',
+    label: '行政機関',
+    placeType: 'local_government_office',
+    Icon: ApartmentIcon,
+    markerColor: '#708090',
+    svgPath: 'M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 12h-2v-2h2v2zm0-4h-2v-2h2v2z',
+  },
+];
+
+// 周辺施設検索設定
+const NEARBY_SEARCH_CONFIG = {
+  radius: 1000, // 検索半径（メートル）
+  maxResultsPerCategory: 10, // カテゴリごとの最大結果数
+};
 
 export default function PropertyMapPanel({
   property,
@@ -100,6 +209,25 @@ export default function PropertyMapPanel({
   const [controlsVisible, setControlsVisible] = useState(true);
   const playIntervalRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
+
+  // 地図オプションパネル用state
+  const [mapOptionsOpen, setMapOptionsOpen] = useState(false);
+  const [activeOptionsTab, setActiveOptionsTab] = useState(0); // 0: 周辺施設, 1: レイヤー
+
+  // 周辺施設用state/ref
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [nearbyFacilities, setNearbyFacilities] = useState({});
+  const [facilitySearchLoading, setFacilitySearchLoading] = useState(false);
+  const nearbyMarkersRef = useRef({});
+  const nearbyInfoWindowRef = useRef(null);
+
+  // レイヤー用state/ref
+  const [availableLayers, setAvailableLayers] = useState([]);
+  const [selectedLayers, setSelectedLayers] = useState([]);
+  const [layersLoading, setLayersLoading] = useState(false);
+  const layerPolygonsRef = useRef({});
+  const layerMarkersRef = useRef({});
+  const layerInfoWindowRef = useRef(null);
 
   // Google Maps初期化
   useEffect(() => {
@@ -656,6 +784,366 @@ export default function PropertyMapPanel({
     }
   }, [isPlaying]);
 
+  // レイヤー一覧を取得
+  const fetchMapLayers = useCallback(async () => {
+    try {
+      setLayersLoading(true);
+      const response = await fetch('/api/v1/map_layers', {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('レイヤー一覧の取得に失敗しました');
+      const data = await response.json();
+      const layers = data.map(layer => ({
+        id: layer.layer_key,
+        label: layer.name,
+        description: `${layer.feature_count || 0}件`,
+        color: layer.color || '#FF6B00',
+        opacity: layer.opacity || 0.15,
+        layerType: layer.layer_type,
+        attribution: layer.attribution,
+      }));
+      setAvailableLayers(layers);
+    } catch (error) {
+      console.error('レイヤー取得エラー:', error);
+    } finally {
+      setLayersLoading(false);
+    }
+  }, []);
+
+  // レイヤーのGeoJSONを取得して描画
+  const fetchAndDisplayLayer = useCallback(async (layerId) => {
+    if (!mapInstanceRef.current || !window.google?.maps) return;
+
+    const layer = availableLayers.find(l => l.id === layerId);
+    if (!layer) return;
+
+    try {
+      const response = await fetch(`/api/v1/map_layers/${layerId}/geojson`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('GeoJSONの取得に失敗しました');
+      const geojson = await response.json();
+
+      if (!geojson.features || geojson.features.length === 0) return;
+
+      const firstFeature = geojson.features[0];
+      const isPoint = firstFeature.geometry.type === 'Point';
+
+      if (isPoint) {
+        displayLayerPoints(geojson, layerId, layer);
+      } else {
+        displayLayerPolygons(geojson, layerId, layer);
+      }
+    } catch (error) {
+      console.error(`レイヤー ${layerId} の取得エラー:`, error);
+    }
+  }, [availableLayers]);
+
+  // レイヤーポリゴンを描画
+  const displayLayerPolygons = useCallback((geojson, layerId, layer) => {
+    if (!mapInstanceRef.current || !window.google?.maps) return;
+
+    // 既存のポリゴンをクリア
+    if (layerPolygonsRef.current[layerId]) {
+      layerPolygonsRef.current[layerId].forEach(p => p.setMap(null));
+    }
+    layerPolygonsRef.current[layerId] = [];
+
+    geojson.features.forEach(feature => {
+      if (feature.geometry.type !== 'Polygon' && feature.geometry.type !== 'MultiPolygon') return;
+
+      const paths = feature.geometry.type === 'Polygon'
+        ? [feature.geometry.coordinates[0].map(coord => ({ lat: coord[1], lng: coord[0] }))]
+        : feature.geometry.coordinates.map(poly => poly[0].map(coord => ({ lat: coord[1], lng: coord[0] })));
+
+      paths.forEach(path => {
+        const polygon = new window.google.maps.Polygon({
+          paths: path,
+          strokeColor: layer.color,
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          fillColor: layer.color,
+          fillOpacity: layer.opacity,
+          map: mapInstanceRef.current,
+          zIndex: 1,
+        });
+
+        // クリックで情報表示
+        polygon.addListener('click', (e) => {
+          if (!layerInfoWindowRef.current) {
+            layerInfoWindowRef.current = new window.google.maps.InfoWindow();
+          }
+          const name = feature.properties?.name || feature.properties?.school_name || 'エリア';
+          layerInfoWindowRef.current.setContent(`
+            <div style="padding: 8px; max-width: 200px;">
+              <h4 style="margin: 0 0 4px 0; font-size: 14px; color: ${layer.color};">${name}</h4>
+              ${layer.attribution ? `<p style="margin: 0; font-size: 11px; color: #888;">出典: ${layer.attribution}</p>` : ''}
+            </div>
+          `);
+          layerInfoWindowRef.current.setPosition(e.latLng);
+          layerInfoWindowRef.current.open(mapInstanceRef.current);
+        });
+
+        layerPolygonsRef.current[layerId].push(polygon);
+      });
+    });
+  }, []);
+
+  // レイヤーポイントを描画
+  const displayLayerPoints = useCallback((geojson, layerId, layer) => {
+    if (!mapInstanceRef.current || !window.google?.maps) return;
+
+    // 既存のマーカーをクリア
+    if (layerMarkersRef.current[layerId]) {
+      layerMarkersRef.current[layerId].forEach(m => m.setMap(null));
+    }
+    layerMarkersRef.current[layerId] = [];
+
+    geojson.features.forEach(feature => {
+      if (feature.geometry.type !== 'Point') return;
+
+      const [lng, lat] = feature.geometry.coordinates;
+      const marker = new window.google.maps.Marker({
+        position: { lat, lng },
+        map: mapInstanceRef.current,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 6,
+          fillColor: layer.color,
+          fillOpacity: 0.8,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 1,
+        },
+        zIndex: 5,
+      });
+
+      const name = feature.properties?.name || feature.properties?.station_name || '地点';
+      marker.addListener('click', () => {
+        if (!layerInfoWindowRef.current) {
+          layerInfoWindowRef.current = new window.google.maps.InfoWindow();
+        }
+        layerInfoWindowRef.current.setContent(`
+          <div style="padding: 8px; max-width: 200px;">
+            <h4 style="margin: 0 0 4px 0; font-size: 14px; color: ${layer.color};">${name}</h4>
+            ${layer.attribution ? `<p style="margin: 0; font-size: 11px; color: #888;">出典: ${layer.attribution}</p>` : ''}
+          </div>
+        `);
+        layerInfoWindowRef.current.open(mapInstanceRef.current, marker);
+      });
+
+      layerMarkersRef.current[layerId].push(marker);
+    });
+  }, []);
+
+  // レイヤーを非表示
+  const hideLayer = useCallback((layerId) => {
+    if (layerPolygonsRef.current[layerId]) {
+      layerPolygonsRef.current[layerId].forEach(p => p.setMap(null));
+      delete layerPolygonsRef.current[layerId];
+    }
+    if (layerMarkersRef.current[layerId]) {
+      layerMarkersRef.current[layerId].forEach(m => m.setMap(null));
+      delete layerMarkersRef.current[layerId];
+    }
+  }, []);
+
+  // レイヤー選択変更時の処理
+  useEffect(() => {
+    if (!mapLoaded) return;
+
+    // 選択されたレイヤーを表示
+    selectedLayers.forEach(layerId => {
+      if (!layerPolygonsRef.current[layerId] && !layerMarkersRef.current[layerId]) {
+        fetchAndDisplayLayer(layerId);
+      }
+    });
+
+    // 選択解除されたレイヤーを非表示
+    Object.keys(layerPolygonsRef.current).forEach(layerId => {
+      if (!selectedLayers.includes(layerId)) {
+        hideLayer(layerId);
+      }
+    });
+    Object.keys(layerMarkersRef.current).forEach(layerId => {
+      if (!selectedLayers.includes(layerId)) {
+        hideLayer(layerId);
+      }
+    });
+  }, [selectedLayers, mapLoaded, fetchAndDisplayLayer, hideLayer]);
+
+  // 周辺施設を検索
+  const searchNearbyFacilities = useCallback(async (categoryId) => {
+    if (!mapInstanceRef.current || !window.google?.maps?.places) return;
+    if (!property?.latitude || !property?.longitude) return;
+
+    const category = NEARBY_FACILITY_CATEGORIES.find(c => c.id === categoryId);
+    if (!category) return;
+
+    // 既にキャッシュがあれば使用
+    if (nearbyFacilities[categoryId]) {
+      createNearbyMarkers(categoryId, nearbyFacilities[categoryId]);
+      return;
+    }
+
+    setFacilitySearchLoading(true);
+
+    const service = new window.google.maps.places.PlacesService(mapInstanceRef.current);
+    const center = { lat: parseFloat(property.latitude), lng: parseFloat(property.longitude) };
+
+    // 複数タイプを検索する場合（例：銀行・郵便局）
+    const placeTypes = category.placeTypes || [category.placeType];
+
+    const searchPromises = placeTypes.map(placeType => {
+      return new Promise((resolve) => {
+        service.nearbySearch({
+          location: center,
+          radius: NEARBY_SEARCH_CONFIG.radius,
+          type: placeType,
+        }, (places, status) => {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && places) {
+            resolve(places);
+          } else {
+            resolve([]);
+          }
+        });
+      });
+    });
+
+    try {
+      const results = await Promise.all(searchPromises);
+      // 複数の結果をマージして重複を除去
+      const allPlaces = results.flat();
+      const uniquePlaces = allPlaces.filter((place, index, self) =>
+        index === self.findIndex(p => p.place_id === place.place_id)
+      );
+      const limitedPlaces = uniquePlaces.slice(0, NEARBY_SEARCH_CONFIG.maxResultsPerCategory);
+
+      setNearbyFacilities(prev => ({ ...prev, [categoryId]: limitedPlaces }));
+      createNearbyMarkers(categoryId, limitedPlaces);
+    } catch (error) {
+      console.error('周辺施設検索エラー:', error);
+      setNearbyFacilities(prev => ({ ...prev, [categoryId]: [] }));
+    } finally {
+      setFacilitySearchLoading(false);
+    }
+  }, [property, nearbyFacilities]);
+
+  // 周辺施設マーカーを作成
+  const createNearbyMarkers = useCallback((categoryId, places) => {
+    if (!mapInstanceRef.current || !window.google?.maps) return;
+
+    const category = NEARBY_FACILITY_CATEGORIES.find(c => c.id === categoryId);
+    if (!category) return;
+
+    // 既存のマーカーをクリア
+    if (nearbyMarkersRef.current[categoryId]) {
+      nearbyMarkersRef.current[categoryId].forEach(m => m.setMap(null));
+    }
+    nearbyMarkersRef.current[categoryId] = [];
+
+    places.forEach((place, index) => {
+      const iconUrl = createSvgMarkerIcon(category.svgPath, category.markerColor, 36);
+      const marker = new window.google.maps.Marker({
+        position: place.geometry.location,
+        map: mapInstanceRef.current,
+        title: place.name,
+        icon: {
+          url: iconUrl,
+          scaledSize: new window.google.maps.Size(36, 36),
+          anchor: new window.google.maps.Point(18, 18),
+        },
+        zIndex: 50,
+      });
+
+      marker.addListener('click', () => {
+        if (!nearbyInfoWindowRef.current) {
+          nearbyInfoWindowRef.current = new window.google.maps.InfoWindow();
+        }
+        nearbyInfoWindowRef.current.setContent(`
+          <div style="padding: 8px; max-width: 200px;">
+            <h4 style="margin: 0 0 4px 0; font-size: 14px; color: ${category.markerColor};">
+              ${place.name}
+            </h4>
+            <p style="margin: 0; font-size: 12px; color: #666;">
+              ${place.vicinity || ''}
+            </p>
+            ${place.rating ? `
+              <p style="margin: 4px 0 0 0; font-size: 11px; color: #888;">
+                ★ ${place.rating} (${place.user_ratings_total || 0}件)
+              </p>
+            ` : ''}
+          </div>
+        `);
+        nearbyInfoWindowRef.current.open(mapInstanceRef.current, marker);
+      });
+
+      nearbyMarkersRef.current[categoryId].push(marker);
+    });
+  }, []);
+
+  // 周辺施設マーカーを削除
+  const clearNearbyMarkers = useCallback((categoryId) => {
+    if (nearbyMarkersRef.current[categoryId]) {
+      nearbyMarkersRef.current[categoryId].forEach(m => m.setMap(null));
+      delete nearbyMarkersRef.current[categoryId];
+    }
+  }, []);
+
+  // 周辺施設カテゴリ選択変更時の処理
+  useEffect(() => {
+    if (!mapLoaded) return;
+
+    // 選択されたカテゴリのマーカーを表示
+    selectedCategories.forEach(categoryId => {
+      if (!nearbyMarkersRef.current[categoryId]) {
+        searchNearbyFacilities(categoryId);
+      }
+    });
+
+    // 選択解除されたカテゴリのマーカーを削除
+    Object.keys(nearbyMarkersRef.current).forEach(categoryId => {
+      if (!selectedCategories.includes(categoryId)) {
+        clearNearbyMarkers(categoryId);
+      }
+    });
+  }, [selectedCategories, mapLoaded, searchNearbyFacilities, clearNearbyMarkers]);
+
+  // コンポーネントアンマウント時のクリーンアップ
+  useEffect(() => {
+    return () => {
+      // 周辺施設マーカーをクリア
+      Object.values(nearbyMarkersRef.current).forEach(markers => {
+        markers.forEach(m => m.setMap(null));
+      });
+      nearbyMarkersRef.current = {};
+
+      // レイヤーポリゴン/マーカーをクリア
+      Object.values(layerPolygonsRef.current).forEach(polygons => {
+        polygons.forEach(p => p.setMap(null));
+      });
+      layerPolygonsRef.current = {};
+      Object.values(layerMarkersRef.current).forEach(markers => {
+        markers.forEach(m => m.setMap(null));
+      });
+      layerMarkersRef.current = {};
+    };
+  }, []);
+
+  // 地図オプションパネルを開いたときにレイヤー一覧を取得
+  useEffect(() => {
+    if (mapOptionsOpen && availableLayers.length === 0) {
+      fetchMapLayers();
+    }
+  }, [mapOptionsOpen, availableLayers.length, fetchMapLayers]);
+
   const loadGoogleMaps = () => {
     // meta tagから取得（本番環境）、または環境変数から取得（開発環境）
     const metaTag = document.querySelector('meta[name="google-maps-api-key"]');
@@ -1074,6 +1562,232 @@ export default function PropertyMapPanel({
               bgcolor: 'grey.100',
             }}
           />
+
+          {/* 地図オプションパネル（周辺施設・レイヤー） */}
+          {mapLoaded && !routeAddMode && !slideshowActive && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 16,
+                left: 16,
+                zIndex: 4,
+                maxWidth: 280,
+              }}
+            >
+              <Paper
+                elevation={3}
+                sx={{
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  bgcolor: 'white',
+                }}
+              >
+                {/* ヘッダー/トグルボタン */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    p: 1,
+                    px: 1.5,
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'grey.50' },
+                  }}
+                  onClick={() => setMapOptionsOpen(!mapOptionsOpen)}
+                >
+                  <LayersIcon fontSize="small" color="primary" />
+                  <Typography variant="body2" sx={{ ml: 0.5, fontWeight: 500, flex: 1 }}>
+                    地図オプション
+                  </Typography>
+                  {(selectedCategories.length > 0 || selectedLayers.length > 0) && (
+                    <Chip
+                      label={selectedCategories.length + selectedLayers.length}
+                      size="small"
+                      color="primary"
+                      sx={{ height: 20, mr: 0.5, '& .MuiChip-label': { px: 1 } }}
+                    />
+                  )}
+                  {mapOptionsOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                </Box>
+
+                {/* 展開パネル */}
+                <Collapse in={mapOptionsOpen}>
+                  <Divider />
+                  {/* タブ */}
+                  <Tabs
+                    value={activeOptionsTab}
+                    onChange={(e, v) => setActiveOptionsTab(v)}
+                    variant="fullWidth"
+                    sx={{
+                      minHeight: 36,
+                      '& .MuiTab-root': { minHeight: 36, py: 0.5, fontSize: '0.8rem' },
+                    }}
+                  >
+                    <Tab
+                      icon={<PlaceIcon sx={{ fontSize: 16 }} />}
+                      iconPosition="start"
+                      label="周辺施設"
+                      sx={{ minHeight: 36 }}
+                    />
+                    <Tab
+                      icon={<LayersIcon sx={{ fontSize: 16 }} />}
+                      iconPosition="start"
+                      label="レイヤー"
+                      sx={{ minHeight: 36 }}
+                    />
+                  </Tabs>
+                  <Divider />
+
+                  {/* 周辺施設タブ */}
+                  {activeOptionsTab === 0 && (
+                    <Box sx={{ p: 1, maxHeight: 300, overflowY: 'auto' }}>
+                      {NEARBY_FACILITY_CATEGORIES.map(category => {
+                        const Icon = category.Icon;
+                        const isSelected = selectedCategories.includes(category.id);
+                        const count = nearbyFacilities[category.id]?.length;
+
+                        return (
+                          <FormControlLabel
+                            key={category.id}
+                            control={
+                              <Checkbox
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedCategories(prev => [...prev, category.id]);
+                                  } else {
+                                    setSelectedCategories(prev => prev.filter(id => id !== category.id));
+                                  }
+                                }}
+                                size="small"
+                                sx={{
+                                  color: category.markerColor,
+                                  '&.Mui-checked': { color: category.markerColor },
+                                  p: 0.5,
+                                }}
+                              />
+                            }
+                            label={
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Icon sx={{ fontSize: 18, color: category.markerColor }} />
+                                <Typography variant="body2">{category.label}</Typography>
+                                {isSelected && count !== undefined && (
+                                  <Typography variant="caption" color="text.secondary">
+                                    ({count})
+                                  </Typography>
+                                )}
+                              </Box>
+                            }
+                            sx={{ display: 'flex', m: 0, ml: 0.5, width: '100%' }}
+                          />
+                        );
+                      })}
+
+                      {/* ローディング表示 */}
+                      {facilitySearchLoading && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+                          <CircularProgress size={20} />
+                        </Box>
+                      )}
+
+                      {/* クリアボタン */}
+                      {selectedCategories.length > 0 && (
+                        <Button
+                          size="small"
+                          color="inherit"
+                          onClick={() => setSelectedCategories([])}
+                          sx={{ mt: 1, width: '100%' }}
+                        >
+                          クリア
+                        </Button>
+                      )}
+                    </Box>
+                  )}
+
+                  {/* レイヤータブ */}
+                  {activeOptionsTab === 1 && (
+                    <Box sx={{ p: 1, maxHeight: 300, overflowY: 'auto' }}>
+                      {layersLoading ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                          <CircularProgress size={24} />
+                        </Box>
+                      ) : availableLayers.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                          利用可能なレイヤーがありません
+                        </Typography>
+                      ) : (
+                        availableLayers.map(layer => {
+                          const isSelected = selectedLayers.includes(layer.id);
+
+                          return (
+                            <FormControlLabel
+                              key={layer.id}
+                              control={
+                                <Checkbox
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedLayers(prev => [...prev, layer.id]);
+                                    } else {
+                                      setSelectedLayers(prev => prev.filter(id => id !== layer.id));
+                                    }
+                                  }}
+                                  size="small"
+                                  sx={{
+                                    color: layer.color,
+                                    '&.Mui-checked': { color: layer.color },
+                                    p: 0.5,
+                                  }}
+                                />
+                              }
+                              label={
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flex: 1, minWidth: 0 }}>
+                                  <Box
+                                    sx={{
+                                      width: 14,
+                                      height: 14,
+                                      bgcolor: layer.color,
+                                      opacity: layer.opacity + 0.3,
+                                      borderRadius: 0.5,
+                                      flexShrink: 0,
+                                    }}
+                                  />
+                                  <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                                    {layer.label}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
+                                    ({layer.description})
+                                  </Typography>
+                                  {layer.attribution && (
+                                    <Tooltip title={`出典: ${layer.attribution}`} placement="top">
+                                      <InfoIcon sx={{ fontSize: 14, color: 'text.disabled', ml: 0.5 }} />
+                                    </Tooltip>
+                                  )}
+                                </Box>
+                              }
+                              sx={{ display: 'flex', m: 0, ml: 0.5, width: '100%' }}
+                            />
+                          );
+                        })
+                      )}
+
+                      {/* クリアボタン */}
+                      {selectedLayers.length > 0 && (
+                        <Button
+                          size="small"
+                          color="inherit"
+                          onClick={() => setSelectedLayers([])}
+                          sx={{ mt: 1, width: '100%' }}
+                        >
+                          クリア
+                        </Button>
+                      )}
+                    </Box>
+                  )}
+                </Collapse>
+              </Paper>
+            </Box>
+          )}
+
           {/* ストリートビュー切り替えFAB */}
           {mapLoaded && !slideshowActive && (
             <Tooltip title={streetViewVisible ? "地図に戻る" : "ストリートビュー"} placement="left">
@@ -1354,32 +2068,6 @@ export default function PropertyMapPanel({
             </IconButton>
           </Tooltip>
         </Box>
-      )}
-
-      {/* 経路追加ボタン（地図左上） */}
-      {mapLoaded && !routeAddMode && onRouteAdd && (
-        <Tooltip title="地図上で目的地を選択して経路を追加">
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddLocationIcon />}
-            onClick={handleStartRouteAddMode}
-            sx={{
-              position: 'absolute',
-              top: 80,
-              left: 16,
-              zIndex: 1,
-              bgcolor: 'white',
-              color: 'primary.main',
-              boxShadow: 2,
-              '&:hover': {
-                bgcolor: 'grey.100',
-              },
-            }}
-          >
-            経路追加
-          </Button>
-        </Tooltip>
       )}
 
       {/* 経路追加モードオーバーレイ */}
