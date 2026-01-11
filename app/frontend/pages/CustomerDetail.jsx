@@ -16,13 +16,8 @@ import {
   IconButton,
   Tooltip,
   TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Card,
   CardContent,
-  CardActions,
   Tabs,
   Tab,
   Menu,
@@ -38,8 +33,6 @@ import {
   QuestionAnswer as QuestionAnswerIcon,
   Key as KeyIcon,
   Edit as EditIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
   OpenInNew as OpenInNewIcon,
   Chat as ChatIcon,
   Home as HomeIcon,
@@ -47,12 +40,9 @@ import {
   Flag as FlagIcon,
   Add as AddIcon,
   Note as NoteIcon,
-  Assignment as AssignmentIcon,
-  ArrowDropDown as ArrowDropDownIcon,
   Visibility as VisibilityIcon,
   CallMade as CallMadeIcon,
   CallReceived as CallReceivedIcon,
-  SwapHoriz as SwapHorizIcon,
   PriorityHigh as PriorityHighIcon,
   Warning as WarningIcon
 } from '@mui/icons-material';
@@ -108,7 +98,8 @@ const getActivityIcon = (activityType, direction) => {
     line_message: <ChatIcon />,
     inquiry: <QuestionAnswerIcon />,
     access_issued: <KeyIcon />,
-    status_change: <FlagIcon />
+    status_change: <FlagIcon />,
+    assigned_user_change: <PersonIcon />
   };
   return iconMap[activityType] || <NoteIcon />;
 };
@@ -124,7 +115,8 @@ const getActivityDotColor = (activityType) => {
     line_message: 'success',
     inquiry: 'warning',
     access_issued: 'info',
-    status_change: 'primary'
+    status_change: 'primary',
+    assigned_user_change: 'secondary'
   };
   return colorMap[activityType] || 'grey';
 };
@@ -176,9 +168,14 @@ export default function CustomerDetail() {
   const [createInquiryDialogOpen, setCreateInquiryDialogOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState(null);
 
-  // Case (inquiry) selector states
+  // Case (inquiry) selector state
   const [selectedInquiryId, setSelectedInquiryId] = useState(null);
-  const [inquiryMenuAnchor, setInquiryMenuAnchor] = useState(null);
+
+  // Inquiry status/user change menu states
+  const [statusMenuAnchor, setStatusMenuAnchor] = useState(null);
+  const [statusMenuInquiryId, setStatusMenuInquiryId] = useState(null);
+  const [userMenuAnchor, setUserMenuAnchor] = useState(null);
+  const [userMenuInquiryId, setUserMenuInquiryId] = useState(null);
 
   // Tab state for right column
   const [rightTab, setRightTab] = useState(0);
@@ -338,166 +335,164 @@ export default function CustomerDetail() {
   const dealStatusInfo = getDealStatusInfo(customer.deal_status);
   const priorityInfo = getPriorityInfo(customer.priority);
 
+  // Handler for inquiry card click (toggle selection)
+  const handleInquiryClick = (inquiryId) => {
+    setSelectedInquiryId(prev => prev === inquiryId ? null : inquiryId);
+  };
+
+  // Inquiry status menu handlers
+  const handleStatusClick = (event, inquiryId) => {
+    event.stopPropagation();
+    setStatusMenuAnchor(event.currentTarget);
+    setStatusMenuInquiryId(inquiryId);
+  };
+
+  const handleStatusMenuClose = () => {
+    setStatusMenuAnchor(null);
+    setStatusMenuInquiryId(null);
+  };
+
+  const handleStatusChange = async (newStatus) => {
+    if (!statusMenuInquiryId) return;
+
+    try {
+      const response = await axios.patch(`/api/v1/inquiries/${statusMenuInquiryId}`, {
+        property_inquiry: { status: newStatus }
+      });
+
+      // Update local state
+      setInquiries(prev => prev.map(inquiry =>
+        inquiry.id === statusMenuInquiryId
+          ? { ...inquiry, status: newStatus, status_label: response.data.inquiry?.status_label }
+          : inquiry
+      ));
+
+      // Reload activities to show the new status change activity
+      loadActivities();
+    } catch (err) {
+      console.error('Failed to update status:', err);
+    } finally {
+      handleStatusMenuClose();
+    }
+  };
+
+  // Inquiry assigned user menu handlers
+  const handleUserClick = (event, inquiryId) => {
+    event.stopPropagation();
+    setUserMenuAnchor(event.currentTarget);
+    setUserMenuInquiryId(inquiryId);
+  };
+
+  const handleUserMenuClose = () => {
+    setUserMenuAnchor(null);
+    setUserMenuInquiryId(null);
+  };
+
+  const handleUserChange = async (userId) => {
+    if (!userMenuInquiryId) return;
+
+    try {
+      const response = await axios.patch(`/api/v1/inquiries/${userMenuInquiryId}`, {
+        property_inquiry: { assigned_user_id: userId || null }
+      });
+
+      // Update local state
+      setInquiries(prev => prev.map(inquiry =>
+        inquiry.id === userMenuInquiryId
+          ? { ...inquiry, assigned_user: response.data.inquiry?.assigned_user }
+          : inquiry
+      ));
+
+      // Reload activities to show the new assigned user change activity
+      loadActivities();
+    } catch (err) {
+      console.error('Failed to update assigned user:', err);
+    } finally {
+      handleUserMenuClose();
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', bgcolor: 'grey.50' }}>
-      {/* Header */}
+      {/* Header - 2 rows */}
       <Paper
         elevation={0}
         sx={{
           px: 2,
-          py: 1.5,
+          py: 1,
           borderBottom: '1px solid',
           borderColor: 'divider',
           bgcolor: 'white',
           flexShrink: 0
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        {/* Row 1: Customer info */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 0.5 }}>
           <IconButton onClick={() => navigate('/customers')} size="small">
             <ArrowBackIcon />
           </IconButton>
-          <PersonIcon color="primary" sx={{ fontSize: 28 }} />
-          <Box sx={{ flexGrow: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                {customer.name}
-              </Typography>
-              {customer.line_user_id && (
-                <Tooltip title="LINE連携済み">
-                  <ChatIcon color="success" fontSize="small" />
-                </Tooltip>
-              )}
-              <Tooltip title="クリックしてステータスを変更">
-                <Chip
-                  size="small"
-                  icon={<FlagIcon />}
-                  label={customer.deal_status_label || dealStatusInfo.label}
-                  color={dealStatusInfo.color}
-                  onClick={() => setStatusDialogOpen(true)}
-                  sx={{ cursor: 'pointer' }}
-                />
+          <PersonIcon color="primary" sx={{ fontSize: 24 }} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
+              {customer.name}
+            </Typography>
+            {customer.line_user_id && (
+              <Tooltip title="LINE連携済み">
+                <ChatIcon color="success" fontSize="small" />
               </Tooltip>
-              {(customer.priority === 'high' || customer.priority === 'urgent') && (
-                <Chip
-                  size="small"
-                  icon={priorityInfo.icon}
-                  label={customer.priority_label || priorityInfo.label}
-                  color={priorityInfo.color}
-                />
-              )}
+            )}
+            <Tooltip title="クリックしてステータスを変更">
               <Chip
                 size="small"
-                label={statusInfo.label}
-                color={statusInfo.color}
-                variant="outlined"
+                icon={<FlagIcon />}
+                label={customer.deal_status_label || dealStatusInfo.label}
+                color={dealStatusInfo.color}
+                onClick={() => setStatusDialogOpen(true)}
+                sx={{ cursor: 'pointer', height: 22 }}
               />
-            </Box>
-            <Typography variant="caption" color="text.secondary">
-              登録日: {customer.created_at}
-              {customer.deal_status_changed_at && (
-                <> | ステータス更新: {customer.deal_status_changed_at}</>
-              )}
-            </Typography>
+            </Tooltip>
+            {(customer.priority === 'high' || customer.priority === 'urgent') && (
+              <Chip
+                size="small"
+                icon={priorityInfo.icon}
+                label={customer.priority_label || priorityInfo.label}
+                color={priorityInfo.color}
+                sx={{ height: 22 }}
+              />
+            )}
+            <Chip
+              size="small"
+              label={statusInfo.label}
+              color={statusInfo.color}
+              variant="outlined"
+              sx={{ height: 22 }}
+            />
           </Box>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddIcon />}
-            onClick={() => {
-              setEditingActivity(null);
-              setActivityDialogOpen(true);
-            }}
-          >
-            対応記録
-          </Button>
-        </Box>
-      </Paper>
-
-      {/* Case Selector Bar */}
-      {inquiries.length > 0 && (
-        <Paper
-          elevation={0}
-          sx={{
-            px: 2,
-            py: 1,
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            bgcolor: 'grey.50',
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5
-          }}
-        >
-          <AssignmentIcon color="action" fontSize="small" />
-          <Typography variant="body2" color="text.secondary">
-            現在の案件:
-          </Typography>
-
-          {/* Current Case Display / Selector */}
-          <Button
-            size="small"
-            variant="outlined"
-            endIcon={<ArrowDropDownIcon />}
-            onClick={(e) => setInquiryMenuAnchor(e.currentTarget)}
-            sx={{ textTransform: 'none', maxWidth: 300 }}
-          >
-            {selectedInquiryId
-              ? (inquiries.find(i => i.id === selectedInquiryId)?.property_title || '案件を選択')
-              : '全ての案件'
-            }
-          </Button>
-
-          <Menu
-            anchorEl={inquiryMenuAnchor}
-            open={Boolean(inquiryMenuAnchor)}
-            onClose={() => setInquiryMenuAnchor(null)}
-          >
-            <MenuItem
-              selected={selectedInquiryId === null}
-              onClick={() => {
-                setSelectedInquiryId(null);
-                setInquiryMenuAnchor(null);
-              }}
-            >
-              <Typography variant="body2" sx={{ fontWeight: selectedInquiryId === null ? 600 : 400 }}>
-                全ての案件を表示
-              </Typography>
-            </MenuItem>
-            <Divider />
-            {inquiries.map((inquiry) => (
-              <MenuItem
-                key={inquiry.id}
-                selected={selectedInquiryId === inquiry.id}
-                onClick={() => {
-                  setSelectedInquiryId(inquiry.id);
-                  setInquiryMenuAnchor(null);
-                }}
-              >
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  <Typography variant="body2" sx={{ fontWeight: selectedInquiryId === inquiry.id ? 600 : 400 }}>
-                    {inquiry.property_title || '物件名なし'}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {inquiry.origin_type_label} | {inquiry.media_type_label} | {inquiry.created_at}
-                  </Typography>
-                </Box>
-              </MenuItem>
-            ))}
-          </Menu>
 
           <Box sx={{ flex: 1 }} />
 
-          {/* Create New Inquiry Button */}
+          {/* Create inquiry button */}
           <Button
+            variant="contained"
+            color="primary"
             size="small"
             startIcon={<AddIcon />}
             onClick={() => setCreateInquiryDialogOpen(true)}
           >
-            別物件で案件作成
+            案件作成
           </Button>
-        </Paper>
-      )}
+        </Box>
+
+        {/* Row 2: Dates */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 5.5 }}>
+          <Typography variant="caption" color="text.secondary">
+            登録日: {customer.created_at}
+            {customer.deal_status_changed_at && (
+              <> | ステータス更新: {customer.deal_status_changed_at}</>
+            )}
+          </Typography>
+        </Box>
+      </Paper>
 
       {/* Main Content - Resizable 3-column layout */}
       <Box
@@ -976,26 +971,46 @@ export default function CustomerDetail() {
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                   {inquiries.map((inquiry) => {
                     const inquiryStatusInfo = getInquiryStatusInfo(inquiry.status);
+                    const isSelected = selectedInquiryId === inquiry.id;
                     return (
-                      <Card key={inquiry.id} variant="outlined" sx={{ bgcolor: 'grey.50' }}>
+                      <Card
+                        key={inquiry.id}
+                        variant="outlined"
+                        onClick={() => handleInquiryClick(inquiry.id)}
+                        sx={{
+                          bgcolor: isSelected ? 'primary.50' : 'grey.50',
+                          cursor: 'pointer',
+                          borderLeft: isSelected ? '3px solid' : '1px solid',
+                          borderLeftColor: isSelected ? 'primary.main' : 'divider',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            bgcolor: isSelected ? 'primary.100' : 'grey.100',
+                            borderLeftColor: isSelected ? 'primary.dark' : 'primary.light'
+                          }
+                        }}
+                      >
                         <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
                             <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
                               {inquiry.property_title || '物件名なし'}
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                              <Chip
-                                size="small"
-                                label={inquiry.status_label || inquiryStatusInfo.label}
-                                color={inquiryStatusInfo.color}
-                                sx={{ height: 18, fontSize: '0.65rem' }}
-                              />
+                              <Tooltip title="クリックしてステータスを変更">
+                                <Chip
+                                  size="small"
+                                  label={inquiry.status_label || inquiryStatusInfo.label}
+                                  color={inquiryStatusInfo.color}
+                                  onClick={(e) => handleStatusClick(e, inquiry.id)}
+                                  sx={{ height: 18, fontSize: '0.65rem', cursor: 'pointer' }}
+                                />
+                              </Tooltip>
                               {inquiry.room?.id && (
                                 <Tooltip title="部屋詳細を開く">
                                   <IconButton
                                     size="small"
                                     component={RouterLink}
                                     to={`/room/${inquiry.room.id}`}
+                                    onClick={(e) => e.stopPropagation()}
                                     sx={{ p: 0.25 }}
                                   >
                                     <OpenInNewIcon sx={{ fontSize: 14 }} />
@@ -1020,15 +1035,27 @@ export default function CustomerDetail() {
                               sx={{ height: 18, fontSize: '0.65rem' }}
                             />
                           </Box>
-                          {/* Assigned User */}
-                          {inquiry.assigned_user && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                              <PersonIcon sx={{ fontSize: 14, color: 'action.active' }} />
-                              <Typography variant="caption" color="text.secondary">
-                                担当: {inquiry.assigned_user.name}
+                          {/* Assigned User - always show, clickable */}
+                          <Tooltip title="クリックして担当者を変更">
+                            <Box
+                              onClick={(e) => handleUserClick(e, inquiry.id)}
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                mb: 0.5,
+                                cursor: 'pointer',
+                                p: 0.5,
+                                borderRadius: 1,
+                                '&:hover': { bgcolor: 'action.hover' }
+                              }}
+                            >
+                              <PersonIcon sx={{ fontSize: 14, color: inquiry.assigned_user ? 'primary.main' : 'action.disabled' }} />
+                              <Typography variant="caption" color={inquiry.assigned_user ? 'text.secondary' : 'text.disabled'}>
+                                担当: {inquiry.assigned_user?.name || '未設定'}
                               </Typography>
                             </Box>
-                          )}
+                          </Tooltip>
                           {/* Message if exists */}
                           {inquiry.message && (
                             <Typography
@@ -1051,12 +1078,29 @@ export default function CustomerDetail() {
                             <Typography variant="caption" color="text.secondary">
                               {inquiry.created_at}
                             </Typography>
-                            <Chip
-                              size="small"
-                              label={inquiry.channel === 'line' ? 'LINE' : 'Web'}
-                              variant="outlined"
-                              sx={{ height: 18, fontSize: '0.65rem' }}
-                            />
+                            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                              <Tooltip title="この案件に対応履歴を追加">
+                                <Button
+                                  size="small"
+                                  startIcon={<AddIcon />}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedInquiryId(inquiry.id);
+                                    setEditingActivity(null);
+                                    setActivityDialogOpen(true);
+                                  }}
+                                  sx={{ minWidth: 'auto', px: 1, py: 0.25, fontSize: '0.65rem' }}
+                                >
+                                  履歴追加
+                                </Button>
+                              </Tooltip>
+                              <Chip
+                                size="small"
+                                label={inquiry.channel === 'line' ? 'LINE' : 'Web'}
+                                variant="outlined"
+                                sx={{ height: 18, fontSize: '0.65rem' }}
+                              />
+                            </Box>
                           </Box>
                           {inquiry.customer_accesses && inquiry.customer_accesses.length > 0 && (
                             <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
@@ -1220,6 +1264,57 @@ export default function CustomerDetail() {
           loadCustomer();
         }}
       />
+
+      {/* Inquiry Status Menu */}
+      <Menu
+        anchorEl={statusMenuAnchor}
+        open={Boolean(statusMenuAnchor)}
+        onClose={handleStatusMenuClose}
+      >
+        <MenuItem
+          onClick={() => handleStatusChange('pending')}
+          selected={inquiries.find(i => i.id === statusMenuInquiryId)?.status === 'pending'}
+        >
+          <Chip size="small" label="未対応" color="error" sx={{ mr: 1 }} />
+          未対応
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleStatusChange('in_progress')}
+          selected={inquiries.find(i => i.id === statusMenuInquiryId)?.status === 'in_progress'}
+        >
+          <Chip size="small" label="対応中" color="warning" sx={{ mr: 1 }} />
+          対応中
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleStatusChange('completed')}
+          selected={inquiries.find(i => i.id === statusMenuInquiryId)?.status === 'completed'}
+        >
+          <Chip size="small" label="完了" color="success" sx={{ mr: 1 }} />
+          完了
+        </MenuItem>
+      </Menu>
+
+      {/* Inquiry Assigned User Menu */}
+      <Menu
+        anchorEl={userMenuAnchor}
+        open={Boolean(userMenuAnchor)}
+        onClose={handleUserMenuClose}
+      >
+        <MenuItem onClick={() => handleUserChange(null)}>
+          <Typography color="text.secondary">担当者なし</Typography>
+        </MenuItem>
+        <Divider />
+        {users.map((user) => (
+          <MenuItem
+            key={user.id}
+            onClick={() => handleUserChange(user.id)}
+            selected={inquiries.find(i => i.id === userMenuInquiryId)?.assigned_user?.id === user.id}
+          >
+            <PersonIcon sx={{ mr: 1, fontSize: 18 }} />
+            {user.name}
+          </MenuItem>
+        ))}
+      </Menu>
     </Box>
   );
 }

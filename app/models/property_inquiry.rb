@@ -1,4 +1,7 @@
 class PropertyInquiry < ApplicationRecord
+  # Temporary attribute for tracking who made the change
+  attr_accessor :changed_by
+
   # Associations
   belongs_to :room
   belongs_to :property_publication, optional: true
@@ -6,6 +9,11 @@ class PropertyInquiry < ApplicationRecord
   belongs_to :assigned_user, class_name: 'User', optional: true
   has_many :customer_accesses
   has_many :customer_activities
+
+  # Callbacks for automatic activity recording
+  after_create :record_inquiry_activity
+  after_update :record_status_change_activity, if: :saved_change_to_status?
+  after_update :record_assigned_user_change_activity, if: :saved_change_to_assigned_user_id?
 
   # Enums
   enum :media_type, {
@@ -90,5 +98,54 @@ class PropertyInquiry < ApplicationRecord
   # 同一顧客の他物件問い合わせ件数
   def other_inquiry_count
     other_inquiries_from_same_customer.count
+  end
+
+  private
+
+  # 問い合わせ作成時のアクティビティ記録
+  def record_inquiry_activity
+    customer_activities.create!(
+      customer: customer,
+      user: changed_by,
+      activity_type: :inquiry,
+      direction: :inbound,
+      subject: "#{origin_type_label}（#{media_type_label}）",
+      content: message.presence
+    )
+  end
+
+  # ステータス変更時のアクティビティ記録
+  def record_status_change_activity
+    old_status, new_status = saved_change_to_status
+    old_label = I18n.t("activerecord.enums.property_inquiry.status.#{old_status}", default: old_status)
+    new_label = status_label
+
+    customer_activities.create!(
+      customer: customer,
+      user: changed_by,
+      activity_type: :status_change,
+      direction: :internal,
+      subject: "案件ステータスを「#{new_label}」に変更",
+      content: "#{property_title}：#{old_label} → #{new_label}"
+    )
+  end
+
+  # 担当者変更時のアクティビティ記録
+  def record_assigned_user_change_activity
+    old_user_id, new_user_id = saved_change_to_assigned_user_id
+    old_user = User.find_by(id: old_user_id)
+    new_user = assigned_user
+
+    old_name = old_user&.name || '未設定'
+    new_name = new_user&.name || '未設定'
+
+    customer_activities.create!(
+      customer: customer,
+      user: changed_by,
+      activity_type: :assigned_user_change,
+      direction: :internal,
+      subject: "担当者を「#{new_name}」に変更",
+      content: "#{property_title}：#{old_name} → #{new_name}"
+    )
   end
 end

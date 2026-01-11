@@ -8,15 +8,16 @@ class CustomerActivity < ApplicationRecord
 
   # Enums
   enum :activity_type, {
-    note: 0,           # メモ
-    phone_call: 1,     # 電話
-    email: 2,          # メール
-    visit: 3,          # 来店
-    viewing: 4,        # 内見
-    inquiry: 5,        # 問い合わせ（自動記録）
-    access_issued: 6,  # アクセス発行（自動記録）
-    status_change: 7,  # ステータス変更（自動記録）
-    line_message: 8    # LINEメッセージ
+    note: 0,                  # メモ
+    phone_call: 1,            # 電話
+    email: 2,                 # メール
+    visit: 3,                 # 来店
+    viewing: 4,               # 内見
+    inquiry: 5,               # 問い合わせ（自動記録）
+    access_issued: 6,         # アクセス発行（自動記録）
+    status_change: 7,         # ステータス変更（自動記録）
+    line_message: 8,          # LINEメッセージ
+    assigned_user_change: 9   # 担当者変更（自動記録）
   }, prefix: true
 
   enum :direction, {
@@ -30,7 +31,7 @@ class CustomerActivity < ApplicationRecord
 
   # Scopes
   scope :recent, -> { order(created_at: :desc) }
-  scope :manual, -> { where.not(activity_type: [:inquiry, :access_issued, :status_change]) }
+  scope :manual, -> { where.not(activity_type: [:inquiry, :access_issued, :status_change, :assigned_user_change]) }
 
   # Callbacks
   after_create :update_customer_last_contacted
@@ -56,7 +57,8 @@ class CustomerActivity < ApplicationRecord
       'inquiry' => '問い合わせ',
       'access_issued' => 'アクセス発行',
       'status_change' => 'ステータス変更',
-      'line_message' => 'LINE'
+      'line_message' => 'LINE',
+      'assigned_user_change' => '担当者変更'
     }[activity_type] || activity_type
   end
 
@@ -80,7 +82,8 @@ class CustomerActivity < ApplicationRecord
       'inquiry' => 'QuestionAnswer',
       'access_issued' => 'Key',
       'status_change' => 'Flag',
-      'line_message' => 'Chat'
+      'line_message' => 'Chat',
+      'assigned_user_change' => 'Person'
     }[activity_type] || 'Info'
   end
 

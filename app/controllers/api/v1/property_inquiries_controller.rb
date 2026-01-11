@@ -223,6 +223,9 @@ class Api::V1::PropertyInquiriesController < ApplicationController
       return render json: { error: 'この問い合わせを編集する権限がありません' }, status: :forbidden
     end
 
+    # 変更者を設定（対応履歴に記録するため）
+    @inquiry.changed_by = current_user
+
     if @inquiry.update(update_params)
       render json: {
         success: true,

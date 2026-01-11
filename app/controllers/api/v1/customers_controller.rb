@@ -163,17 +163,10 @@ class Api::V1::CustomersController < ApplicationController
       source: params[:source] || 'staff_created'
     )
 
-    if inquiry.save
-      # 顧客アクティビティを記録
-      @customer.customer_activities.create!(
-        activity_type: :inquiry,
-        subject: "案件作成: #{inquiry.property_title}",
-        content: params[:message],
-        direction: :internal,
-        property_inquiry: inquiry,
-        user: current_user
-      )
+    # 変更者を設定（対応履歴に記録するため - コールバックで自動記録）
+    inquiry.changed_by = current_user
 
+    if inquiry.save
       render json: {
         success: true,
         message: '案件を作成しました',
