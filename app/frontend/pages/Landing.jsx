@@ -224,7 +224,13 @@ const stats = [
 
 export default function Landing() {
   const handleOpenHome = () => {
-    window.open('/home', '_blank');
+    // 本番環境（cocosumo.space）の場合はdemoサブドメインへリダイレクト
+    const hostname = window.location.hostname;
+    if (hostname === 'cocosumo.space' || hostname === 'www.cocosumo.space') {
+      window.location.href = 'https://demo.cocosumo.space/home';
+    } else {
+      window.open('/home', '_blank');
+    }
   };
 
   return (
