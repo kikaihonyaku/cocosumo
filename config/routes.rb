@@ -291,6 +291,9 @@ Rails.application.routes.draw do
         end
       end
 
+      # ダッシュボード（認証必要）
+      resource :dashboard, only: [:show]
+
       # 顧客管理（認証必要）
       resources :customers, only: [:index, :show, :update, :destroy] do
         member do

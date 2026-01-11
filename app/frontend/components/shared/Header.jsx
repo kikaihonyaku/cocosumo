@@ -43,7 +43,8 @@ import {
   Lock as LockIcon,
   Logout as LogoutIcon,
   Person as PersonIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Map as MapIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import ChangePasswordDialog from "./ChangePasswordDialog";
@@ -181,8 +182,7 @@ export default function Header() {
   const adminMenuItems = getAdminMenuItems();
 
   const menuItems = [
-    { to: "/home", label: "ホーム", end: false },
-    { to: "/map", label: "物件管理" },
+    { to: "/map", label: "物件管理", icon: <MapIcon fontSize="small" /> },
   ];
 
   return (
@@ -238,7 +238,10 @@ export default function Header() {
                     style={navStyle}
                     end={item.end}
                   >
-                    {item.label}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {item.icon}
+                      {item.label}
+                    </Box>
                   </NavLink>
                 ))}
                 {/* コンテンツメニュー */}
@@ -483,6 +486,9 @@ export default function Header() {
                   },
                 }}
               >
+                <ListItemIcon sx={{ color: 'white', minWidth: 36 }}>
+                  {item.icon}
+                </ListItemIcon>
                 <ListItemText
                   primary={item.label}
                   sx={{ color: 'white' }}
