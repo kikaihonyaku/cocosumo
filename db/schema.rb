@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_10_103100) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_11_202357) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -360,7 +360,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_10_103100) do
   end
 
   create_table "property_inquiries", force: :cascade do |t|
-    t.integer "property_publication_id", null: false
+    t.integer "property_publication_id"
     t.string "name", null: false
     t.string "email", null: false
     t.string "phone"
@@ -379,12 +379,22 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_10_103100) do
     t.text "reply_message"
     t.bigint "customer_id"
     t.integer "channel", default: 0, null: false
+    t.bigint "room_id", null: false
+    t.bigint "assigned_user_id"
+    t.integer "media_type", default: 0
+    t.integer "origin_type", default: 0
+    t.index ["assigned_user_id"], name: "index_property_inquiries_on_assigned_user_id"
     t.index ["channel"], name: "index_property_inquiries_on_channel"
     t.index ["created_at"], name: "index_property_inquiries_on_created_at"
     t.index ["customer_id"], name: "index_property_inquiries_on_customer_id"
+    t.index ["media_type"], name: "index_property_inquiries_on_media_type"
+    t.index ["origin_type"], name: "index_property_inquiries_on_origin_type"
     t.index ["property_publication_id"], name: "index_property_inquiries_on_property_publication_id"
+    t.index ["room_id", "customer_id"], name: "index_property_inquiries_on_room_id_and_customer_id"
+    t.index ["room_id"], name: "index_property_inquiries_on_room_id"
     t.index ["source_type"], name: "index_property_inquiries_on_source_type"
     t.index ["status"], name: "index_property_inquiries_on_status"
+    t.index ["status"], name: "index_property_inquiries_on_status_new"
   end
 
   create_table "property_publication_photos", force: :cascade do |t|
@@ -747,6 +757,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_10_103100) do
   add_foreign_key "presentation_accesses", "property_publications"
   add_foreign_key "property_inquiries", "customers"
   add_foreign_key "property_inquiries", "property_publications"
+  add_foreign_key "property_inquiries", "rooms"
+  add_foreign_key "property_inquiries", "users", column: "assigned_user_id"
   add_foreign_key "property_publication_photos", "property_publications"
   add_foreign_key "property_publication_photos", "room_photos"
   add_foreign_key "property_publication_virtual_stagings", "property_publications"

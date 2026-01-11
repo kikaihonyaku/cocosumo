@@ -282,6 +282,41 @@ class Api::V1::RoomsController < ApplicationController
     end
   end
 
+  # GET /api/v1/rooms/search
+  # 建物名・部屋番号で物件を検索
+  def search
+    query = params[:q].to_s.strip
+
+    if query.blank?
+      return render json: { rooms: [] }
+    end
+
+    @rooms = Room.joins(:building)
+                 .where(buildings: { tenant_id: current_tenant.id })
+                 .where(
+                   "buildings.name ILIKE :query OR rooms.room_number ILIKE :query OR CONCAT(buildings.name, ' ', rooms.room_number) ILIKE :query",
+                   query: "%#{query}%"
+                 )
+                 .order('buildings.name ASC, rooms.room_number ASC')
+                 .limit(20)
+
+    render json: {
+      rooms: @rooms.map do |room|
+        {
+          id: room.id,
+          room_number: room.room_number,
+          building_id: room.building_id,
+          building_name: room.building.name,
+          full_name: "#{room.building.name} #{room.room_number}",
+          room_type: room.room_type,
+          room_type_label: room.room_type_label,
+          rent: room.rent,
+          area: room.area
+        }
+      end
+    }
+  end
+
   # POST /api/v1/rooms/:id/regenerate_floorplan_thumbnail
   # 既存PDFからサムネイルを再生成
   def regenerate_floorplan_thumbnail

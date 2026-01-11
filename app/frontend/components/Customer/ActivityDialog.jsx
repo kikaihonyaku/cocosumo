@@ -11,11 +11,13 @@ import {
   Select,
   MenuItem,
   Box,
-  Alert
+  Alert,
+  Typography
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  Home as HomeIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -38,10 +40,11 @@ const DEFAULT_FORM = {
   activity_type: 'phone_call',
   direction: 'outbound',
   subject: '',
-  content: ''
+  content: '',
+  property_inquiry_id: ''
 };
 
-export default function ActivityDialog({ open, onClose, customerId, activity, onCreated, onUpdated }) {
+export default function ActivityDialog({ open, onClose, customerId, activity, onCreated, onUpdated, inquiries = [], selectedInquiryId = null }) {
   const isEditMode = !!activity;
   const [formData, setFormData] = useState(DEFAULT_FORM);
   const [loading, setLoading] = useState(false);
@@ -54,12 +57,17 @@ export default function ActivityDialog({ open, onClose, customerId, activity, on
         activity_type: activity.activity_type || 'phone_call',
         direction: activity.direction || 'outbound',
         subject: activity.subject || '',
-        content: activity.content || ''
+        content: activity.content || '',
+        property_inquiry_id: activity.property_inquiry_id || ''
       });
     } else {
-      setFormData(DEFAULT_FORM);
+      // For new activities, pre-select the currently selected inquiry
+      setFormData({
+        ...DEFAULT_FORM,
+        property_inquiry_id: selectedInquiryId || ''
+      });
     }
-  }, [activity]);
+  }, [activity, selectedInquiryId]);
 
   const handleChange = (field) => (event) => {
     setFormData(prev => ({ ...prev, [field]: event.target.value }));
@@ -97,7 +105,10 @@ export default function ActivityDialog({ open, onClose, customerId, activity, on
   };
 
   const handleClose = () => {
-    setFormData(DEFAULT_FORM);
+    setFormData({
+      ...DEFAULT_FORM,
+      property_inquiry_id: selectedInquiryId || ''
+    });
     setError(null);
     onClose();
   };
@@ -123,6 +134,37 @@ export default function ActivityDialog({ open, onClose, customerId, activity, on
             <Alert severity="info">
               この履歴はシステムによって自動生成されたため、種類と方向は変更できません。
             </Alert>
+          )}
+
+          {/* Inquiry Selector */}
+          {inquiries.length > 0 && (
+            <FormControl fullWidth>
+              <InputLabel>関連案件</InputLabel>
+              <Select
+                value={formData.property_inquiry_id}
+                onChange={handleChange('property_inquiry_id')}
+                label="関連案件"
+              >
+                <MenuItem value="">
+                  <Typography variant="body2" color="text.secondary">案件に紐付けない</Typography>
+                </MenuItem>
+                {inquiries.map(inquiry => (
+                  <MenuItem key={inquiry.id} value={inquiry.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <HomeIcon fontSize="small" color="action" />
+                      <Box>
+                        <Typography variant="body2">
+                          {inquiry.property_title || '物件名なし'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {inquiry.room?.building_name} {inquiry.room?.room_number}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           )}
 
           <Box sx={{ display: 'flex', gap: 2 }}>

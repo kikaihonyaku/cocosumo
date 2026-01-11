@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -22,9 +22,10 @@ import {
   Menu,
   MenuItem,
   ListItemIcon,
-  ListItemText,
-  Collapse,
   Divider,
+  FormControl,
+  InputLabel,
+  Select,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -35,8 +36,6 @@ import {
   Email as EmailIcon,
   Phone as PhoneIcon,
   Refresh as RefreshIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
   Public as PublicIcon,
   Campaign as CampaignIcon,
   Link as LinkIcon,
@@ -45,70 +44,74 @@ import {
   Edit as EditIcon,
   Download as DownloadIcon,
   Lock as LockIcon,
-  Reply as ReplyIcon,
-  Send as SendIcon,
-  Close as CloseIcon
+  Person as PersonIcon,
+  PersonOutline as PersonOutlineIcon,
+  Close as CloseIcon,
+  NavigateBefore as NavigateBeforeIcon,
+  NavigateNext as NavigateNextIcon,
+  FilterList as FilterListIcon,
+  Clear as ClearIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
-// Source label mapping
-const getSourceInfo = (source) => {
-  const sourceMap = {
-    direct: { label: 'ダイレクト', icon: <LinkIcon fontSize="small" />, color: 'default' },
-    organic_search: { label: '検索', icon: <SearchIcon fontSize="small" />, color: 'primary' },
-    social: { label: 'SNS', icon: <ShareIcon fontSize="small" />, color: 'secondary' },
-    referral: { label: '参照', icon: <PublicIcon fontSize="small" />, color: 'info' },
-    campaign: { label: 'キャンペーン', icon: <CampaignIcon fontSize="small" />, color: 'success' }
-  };
-  return sourceMap[source] || { label: source || '不明', icon: <PublicIcon fontSize="small" />, color: 'default' };
-};
-
-// Source type label mapping
-const getSourceTypeInfo = (sourceType) => {
-  if (sourceType === 'customer_limited') {
-    return { label: '顧客限定', icon: <LockIcon fontSize="small" />, color: 'warning' };
-  }
-  return { label: '公開', icon: <PublicIcon fontSize="small" />, color: 'info' };
-};
-
-// Status label mapping
+// Status label mapping (new status values)
 const getStatusInfo = (status) => {
   const statusMap = {
-    unreplied: { label: '未返信', color: 'error' },
-    replied: { label: '返信済み', color: 'success' },
-    no_reply_needed: { label: '返信不要', color: 'default' }
+    pending: { label: '未対応', color: 'error' },
+    status_pending: { label: '未対応', color: 'error' },
+    in_progress: { label: '対応中', color: 'warning' },
+    status_in_progress: { label: '対応中', color: 'warning' },
+    completed: { label: '完了', color: 'success' },
+    status_completed: { label: '完了', color: 'success' }
   };
-  return statusMap[status] || { label: status || '未返信', color: 'error' };
+  return statusMap[status] || { label: status || '未対応', color: 'default' };
 };
+
+// Status options for filter
+const STATUS_OPTIONS = [
+  { value: '', label: 'すべて' },
+  { value: 'pending', label: '未対応' },
+  { value: 'in_progress', label: '対応中' },
+  { value: 'completed', label: '完了' }
+];
 
 export default function InquiryManager() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [inquiries, setInquiries] = useState([]);
-  const [filteredInquiries, setFilteredInquiries] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
-  const [expandedId, setExpandedId] = useState(null);
+  const [users, setUsers] = useState([]);
+
+  // Filter states
+  const [statusFilter, setStatusFilter] = useState('');
+  const [assignedUserFilter, setAssignedUserFilter] = useState('');
+  const [customerFilter, setCustomerFilter] = useState('');
+
+  // Detail dialog state
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [selectedInquiryIndex, setSelectedInquiryIndex] = useState(-1);
 
   // Status menu state
   const [statusMenuAnchor, setStatusMenuAnchor] = useState(null);
   const [statusMenuInquiryId, setStatusMenuInquiryId] = useState(null);
 
-  // Reply dialog state
-  const [replyDialogOpen, setReplyDialogOpen] = useState(false);
-  const [replyInquiry, setReplyInquiry] = useState(null);
-  const [replySubject, setReplySubject] = useState('');
-  const [replyBody, setReplyBody] = useState('');
-  const [replySending, setReplySending] = useState(false);
+  // Assigned user menu state
+  const [userMenuAnchor, setUserMenuAnchor] = useState(null);
+  const [userMenuInquiryId, setUserMenuInquiryId] = useState(null);
 
   const loadInquiries = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('/api/v1/inquiries');
-      setInquiries(response.data.inquiries || []);
+      const [inquiriesRes, usersRes] = await Promise.all([
+        axios.get('/api/v1/inquiries'),
+        axios.get('/api/v1/admin/users').catch(() => ({ data: [] }))
+      ]);
+      setInquiries(inquiriesRes.data.inquiries || []);
+      setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
     } catch (err) {
       console.error('Failed to load inquiries:', err);
       if (err.response?.status === 401) {
@@ -125,23 +128,61 @@ export default function InquiryManager() {
     loadInquiries();
   }, [loadInquiries]);
 
-  // 検索フィルタ
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredInquiries(inquiries);
-    } else {
+  // Get unique customers for filter dropdown
+  const uniqueCustomers = useMemo(() => {
+    const customerMap = new Map();
+    inquiries.forEach(inquiry => {
+      if (inquiry.customer?.id && inquiry.customer?.name) {
+        customerMap.set(inquiry.customer.id, inquiry.customer.name);
+      }
+    });
+    return Array.from(customerMap.entries()).map(([id, name]) => ({ id, name }));
+  }, [inquiries]);
+
+  // Filter inquiries
+  const filteredInquiries = useMemo(() => {
+    let result = inquiries;
+
+    // Status filter
+    if (statusFilter) {
+      result = result.filter(inquiry => inquiry.status === statusFilter);
+    }
+
+    // Assigned user filter
+    if (assignedUserFilter) {
+      if (assignedUserFilter === 'unassigned') {
+        result = result.filter(inquiry => !inquiry.assigned_user);
+      } else {
+        result = result.filter(inquiry => inquiry.assigned_user?.id === parseInt(assignedUserFilter));
+      }
+    }
+
+    // Customer filter
+    if (customerFilter) {
+      result = result.filter(inquiry => inquiry.customer?.id === parseInt(customerFilter));
+    }
+
+    // Search query filter
+    if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      setFilteredInquiries(inquiries.filter(inquiry =>
+      result = result.filter(inquiry =>
         inquiry.name?.toLowerCase().includes(query) ||
         inquiry.email?.toLowerCase().includes(query) ||
         inquiry.phone?.includes(query) ||
         inquiry.message?.toLowerCase().includes(query) ||
-        inquiry.property_publication?.title?.toLowerCase().includes(query) ||
-        inquiry.property_publication?.room?.building?.name?.toLowerCase().includes(query)
-      ));
+        inquiry.property_title?.toLowerCase().includes(query) ||
+        inquiry.room?.building_name?.toLowerCase().includes(query) ||
+        inquiry.assigned_user?.name?.toLowerCase().includes(query)
+      );
     }
+
+    return result;
+  }, [inquiries, statusFilter, assignedUserFilter, customerFilter, searchQuery]);
+
+  // Reset page when filters change
+  useEffect(() => {
     setPage(0);
-  }, [searchQuery, inquiries]);
+  }, [statusFilter, assignedUserFilter, customerFilter, searchQuery]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -152,8 +193,36 @@ export default function InquiryManager() {
     setPage(0);
   };
 
-  const handleToggleExpand = (id) => {
-    setExpandedId(expandedId === id ? null : id);
+  // Detail dialog handlers
+  const handleOpenDetail = (inquiry) => {
+    const index = filteredInquiries.findIndex(i => i.id === inquiry.id);
+    setSelectedInquiryIndex(index);
+    setDetailDialogOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailDialogOpen(false);
+    setSelectedInquiryIndex(-1);
+  };
+
+  const handlePrevInquiry = () => {
+    if (selectedInquiryIndex > 0) {
+      setSelectedInquiryIndex(selectedInquiryIndex - 1);
+    }
+  };
+
+  const handleNextInquiry = () => {
+    if (selectedInquiryIndex < filteredInquiries.length - 1) {
+      setSelectedInquiryIndex(selectedInquiryIndex + 1);
+    }
+  };
+
+  const selectedInquiry = selectedInquiryIndex >= 0 ? filteredInquiries[selectedInquiryIndex] : null;
+
+  const handleViewCustomer = (inquiry) => {
+    if (inquiry.customer?.id) {
+      navigate(`/customers/${inquiry.customer.id}`);
+    }
   };
 
   const handleEditPublication = (inquiry) => {
@@ -172,6 +241,15 @@ export default function InquiryManager() {
     window.open('/api/v1/inquiries/export_csv', '_blank');
   };
 
+  const handleClearFilters = () => {
+    setStatusFilter('');
+    setAssignedUserFilter('');
+    setCustomerFilter('');
+    setSearchQuery('');
+  };
+
+  const hasActiveFilters = statusFilter || assignedUserFilter || customerFilter || searchQuery;
+
   // Status menu handlers
   const handleStatusClick = (event, inquiryId) => {
     event.stopPropagation();
@@ -188,14 +266,13 @@ export default function InquiryManager() {
     if (!statusMenuInquiryId) return;
 
     try {
-      await axios.patch(`/api/v1/inquiries/${statusMenuInquiryId}`, {
+      const response = await axios.patch(`/api/v1/inquiries/${statusMenuInquiryId}`, {
         property_inquiry: { status: newStatus }
       });
 
-      // Update local state
       setInquiries(prev => prev.map(inquiry =>
         inquiry.id === statusMenuInquiryId
-          ? { ...inquiry, status: newStatus }
+          ? { ...inquiry, status: newStatus, status_label: response.data.inquiry?.status_label }
           : inquiry
       ));
     } catch (err) {
@@ -206,44 +283,36 @@ export default function InquiryManager() {
     }
   };
 
-  // Reply dialog handlers
-  const handleOpenReplyDialog = (inquiry) => {
-    setReplyInquiry(inquiry);
-    setReplySubject(`Re: ${inquiry.property_publication?.room?.building?.name || ''} についてのお問い合わせ`);
-    setReplyBody('');
-    setReplyDialogOpen(true);
+  // Assigned user menu handlers
+  const handleUserClick = (event, inquiryId) => {
+    event.stopPropagation();
+    setUserMenuAnchor(event.currentTarget);
+    setUserMenuInquiryId(inquiryId);
   };
 
-  const handleCloseReplyDialog = () => {
-    setReplyDialogOpen(false);
-    setReplyInquiry(null);
-    setReplySubject('');
-    setReplyBody('');
+  const handleUserMenuClose = () => {
+    setUserMenuAnchor(null);
+    setUserMenuInquiryId(null);
   };
 
-  const handleSendReply = async () => {
-    if (!replyInquiry || !replySubject.trim() || !replyBody.trim()) return;
+  const handleUserChange = async (userId) => {
+    if (!userMenuInquiryId) return;
 
     try {
-      setReplySending(true);
-      await axios.post(`/api/v1/inquiries/${replyInquiry.id}/reply`, {
-        subject: replySubject,
-        body: replyBody
+      const response = await axios.patch(`/api/v1/inquiries/${userMenuInquiryId}`, {
+        property_inquiry: { assigned_user_id: userId || null }
       });
 
-      // Update local state
       setInquiries(prev => prev.map(inquiry =>
-        inquiry.id === replyInquiry.id
-          ? { ...inquiry, status: 'replied', replied_at: new Date().toISOString() }
+        inquiry.id === userMenuInquiryId
+          ? { ...inquiry, assigned_user: response.data.inquiry?.assigned_user }
           : inquiry
       ));
-
-      handleCloseReplyDialog();
     } catch (err) {
-      console.error('Failed to send reply:', err);
-      setError('返信メールの送信に失敗しました');
+      console.error('Failed to update assigned user:', err);
+      setError('担当者の更新に失敗しました');
     } finally {
-      setReplySending(false);
+      handleUserMenuClose();
     }
   };
 
@@ -301,21 +370,114 @@ export default function InquiryManager() {
         </Alert>
       )}
 
+      {/* Filters */}
       <Paper sx={{ mb: 2, p: 2 }}>
-        <TextField
-          fullWidth
-          placeholder="名前、メール、電話番号、メッセージ、物件名で検索..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          size="small"
-        />
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <FilterListIcon color="action" />
+
+          {/* Status Filter */}
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>ステータス</InputLabel>
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              label="ステータス"
+            >
+              {STATUS_OPTIONS.map(option => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.value ? (
+                    <Chip
+                      size="small"
+                      label={option.label}
+                      color={getStatusInfo(option.value).color}
+                      sx={{ height: 20 }}
+                    />
+                  ) : option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Assigned User Filter */}
+          <FormControl size="small" sx={{ minWidth: 140 }}>
+            <InputLabel>担当者</InputLabel>
+            <Select
+              value={assignedUserFilter}
+              onChange={(e) => setAssignedUserFilter(e.target.value)}
+              label="担当者"
+            >
+              <MenuItem value="">すべて</MenuItem>
+              <MenuItem value="unassigned">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <PersonOutlineIcon fontSize="small" />
+                  未設定
+                </Box>
+              </MenuItem>
+              <Divider />
+              {users.map(user => (
+                <MenuItem key={user.id} value={user.id.toString()}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <PersonIcon fontSize="small" />
+                    {user.name}
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Customer Filter */}
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <InputLabel>顧客</InputLabel>
+            <Select
+              value={customerFilter}
+              onChange={(e) => setCustomerFilter(e.target.value)}
+              label="顧客"
+            >
+              <MenuItem value="">すべて</MenuItem>
+              <Divider />
+              {uniqueCustomers.map(customer => (
+                <MenuItem key={customer.id} value={customer.id.toString()}>
+                  {customer.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Search */}
+          <TextField
+            placeholder="検索..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+            size="small"
+            sx={{ minWidth: 200 }}
+          />
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
+            <Button
+              size="small"
+              startIcon={<ClearIcon />}
+              onClick={handleClearFilters}
+            >
+              クリア
+            </Button>
+          )}
+
+          <Box sx={{ flex: 1 }} />
+
+          {/* Result count */}
+          <Typography variant="body2" color="text.secondary">
+            {filteredInquiries.length} 件
+            {hasActiveFilters && ` / ${inquiries.length} 件中`}
+          </Typography>
+        </Box>
       </Paper>
 
       <Paper>
@@ -324,271 +486,86 @@ export default function InquiryManager() {
             <TableHead>
               <TableRow>
                 <TableCell>日時</TableCell>
-                <TableCell>種別</TableCell>
+                <TableCell>発生元</TableCell>
+                <TableCell>媒体</TableCell>
                 <TableCell>ステータス</TableCell>
-                <TableCell>名前</TableCell>
-                <TableCell>連絡先</TableCell>
+                <TableCell>担当者</TableCell>
+                <TableCell>顧客名</TableCell>
                 <TableCell>物件</TableCell>
-                <TableCell>流入元</TableCell>
-                <TableCell align="center">詳細</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {paginatedInquiries.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                     <Typography color="text.secondary">
-                      {searchQuery ? '検索結果がありません' : '問い合わせがありません'}
+                      {hasActiveFilters ? '該当する問い合わせがありません' : '問い合わせがありません'}
                     </Typography>
                   </TableCell>
                 </TableRow>
               ) : (
                 paginatedInquiries.map((inquiry) => {
-                  const sourceInfo = getSourceInfo(inquiry.source);
-                  const sourceTypeInfo = getSourceTypeInfo(inquiry.source_type);
                   const statusInfo = getStatusInfo(inquiry.status);
-                  const isExpanded = expandedId === inquiry.id;
 
                   return (
-                    <React.Fragment key={inquiry.id}>
-                      <TableRow
-                        hover
-                        sx={{ cursor: 'pointer' }}
-                        onClick={() => handleToggleExpand(inquiry.id)}
-                      >
-                        <TableCell>
-                          <Typography variant="body2">
-                            {inquiry.formatted_created_at || formatDate(inquiry.created_at)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Tooltip title={sourceTypeInfo.label}>
-                            <Chip
-                              size="small"
-                              icon={sourceTypeInfo.icon}
-                              label={sourceTypeInfo.label}
-                              color={sourceTypeInfo.color}
-                              variant="outlined"
-                              sx={{ height: 24 }}
-                            />
-                          </Tooltip>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            size="small"
-                            label={statusInfo.label}
-                            color={statusInfo.color}
-                            onClick={(e) => handleStatusClick(e, inquiry.id)}
-                            sx={{ height: 24, cursor: 'pointer' }}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight="medium">
-                            {inquiry.name}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <EmailIcon fontSize="small" color="action" sx={{ fontSize: 14 }} />
-                              <Typography variant="caption">{inquiry.email}</Typography>
-                            </Box>
-                            {inquiry.phone && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <PhoneIcon fontSize="small" color="action" sx={{ fontSize: 14 }} />
-                                <Typography variant="caption">{inquiry.phone}</Typography>
-                              </Box>
-                            )}
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Box>
-                            <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
-                              {inquiry.property_publication?.room?.building?.name || '-'}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 200, display: 'block' }}>
-                              {inquiry.property_publication?.title}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Chip
-                              size="small"
-                              icon={sourceInfo.icon}
-                              label={sourceInfo.label}
-                              color={sourceInfo.color}
-                              variant="outlined"
-                              sx={{ height: 24 }}
-                            />
-                            {inquiry.utm_campaign && (
-                              <Tooltip title={`キャンペーン: ${inquiry.utm_campaign}`}>
-                                <Chip
-                                  size="small"
-                                  label={inquiry.utm_campaign}
-                                  color="success"
-                                  variant="filled"
-                                  sx={{ height: 24, maxWidth: 80, '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' } }}
-                                />
-                              </Tooltip>
-                            )}
-                          </Box>
-                        </TableCell>
-                        <TableCell align="center">
-                          <IconButton size="small">
-                            {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell colSpan={8} sx={{ py: 0, borderBottom: isExpanded ? undefined : 'none' }}>
-                          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                            <Box sx={{ py: 2, px: 1 }}>
-                              {/* メッセージ */}
-                              <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
-                                <Typography variant="subtitle2" gutterBottom>
-                                  メッセージ
-                                </Typography>
-                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                                  {inquiry.message || '(メッセージなし)'}
-                                </Typography>
-                              </Paper>
-
-                              {/* 返信済みの場合、返信内容を表示 */}
-                              {inquiry.status === 'replied' && inquiry.reply_message && (
-                                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'success.50', borderColor: 'success.main' }}>
-                                  <Typography variant="subtitle2" gutterBottom color="success.dark">
-                                    返信内容 ({inquiry.formatted_replied_at || formatDate(inquiry.replied_at)})
-                                  </Typography>
-                                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                                    {inquiry.reply_message}
-                                  </Typography>
-                                </Paper>
-                              )}
-
-                              {/* 登録元URL */}
-                              {inquiry.source_url && (
-                                <Box sx={{ mb: 2 }}>
-                                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                                    登録元URL
-                                  </Typography>
-                                  <Tooltip title={inquiry.source_url}>
-                                    <Chip
-                                      size="small"
-                                      icon={<LinkIcon fontSize="small" />}
-                                      label={(() => { try { return new URL(inquiry.source_url).pathname; } catch { return inquiry.source_url; } })()}
-                                      variant="outlined"
-                                      sx={{ height: 22, fontSize: '0.7rem', maxWidth: 300 }}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        window.open(inquiry.source_url, '_blank');
-                                      }}
-                                    />
-                                  </Tooltip>
-                                </Box>
-                              )}
-
-                              {/* 流入詳細 */}
-                              {(inquiry.utm_source || inquiry.utm_medium || inquiry.referrer) && (
-                                <Box sx={{ mb: 2 }}>
-                                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                                    流入詳細
-                                  </Typography>
-                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                    {inquiry.utm_source && (
-                                      <Chip
-                                        size="small"
-                                        label={`ソース: ${inquiry.utm_source}`}
-                                        variant="outlined"
-                                        sx={{ height: 22, fontSize: '0.7rem' }}
-                                      />
-                                    )}
-                                    {inquiry.utm_medium && (
-                                      <Chip
-                                        size="small"
-                                        label={`メディア: ${inquiry.utm_medium}`}
-                                        variant="outlined"
-                                        sx={{ height: 22, fontSize: '0.7rem' }}
-                                      />
-                                    )}
-                                    {inquiry.referrer && (
-                                      <Tooltip title={inquiry.referrer}>
-                                        <Chip
-                                          size="small"
-                                          label={`参照元: ${(() => { try { return new URL(inquiry.referrer).hostname; } catch { return inquiry.referrer; } })()}`}
-                                          variant="outlined"
-                                          sx={{ height: 22, fontSize: '0.7rem', maxWidth: 200 }}
-                                        />
-                                      </Tooltip>
-                                    )}
-                                  </Box>
-                                </Box>
-                              )}
-
-                              {/* アクションボタン */}
-                              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                <Button
-                                  size="small"
-                                  variant="contained"
-                                  color="primary"
-                                  startIcon={<ReplyIcon />}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenReplyDialog(inquiry);
-                                  }}
-                                >
-                                  返信する
-                                </Button>
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  startIcon={<OpenInNewIcon />}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenPublicPage(inquiry);
-                                  }}
-                                  disabled={!inquiry.property_publication?.publication_id}
-                                >
-                                  公開ページを見る
-                                </Button>
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  startIcon={<EditIcon />}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditPublication(inquiry);
-                                  }}
-                                  disabled={!inquiry.property_publication?.room?.id}
-                                >
-                                  公開ページを編集
-                                </Button>
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  startIcon={<EmailIcon />}
-                                  href={`mailto:${inquiry.email}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  メールクライアント
-                                </Button>
-                                {inquiry.phone && (
-                                  <Button
-                                    size="small"
-                                    variant="outlined"
-                                    startIcon={<PhoneIcon />}
-                                    href={`tel:${inquiry.phone}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    電話をかける
-                                  </Button>
-                                )}
-                              </Box>
-                            </Box>
-                          </Collapse>
-                        </TableCell>
-                      </TableRow>
-                    </React.Fragment>
+                    <TableRow
+                      key={inquiry.id}
+                      hover
+                      sx={{ cursor: 'pointer' }}
+                      onClick={() => handleOpenDetail(inquiry)}
+                    >
+                      <TableCell>
+                        <Typography variant="body2">
+                          {inquiry.formatted_created_at || formatDate(inquiry.created_at)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          label={inquiry.origin_type_label || inquiry.origin_type || '-'}
+                          color="primary"
+                          variant="outlined"
+                          sx={{ height: 24 }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          label={inquiry.media_type_label || inquiry.media_type || '-'}
+                          variant="outlined"
+                          sx={{ height: 24 }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          label={inquiry.status_label || statusInfo.label}
+                          color={statusInfo.color}
+                          onClick={(e) => handleStatusClick(e, inquiry.id)}
+                          sx={{ height: 24, cursor: 'pointer' }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          icon={inquiry.assigned_user ? <PersonIcon fontSize="small" /> : <PersonOutlineIcon fontSize="small" />}
+                          label={inquiry.assigned_user?.name || '未設定'}
+                          variant={inquiry.assigned_user ? 'filled' : 'outlined'}
+                          onClick={(e) => handleUserClick(e, inquiry.id)}
+                          sx={{ height: 24, cursor: 'pointer' }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight="medium">
+                          {inquiry.name}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
+                          {inquiry.property_title || inquiry.room?.building_name || '-'}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
                   );
                 })
               )}
@@ -614,108 +591,292 @@ export default function InquiryManager() {
         open={Boolean(statusMenuAnchor)}
         onClose={handleStatusMenuClose}
       >
-        <MenuItem onClick={() => handleStatusChange('unreplied')}>
+        <MenuItem onClick={() => handleStatusChange('pending')}>
           <ListItemIcon>
-            <Chip size="small" label="未返信" color="error" sx={{ height: 20 }} />
+            <Chip size="small" label="未対応" color="error" sx={{ height: 20 }} />
           </ListItemIcon>
         </MenuItem>
-        <MenuItem onClick={() => handleStatusChange('replied')}>
+        <MenuItem onClick={() => handleStatusChange('in_progress')}>
           <ListItemIcon>
-            <Chip size="small" label="返信済み" color="success" sx={{ height: 20 }} />
+            <Chip size="small" label="対応中" color="warning" sx={{ height: 20 }} />
           </ListItemIcon>
         </MenuItem>
-        <MenuItem onClick={() => handleStatusChange('no_reply_needed')}>
+        <MenuItem onClick={() => handleStatusChange('completed')}>
           <ListItemIcon>
-            <Chip size="small" label="返信不要" color="default" sx={{ height: 20 }} />
+            <Chip size="small" label="完了" color="success" sx={{ height: 20 }} />
           </ListItemIcon>
         </MenuItem>
       </Menu>
 
-      {/* Reply dialog */}
+      {/* Assigned user menu */}
+      <Menu
+        anchorEl={userMenuAnchor}
+        open={Boolean(userMenuAnchor)}
+        onClose={handleUserMenuClose}
+      >
+        <MenuItem onClick={() => handleUserChange(null)}>
+          <ListItemIcon>
+            <PersonOutlineIcon fontSize="small" />
+          </ListItemIcon>
+          未設定
+        </MenuItem>
+        <Divider />
+        {users.map((user) => (
+          <MenuItem key={user.id} onClick={() => handleUserChange(user.id)}>
+            <ListItemIcon>
+              <PersonIcon fontSize="small" />
+            </ListItemIcon>
+            {user.name}
+          </MenuItem>
+        ))}
+      </Menu>
+
+      {/* Detail Dialog */}
       <Dialog
-        open={replyDialogOpen}
-        onClose={handleCloseReplyDialog}
+        open={detailDialogOpen}
+        onClose={handleCloseDetail}
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ReplyIcon />
-            問い合わせへの返信
-          </Box>
-          <IconButton onClick={handleCloseReplyDialog} size="small">
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers>
-          {replyInquiry && (
-            <Box>
-              <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  元のお問い合わせ
-                </Typography>
-                <Typography variant="body2" fontWeight="medium">
-                  {replyInquiry.name} 様 ({replyInquiry.email})
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
-                  {replyInquiry.message}
+        {selectedInquiry && (
+          <>
+            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography variant="h6">問い合わせ詳細</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {selectedInquiryIndex + 1} / {filteredInquiries.length}
                 </Typography>
               </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconButton
+                  onClick={handlePrevInquiry}
+                  disabled={selectedInquiryIndex <= 0}
+                  size="small"
+                >
+                  <NavigateBeforeIcon />
+                </IconButton>
+                <IconButton
+                  onClick={handleNextInquiry}
+                  disabled={selectedInquiryIndex >= filteredInquiries.length - 1}
+                  size="small"
+                >
+                  <NavigateNextIcon />
+                </IconButton>
+                <IconButton onClick={handleCloseDetail} size="small">
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            </DialogTitle>
+            <DialogContent dividers>
+              {/* Header info */}
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">日時</Typography>
+                  <Typography variant="body2">
+                    {selectedInquiry.formatted_created_at || formatDate(selectedInquiry.created_at)}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">発生元</Typography>
+                  <Box>
+                    <Chip
+                      size="small"
+                      label={selectedInquiry.origin_type_label || selectedInquiry.origin_type || '-'}
+                      color="primary"
+                      variant="outlined"
+                      sx={{ height: 24 }}
+                    />
+                  </Box>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">媒体</Typography>
+                  <Box>
+                    <Chip
+                      size="small"
+                      label={selectedInquiry.media_type_label || selectedInquiry.media_type || '-'}
+                      variant="outlined"
+                      sx={{ height: 24 }}
+                    />
+                  </Box>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">ステータス</Typography>
+                  <Box>
+                    <Chip
+                      size="small"
+                      label={selectedInquiry.status_label || getStatusInfo(selectedInquiry.status).label}
+                      color={getStatusInfo(selectedInquiry.status).color}
+                      sx={{ height: 24 }}
+                    />
+                  </Box>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">担当者</Typography>
+                  <Box>
+                    <Chip
+                      size="small"
+                      icon={selectedInquiry.assigned_user ? <PersonIcon fontSize="small" /> : <PersonOutlineIcon fontSize="small" />}
+                      label={selectedInquiry.assigned_user?.name || '未設定'}
+                      variant={selectedInquiry.assigned_user ? 'filled' : 'outlined'}
+                      sx={{ height: 24 }}
+                    />
+                  </Box>
+                </Box>
+              </Box>
 
-              <TextField
-                fullWidth
-                label="宛先"
-                value={replyInquiry.email}
-                disabled
-                margin="normal"
-                size="small"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
+              {/* Customer & Property info */}
+              <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
+                <Paper variant="outlined" sx={{ flex: 1, p: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom color="primary">
+                    顧客情報
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {selectedInquiry.name}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
+                    <EmailIcon fontSize="small" color="action" />
+                    <Typography variant="body2">{selectedInquiry.email}</Typography>
+                  </Box>
+                  {selectedInquiry.phone && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                      <PhoneIcon fontSize="small" color="action" />
+                      <Typography variant="body2">{selectedInquiry.phone}</Typography>
+                    </Box>
+                  )}
+                </Paper>
+                <Paper variant="outlined" sx={{ flex: 1, p: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom color="primary">
+                    物件情報
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {selectedInquiry.property_title || '-'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {selectedInquiry.room?.building_name} {selectedInquiry.room?.room_number}
+                  </Typography>
+                </Paper>
+              </Box>
 
-              <TextField
-                fullWidth
-                label="件名"
-                value={replySubject}
-                onChange={(e) => setReplySubject(e.target.value)}
-                margin="normal"
-                size="small"
-                required
-              />
+              {/* Message */}
+              <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: 'grey.50' }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  メッセージ
+                </Typography>
+                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                  {selectedInquiry.message || '(メッセージなし)'}
+                </Typography>
+              </Paper>
 
-              <TextField
-                fullWidth
-                label="本文"
-                value={replyBody}
-                onChange={(e) => setReplyBody(e.target.value)}
-                margin="normal"
-                multiline
-                rows={8}
-                required
-                placeholder="返信内容を入力してください..."
-              />
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseReplyDialog}>
-            キャンセル
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSendReply}
-            disabled={replySending || !replySubject.trim() || !replyBody.trim()}
-            startIcon={replySending ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
-          >
-            {replySending ? '送信中...' : '送信'}
-          </Button>
-        </DialogActions>
+              {/* Source info */}
+              {(selectedInquiry.source_url || selectedInquiry.utm_source || selectedInquiry.utm_medium || selectedInquiry.referrer) && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    流入情報
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {selectedInquiry.source_url && (
+                      <Tooltip title={selectedInquiry.source_url}>
+                        <Chip
+                          size="small"
+                          icon={<LinkIcon fontSize="small" />}
+                          label={`登録元: ${(() => { try { return new URL(selectedInquiry.source_url).pathname; } catch { return selectedInquiry.source_url; } })()}`}
+                          variant="outlined"
+                          sx={{ height: 22, fontSize: '0.7rem' }}
+                          onClick={() => window.open(selectedInquiry.source_url, '_blank')}
+                        />
+                      </Tooltip>
+                    )}
+                    {selectedInquiry.utm_source && (
+                      <Chip
+                        size="small"
+                        label={`ソース: ${selectedInquiry.utm_source}`}
+                        variant="outlined"
+                        sx={{ height: 22, fontSize: '0.7rem' }}
+                      />
+                    )}
+                    {selectedInquiry.utm_medium && (
+                      <Chip
+                        size="small"
+                        label={`メディア: ${selectedInquiry.utm_medium}`}
+                        variant="outlined"
+                        sx={{ height: 22, fontSize: '0.7rem' }}
+                      />
+                    )}
+                    {selectedInquiry.utm_campaign && (
+                      <Chip
+                        size="small"
+                        label={`キャンペーン: ${selectedInquiry.utm_campaign}`}
+                        variant="outlined"
+                        color="success"
+                        sx={{ height: 22, fontSize: '0.7rem' }}
+                      />
+                    )}
+                    {selectedInquiry.referrer && (
+                      <Tooltip title={selectedInquiry.referrer}>
+                        <Chip
+                          size="small"
+                          label={`参照元: ${(() => { try { return new URL(selectedInquiry.referrer).hostname; } catch { return selectedInquiry.referrer; } })()}`}
+                          variant="outlined"
+                          sx={{ height: 22, fontSize: '0.7rem' }}
+                        />
+                      </Tooltip>
+                    )}
+                  </Box>
+                </Box>
+              )}
+            </DialogContent>
+            <DialogActions sx={{ justifyContent: 'space-between', px: 3, py: 2 }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<PersonIcon />}
+                  onClick={() => {
+                    handleViewCustomer(selectedInquiry);
+                    handleCloseDetail();
+                  }}
+                  disabled={!selectedInquiry.customer?.id}
+                >
+                  顧客情報を見る
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<OpenInNewIcon />}
+                  onClick={() => handleOpenPublicPage(selectedInquiry)}
+                  disabled={!selectedInquiry.property_publication?.publication_id}
+                >
+                  公開ページ
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<EditIcon />}
+                  onClick={() => handleEditPublication(selectedInquiry)}
+                  disabled={!selectedInquiry.property_publication?.room?.id}
+                >
+                  編集
+                </Button>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<EmailIcon />}
+                  href={`mailto:${selectedInquiry.email}`}
+                >
+                  メール
+                </Button>
+                {selectedInquiry.phone && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<PhoneIcon />}
+                    href={`tel:${selectedInquiry.phone}`}
+                  >
+                    電話
+                  </Button>
+                )}
+              </Box>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
     </Box>
   );

@@ -153,6 +153,9 @@ Rails.application.routes.draw do
 
       # 部屋詳細・更新・削除はスタンドアロン
       resources :rooms, only: [:show, :update, :destroy] do
+        collection do
+          get :search
+        end
         member do
           post :upload_floorplan
           delete :delete_floorplan
@@ -232,6 +235,7 @@ Rails.application.routes.draw do
       resources :property_publications, only: [:index] do
         collection do
           post :bulk_action
+          get :search
         end
       end
 
@@ -293,6 +297,7 @@ Rails.application.routes.draw do
           get :inquiries
           get :accesses
           post :change_status
+          post :create_inquiry
         end
         resources :activities, controller: 'customer_activities', only: [:index, :create, :update, :destroy]
       end

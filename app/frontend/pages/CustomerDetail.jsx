@@ -25,6 +25,8 @@ import {
   CardActions,
   Tabs,
   Tab,
+  Menu,
+  MenuItem,
   useMediaQuery,
   useTheme
 } from '@mui/material';
@@ -45,6 +47,8 @@ import {
   Flag as FlagIcon,
   Add as AddIcon,
   Note as NoteIcon,
+  Assignment as AssignmentIcon,
+  ArrowDropDown as ArrowDropDownIcon,
   Visibility as VisibilityIcon,
   CallMade as CallMadeIcon,
   CallReceived as CallReceivedIcon,
@@ -55,6 +59,7 @@ import {
 import axios from 'axios';
 import ActivityDialog from '../components/Customer/ActivityDialog';
 import StatusChangeDialog from '../components/Customer/StatusChangeDialog';
+import CreateInquiryDialog from '../components/Customer/CreateInquiryDialog';
 
 // Status label mapping
 const getStatusInfo = (status) => {
@@ -127,11 +132,14 @@ const getActivityDotColor = (activityType) => {
 // Inquiry status mapping
 const getInquiryStatusInfo = (status) => {
   const statusMap = {
-    status_unreplied: { label: '未返信', color: 'error' },
-    status_replied: { label: '返信済み', color: 'success' },
-    status_no_reply_needed: { label: '返信不要', color: 'default' }
+    pending: { label: '未対応', color: 'error' },
+    status_pending: { label: '未対応', color: 'error' },
+    in_progress: { label: '対応中', color: 'warning' },
+    status_in_progress: { label: '対応中', color: 'warning' },
+    completed: { label: '完了', color: 'success' },
+    status_completed: { label: '完了', color: 'success' }
   };
-  return statusMap[status] || { label: '未返信', color: 'error' };
+  return statusMap[status] || { label: status || '未対応', color: 'default' };
 };
 
 // Access status mapping
@@ -157,6 +165,7 @@ export default function CustomerDetail() {
   const [inquiries, setInquiries] = useState([]);
   const [accesses, setAccesses] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [users, setUsers] = useState([]);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ notes: '' });
   const [saving, setSaving] = useState(false);
@@ -164,7 +173,12 @@ export default function CustomerDetail() {
   // Dialog states
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [createInquiryDialogOpen, setCreateInquiryDialogOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState(null);
+
+  // Case (inquiry) selector states
+  const [selectedInquiryId, setSelectedInquiryId] = useState(null);
+  const [inquiryMenuAnchor, setInquiryMenuAnchor] = useState(null);
 
   // Tab state for right column
   const [rightTab, setRightTab] = useState(0);
@@ -230,17 +244,19 @@ export default function CustomerDetail() {
       setLoading(true);
       setError(null);
 
-      const [customerRes, inquiriesRes, accessesRes, activitiesRes] = await Promise.all([
+      const [customerRes, inquiriesRes, accessesRes, activitiesRes, usersRes] = await Promise.all([
         axios.get(`/api/v1/customers/${id}`),
         axios.get(`/api/v1/customers/${id}/inquiries`),
         axios.get(`/api/v1/customers/${id}/accesses`),
-        axios.get(`/api/v1/customers/${id}/activities`)
+        axios.get(`/api/v1/customers/${id}/activities`),
+        axios.get('/api/v1/admin/users').catch(() => ({ data: [] }))
       ]);
 
       setCustomer(customerRes.data);
-      setInquiries(inquiriesRes.data);
-      setAccesses(accessesRes.data);
-      setActivities(activitiesRes.data);
+      setInquiries(Array.isArray(inquiriesRes.data) ? inquiriesRes.data : []);
+      setAccesses(Array.isArray(accessesRes.data) ? accessesRes.data : []);
+      setActivities(Array.isArray(activitiesRes.data) ? activitiesRes.data : []);
+      setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
       setEditForm({ notes: customerRes.data.notes || '' });
     } catch (err) {
       console.error('Failed to load customer:', err);
@@ -396,6 +412,92 @@ export default function CustomerDetail() {
           </Button>
         </Box>
       </Paper>
+
+      {/* Case Selector Bar */}
+      {inquiries.length > 0 && (
+        <Paper
+          elevation={0}
+          sx={{
+            px: 2,
+            py: 1,
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'grey.50',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5
+          }}
+        >
+          <AssignmentIcon color="action" fontSize="small" />
+          <Typography variant="body2" color="text.secondary">
+            現在の案件:
+          </Typography>
+
+          {/* Current Case Display / Selector */}
+          <Button
+            size="small"
+            variant="outlined"
+            endIcon={<ArrowDropDownIcon />}
+            onClick={(e) => setInquiryMenuAnchor(e.currentTarget)}
+            sx={{ textTransform: 'none', maxWidth: 300 }}
+          >
+            {selectedInquiryId
+              ? (inquiries.find(i => i.id === selectedInquiryId)?.property_title || '案件を選択')
+              : '全ての案件'
+            }
+          </Button>
+
+          <Menu
+            anchorEl={inquiryMenuAnchor}
+            open={Boolean(inquiryMenuAnchor)}
+            onClose={() => setInquiryMenuAnchor(null)}
+          >
+            <MenuItem
+              selected={selectedInquiryId === null}
+              onClick={() => {
+                setSelectedInquiryId(null);
+                setInquiryMenuAnchor(null);
+              }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: selectedInquiryId === null ? 600 : 400 }}>
+                全ての案件を表示
+              </Typography>
+            </MenuItem>
+            <Divider />
+            {inquiries.map((inquiry) => (
+              <MenuItem
+                key={inquiry.id}
+                selected={selectedInquiryId === inquiry.id}
+                onClick={() => {
+                  setSelectedInquiryId(inquiry.id);
+                  setInquiryMenuAnchor(null);
+                }}
+              >
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  <Typography variant="body2" sx={{ fontWeight: selectedInquiryId === inquiry.id ? 600 : 400 }}>
+                    {inquiry.property_title || '物件名なし'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {inquiry.origin_type_label} | {inquiry.media_type_label} | {inquiry.created_at}
+                  </Typography>
+                </Box>
+              </MenuItem>
+            ))}
+          </Menu>
+
+          <Box sx={{ flex: 1 }} />
+
+          {/* Create New Inquiry Button */}
+          <Button
+            size="small"
+            startIcon={<AddIcon />}
+            onClick={() => setCreateInquiryDialogOpen(true)}
+          >
+            別物件で案件作成
+          </Button>
+        </Paper>
+      )}
 
       {/* Main Content - Resizable 3-column layout */}
       <Box
@@ -655,122 +757,139 @@ export default function CustomerDetail() {
           </Box>
 
           <Box sx={{ p: 2, overflow: 'auto', flex: 1 }}>
-            {activities.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 6 }}>
-                <NoteIcon sx={{ fontSize: 48, color: 'grey.300', mb: 1 }} />
-                <Typography color="text.secondary">
-                  対応履歴はありません
-                </Typography>
-                <Button
-                  size="small"
-                  startIcon={<AddIcon />}
-                  onClick={() => setActivityDialogOpen(true)}
-                  sx={{ mt: 2 }}
-                >
-                  最初の対応を記録
-                </Button>
-              </Box>
-            ) : (
-              <List sx={{ py: 0 }}>
-                {activities.map((activity, index) => (
-                  <ListItem
-                    key={activity.id}
-                    sx={{
-                      px: 0,
-                      py: 1.5,
-                      borderBottom: index < activities.length - 1 ? '1px solid' : 'none',
-                      borderColor: 'divider',
-                      alignItems: 'flex-start'
-                    }}
-                  >
-                    <ListItemIcon sx={{ minWidth: 44, mt: 0.5 }}>
-                      <Box
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: '50%',
-                          bgcolor: `${getActivityDotColor(activity.activity_type)}.light`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: `${getActivityDotColor(activity.activity_type)}.main`
-                        }}
-                      >
-                        {getActivityIcon(activity.activity_type, activity.direction)}
-                      </Box>
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {activity.subject || activity.activity_type_label}
-                          </Typography>
-                          <Chip
-                            size="small"
-                            label={activity.activity_type_label}
-                            sx={{ height: 20, fontSize: '0.7rem' }}
-                          />
-                          {activity.direction && activity.direction !== 'internal' && (
-                            <Chip
-                              size="small"
-                              label={activity.direction_label}
-                              variant="outlined"
-                              sx={{ height: 20, fontSize: '0.7rem' }}
-                            />
-                          )}
+            {(() => {
+              // Filter activities if a specific inquiry is selected
+              const filteredActivities = selectedInquiryId
+                ? activities.filter(a => a.property_inquiry_id === selectedInquiryId)
+                : activities;
+
+              if (filteredActivities.length === 0) {
+                return (
+                  <Box sx={{ textAlign: 'center', py: 6 }}>
+                    <NoteIcon sx={{ fontSize: 48, color: 'grey.300', mb: 1 }} />
+                    <Typography color="text.secondary">
+                      {selectedInquiryId ? 'この案件に関連する対応履歴はありません' : '対応履歴はありません'}
+                    </Typography>
+                    <Button
+                      size="small"
+                      startIcon={<AddIcon />}
+                      onClick={() => setActivityDialogOpen(true)}
+                      sx={{ mt: 2 }}
+                    >
+                      最初の対応を記録
+                    </Button>
+                  </Box>
+                );
+              }
+
+              return (
+                <List sx={{ py: 0 }}>
+                  {filteredActivities.map((activity, index) => (
+                    <ListItem
+                      key={activity.id}
+                      sx={{
+                        px: 0,
+                        py: 1.5,
+                        borderBottom: index < filteredActivities.length - 1 ? '1px solid' : 'none',
+                        borderColor: 'divider',
+                        alignItems: 'flex-start'
+                      }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 44, mt: 0.5 }}>
+                        <Box
+                          sx={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: '50%',
+                            bgcolor: `${getActivityDotColor(activity.activity_type)}.light`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: `${getActivityDotColor(activity.activity_type)}.main`
+                          }}
+                        >
+                          {getActivityIcon(activity.activity_type, activity.direction)}
                         </Box>
-                      }
-                      secondary={
-                        <Box sx={{ mt: 0.5 }}>
-                          {activity.content && (
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{
-                                whiteSpace: 'pre-wrap',
-                                maxHeight: 80,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                mb: 0.5
-                              }}
-                            >
-                              {activity.content}
-                            </Typography>
-                          )}
-                          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-                            <Typography variant="caption" color="text.secondary">
-                              {activity.formatted_date || activity.formatted_created_at}
-                            </Typography>
-                            {activity.user && (
-                              <Typography variant="caption" color="text.secondary">
-                                {activity.user.name}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                {activity.subject || activity.activity_type_label}
                               </Typography>
-                            )}
-                            {activity.property_publication && (
-                              <Typography variant="caption" color="primary.main">
-                                {activity.property_publication.title}
-                              </Typography>
+                              <Chip
+                                size="small"
+                                label={activity.activity_type_label}
+                                sx={{ height: 20, fontSize: '0.7rem' }}
+                              />
+                              {activity.direction && activity.direction !== 'internal' && (
+                                <Chip
+                                  size="small"
+                                  label={activity.direction_label}
+                                  variant="outlined"
+                                  sx={{ height: 20, fontSize: '0.7rem' }}
+                                />
+                              )}
+                            </Box>
+                            {/* Case label - only show when not filtered and there's a linked inquiry */}
+                            {!selectedInquiryId && activity.property_inquiry_id && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <HomeIcon sx={{ fontSize: 14, color: 'primary.main' }} />
+                                <Typography variant="caption" color="primary.main" sx={{ fontWeight: 500 }}>
+                                  {activity.property_publication?.title || activity.property_title || '案件'}
+                                </Typography>
+                              </Box>
                             )}
                           </Box>
-                        </Box>
-                      }
-                    />
-                    <Tooltip title="編集">
-                      <IconButton
-                        size="small"
-                        sx={{ ml: 1, alignSelf: 'flex-start', mt: 0.5 }}
-                        onClick={() => {
-                          setEditingActivity(activity);
-                          setActivityDialogOpen(true);
-                        }}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </ListItem>
-                ))}
-              </List>
-            )}
+                        }
+                        secondary={
+                          <Box sx={{ mt: 0.5 }}>
+                            {activity.content && (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{
+                                  whiteSpace: 'pre-wrap',
+                                  maxHeight: 80,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  mb: 0.5
+                                }}
+                              >
+                                {activity.content}
+                              </Typography>
+                            )}
+                            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                              <Typography variant="caption" color="text.secondary">
+                                {activity.formatted_date || activity.formatted_created_at}
+                              </Typography>
+                              {activity.user && (
+                                <Typography variant="caption" color="text.secondary">
+                                  {activity.user.name}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
+                        }
+                      />
+                      <Tooltip title="編集">
+                        <IconButton
+                          size="small"
+                          sx={{ ml: 1, alignSelf: 'flex-start', mt: 0.5 }}
+                          onClick={() => {
+                            setEditingActivity(activity);
+                            setActivityDialogOpen(true);
+                          }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </ListItem>
+                  ))}
+                </List>
+              );
+            })()}
           </Box>
         </Paper>
 
@@ -840,9 +959,19 @@ export default function CustomerDetail() {
             {/* Inquiries Tab Panel */}
             <Box sx={{ p: 2, flex: 1, overflow: 'auto', display: rightTab === 0 ? 'block' : 'none' }}>
               {inquiries.length === 0 ? (
-                <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                  問い合わせ履歴はありません
-                </Typography>
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography color="text.secondary" sx={{ mb: 2 }}>
+                    案件はありません
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={() => setCreateInquiryDialogOpen(true)}
+                  >
+                    案件を作成
+                  </Button>
+                </Box>
               ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                   {inquiries.map((inquiry) => {
@@ -852,21 +981,21 @@ export default function CustomerDetail() {
                         <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
                             <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                              {inquiry.property_publication?.title || '物件名なし'}
+                              {inquiry.property_title || '物件名なし'}
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
                               <Chip
                                 size="small"
-                                label={inquiryStatusInfo.label}
+                                label={inquiry.status_label || inquiryStatusInfo.label}
                                 color={inquiryStatusInfo.color}
                                 sx={{ height: 18, fontSize: '0.65rem' }}
                               />
-                              {inquiry.property_publication?.id && inquiry.property_publication?.room_id && (
-                                <Tooltip title="問い合わせタブを開く">
+                              {inquiry.room?.id && (
+                                <Tooltip title="部屋詳細を開く">
                                   <IconButton
                                     size="small"
                                     component={RouterLink}
-                                    to={`/room/${inquiry.property_publication.room_id}/property-publication/${inquiry.property_publication.id}/edit?tab=inquiries`}
+                                    to={`/room/${inquiry.room.id}`}
                                     sx={{ p: 0.25 }}
                                   >
                                     <OpenInNewIcon sx={{ fontSize: 14 }} />
@@ -875,30 +1004,56 @@ export default function CustomerDetail() {
                               )}
                             </Box>
                           </Box>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                            {inquiry.property_publication?.building_name} {inquiry.property_publication?.room_number}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              whiteSpace: 'pre-wrap',
-                              bgcolor: 'white',
-                              p: 1,
-                              borderRadius: 1,
-                              maxHeight: 60,
-                              overflow: 'auto',
-                              fontSize: '0.8rem'
-                            }}
-                          >
-                            {inquiry.message}
-                          </Typography>
+                          {/* Origin & Media Type Row */}
+                          <Box sx={{ display: 'flex', gap: 0.5, mb: 0.5, flexWrap: 'wrap' }}>
+                            <Chip
+                              size="small"
+                              label={inquiry.origin_type_label || inquiry.origin_type}
+                              variant="outlined"
+                              color="primary"
+                              sx={{ height: 18, fontSize: '0.65rem' }}
+                            />
+                            <Chip
+                              size="small"
+                              label={inquiry.media_type_label || inquiry.media_type}
+                              variant="outlined"
+                              sx={{ height: 18, fontSize: '0.65rem' }}
+                            />
+                          </Box>
+                          {/* Assigned User */}
+                          {inquiry.assigned_user && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                              <PersonIcon sx={{ fontSize: 14, color: 'action.active' }} />
+                              <Typography variant="caption" color="text.secondary">
+                                担当: {inquiry.assigned_user.name}
+                              </Typography>
+                            </Box>
+                          )}
+                          {/* Message if exists */}
+                          {inquiry.message && (
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                whiteSpace: 'pre-wrap',
+                                bgcolor: 'white',
+                                p: 1,
+                                borderRadius: 1,
+                                maxHeight: 60,
+                                overflow: 'auto',
+                                fontSize: '0.8rem',
+                                mt: 0.5
+                              }}
+                            >
+                              {inquiry.message}
+                            </Typography>
+                          )}
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
                             <Typography variant="caption" color="text.secondary">
                               {inquiry.created_at}
                             </Typography>
                             <Chip
                               size="small"
-                              label={inquiry.channel === 'channel_line' ? 'LINE' : 'Web'}
+                              label={inquiry.channel === 'line' ? 'LINE' : 'Web'}
                               variant="outlined"
                               sx={{ height: 18, fontSize: '0.65rem' }}
                             />
@@ -1034,6 +1189,8 @@ export default function CustomerDetail() {
         }}
         customerId={id}
         activity={editingActivity}
+        inquiries={inquiries}
+        selectedInquiryId={selectedInquiryId}
         onCreated={() => {
           loadActivities();
           loadCustomer();
@@ -1051,6 +1208,17 @@ export default function CustomerDetail() {
         customerId={id}
         currentStatus={customer.deal_status}
         onChanged={loadCustomer}
+      />
+
+      {/* Create Inquiry Dialog */}
+      <CreateInquiryDialog
+        open={createInquiryDialogOpen}
+        onClose={() => setCreateInquiryDialogOpen(false)}
+        customerId={id}
+        users={users}
+        onCreated={() => {
+          loadCustomer();
+        }}
       />
     </Box>
   );

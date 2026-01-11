@@ -1,7 +1,7 @@
 class Api::V1::CustomersController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
-  before_action :set_customer, only: [:show, :update, :destroy, :inquiries, :accesses, :change_status]
+  before_action :set_customer, only: [:show, :update, :destroy, :inquiries, :accesses, :change_status, :create_inquiry]
 
   # GET /api/v1/customers
   def index
@@ -110,7 +110,7 @@ class Api::V1::CustomersController < ApplicationController
   # GET /api/v1/customers/:id/inquiries
   def inquiries
     inquiries = @customer.property_inquiries
-                         .includes(:customer_accesses, property_publication: { room: :building })
+                         .includes(:customer_accesses, :assigned_user, :property_publication, room: :building)
                          .recent
 
     render json: inquiries.map { |i| inquiry_json(i) }
@@ -123,6 +123,67 @@ class Api::V1::CustomersController < ApplicationController
                         .recent
 
     render json: accesses.map { |a| access_json(a) }
+  end
+
+  # POST /api/v1/customers/:id/inquiries
+  # 顧客詳細画面から新規案件（問い合わせ）を作成
+  def create_inquiry
+    room = Room.find(params[:room_id])
+
+    # テナント権限チェック
+    unless room.building&.tenant_id == current_user.tenant_id
+      return render json: { error: 'この物件への案件を作成する権限がありません' }, status: :forbidden
+    end
+
+    # 任意でproperty_publicationを関連付け
+    property_publication = nil
+    if params[:property_publication_id].present?
+      property_publication = PropertyPublication.kept.find_by(id: params[:property_publication_id], room_id: room.id)
+    end
+
+    # 担当者の検証（指定されていれば同じテナントのユーザーか確認）
+    assigned_user = nil
+    if params[:assigned_user_id].present?
+      assigned_user = current_user.tenant.users.find_by(id: params[:assigned_user_id])
+    end
+
+    inquiry = PropertyInquiry.new(
+      room: room,
+      property_publication: property_publication,
+      customer: @customer,
+      assigned_user: assigned_user,
+      name: @customer.name,
+      email: @customer.email || 'noreply@example.com',
+      phone: @customer.phone,
+      message: params[:message],
+      media_type: params[:media_type] || :other_media,
+      origin_type: params[:origin_type] || :staff_proposal,
+      status: :pending,
+      channel: :web_form,
+      source: params[:source] || 'staff_created'
+    )
+
+    if inquiry.save
+      # 顧客アクティビティを記録
+      @customer.customer_activities.create!(
+        activity_type: :inquiry,
+        subject: "案件作成: #{inquiry.property_title}",
+        content: params[:message],
+        direction: :internal,
+        property_inquiry: inquiry,
+        user: current_user
+      )
+
+      render json: {
+        success: true,
+        message: '案件を作成しました',
+        inquiry: inquiry_json(inquiry.reload)
+      }, status: :created
+    else
+      render json: { errors: inquiry.errors.full_messages }, status: :unprocessable_entity
+    end
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: '物件が見つかりませんでした' }, status: :not_found
   end
 
   private
@@ -201,19 +262,36 @@ class Api::V1::CustomersController < ApplicationController
 
   def inquiry_json(inquiry)
     publication = inquiry.property_publication
+    room = inquiry.room
     {
       id: inquiry.id,
       message: inquiry.message,
       channel: inquiry.channel,
       status: inquiry.status,
+      status_label: inquiry.status_label,
+      media_type: inquiry.media_type,
+      media_type_label: inquiry.media_type_label,
+      origin_type: inquiry.origin_type,
+      origin_type_label: inquiry.origin_type_label,
       created_at: inquiry.formatted_created_at,
-      property_publication: {
+      assigned_user: inquiry.assigned_user ? {
+        id: inquiry.assigned_user.id,
+        name: inquiry.assigned_user.name
+      } : nil,
+      room: {
+        id: room.id,
+        room_number: room.room_number,
+        building_id: room.building_id,
+        building_name: room.building&.name
+      },
+      property_publication: publication ? {
         id: publication.id,
         room_id: publication.room_id,
         title: publication.title,
         building_name: publication.room&.building&.name,
         room_number: publication.room&.room_number
-      },
+      } : nil,
+      property_title: inquiry.property_title,
       customer_accesses: inquiry.customer_accesses.map do |access|
         {
           id: access.id,

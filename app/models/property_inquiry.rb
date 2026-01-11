@@ -1,24 +1,53 @@
 class PropertyInquiry < ApplicationRecord
   # Associations
-  belongs_to :property_publication
-  belongs_to :customer, optional: true
+  belongs_to :room
+  belongs_to :property_publication, optional: true
+  belongs_to :customer
+  belongs_to :assigned_user, class_name: 'User', optional: true
   has_many :customer_accesses
+  has_many :customer_activities
 
   # Enums
-  enum :source_type, { public_page: 0, customer_limited: 1 }, prefix: true
-  enum :status, { unreplied: 0, replied: 1, no_reply_needed: 2 }, prefix: true
+  enum :media_type, {
+    suumo: 0,
+    athome: 1,
+    homes: 2,
+    lifull: 3,
+    own_website: 10,
+    line: 11,
+    phone: 12,
+    walk_in: 13,
+    referral: 14,
+    other_media: 99
+  }, prefix: true
+
+  enum :origin_type, {
+    document_request: 0,
+    visit_reservation: 1,
+    general_inquiry: 2,
+    staff_proposal: 10,
+    other_origin: 99
+  }, prefix: true
+
+  enum :status, {
+    pending: 0,
+    in_progress: 1,
+    completed: 2
+  }, prefix: true
+
   enum :channel, { web_form: 0, line: 1 }, prefix: true
 
   # Validations
   validates :name, presence: true
-  validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }, if: -> { channel_web_form? }
-  validates :message, presence: true
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
 
-  # Callbacks
-  before_create :link_or_create_customer
+  # Delegations
+  delegate :building, to: :room
+  delegate :tenant, to: :building
 
   # Scopes
   scope :recent, -> { order(created_at: :desc) }
+  scope :active, -> { where.not(status: :completed) }
 
   # Get formatted created time
   def formatted_created_at
@@ -30,9 +59,26 @@ class PropertyInquiry < ApplicationRecord
     replied_at&.strftime('%Y年%m月%d日 %H:%M')
   end
 
-  # テナントを取得
-  def tenant
-    property_publication&.room&.building&.tenant
+  # ラベルメソッド
+  def media_type_label
+    I18n.t("activerecord.enums.property_inquiry.media_type.#{media_type}", default: media_type)
+  end
+
+  def origin_type_label
+    I18n.t("activerecord.enums.property_inquiry.origin_type.#{origin_type}", default: origin_type)
+  end
+
+  def status_label
+    I18n.t("activerecord.enums.property_inquiry.status.#{status}", default: status)
+  end
+
+  # 物件タイトル（room経由で取得）
+  def property_title
+    if property_publication.present?
+      property_publication.title
+    else
+      "#{room.building.name} #{room.room_number}"
+    end
   end
 
   # 顧客の他の問い合わせ
@@ -44,23 +90,5 @@ class PropertyInquiry < ApplicationRecord
   # 同一顧客の他物件問い合わせ件数
   def other_inquiry_count
     other_inquiries_from_same_customer.count
-  end
-
-  private
-
-  def link_or_create_customer
-    return if customer.present?
-    return unless email.present?
-
-    tenant_obj = tenant
-    return unless tenant_obj
-
-    self.customer = Customer.find_or_initialize_by_contact(
-      tenant: tenant_obj,
-      email: email,
-      name: name,
-      phone: phone
-    )
-    customer.save! if customer.new_record?
   end
 end

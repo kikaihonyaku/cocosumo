@@ -45,13 +45,10 @@ class Api::V1::PropertyInquiriesController < ApplicationController
   def all
     return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
 
-    # ユーザーのテナントに紐づく物件のみ
-    user_publication_ids = PropertyPublication.kept.joins(room: :building)
-                                              .where(buildings: { tenant_id: current_user.tenant_id })
-                                              .pluck(:id)
-
-    @inquiries = PropertyInquiry.where(property_publication_id: user_publication_ids)
-                                .includes(:customer, :customer_accesses, property_publication: { room: :building })
+    # ユーザーのテナントに紐づく物件（room経由）
+    @inquiries = PropertyInquiry.joins(room: :building)
+                                .where(buildings: { tenant_id: current_user.tenant_id })
+                                .includes(:customer, :customer_accesses, :assigned_user, :property_publication, room: :building)
                                 .order(created_at: :desc)
                                 .limit(500)
 
@@ -229,10 +226,15 @@ class Api::V1::PropertyInquiriesController < ApplicationController
     if @inquiry.update(update_params)
       render json: {
         success: true,
-        inquiry: @inquiry.as_json(
-          methods: [:formatted_created_at, :formatted_replied_at],
-          only: [:id, :name, :email, :phone, :message, :source, :source_type, :source_url, :status, :replied_at, :created_at]
-        )
+        inquiry: {
+          id: @inquiry.id,
+          status: @inquiry.status,
+          status_label: @inquiry.status_label,
+          assigned_user: @inquiry.assigned_user ? {
+            id: @inquiry.assigned_user.id,
+            name: @inquiry.assigned_user.name
+          } : nil
+        }
       }
     else
       render json: { errors: @inquiry.errors.full_messages }, status: :unprocessable_entity
@@ -287,10 +289,8 @@ class Api::V1::PropertyInquiriesController < ApplicationController
   private
 
   def authorized_for_inquiry?(inquiry)
-    publication = inquiry.property_publication
-    return false unless publication
-
-    building = publication.room&.building
+    # room経由でテナント権限をチェック（room_idは必須）
+    building = inquiry.room&.building
     return false unless building
 
     building.tenant_id == current_user.tenant_id
@@ -301,7 +301,7 @@ class Api::V1::PropertyInquiriesController < ApplicationController
   end
 
   def update_params
-    params.require(:property_inquiry).permit(:status)
+    params.require(:property_inquiry).permit(:status, :assigned_user_id)
   end
 
   def send_notification_emails(property_inquiry)
@@ -342,27 +342,45 @@ class Api::V1::PropertyInquiriesController < ApplicationController
   # 問い合わせJSON（物件情報含む版）
   def inquiry_with_publication_json(inquiry)
     publication = inquiry.property_publication
-    room = publication&.room
+    room = inquiry.room
     building = room&.building
 
     inquiry_with_customer_json(inquiry).merge(
       source_url: inquiry.source_url,
       replied_at: inquiry.replied_at,
       reply_message: inquiry.reply_message,
-      property_publication: {
-        id: publication&.id,
-        title: publication&.title,
-        publication_id: publication&.publication_id,
-        room: room ? {
-          id: room.id,
-          room_number: room.room_number,
-          building: building ? {
-            id: building.id,
-            name: building.name,
-            address: building.address
+      # 新しいフィールド
+      media_type: inquiry.media_type,
+      media_type_label: inquiry.media_type_label,
+      origin_type: inquiry.origin_type,
+      origin_type_label: inquiry.origin_type_label,
+      status_label: inquiry.status_label,
+      property_title: inquiry.property_title,
+      assigned_user: inquiry.assigned_user ? {
+        id: inquiry.assigned_user.id,
+        name: inquiry.assigned_user.name
+      } : nil,
+      room: room ? {
+        id: room.id,
+        room_number: room.room_number,
+        building_id: room.building_id,
+        building_name: building&.name,
+        building_address: building&.address
+      } : nil,
+      property_publication: publication ? {
+        id: publication.id,
+        title: publication.title,
+        publication_id: publication.publication_id,
+        room: publication.room ? {
+          id: publication.room.id,
+          room_number: publication.room.room_number,
+          building: publication.room.building ? {
+            id: publication.room.building.id,
+            name: publication.room.building.name,
+            address: publication.room.building.address
           } : nil
         } : nil
-      }
+      } : nil
     )
   end
 

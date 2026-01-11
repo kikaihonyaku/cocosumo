@@ -479,6 +479,41 @@ class Api::V1::PropertyPublicationsController < ApplicationController
     render json: { error: 'Not found' }, status: :not_found
   end
 
+  # GET /api/v1/property_publications/search
+  # 公開物件を検索（案件作成用）
+  def search
+    return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
+
+    query = params[:query].to_s.strip
+    return render json: { publications: [] } if query.blank?
+
+    # ユーザーのテナントの公開物件のみ
+    publications = PropertyPublication.kept
+                                      .published
+                                      .joins(room: :building)
+                                      .where(buildings: { tenant_id: current_user.tenant_id })
+                                      .where(
+                                        'property_publications.title ILIKE :query OR buildings.name ILIKE :query OR rooms.room_number ILIKE :query',
+                                        query: "%#{query}%"
+                                      )
+                                      .includes(room: :building)
+                                      .order('property_publications.updated_at DESC')
+                                      .limit(20)
+
+    render json: {
+      publications: publications.map do |pub|
+        {
+          id: pub.id,
+          title: pub.title,
+          building_name: pub.room&.building&.name,
+          room_number: pub.room&.room_number,
+          room_id: pub.room_id,
+          thumbnail_url: pub.thumbnail_url
+        }
+      end
+    }
+  end
+
   # POST /api/v1/property_publications/bulk_action
   def bulk_action
     ids = params[:ids]

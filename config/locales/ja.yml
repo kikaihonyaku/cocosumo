@@ -1,0 +1,25 @@
+ja:
+  activerecord:
+    enums:
+      property_inquiry:
+        media_type:
+          suumo: "SUUMO"
+          athome: "at home"
+          homes: "HOMES"
+          lifull: "LIFULL"
+          own_website: "自社HP"
+          line: "LINE"
+          phone: "電話"
+          walk_in: "飛び込み"
+          referral: "紹介"
+          other_media: "その他"
+        origin_type:
+          document_request: "資料請求"
+          visit_reservation: "来場予約"
+          general_inquiry: "その他問い合わせ"
+          staff_proposal: "提案"
+          other_origin: "その他"
+        status:
+          pending: "未対応"
+          in_progress: "対応中"
+          completed: "完了"
