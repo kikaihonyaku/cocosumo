@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
   AppBar,
@@ -61,10 +61,23 @@ import { getRoomTypeLabel } from '../utils/formatters';
 function PropertyPublicationEditor() {
   const { roomId, id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isEditMode = Boolean(id);
 
+  // Get initial tab from URL parameter (tab=inquiries, tab=access, etc.)
+  const getInitialTab = () => {
+    const tabParam = searchParams.get('tab');
+    if (!isEditMode) return 0;
+    switch (tabParam) {
+      case 'access': return 5;
+      case 'inquiries': return 6;
+      case 'analytics': return 7;
+      default: return 0;
+    }
+  };
+
   // State
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(getInitialTab);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });

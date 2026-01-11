@@ -209,6 +209,7 @@ class Api::V1::CustomersController < ApplicationController
       created_at: inquiry.formatted_created_at,
       property_publication: {
         id: publication.id,
+        room_id: publication.room_id,
         title: publication.title,
         building_name: publication.room&.building&.name,
         room_number: publication.room&.room_number
@@ -227,6 +228,7 @@ class Api::V1::CustomersController < ApplicationController
     publication = access.property_publication
     {
       id: access.id,
+      access_token: access.access_token,
       status: access.status,
       view_count: access.view_count,
       expires_at: access.formatted_expires_at,
@@ -234,6 +236,7 @@ class Api::V1::CustomersController < ApplicationController
       created_at: access.created_at.strftime('%Y/%m/%d'),
       property_publication: {
         id: publication.id,
+        room_id: publication.room_id,
         title: publication.title,
         building_name: publication.room&.building&.name,
         room_number: publication.room&.room_number

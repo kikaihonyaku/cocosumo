@@ -854,13 +854,25 @@ export default function CustomerDetail() {
                             <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
                               {inquiry.property_publication?.title || '物件名なし'}
                             </Typography>
-                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
                               <Chip
                                 size="small"
                                 label={inquiryStatusInfo.label}
                                 color={inquiryStatusInfo.color}
                                 sx={{ height: 18, fontSize: '0.65rem' }}
                               />
+                              {inquiry.property_publication?.id && inquiry.property_publication?.room_id && (
+                                <Tooltip title="問い合わせタブを開く">
+                                  <IconButton
+                                    size="small"
+                                    component={RouterLink}
+                                    to={`/room/${inquiry.property_publication.room_id}/property-publication/${inquiry.property_publication.id}/edit?tab=inquiries`}
+                                    sx={{ p: 0.25 }}
+                                  >
+                                    <OpenInNewIcon sx={{ fontSize: 14 }} />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
                             </Box>
                           </Box>
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
@@ -933,12 +945,26 @@ export default function CustomerDetail() {
                             <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
                               {access.property_publication?.title || '物件名なし'}
                             </Typography>
-                            <Chip
-                              size="small"
-                              label={accessStatusInfo.label}
-                              color={accessStatusInfo.color}
-                              sx={{ height: 18, fontSize: '0.65rem' }}
-                            />
+                            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                              <Chip
+                                size="small"
+                                label={accessStatusInfo.label}
+                                color={accessStatusInfo.color}
+                                sx={{ height: 18, fontSize: '0.65rem' }}
+                              />
+                              {access.property_publication?.id && access.property_publication?.room_id && (
+                                <Tooltip title="顧客アクセスタブを開く">
+                                  <IconButton
+                                    size="small"
+                                    component={RouterLink}
+                                    to={`/room/${access.property_publication.room_id}/property-publication/${access.property_publication.id}/edit?tab=access`}
+                                    sx={{ p: 0.25 }}
+                                  >
+                                    <OpenInNewIcon sx={{ fontSize: 14 }} />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </Box>
                           </Box>
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
                             {access.property_publication?.building_name} {access.property_publication?.room_number}
@@ -966,14 +992,29 @@ export default function CustomerDetail() {
                               <Typography variant="caption">{access.view_count}回</Typography>
                             </Box>
                           </Box>
-                          {access.from_inquiry && (
-                            <Chip
-                              size="small"
-                              label="問い合わせから"
-                              variant="outlined"
-                              sx={{ height: 18, fontSize: '0.65rem', mt: 1 }}
-                            />
-                          )}
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                            {access.from_inquiry ? (
+                              <Chip
+                                size="small"
+                                label="問い合わせから"
+                                variant="outlined"
+                                sx={{ height: 18, fontSize: '0.65rem' }}
+                              />
+                            ) : (
+                              <Box />
+                            )}
+                            {access.access_token && (
+                              <Tooltip title="URLをコピー">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleCopyUrl(`${window.location.origin}/c/${access.access_token}`)}
+                                  sx={{ p: 0.25 }}
+                                >
+                                  <ContentCopyIcon sx={{ fontSize: 14 }} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </Box>
                         </CardContent>
                       </Card>
                     );
