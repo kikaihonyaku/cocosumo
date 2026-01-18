@@ -57,6 +57,7 @@ import ViewAnalyticsDashboard from '../components/PropertyPublication/ViewAnalyt
 import CustomerAccessPanel from '../components/CustomerAccess/CustomerAccessPanel';
 import PresentationAccessPanel from '../components/SalesPresentation/PresentationAccessPanel';
 import { getRoomTypeLabel } from '../utils/formatters';
+import { useCopyToClipboard } from '../hooks/useClipboard';
 
 function PropertyPublicationEditor() {
   const { roomId, id } = useParams();
@@ -114,6 +115,9 @@ function PropertyPublicationEditor() {
   const [previewPhotos, setPreviewPhotos] = useState([]);
   const [previewVrTours, setPreviewVrTours] = useState([]);
   const [previewVirtualStagings, setPreviewVirtualStagings] = useState([]);
+
+  // Clipboard hook (supports fallback for non-secure contexts)
+  const { copy: copyToClipboard } = useCopyToClipboard();
 
   // Load data
   useEffect(() => {
@@ -335,10 +339,14 @@ function PropertyPublicationEditor() {
     }
   };
 
-  const handleCopyUrl = () => {
+  const handleCopyUrl = async () => {
     if (propertyPublication.public_url) {
-      navigator.clipboard.writeText(propertyPublication.public_url);
-      showSnackbar('URLをコピーしました', 'success');
+      const success = await copyToClipboard(propertyPublication.public_url);
+      if (success) {
+        showSnackbar('URLをコピーしました', 'success');
+      } else {
+        showSnackbar('URLのコピーに失敗しました', 'error');
+      }
     }
   };
 
