@@ -290,7 +290,7 @@ function Template0({ data, publicationId }) {
                             src={`/vr/${item.vr_tour.public_id}`}
                             sx={{
                               width: '100%',
-                              height: 500,
+                              height: 550,
                               border: `2px solid ${colors.primary}`,
                               borderRadius: 1,
                               mt: 1
@@ -316,10 +316,10 @@ function Template0({ data, publicationId }) {
                           )}
                           <Box
                             component="iframe"
-                            src={`/virtual-staging/${item.virtual_staging.public_id}`}
+                            src={`/virtual-staging/${item.virtual_staging.public_id}?embed=true`}
                             sx={{
                               width: '100%',
-                              height: 500,
+                              height: 550,
                               border: `2px solid ${colors.primary}`,
                               borderRadius: 1,
                               mt: 1

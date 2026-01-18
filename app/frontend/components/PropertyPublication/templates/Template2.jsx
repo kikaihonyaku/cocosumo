@@ -422,7 +422,7 @@ function Template2({ data, publicationId }) {
 
         .template2-roomspot .vr-iframe {
           width: 100%;
-          height: 500px;
+          height: 550px;
           border: 2px solid #e0e0e0;
           border-radius: 8px;
         }
@@ -721,7 +721,7 @@ function Template2({ data, publicationId }) {
                       <div className="vr-item-description">{item.virtual_staging.description}</div>
                     )}
                     <iframe
-                      src={`/virtual-staging/${item.virtual_staging.public_id}`}
+                      src={`/virtual-staging/${item.virtual_staging.public_id}?embed=true`}
                       className="vr-iframe"
                       title={item.virtual_staging.title}
                     />

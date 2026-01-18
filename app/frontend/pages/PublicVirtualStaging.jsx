@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Paper, Alert, Chip, Stack } from '@mui/material';
 import { LocationOn as LocationIcon } from '@mui/icons-material';
 import BeforeAfterViewer from '../components/VirtualStaging/BeforeAfterViewer';
@@ -7,6 +7,8 @@ import SharePanel from '../components/VirtualStaging/SharePanel';
 
 const PublicVirtualStaging = () => {
   const { publicId } = useParams();
+  const [searchParams] = useSearchParams();
+  const isEmbedded = searchParams.get('embed') === 'true';
   const [loading, setLoading] = useState(true);
   const [virtualStaging, setVirtualStaging] = useState(null);
   const [error, setError] = useState(null);
@@ -44,11 +46,12 @@ const PublicVirtualStaging = () => {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          minHeight: '100vh',
-          bgcolor: '#1a1a2e',
+          minHeight: isEmbedded ? '100%' : '100vh',
+          height: isEmbedded ? '100%' : 'auto',
+          bgcolor: isEmbedded ? '#fff' : '#1a1a2e',
         }}
       >
-        <CircularProgress sx={{ color: 'white' }} />
+        <CircularProgress sx={{ color: isEmbedded ? 'primary.main' : 'white' }} />
       </Box>
     );
   }
@@ -60,8 +63,9 @@ const PublicVirtualStaging = () => {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          minHeight: '100vh',
-          bgcolor: '#1a1a2e',
+          minHeight: isEmbedded ? '100%' : '100vh',
+          height: isEmbedded ? '100%' : 'auto',
+          bgcolor: isEmbedded ? '#fff' : '#1a1a2e',
         }}
       >
         <Alert severity="error" sx={{ maxWidth: 500 }}>
@@ -87,8 +91,9 @@ const PublicVirtualStaging = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        bgcolor: '#1a1a2e',
+        minHeight: isEmbedded ? '100%' : '100vh',
+        height: isEmbedded ? '100%' : 'auto',
+        bgcolor: isEmbedded ? '#fff' : '#1a1a2e',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -97,23 +102,26 @@ const PublicVirtualStaging = () => {
       <Box
         sx={{
           width: '100%',
-          minHeight: '100vh',
+          height: isEmbedded ? '100%' : 'auto',
+          minHeight: isEmbedded ? '100%' : '100vh',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          p: 2,
-          pt: 10,
-          pb: 16,
+          p: isEmbedded ? 1.5 : 2,
+          pt: isEmbedded ? 1.5 : 10,
+          pb: isEmbedded ? (hasVariations ? 7 : 1.5) : 16,
+          boxSizing: 'border-box',
         }}
       >
-        <Box sx={{ width: '100%', maxWidth: 1400 }}>
+        <Box sx={{ width: '100%', maxWidth: isEmbedded ? '100%' : 1400, flex: isEmbedded ? 1 : 'none', minHeight: 0 }}>
           <BeforeAfterViewer
             beforeImageUrl={virtualStaging.before_photo_url}
             afterImageUrl={getActiveAfterImageUrl()}
             beforeLabel="Before"
             afterLabel="After"
             showTitle={false}
-            darkMode
+            darkMode={!isEmbedded}
             showAiDisclaimer
           />
         </Box>
@@ -124,7 +132,7 @@ const PublicVirtualStaging = () => {
         <Box
           sx={{
             position: 'absolute',
-            bottom: 80,
+            bottom: isEmbedded ? 8 : 80,
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 10,
@@ -132,14 +140,15 @@ const PublicVirtualStaging = () => {
         >
           <Paper
             sx={{
-              bgcolor: 'rgba(0, 0, 0, 0.7)',
+              bgcolor: isEmbedded ? 'rgba(255, 255, 255, 0.95)' : 'rgba(0, 0, 0, 0.7)',
               backdropFilter: 'blur(8px)',
               px: 2,
-              py: 1.5,
+              py: 1,
               borderRadius: 2,
+              boxShadow: isEmbedded ? 2 : 0,
             }}
           >
-            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', display: 'block', mb: 1, textAlign: 'center' }}>
+            <Typography variant="caption" sx={{ color: isEmbedded ? 'text.secondary' : 'rgba(255,255,255,0.7)', display: 'block', mb: 0.5, textAlign: 'center' }}>
               スタイルを選択
             </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center">
@@ -148,7 +157,8 @@ const PublicVirtualStaging = () => {
                 onClick={() => setSelectedVariationId(null)}
                 color={selectedVariationId === null ? 'primary' : 'default'}
                 variant={selectedVariationId === null ? 'filled' : 'outlined'}
-                sx={{
+                size="small"
+                sx={isEmbedded ? {} : {
                   color: 'white',
                   borderColor: 'rgba(255,255,255,0.5)',
                   '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
@@ -161,7 +171,8 @@ const PublicVirtualStaging = () => {
                   onClick={() => setSelectedVariationId(variation.id)}
                   color={selectedVariationId === variation.id ? 'primary' : 'default'}
                   variant={selectedVariationId === variation.id ? 'filled' : 'outlined'}
-                  sx={{
+                  size="small"
+                  sx={isEmbedded ? {} : {
                     color: 'white',
                     borderColor: 'rgba(255,255,255,0.5)',
                     '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
@@ -173,36 +184,38 @@ const PublicVirtualStaging = () => {
         </Box>
       )}
 
-      {/* タイトル（上部中央にオーバーレイ） */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 20,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          bgcolor: 'rgba(0, 0, 0, 0.7)',
-          backdropFilter: 'blur(8px)',
-          color: 'white',
-          px: 4,
-          py: 1.5,
-          borderRadius: 2,
-          zIndex: 10,
-          textAlign: 'center',
-          maxWidth: '80%',
-        }}
-      >
-        <Typography variant="h5" fontWeight="600" noWrap>
-          {virtualStaging.title}
-        </Typography>
-        {virtualStaging.description && (
-          <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
-            {virtualStaging.description}
+      {/* タイトル（上部中央にオーバーレイ）- 埋め込み時は非表示 */}
+      {!isEmbedded && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 20,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            bgcolor: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(8px)',
+            color: 'white',
+            px: 4,
+            py: 1.5,
+            borderRadius: 2,
+            zIndex: 10,
+            textAlign: 'center',
+            maxWidth: '80%',
+          }}
+        >
+          <Typography variant="h5" fontWeight="600" noWrap>
+            {virtualStaging.title}
           </Typography>
-        )}
-      </Box>
+          {virtualStaging.description && (
+            <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
+              {virtualStaging.description}
+            </Typography>
+          )}
+        </Box>
+      )}
 
-      {/* 物件情報（左下にオーバーレイ） */}
-      {virtualStaging.room && (
+      {/* 物件情報（左下にオーバーレイ）- 埋め込み時は非表示 */}
+      {!isEmbedded && virtualStaging.room && (
         <Paper
           sx={{
             position: 'absolute',
@@ -241,35 +254,39 @@ const PublicVirtualStaging = () => {
         </Paper>
       )}
 
-      {/* 共有ボタン（右上） */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 20,
-          right: 20,
-          zIndex: 10,
-        }}
-      >
-        <SharePanel
-          publicUrl={window.location.href}
-          title={virtualStaging.title}
-          variant="icon"
-        />
-      </Box>
+      {/* 共有ボタン（右上）- 埋め込み時は非表示 */}
+      {!isEmbedded && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 20,
+            right: 20,
+            zIndex: 10,
+          }}
+        >
+          <SharePanel
+            publicUrl={window.location.href}
+            title={virtualStaging.title}
+            variant="icon"
+          />
+        </Box>
+      )}
 
-      {/* フッター（右下に控えめに表示） */}
-      <Box
-        sx={{
-          position: 'absolute',
-          bottom: 16,
-          right: 20,
-          zIndex: 10,
-        }}
-      >
-        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
-          Powered by CoCoSuMo
-        </Typography>
-      </Box>
+      {/* フッター（右下に控えめに表示）- 埋め込み時は非表示 */}
+      {!isEmbedded && (
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 16,
+            right: 20,
+            zIndex: 10,
+          }}
+        >
+          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+            Powered by CoCoSuMo
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };
