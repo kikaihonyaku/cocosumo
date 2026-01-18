@@ -29,8 +29,10 @@ export default function ImageSimulationPhotoSelector({
   };
 
   const handleSelect = (photo, type) => {
+    // room_photoの場合は実際のRoomPhotoのIDを使用（PropertyPublicationPhotoのIDではなく）
+    const photoId = type === 'room_photo' ? photo.room_photo?.id : photo.id;
     onSelect({
-      id: photo.id,
+      id: photoId,
       type: type,
       url: type === 'room_photo' ? photo.room_photo?.photo_url : photo.photo_url,
       caption: type === 'room_photo' ? photo.room_photo?.caption : photo.caption
@@ -38,7 +40,9 @@ export default function ImageSimulationPhotoSelector({
   };
 
   const isSelected = (photo, type) => {
-    return selectedPhoto?.id === photo.id && selectedPhoto?.type === type;
+    // room_photoの場合は実際のRoomPhotoのIDと比較
+    const photoId = type === 'room_photo' ? photo.room_photo?.id : photo.id;
+    return selectedPhoto?.id === photoId && selectedPhoto?.type === type;
   };
 
   // 部屋写真をroom_photoから取得
