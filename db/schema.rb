@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_11_202357) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_17_002015) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -228,6 +228,24 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_11_202357) do
     t.index ["property_inquiry_id"], name: "index_customer_activities_on_property_inquiry_id"
     t.index ["property_publication_id"], name: "index_customer_activities_on_property_publication_id"
     t.index ["user_id"], name: "index_customer_activities_on_user_id"
+  end
+
+  create_table "customer_image_simulations", force: :cascade do |t|
+    t.bigint "property_publication_id", null: false
+    t.string "session_id", null: false
+    t.string "source_photo_type", null: false
+    t.bigint "source_photo_id", null: false
+    t.text "prompt", null: false
+    t.text "result_image_base64"
+    t.integer "status", default: 0, null: false
+    t.string "error_message"
+    t.date "simulation_date", null: false
+    t.string "ip_address"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["property_publication_id", "simulation_date"], name: "idx_cis_publication_date"
+    t.index ["property_publication_id"], name: "index_customer_image_simulations_on_property_publication_id"
+    t.index ["session_id"], name: "index_customer_image_simulations_on_session_id"
   end
 
   create_table "customer_routes", force: :cascade do |t|
@@ -747,6 +765,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_11_202357) do
   add_foreign_key "customer_activities", "property_inquiries"
   add_foreign_key "customer_activities", "property_publications"
   add_foreign_key "customer_activities", "users"
+  add_foreign_key "customer_image_simulations", "property_publications"
   add_foreign_key "customer_routes", "customer_accesses"
   add_foreign_key "customers", "tenants"
   add_foreign_key "customers", "users", column: "assigned_user_id"

@@ -310,6 +310,11 @@ Rails.application.routes.draw do
       post 'customer/:access_token/verify_access', to: 'customer_accesses#verify_access'
       post 'customer/:access_token/track_view', to: 'customer_accesses#track_view'
 
+      # 顧客向け画像シミュレーションAPI（認証不要）
+      get 'customer/:access_token/image_simulations/quota', to: 'customer_image_simulations#quota'
+      get 'customer/:access_token/image_simulations', to: 'customer_image_simulations#index'
+      post 'customer/:access_token/image_simulations', to: 'customer_image_simulations#create'
+
       # 顧客専用経路
       get 'customer/:access_token/routes', to: 'customer_accesses#customer_routes'
       post 'customer/:access_token/routes/preview', to: 'customer_accesses#preview_customer_route'

@@ -58,6 +58,7 @@ import PhotoGallery from '../components/PropertyPublication/PhotoGallery';
 import PropertyMapPanel from '../components/BuildingDetail/PropertyMapPanel';
 import CustomerRouteDialog from '../components/CustomerAccess/CustomerRouteDialog';
 import InquiryForm from '../components/PropertyPublication/InquiryForm';
+import { ImageSimulationSection } from '../components/CustomerAccess/ImageSimulation';
 import { getRoomTypeLabel } from '../utils/formatters';
 
 export default function CustomerPropertyView() {
@@ -1094,6 +1095,16 @@ export default function CustomerPropertyView() {
               ))}
             </Grid>
           </Paper>
+        )}
+
+        {/* AIイメージシミュレーション */}
+        {property_publication_photos?.length > 0 && (
+          <ImageSimulationSection
+            accessToken={accessToken}
+            photos={property_publication_photos}
+            buildingPhotos={data.room?.building?.building_photos || []}
+            isMobile={isMobile}
+          />
         )}
 
         {/* お問い合わせ・QRコード */}

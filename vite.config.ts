@@ -5,6 +5,12 @@ export default defineConfig({
   plugins: [
     RubyPlugin(),
   ],
+  server: {
+    hmr: {
+      host: 'localhost',
+      protocol: 'ws',
+    },
+  },
   esbuild: {
     loader: 'jsx',
     include: /.*\.jsx?$/,

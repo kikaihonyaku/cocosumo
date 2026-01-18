@@ -8,7 +8,7 @@ class Api::V1::ImagenController < ApplicationController
 
   # Gemini API設定
   GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
-  GEMINI_MODEL = 'gemini-2.5-flash-image-preview'
+  GEMINI_MODEL = 'gemini-2.5-flash-image'
   IMAGE_MIME_TYPE = 'image/jpeg'
   MAX_RETRIES = 3
   RETRY_DELAY = 2 # 秒
