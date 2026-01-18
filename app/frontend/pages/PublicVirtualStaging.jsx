@@ -114,6 +114,7 @@ const PublicVirtualStaging = () => {
             afterLabel="After"
             showTitle={false}
             darkMode
+            showAiDisclaimer
           />
         </Box>
       </Box>

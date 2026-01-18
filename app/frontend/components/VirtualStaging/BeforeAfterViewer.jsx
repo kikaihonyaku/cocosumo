@@ -24,7 +24,8 @@ export default function BeforeAfterViewer({
   isMobile = false,
   showTitle = true,
   maxHeight,
-  darkMode = false
+  darkMode = false,
+  showAiDisclaimer = false
 }) {
   const [viewMode, setViewMode] = useState('compare'); // 'before', 'after', 'compare'
   const [sliderPosition, setSliderPosition] = useState(50);
@@ -265,6 +266,21 @@ export default function BeforeAfterViewer({
           </Box>
         )}
       </Paper>
+
+      {/* AI免責表示 */}
+      {showAiDisclaimer && (
+        <Typography
+          variant="caption"
+          sx={{
+            display: 'block',
+            mt: 1,
+            textAlign: 'center',
+            color: darkMode ? 'rgba(255,255,255,0.6)' : 'text.secondary'
+          }}
+        >
+          ※AIによる参考イメージです。実際と異なる場合があります。
+        </Typography>
+      )}
     </Box>
   );
 }

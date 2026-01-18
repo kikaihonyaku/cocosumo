@@ -119,6 +119,7 @@ const VirtualStagingViewer = () => {
             beforeLabel="Before"
             afterLabel="After"
             showTitle={false}
+            showAiDisclaimer
           />
         </Paper>
 

@@ -102,9 +102,12 @@ class Api::V1::CustomerImageSimulationsController < ApplicationController
       generated_image = extract_generated_image(response_data)
 
       if generated_image
+        # ウォーターマークを追加
+        watermarked_image = AiImageWatermarkService.new(generated_image).add_watermark
+
         simulation.update!(
           status: :success,
-          result_image_base64: generated_image
+          result_image_base64: watermarked_image
         )
 
         render json: {

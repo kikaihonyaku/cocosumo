@@ -48,7 +48,9 @@ class Api::V1::ImagenController < ApplicationController
       generated_image = extract_generated_image(response_data)
 
       if generated_image
-        render_success(generated_image)
+        # ウォーターマークを追加
+        watermarked_image = AiImageWatermarkService.new(generated_image).add_watermark
+        render_success(watermarked_image)
       else
         render_generation_error(response_data)
       end
