@@ -12,7 +12,10 @@ class Api::V1::CustomerAccessesController < ApplicationController
   def index
     if params[:property_publication_id]
       # 物件公開ページ単位のアクセス一覧（配列を直接返す）
-      @property_publication = PropertyPublication.kept.find(params[:property_publication_id])
+      # テナント権限チェック付きで取得
+      @property_publication = PropertyPublication.kept.joins(room: :building)
+                                                 .where(buildings: { tenant_id: current_user.tenant_id })
+                                                 .find(params[:property_publication_id])
       @customer_accesses = @property_publication.customer_accesses.recent
 
       render json: @customer_accesses.as_json(
@@ -23,7 +26,12 @@ class Api::V1::CustomerAccessesController < ApplicationController
       )
     else
       # 全アクセス一覧（管理画面用、オブジェクトで返す）
-      @customer_accesses = CustomerAccess.includes(property_publication: { room: :building })
+      # テナントに紐づく物件のみ取得
+      user_publication_ids = PropertyPublication.kept.joins(room: :building)
+                                                .where(buildings: { tenant_id: current_user.tenant_id })
+                                                .pluck(:id)
+      @customer_accesses = CustomerAccess.where(property_publication_id: user_publication_ids)
+                                         .includes(property_publication: { room: :building })
                                          .recent
                                          .limit(500)
 
@@ -630,11 +638,19 @@ class Api::V1::CustomerAccessesController < ApplicationController
   private
 
   def set_property_publication
-    @property_publication = PropertyPublication.kept.find(params[:property_publication_id])
+    # テナント権限チェック付きで取得
+    @property_publication = PropertyPublication.kept.joins(room: :building)
+                                               .where(buildings: { tenant_id: current_user.tenant_id })
+                                               .find(params[:property_publication_id])
   end
 
   def set_customer_access
-    @customer_access = CustomerAccess.find(params[:id])
+    # テナント権限チェック付きで取得
+    user_publication_ids = PropertyPublication.kept.joins(room: :building)
+                                              .where(buildings: { tenant_id: current_user.tenant_id })
+                                              .pluck(:id)
+    @customer_access = CustomerAccess.where(property_publication_id: user_publication_ids)
+                                     .find(params[:id])
   end
 
   def customer_access_params
