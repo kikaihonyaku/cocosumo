@@ -10,19 +10,37 @@ class Api::V1::PropertyInquiriesController < ApplicationController
       return
     end
 
-    @property_inquiry = @property_publication.property_inquiries.build(property_inquiry_params)
+    # 顧客を検索または作成
+    tenant = @property_publication.tenant
+    inquiry_params = property_inquiry_params
+    @customer = Customer.find_or_initialize_by_contact(
+      tenant: tenant,
+      email: inquiry_params[:email],
+      name: inquiry_params[:name],
+      phone: inquiry_params[:phone]
+    )
 
-    if @property_inquiry.save
-      # メール通知を非同期で送信
-      send_notification_emails(@property_inquiry)
+    @property_inquiry = @property_publication.property_inquiries.build(inquiry_params)
+    @property_inquiry.room = @property_publication.room
+    @property_inquiry.customer = @customer
 
-      render json: {
-        success: true,
-        message: 'お問い合わせを受け付けました。担当者より折り返しご連絡いたします。'
-      }, status: :created
-    else
-      render json: { errors: @property_inquiry.errors.full_messages }, status: :unprocessable_entity
+    ActiveRecord::Base.transaction do
+      @customer.save!
+      @property_inquiry.save!
     end
+
+    # メール通知を非同期で送信
+    send_notification_emails(@property_inquiry)
+
+    render json: {
+      success: true,
+      message: 'お問い合わせを受け付けました。担当者より折り返しご連絡いたします。'
+    }, status: :created
+  rescue ActiveRecord::RecordInvalid => e
+    errors = []
+    errors.concat(@customer.errors.full_messages) if @customer&.errors&.any?
+    errors.concat(@property_inquiry.errors.full_messages) if @property_inquiry&.errors&.any?
+    render json: { errors: errors }, status: :unprocessable_entity
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'この物件公開ページは見つかりませんでした' }, status: :not_found
   end
