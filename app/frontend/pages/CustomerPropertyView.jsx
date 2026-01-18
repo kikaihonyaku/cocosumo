@@ -924,25 +924,32 @@ export default function CustomerPropertyView() {
               }}>
                 <ViewInArIcon sx={{ color: 'primary.main', fontSize: 26 }} />
               </Box>
-              <Typography variant="h6" fontWeight="bold" sx={{ fontSize: '1.35rem' }}>
-                バーチャルコンテンツ
-              </Typography>
+              <Box>
+                <Typography variant="h6" fontWeight="bold" sx={{ fontSize: '1.35rem' }}>
+                  バーチャルコンテンツ
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  360°VRツアーやAIステージングで物件をより詳しくご覧いただけます
+                </Typography>
+              </Box>
             </Box>
 
-            <Grid container spacing={2}>
+            <Grid container spacing={3}>
               {/* VRツアー */}
               {property_publication_vr_tours?.map((item) => (
-                <Grid item xs={6} sm={6} md={4} lg={4} key={`vr-${item.vr_tour?.id}`}>
+                <Grid item xs={12} sm={6} md={6} lg={4} key={`vr-${item.vr_tour?.id}`}>
                   <Card
-                    variant="outlined"
+                    elevation={2}
                     sx={{
                       height: '100%',
                       display: 'flex',
                       flexDirection: 'column',
                       transition: 'transform 0.2s, box-shadow 0.2s',
+                      borderRadius: 3,
+                      overflow: 'hidden',
                       '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: 2,
+                        transform: 'translateY(-4px)',
+                        boxShadow: 6,
                       },
                     }}
                   >
@@ -954,7 +961,7 @@ export default function CustomerPropertyView() {
                       <Box
                         sx={{
                           position: 'relative',
-                          paddingTop: '56.25%',
+                          paddingTop: '66.67%',
                           bgcolor: 'grey.200',
                           overflow: 'hidden',
                         }}
@@ -984,27 +991,65 @@ export default function CustomerPropertyView() {
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
+                              background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
                             }}
                           >
-                            <ViewInArIcon sx={{ fontSize: 40, color: 'grey.400' }} />
+                            <ViewInArIcon sx={{ fontSize: 64, color: 'primary.main', opacity: 0.5 }} />
                           </Box>
                         )}
-                        <Chip
-                          label="VRツアー"
-                          size="small"
-                          color="primary"
+                        {/* オーバーレイグラデーション */}
+                        <Box
                           sx={{
                             position: 'absolute',
-                            top: 8,
-                            left: 8,
-                            fontSize: '0.7rem',
-                            height: 22,
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: '50%',
+                            background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)',
                           }}
                         />
+                        <Chip
+                          icon={<ViewInArIcon sx={{ fontSize: 16 }} />}
+                          label="360° VRツアー"
+                          size="small"
+                          sx={{
+                            position: 'absolute',
+                            top: 12,
+                            left: 12,
+                            bgcolor: 'primary.main',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem',
+                            height: 28,
+                            '& .MuiChip-icon': { color: 'white' },
+                          }}
+                        />
+                        {/* 再生アイコン */}
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: 56,
+                            height: 56,
+                            borderRadius: '50%',
+                            bgcolor: 'rgba(255,255,255,0.9)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: 3,
+                          }}
+                        >
+                          <PlayArrowIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+                        </Box>
                       </Box>
-                      <CardContent sx={{ py: 1, px: 1.5 }}>
-                        <Typography variant="body2" fontWeight="bold" noWrap>
+                      <CardContent sx={{ py: 2, px: 2.5 }}>
+                        <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 0.5 }}>
                           {item.vr_tour?.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          タップして360°ビューを体験
                         </Typography>
                       </CardContent>
                     </CardActionArea>
@@ -1014,17 +1059,19 @@ export default function CustomerPropertyView() {
 
               {/* バーチャルステージング */}
               {property_publication_virtual_stagings?.map((item) => (
-                <Grid item xs={6} sm={6} md={4} lg={4} key={`staging-${item.virtual_staging?.id}`}>
+                <Grid item xs={12} sm={6} md={6} lg={4} key={`staging-${item.virtual_staging?.id}`}>
                   <Card
-                    variant="outlined"
+                    elevation={2}
                     sx={{
                       height: '100%',
                       display: 'flex',
                       flexDirection: 'column',
                       transition: 'transform 0.2s, box-shadow 0.2s',
+                      borderRadius: 3,
+                      overflow: 'hidden',
                       '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: 2,
+                        transform: 'translateY(-4px)',
+                        boxShadow: 6,
                       },
                     }}
                   >
@@ -1036,7 +1083,7 @@ export default function CustomerPropertyView() {
                       <Box
                         sx={{
                           position: 'relative',
-                          paddingTop: '56.25%',
+                          paddingTop: '66.67%',
                           bgcolor: 'grey.200',
                           overflow: 'hidden',
                         }}
@@ -1066,27 +1113,65 @@ export default function CustomerPropertyView() {
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
+                              background: 'linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%)',
                             }}
                           >
-                            <ImageIcon sx={{ fontSize: 40, color: 'grey.400' }} />
+                            <ImageIcon sx={{ fontSize: 64, color: 'secondary.main', opacity: 0.5 }} />
                           </Box>
                         )}
-                        <Chip
-                          label="ステージング"
-                          size="small"
-                          color="secondary"
+                        {/* オーバーレイグラデーション */}
+                        <Box
                           sx={{
                             position: 'absolute',
-                            top: 8,
-                            left: 8,
-                            fontSize: '0.7rem',
-                            height: 22,
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: '50%',
+                            background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)',
                           }}
                         />
+                        <Chip
+                          icon={<ImageIcon sx={{ fontSize: 16 }} />}
+                          label="AIステージング"
+                          size="small"
+                          sx={{
+                            position: 'absolute',
+                            top: 12,
+                            left: 12,
+                            bgcolor: 'secondary.main',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem',
+                            height: 28,
+                            '& .MuiChip-icon': { color: 'white' },
+                          }}
+                        />
+                        {/* 比較アイコン */}
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: 56,
+                            height: 56,
+                            borderRadius: '50%',
+                            bgcolor: 'rgba(255,255,255,0.9)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: 3,
+                          }}
+                        >
+                          <OpenInNewIcon sx={{ fontSize: 28, color: 'secondary.main' }} />
+                        </Box>
                       </Box>
-                      <CardContent sx={{ py: 1, px: 1.5 }}>
-                        <Typography variant="body2" fontWeight="bold" noWrap>
+                      <CardContent sx={{ py: 2, px: 2.5 }}>
+                        <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 0.5 }}>
                           {item.virtual_staging?.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          タップしてBefore/Afterを比較
                         </Typography>
                       </CardContent>
                     </CardActionArea>
