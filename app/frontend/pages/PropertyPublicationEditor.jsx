@@ -56,6 +56,7 @@ import InquiryList from '../components/PropertyPublication/InquiryList';
 import ViewAnalyticsDashboard from '../components/PropertyPublication/ViewAnalyticsDashboard';
 import CustomerAccessPanel from '../components/CustomerAccess/CustomerAccessPanel';
 import PresentationAccessPanel from '../components/SalesPresentation/PresentationAccessPanel';
+import BeforeAfterViewer from '../components/VirtualStaging/BeforeAfterViewer';
 import { getRoomTypeLabel } from '../utils/formatters';
 import { useCopyToClipboard } from '../hooks/useClipboard';
 
@@ -70,6 +71,10 @@ function PropertyPublicationEditor() {
     const tabParam = searchParams.get('tab');
     if (!isEditMode) return 0;
     switch (tabParam) {
+      case 'photos': return 1;
+      case 'content': return 2;
+      case 'fields': return 3;
+      case 'preview': return 4;
       case 'access': return 5;
       case 'inquiries': return 6;
       case 'analytics': return 7;
@@ -887,6 +892,7 @@ function PropertyPublicationEditor() {
         {activeTab === 2 && (
           <ContentSelector
             roomId={roomId}
+            publicationId={id}
             selectedVrTourIds={selectedVrTourIds}
             selectedVirtualStagingIds={selectedVirtualStagingIds}
             onVrTourSelectionChange={setSelectedVrTourIds}
@@ -1112,25 +1118,38 @@ function PropertyPublicationEditor() {
                       {previewVirtualStagings.length > 0 ? (
                         previewVirtualStagings.map((item, index) => (
                           <Box key={item.virtual_staging.id} sx={{ mb: 3 }}>
-                            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                              {item.virtual_staging.title}
-                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                              <Typography variant="subtitle1" fontWeight={600}>
+                                {item.virtual_staging.title}
+                              </Typography>
+                              {item.virtual_staging.status !== 'published' && (
+                                <Chip
+                                  label="未公開"
+                                  size="small"
+                                  color="warning"
+                                  sx={{ height: 20, fontSize: '0.7rem' }}
+                                />
+                              )}
+                            </Box>
+                            {item.virtual_staging.status !== 'published' && (
+                              <Alert severity="warning" sx={{ mb: 1, py: 0 }}>
+                                このバーチャルステージングは未公開のため、公開ページには表示されません
+                              </Alert>
+                            )}
                             {item.virtual_staging.description && (
                               <Typography variant="body2" color="text.secondary" gutterBottom>
                                 {item.virtual_staging.description}
                               </Typography>
                             )}
-                            <Box
-                              component="iframe"
-                              src={`/room/${roomId}/virtual-staging/${item.virtual_staging.id}/viewer`}
-                              sx={{
-                                width: '100%',
-                                height: 500,
-                                border: '1px solid #e0e0e0',
-                                borderRadius: 1,
-                                mt: 1
-                              }}
-                            />
+                            <Box sx={{ mt: 1 }}>
+                              <BeforeAfterViewer
+                                beforeImageUrl={item.virtual_staging.before_photo_url}
+                                afterImageUrl={item.virtual_staging.after_photo_url}
+                                beforeLabel="Before"
+                                afterLabel="After"
+                                showTitle={false}
+                              />
+                            </Box>
                           </Box>
                         ))
                       ) : (

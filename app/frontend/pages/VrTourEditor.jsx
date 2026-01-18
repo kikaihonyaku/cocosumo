@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -46,8 +46,18 @@ import muiTheme from '../theme/muiTheme';
 export default function VrTourEditor() {
   const { roomId, id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
   const isNew = !id; // idが存在しない場合は新規作成
   const isMdUp = useMediaQuery(muiTheme.breakpoints.up('md'));
+
+  const handleBack = () => {
+    if (returnUrl) {
+      navigate(returnUrl);
+    } else {
+      navigate(`/room/${roomId}`);
+    }
+  };
 
   const [vrTour, setVrTour] = useState({
     title: '',
@@ -539,7 +549,7 @@ export default function VrTourEditor() {
           <Toolbar variant="dense" sx={{ minHeight: 52 }}>
             <IconButton
               edge="start"
-              onClick={() => navigate(`/room/${roomId}`)}
+              onClick={handleBack}
               sx={{ mr: 1, color: 'white' }}
             >
               <ArrowBackIcon />

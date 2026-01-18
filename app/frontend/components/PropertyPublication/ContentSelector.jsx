@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Grid,
@@ -24,22 +25,43 @@ import {
   Chair as StagingIcon,
   CheckCircle as CheckCircleIcon,
   Visibility as VisibilityIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Add as AddIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
 export default function ContentSelector({
   roomId,
+  publicationId,
   selectedVrTourIds,
   selectedVirtualStagingIds,
   onVrTourSelectionChange,
   onVirtualStagingSelectionChange
 }) {
+  const navigate = useNavigate();
   const [vrTours, setVrTours] = useState([]);
   const [virtualStagings, setVirtualStagings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [previewDialog, setPreviewDialog] = useState({ open: false, type: null, item: null });
+
+  // 公開ページ編集のコンテンツタブに戻るためのURL
+  const getReturnUrl = () => {
+    if (publicationId) {
+      return `/room/${roomId}/property-publication/${publicationId}/edit?tab=content`;
+    }
+    return null;
+  };
+
+  const navigateToVirtualStaging = (path) => {
+    const returnUrl = getReturnUrl();
+    if (returnUrl) {
+      navigate(`${path}?returnUrl=${encodeURIComponent(returnUrl)}`);
+    } else {
+      navigate(path);
+    }
+  };
 
   useEffect(() => {
     loadContent();
@@ -104,10 +126,20 @@ export default function ContentSelector({
         {/* VRツアー */}
         <Grid size={{ xs: 12, md: 6 }}>
           <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <VrIcon color="primary" />
-              VRツアー
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <VrIcon color="primary" />
+                VRツアー
+              </Typography>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<AddIcon />}
+                onClick={() => navigateToVirtualStaging(`/room/${roomId}/vr-tour/new`)}
+              >
+                新規作成
+              </Button>
+            </Box>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               公開ページに埋め込むVRツアーを選択してください
             </Typography>
@@ -115,6 +147,14 @@ export default function ContentSelector({
             {vrTours.length === 0 ? (
               <Alert severity="info" sx={{ mt: 2 }}>
                 この部屋にはまだVRツアーが作成されていません。
+                <Button
+                  size="small"
+                  startIcon={<AddIcon />}
+                  onClick={() => navigateToVirtualStaging(`/room/${roomId}/vr-tour/new`)}
+                  sx={{ ml: 1 }}
+                >
+                  作成する
+                </Button>
               </Alert>
             ) : (
               <Box sx={{ mt: 2 }}>
@@ -177,27 +217,52 @@ export default function ContentSelector({
                         />
                       </Box>
                     </CardContent>
-                    <IconButton
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePreview('vr_tour', tour);
-                      }}
+                    <Box
                       sx={{
                         position: 'absolute',
                         top: 8,
                         right: 8,
-                        bgcolor: 'background.paper',
-                        boxShadow: 1,
-                        '&:hover': {
-                          bgcolor: 'primary.main',
-                          color: 'white'
-                        }
+                        display: 'flex',
+                        gap: 0.5
                       }}
-                      size="small"
-                      title="プレビュー"
                     >
-                      <VisibilityIcon fontSize="small" />
-                    </IconButton>
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigateToVirtualStaging(`/room/${roomId}/vr-tour/${tour.id}/edit`);
+                        }}
+                        sx={{
+                          bgcolor: 'background.paper',
+                          boxShadow: 1,
+                          '&:hover': {
+                            bgcolor: 'secondary.main',
+                            color: 'white'
+                          }
+                        }}
+                        size="small"
+                        title="編集"
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePreview('vr_tour', tour);
+                        }}
+                        sx={{
+                          bgcolor: 'background.paper',
+                          boxShadow: 1,
+                          '&:hover': {
+                            bgcolor: 'primary.main',
+                            color: 'white'
+                          }
+                        }}
+                        size="small"
+                        title="プレビュー"
+                      >
+                        <VisibilityIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
                   </Card>
                 ))}
               </Box>
@@ -214,10 +279,20 @@ export default function ContentSelector({
         {/* バーチャルステージング */}
         <Grid size={{ xs: 12, md: 6 }}>
           <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <StagingIcon color="primary" />
-              バーチャルステージング
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <StagingIcon color="primary" />
+                バーチャルステージング
+              </Typography>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<AddIcon />}
+                onClick={() => navigateToVirtualStaging(`/room/${roomId}/virtual-staging/new`)}
+              >
+                新規作成
+              </Button>
+            </Box>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               公開ページに埋め込むバーチャルステージングを選択してください
             </Typography>
@@ -225,6 +300,14 @@ export default function ContentSelector({
             {virtualStagings.length === 0 ? (
               <Alert severity="info" sx={{ mt: 2 }}>
                 この部屋にはまだバーチャルステージングが作成されていません。
+                <Button
+                  size="small"
+                  startIcon={<AddIcon />}
+                  onClick={() => navigateToVirtualStaging(`/room/${roomId}/virtual-staging/new`)}
+                  sx={{ ml: 1 }}
+                >
+                  作成する
+                </Button>
               </Alert>
             ) : (
               <Box sx={{ mt: 2 }}>
@@ -280,27 +363,52 @@ export default function ContentSelector({
                         </Typography>
                       )}
                     </CardContent>
-                    <IconButton
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePreview('virtual_staging', staging);
-                      }}
+                    <Box
                       sx={{
                         position: 'absolute',
                         top: 8,
                         right: 8,
-                        bgcolor: 'background.paper',
-                        boxShadow: 1,
-                        '&:hover': {
-                          bgcolor: 'primary.main',
-                          color: 'white'
-                        }
+                        display: 'flex',
+                        gap: 0.5
                       }}
-                      size="small"
-                      title="プレビュー"
                     >
-                      <VisibilityIcon fontSize="small" />
-                    </IconButton>
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigateToVirtualStaging(`/room/${roomId}/virtual-staging/${staging.id}/edit`);
+                        }}
+                        sx={{
+                          bgcolor: 'background.paper',
+                          boxShadow: 1,
+                          '&:hover': {
+                            bgcolor: 'secondary.main',
+                            color: 'white'
+                          }
+                        }}
+                        size="small"
+                        title="編集"
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePreview('virtual_staging', staging);
+                        }}
+                        sx={{
+                          bgcolor: 'background.paper',
+                          boxShadow: 1,
+                          '&:hover': {
+                            bgcolor: 'primary.main',
+                            color: 'white'
+                          }
+                        }}
+                        size="small"
+                        title="プレビュー"
+                      >
+                        <VisibilityIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
                   </Card>
                 ))}
               </Box>

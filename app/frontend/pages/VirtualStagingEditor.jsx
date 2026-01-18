@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -44,7 +44,17 @@ import muiTheme from '../theme/muiTheme';
 const VirtualStagingEditor = () => {
   const { roomId, id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
   const isMdUp = useMediaQuery(muiTheme.breakpoints.up('md'));
+
+  const handleBack = () => {
+    if (returnUrl) {
+      navigate(returnUrl);
+    } else {
+      navigate(`/room/${roomId}`);
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [roomPhotos, setRoomPhotos] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -255,7 +265,7 @@ const VirtualStagingEditor = () => {
           <Toolbar variant="dense" sx={{ minHeight: 52 }}>
             <IconButton
               edge="start"
-              onClick={() => navigate(`/room/${roomId}`)}
+              onClick={handleBack}
               sx={{ mr: 1, color: 'white' }}
             >
               <ArrowBackIcon />
