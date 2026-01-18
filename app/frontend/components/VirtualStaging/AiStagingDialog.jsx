@@ -26,6 +26,7 @@ import {
   CleaningServices as UnfurnishedIcon,
   CheckCircle as CheckIcon,
   Edit as CustomIcon,
+  BrandingWatermark as WatermarkIcon,
 } from '@mui/icons-material';
 
 // スタイルプリセット定義
@@ -81,6 +82,7 @@ const AiStagingDialog = ({
   const [generatedImage, setGeneratedImage] = useState(null);
   const [error, setError] = useState(null);
   const [progress, setProgress] = useState(0);
+  const [watermarkProcessing, setWatermarkProcessing] = useState(false);
   const abortControllerRef = useRef(null);
 
   const handleStyleChange = (event, newStyle) => {
@@ -195,6 +197,52 @@ const AiStagingDialog = ({
       abortControllerRef.current.abort();
     }
     setIsGenerating(false);
+  };
+
+  // AI透かしを追加
+  const handleAddWatermark = async () => {
+    if (!generatedImage) return;
+
+    setWatermarkProcessing(true);
+    setError(null);
+
+    try {
+      // Base64をBlobに変換
+      const base64Data = generatedImage.replace(/^data:image\/\w+;base64,/, '');
+      const binaryData = atob(base64Data);
+      const bytes = new Uint8Array(binaryData.length);
+      for (let i = 0; i < binaryData.length; i++) {
+        bytes[i] = binaryData.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: 'image/jpeg' });
+
+      const formData = new FormData();
+      formData.append('image', blob, 'generated.jpg');
+
+      const response = await fetch('/api/v1/imagen/add_watermark', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '透かしの追加に失敗しました');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.image) {
+        const watermarkedImageUrl = `data:image/jpeg;base64,${data.image}`;
+        setGeneratedImage(watermarkedImageUrl);
+      } else {
+        throw new Error('透かしの追加に失敗しました');
+      }
+    } catch (err) {
+      setError(err.message || '透かしの追加に失敗しました');
+    } finally {
+      setWatermarkProcessing(false);
+    }
   };
 
   const handleSaveAndUse = async () => {
@@ -424,9 +472,9 @@ const AiStagingDialog = ({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        {isGenerating ? (
-          <Button onClick={handleCancel} color="error">
-            キャンセル
+        {isGenerating || watermarkProcessing ? (
+          <Button onClick={handleCancel} color="error" disabled={watermarkProcessing}>
+            {watermarkProcessing ? '透かし追加中...' : 'キャンセル'}
           </Button>
         ) : (
           <>
@@ -441,6 +489,13 @@ const AiStagingDialog = ({
                   }}
                 >
                   再生成
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={handleAddWatermark}
+                  startIcon={<WatermarkIcon />}
+                >
+                  AI透かしを追加
                 </Button>
                 <Button
                   variant="contained"

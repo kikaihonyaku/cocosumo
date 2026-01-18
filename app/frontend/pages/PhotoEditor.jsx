@@ -52,6 +52,7 @@ export default function PhotoEditor() {
   const [referenceImages, setReferenceImages] = useState([]);
   const [editMode, setEditMode] = useState('full');
   const [clickPoints, setClickPoints] = useState([]);
+  const [watermarkProcessing, setWatermarkProcessing] = useState(false);
 
   // 編集履歴管理
   const [editHistory, setEditHistory] = useState([]);
@@ -740,6 +741,55 @@ export default function PhotoEditor() {
     }
   };
 
+  // AI透かしを追加
+  const handleAddWatermark = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    setWatermarkProcessing(true);
+
+    try {
+      const blob = await new Promise((resolve) => {
+        canvas.toBlob(resolve, 'image/jpeg', 0.95);
+      });
+
+      const formData = new FormData();
+      formData.append('image', blob, 'current_image.jpg');
+
+      const response = await fetch('/api/v1/imagen/add_watermark', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '透かしの追加に失敗しました');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.image) {
+        const img = new Image();
+        img.onload = () => {
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          originalImageRef.current = img;
+          saveToHistory();
+        };
+        img.src = `data:image/png;base64,${data.image}`;
+      } else {
+        throw new Error('透かしの追加に失敗しました');
+      }
+    } catch (err) {
+      console.error('透かし追加エラー:', err);
+      alert(err.message || '透かしの追加に失敗しました');
+    } finally {
+      setWatermarkProcessing(false);
+    }
+  };
+
   const handleSave = () => setSaveDialogOpen(true);
 
   const handleSaveConfirm = async () => {
@@ -889,11 +939,13 @@ export default function PhotoEditor() {
                 aiProcessing={aiProcessing}
                 referenceImages={referenceImages}
                 clickPoints={clickPoints}
+                watermarkProcessing={watermarkProcessing}
                 onEditModeChange={handleEditModeChange}
                 onAiPromptChange={setAiPrompt}
                 onAddReferenceImage={handleAddReferenceImage}
                 onRemoveReferenceImage={handleRemoveReferenceImage}
                 onClearClickPoints={handleClearClickPoints}
+                onAddWatermark={handleAddWatermark}
                 onAiProcess={handleAiProcess}
               />
 

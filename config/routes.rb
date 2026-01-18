@@ -34,6 +34,7 @@ Rails.application.routes.draw do
 
       # Imagen AI (image editing)
       post 'imagen/edit_image', to: 'imagen#edit_image'
+      post 'imagen/add_watermark', to: 'imagen#add_watermark'
 
       # 店舗管理
       resources :stores, only: [:index, :create, :show, :update] do

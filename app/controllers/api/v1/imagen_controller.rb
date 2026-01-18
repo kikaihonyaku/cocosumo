@@ -13,6 +13,34 @@ class Api::V1::ImagenController < ApplicationController
   MAX_RETRIES = 3
   RETRY_DELAY = 2 # 秒
 
+  # POST /api/v1/imagen/add_watermark
+  # 画像にAIイメージウォーターマークを追加する
+  def add_watermark
+    unless params[:image].present?
+      return render json: { error: '画像が必要です' }, status: :bad_request
+    end
+
+    begin
+      # 画像をBase64エンコード
+      image_base64 = encode_image(params[:image])
+
+      # ウォーターマークを追加
+      watermarked_image = AiImageWatermarkService.new(image_base64).add_watermark
+
+      render json: {
+        success: true,
+        image: watermarked_image,
+        message: 'ウォーターマークを追加しました'
+      }
+    rescue StandardError => e
+      Rails.logger.error("Watermark error: #{e.message}")
+      render json: {
+        error: 'ウォーターマークの追加に失敗しました',
+        details: e.message
+      }, status: :internal_server_error
+    end
+  end
+
   # POST /api/v1/imagen/edit_image
   # Gemini 2.5 Flash Image Preview (Nano Banana)を使用して画像編集を行う
   def edit_image
@@ -48,9 +76,13 @@ class Api::V1::ImagenController < ApplicationController
       generated_image = extract_generated_image(response_data)
 
       if generated_image
-        # ウォーターマークを追加
-        watermarked_image = AiImageWatermarkService.new(generated_image).add_watermark
-        render_success(watermarked_image)
+        # ウォーターマークを追加（add_watermarkパラメータがtrueの場合のみ）
+        final_image = if params[:add_watermark] == 'true'
+          AiImageWatermarkService.new(generated_image).add_watermark
+        else
+          generated_image
+        end
+        render_success(final_image)
       else
         render_generation_error(response_data)
       end

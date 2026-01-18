@@ -17,6 +17,7 @@ import {
   Close as CloseIcon,
   CropFree as CropFreeIcon,
   Image as ImageIcon,
+  BrandingWatermark as WatermarkIcon,
 } from '@mui/icons-material';
 
 export default function AIEditingPanel({
@@ -26,11 +27,13 @@ export default function AIEditingPanel({
   aiProcessing,
   referenceImages,
   clickPoints,
+  watermarkProcessing,
   onEditModeChange,
   onAiPromptChange,
   onAddReferenceImage,
   onRemoveReferenceImage,
   onClearClickPoints,
+  onAddWatermark,
   onAiProcess,
 }) {
   return (
@@ -192,16 +195,28 @@ export default function AIEditingPanel({
         )}
       </Box>
 
-      <Button
-        fullWidth
-        variant="contained"
-        color="secondary"
-        startIcon={<AutoFixHighIcon />}
-        onClick={onAiProcess}
-        disabled={aiProcessing || !aiPrompt.trim()}
-      >
-        {aiProcessing ? 'AI編集中...' : 'AI編集を実行'}
-      </Button>
+      <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
+        <Button
+          fullWidth
+          variant="contained"
+          color="secondary"
+          startIcon={<AutoFixHighIcon />}
+          onClick={onAiProcess}
+          disabled={aiProcessing || watermarkProcessing || !aiPrompt.trim()}
+        >
+          {aiProcessing ? 'AI編集中...' : 'AI編集を実行'}
+        </Button>
+
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={<WatermarkIcon />}
+          onClick={onAddWatermark}
+          disabled={aiProcessing || watermarkProcessing}
+        >
+          {watermarkProcessing ? '透かし追加中...' : '「AIイメージ」透かしを追加'}
+        </Button>
+      </Box>
 
       <Alert severity="info" sx={{ mt: 2, fontSize: '0.75rem' }}>
         <strong>効果的なプロンプトのコツ：</strong>
