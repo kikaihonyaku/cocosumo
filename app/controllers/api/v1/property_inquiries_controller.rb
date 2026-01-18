@@ -209,6 +209,16 @@ class Api::V1::PropertyInquiriesController < ApplicationController
       }
     end
 
+    # コンバージョンファネル用データ（実際の閲覧数を集計）
+    publications_with_views = PropertyPublication.kept
+                                                 .where(id: user_publication_ids)
+                                                 .where(status: :published)
+    funnel_data = {
+      page_views: publications_with_views.sum(:view_count) || 0,
+      max_scroll_50_percent: publications_with_views.where('max_scroll_depth >= 50').count,
+      inquiries: total_count
+    }
+
     render json: {
       period: {
         days: days,
@@ -226,7 +236,8 @@ class Api::V1::PropertyInquiriesController < ApplicationController
       top_publications: top_publications,
       campaign_breakdown: campaign_breakdown,
       template_breakdown: template_breakdown,
-      recent_inquiries: recent_inquiries
+      recent_inquiries: recent_inquiries,
+      funnel_data: funnel_data
     }
   end
 

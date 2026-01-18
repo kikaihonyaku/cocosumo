@@ -99,34 +99,35 @@ function SummaryCard({ title, value, subtitle, trend, icon }) {
 
 // Conversion Funnel Component
 function ConversionFunnel({ data }) {
-  // Simulated funnel data based on actual inquiry data
-  // In production, this would come from GA4 or internal analytics
-  const totalInquiries = data?.summary?.total || 0;
+  // 実際のファネルデータを使用
+  const funnelData = data?.funnel_data || {};
+  const pageViews = funnelData.page_views || 0;
+  const scroll50Percent = funnelData.max_scroll_50_percent || 0;
+  const totalInquiries = funnelData.inquiries || data?.summary?.total || 0;
 
-  // Estimate funnel steps based on typical conversion rates
-  // These multipliers represent typical drop-off rates
   const funnelSteps = [
-    { name: 'ページ閲覧', value: totalInquiries * 20, color: '#e3f2fd', textColor: '#1976d2' },
-    { name: 'スクロール50%', value: totalInquiries * 12, color: '#bbdefb', textColor: '#1565c0' },
-    { name: 'ギャラリー閲覧', value: totalInquiries * 6, color: '#90caf9', textColor: '#0d47a1' },
-    { name: '問い合わせ開始', value: totalInquiries * 2, color: '#64b5f6', textColor: '#0d47a1' },
+    { name: 'ページ閲覧', value: pageViews, color: '#e3f2fd', textColor: '#1976d2' },
+    { name: 'スクロール50%以上', value: scroll50Percent, color: '#90caf9', textColor: '#0d47a1' },
     { name: '問い合わせ送信', value: totalInquiries, color: '#1976d2', textColor: 'white' }
   ];
 
   const maxValue = Math.max(...funnelSteps.map(s => s.value), 1);
 
-  if (totalInquiries === 0) {
+  if (pageViews === 0 && totalInquiries === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
         <Typography variant="body2" color="text.secondary">
-          問い合わせデータがないため、ファネルを表示できません
+          閲覧データがないため、ファネルを表示できません
         </Typography>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-          問い合わせが発生すると、コンバージョンファネルが表示されます
+          公開ページが閲覧されると、コンバージョンファネルが表示されます
         </Typography>
       </Box>
     );
   }
+
+  // コンバージョン率の計算
+  const conversionRate = pageViews > 0 ? (totalInquiries / pageViews * 100).toFixed(2) : 0;
 
   return (
     <Box>
@@ -179,7 +180,10 @@ function ConversionFunnel({ data }) {
         <Typography variant="body2" color="text.secondary">
           全体コンバージョン率:
           <Typography component="span" variant="body2" fontWeight={700} color="success.main" sx={{ ml: 1 }}>
-            {((totalInquiries / (totalInquiries * 20)) * 100).toFixed(1)}%
+            {conversionRate}%
+          </Typography>
+          <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+            （{pageViews}閲覧 → {totalInquiries}問い合わせ）
           </Typography>
         </Typography>
       </Box>
@@ -700,7 +704,7 @@ export default function InquiryAnalyticsDashboard() {
               コンバージョンファネル
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-              ページ閲覧から問い合わせ送信までの流れ（推定値）
+              ページ閲覧から問い合わせ送信までの流れ
             </Typography>
             <ConversionFunnel data={data} />
           </Paper>
