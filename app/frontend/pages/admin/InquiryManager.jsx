@@ -50,9 +50,11 @@ import {
   NavigateBefore as NavigateBeforeIcon,
   NavigateNext as NavigateNextIcon,
   FilterList as FilterListIcon,
-  Clear as ClearIcon
+  Clear as ClearIcon,
+  PersonAdd as PersonAddIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import CustomerAccessDialog from '../../components/CustomerAccess/CustomerAccessDialog';
 
 // Status label mapping (new status values)
 const getStatusInfo = (status) => {
@@ -101,6 +103,10 @@ export default function InquiryManager() {
   // Assigned user menu state
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [userMenuInquiryId, setUserMenuInquiryId] = useState(null);
+
+  // Customer access dialog state
+  const [customerAccessDialogOpen, setCustomerAccessDialogOpen] = useState(false);
+  const [customerAccessInquiry, setCustomerAccessInquiry] = useState(null);
 
   const loadInquiries = useCallback(async () => {
     try {
@@ -235,6 +241,16 @@ export default function InquiryManager() {
     if (inquiry.property_publication?.publication_id) {
       window.open(`/property/${inquiry.property_publication.publication_id}`, '_blank');
     }
+  };
+
+  const handleOpenCustomerAccessDialog = (inquiry) => {
+    setCustomerAccessInquiry(inquiry);
+    setCustomerAccessDialogOpen(true);
+  };
+
+  const handleCloseCustomerAccessDialog = () => {
+    setCustomerAccessDialogOpen(false);
+    setCustomerAccessInquiry(null);
   };
 
   const handleExportCsv = () => {
@@ -631,6 +647,17 @@ export default function InquiryManager() {
         ))}
       </Menu>
 
+      {/* Customer Access Dialog */}
+      <CustomerAccessDialog
+        open={customerAccessDialogOpen}
+        onClose={handleCloseCustomerAccessDialog}
+        publicationId={customerAccessInquiry?.property_publication?.id}
+        inquiry={customerAccessInquiry}
+        onCreated={() => {
+          // アクセス権発行後の処理（必要に応じてリロードなど）
+        }}
+      />
+
       {/* Detail Dialog */}
       <Dialog
         open={detailDialogOpen}
@@ -826,7 +853,7 @@ export default function InquiryManager() {
               )}
             </DialogContent>
             <DialogActions sx={{ justifyContent: 'space-between', px: 3, py: 2 }}>
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 <Button
                   variant="contained"
                   color="primary"
@@ -838,6 +865,15 @@ export default function InquiryManager() {
                   disabled={!selectedInquiry.customer?.id}
                 >
                   顧客情報を見る
+                </Button>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<PersonAddIcon />}
+                  onClick={() => handleOpenCustomerAccessDialog(selectedInquiry)}
+                  disabled={!selectedInquiry.property_publication?.id}
+                >
+                  顧客ページ発行
                 </Button>
                 <Button
                   variant="outlined"

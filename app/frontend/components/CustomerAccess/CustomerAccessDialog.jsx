@@ -115,14 +115,14 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, inq
         onCreated?.();
 
         // 成功メッセージとURLを表示
-        alert(`顧客アクセス権を発行しました。\n\nURL: ${response.data.customer_access.public_url}`);
+        alert(`顧客ページを発行しました。\n\nURL: ${response.data.customer_access.public_url}`);
       }
     } catch (err) {
       console.error('Failed to create customer access:', err);
       if (err.response?.data?.errors) {
         setError(err.response.data.errors.join('\n'));
       } else {
-        setError('顧客アクセス権の発行に失敗しました');
+        setError('顧客ページの発行に失敗しました');
       }
     } finally {
       setLoading(false);
@@ -151,7 +151,7 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, inq
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <PersonAddIcon color="primary" />
-        顧客アクセス権の発行
+        顧客ページの発行
         {inquiry && (
           <Chip
             size="small"
