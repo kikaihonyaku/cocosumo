@@ -32,7 +32,7 @@ import {
   Edit as EditIcon,
   AutoAwesome as AiIcon,
 } from '@mui/icons-material';
-import BeforeAfterSlider from '../components/VirtualStaging/BeforeAfterSlider';
+import BeforeAfterViewer from '../components/VirtualStaging/BeforeAfterViewer';
 import PhotoSelector from '../components/VirtualStaging/PhotoSelector';
 import AiStagingDialog from '../components/VirtualStaging/AiStagingDialog';
 import SharePanel from '../components/VirtualStaging/SharePanel';
@@ -490,13 +490,12 @@ const VirtualStagingEditor = () => {
           <Typography variant="h6" gutterBottom>
             プレビュー
           </Typography>
-          <BeforeAfterSlider
+          <BeforeAfterViewer
             beforeImageUrl={getBeforePhotoUrl()}
             afterImageUrl={getAfterPhotoUrl()}
             beforeLabel="Before"
             afterLabel="After"
-            height="500px"
-            annotations={annotations}
+            showTitle={false}
           />
         </Paper>
       )}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Paper, Alert, Chip, Stack } from '@mui/material';
 import { LocationOn as LocationIcon } from '@mui/icons-material';
-import BeforeAfterSlider from '../components/VirtualStaging/BeforeAfterSlider';
+import BeforeAfterViewer from '../components/VirtualStaging/BeforeAfterViewer';
 import SharePanel from '../components/VirtualStaging/SharePanel';
 
 const PublicVirtualStaging = () => {
@@ -93,25 +93,29 @@ const PublicVirtualStaging = () => {
         overflow: 'hidden',
       }}
     >
-      {/* スライダー表示（フルスクリーン） */}
+      {/* ビューワー表示 */}
       <Box
         sx={{
           width: '100%',
-          height: '100vh',
+          minHeight: '100vh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           p: 2,
+          pt: 10,
+          pb: 16,
         }}
       >
-        <BeforeAfterSlider
-          beforeImageUrl={virtualStaging.before_photo_url}
-          afterImageUrl={getActiveAfterImageUrl()}
-          beforeLabel="Before"
-          afterLabel="After"
-          height="calc(100vh - 32px)"
-          annotations={virtualStaging.annotations || []}
-        />
+        <Box sx={{ width: '100%', maxWidth: 1400 }}>
+          <BeforeAfterViewer
+            beforeImageUrl={virtualStaging.before_photo_url}
+            afterImageUrl={getActiveAfterImageUrl()}
+            beforeLabel="Before"
+            afterLabel="After"
+            showTitle={false}
+            darkMode
+          />
+        </Box>
       </Box>
 
       {/* バリエーション切り替え（下部中央） */}

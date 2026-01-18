@@ -10,7 +10,7 @@ import {
   Button,
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Edit as EditIcon } from '@mui/icons-material';
-import BeforeAfterSlider from '../components/VirtualStaging/BeforeAfterSlider';
+import BeforeAfterViewer from '../components/VirtualStaging/BeforeAfterViewer';
 
 const VirtualStagingViewer = () => {
   const { roomId, id } = useParams();
@@ -105,20 +105,20 @@ const VirtualStagingViewer = () => {
           </Button>
         </Box>
 
-        {/* スライダー表示 */}
+        {/* ビューワー表示 */}
         <Paper
           sx={{
-            p: 2,
+            p: 3,
             bgcolor: 'background.paper',
             borderRadius: 2,
           }}
         >
-          <BeforeAfterSlider
+          <BeforeAfterViewer
             beforeImageUrl={virtualStaging.before_photo_url}
             afterImageUrl={virtualStaging.after_photo_url}
             beforeLabel="Before"
             afterLabel="After"
-            height="calc(100vh - 200px)"
+            showTitle={false}
           />
         </Paper>
 

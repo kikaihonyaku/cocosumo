@@ -3,28 +3,30 @@ import {
   Box,
   Typography,
   Paper,
-  IconButton,
   ToggleButtonGroup,
   ToggleButton,
-  Chip,
-  Fade,
-  CircularProgress,
-  Alert
+  Chip
 } from '@mui/material';
 import CompareIcon from '@mui/icons-material/Compare';
 import ImageIcon from '@mui/icons-material/Image';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
-import RefreshIcon from '@mui/icons-material/Refresh';
 
-export default function ImageSimulationResult({
-  originalImageUrl,
-  resultImageUrl,
-  prompt,
-  loading,
-  error,
-  isMobile
+/**
+ * Before/After画像ビューワーコンポーネント
+ * バーチャルステージングなどで使用するBefore/After/比較切り替え機能付きビューワー
+ */
+export default function BeforeAfterViewer({
+  beforeImageUrl,
+  afterImageUrl,
+  beforeLabel = 'Before',
+  afterLabel = 'After',
+  title,
+  isMobile = false,
+  showTitle = true,
+  maxHeight,
+  darkMode = false
 }) {
-  const [viewMode, setViewMode] = useState('compare'); // 'original', 'result', 'compare'
+  const [viewMode, setViewMode] = useState('compare'); // 'before', 'after', 'compare'
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -52,65 +54,51 @@ export default function ImageSimulationResult({
     setSliderPosition(percentage);
   };
 
-  if (loading) {
-    return (
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 4,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: 300,
-          bgcolor: 'grey.50'
-        }}
-      >
-        <CircularProgress size={48} sx={{ mb: 2 }} />
-        <Typography variant="body1" color="text.secondary" gutterBottom>
-          AIがシミュレーション中...
-        </Typography>
-        <Typography variant="caption" color="text.disabled">
-          処理には数秒〜数十秒かかる場合があります
-        </Typography>
-      </Paper>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert severity="error" sx={{ mb: 2 }}>
-        <Typography variant="body2" fontWeight="bold" gutterBottom>
-          シミュレーションに失敗しました
-        </Typography>
-        <Typography variant="caption">{error}</Typography>
-      </Alert>
-    );
-  }
-
-  if (!resultImageUrl) {
+  if (!beforeImageUrl || !afterImageUrl) {
     return null;
   }
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="subtitle2" fontWeight="bold">
-          シミュレーション結果
-        </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+        {showTitle && title && (
+          <Typography variant="subtitle2" fontWeight="bold" sx={darkMode ? { color: 'white' } : {}}>
+            {title}
+          </Typography>
+        )}
         <ToggleButtonGroup
           value={viewMode}
           exclusive
           onChange={handleViewModeChange}
           size="small"
+          sx={{
+            ml: 'auto',
+            ...(darkMode && {
+              bgcolor: 'rgba(255,255,255,0.1)',
+              '& .MuiToggleButton-root': {
+                color: 'rgba(255,255,255,0.7)',
+                borderColor: 'rgba(255,255,255,0.3)',
+                '&.Mui-selected': {
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  color: 'white',
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.3)',
+                  }
+                },
+                '&:hover': {
+                  bgcolor: 'rgba(255,255,255,0.1)',
+                }
+              }
+            })
+          }}
         >
-          <ToggleButton value="original" aria-label="元画像">
+          <ToggleButton value="before" aria-label={beforeLabel}>
             <ImageIcon sx={{ fontSize: 18, mr: 0.5 }} />
-            <Typography variant="caption">元画像</Typography>
+            <Typography variant="caption">{beforeLabel}</Typography>
           </ToggleButton>
-          <ToggleButton value="result" aria-label="結果">
+          <ToggleButton value="after" aria-label={afterLabel}>
             <AutoFixHighIcon sx={{ fontSize: 18, mr: 0.5 }} />
-            <Typography variant="caption">結果</Typography>
+            <Typography variant="caption">{afterLabel}</Typography>
           </ToggleButton>
           <ToggleButton value="compare" aria-label="比較">
             <CompareIcon sx={{ fontSize: 18, mr: 0.5 }} />
@@ -125,32 +113,38 @@ export default function ImageSimulationResult({
           position: 'relative',
           overflow: 'hidden',
           borderRadius: 2,
-          bgcolor: 'grey.100'
+          bgcolor: darkMode ? 'rgba(0,0,0,0.3)' : 'grey.100',
+          borderColor: darkMode ? 'rgba(255,255,255,0.2)' : undefined,
+          maxHeight: maxHeight
         }}
       >
-        {/* 元画像のみ */}
-        {viewMode === 'original' && (
+        {/* Before画像のみ */}
+        {viewMode === 'before' && (
           <Box
             component="img"
-            src={originalImageUrl}
-            alt="元画像"
+            src={beforeImageUrl}
+            alt={beforeLabel}
             sx={{
               width: '100%',
               height: 'auto',
+              maxHeight: maxHeight,
+              objectFit: 'contain',
               display: 'block'
             }}
           />
         )}
 
-        {/* 結果画像のみ */}
-        {viewMode === 'result' && (
+        {/* After画像のみ */}
+        {viewMode === 'after' && (
           <Box
             component="img"
-            src={resultImageUrl}
-            alt="シミュレーション結果"
+            src={afterImageUrl}
+            alt={afterLabel}
             sx={{
               width: '100%',
               height: 'auto',
+              maxHeight: maxHeight,
+              objectFit: 'contain',
               display: 'block'
             }}
           />
@@ -172,19 +166,21 @@ export default function ImageSimulationResult({
             onTouchEnd={() => setIsDragging(false)}
             onTouchMove={handleTouchMove}
           >
-            {/* AI生成結果（背景・右側に表示） */}
+            {/* After画像（背景・右側に表示） */}
             <Box
               component="img"
-              src={resultImageUrl}
-              alt="シミュレーション結果"
+              src={afterImageUrl}
+              alt={afterLabel}
               sx={{
                 width: '100%',
                 height: 'auto',
+                maxHeight: maxHeight,
+                objectFit: 'contain',
                 display: 'block'
               }}
             />
 
-            {/* 元画像（クリップ・左側に表示） */}
+            {/* Before画像（クリップ・左側に表示） */}
             <Box
               sx={{
                 position: 'absolute',
@@ -198,8 +194,8 @@ export default function ImageSimulationResult({
             >
               <Box
                 component="img"
-                src={originalImageUrl}
-                alt="元画像"
+                src={beforeImageUrl}
+                alt={beforeLabel}
                 sx={{
                   width: '100%',
                   height: '100%',
@@ -244,7 +240,7 @@ export default function ImageSimulationResult({
 
             {/* ラベル */}
             <Chip
-              label="元画像"
+              label={beforeLabel}
               size="small"
               sx={{
                 position: 'absolute',
@@ -256,7 +252,7 @@ export default function ImageSimulationResult({
               }}
             />
             <Chip
-              label="AI生成"
+              label={afterLabel}
               size="small"
               color="primary"
               sx={{
@@ -269,19 +265,6 @@ export default function ImageSimulationResult({
           </Box>
         )}
       </Paper>
-
-      {/* プロンプト表示 */}
-      {prompt && (
-        <Box sx={{ mt: 2, p: 1.5, bgcolor: 'grey.50', borderRadius: 1 }}>
-          <Typography variant="caption" color="text.secondary">
-            適用したシミュレーション: {prompt}
-          </Typography>
-        </Box>
-      )}
-
-      <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 1 }}>
-        ※ AI生成画像はイメージです。実際の物件とは異なる場合があります。
-      </Typography>
     </Box>
   );
 }
