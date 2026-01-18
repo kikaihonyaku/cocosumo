@@ -172,11 +172,11 @@ export default function ImageSimulationResult({
             onTouchEnd={() => setIsDragging(false)}
             onTouchMove={handleTouchMove}
           >
-            {/* 元画像（背景） */}
+            {/* AI生成結果（背景・右側に表示） */}
             <Box
               component="img"
-              src={originalImageUrl}
-              alt="元画像"
+              src={resultImageUrl}
+              alt="シミュレーション結果"
               sx={{
                 width: '100%',
                 height: 'auto',
@@ -184,7 +184,7 @@ export default function ImageSimulationResult({
               }}
             />
 
-            {/* 結果画像（クリップ） */}
+            {/* 元画像（クリップ・左側に表示） */}
             <Box
               sx={{
                 position: 'absolute',
@@ -198,8 +198,8 @@ export default function ImageSimulationResult({
             >
               <Box
                 component="img"
-                src={resultImageUrl}
-                alt="シミュレーション結果"
+                src={originalImageUrl}
+                alt="元画像"
                 sx={{
                   width: '100%',
                   height: '100%',
