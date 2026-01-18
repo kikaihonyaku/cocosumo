@@ -30,6 +30,8 @@ export default function ImageSimulationSection({
   const [expanded, setExpanded] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [originalPhoto, setOriginalPhoto] = useState(null); // ビューワー表示用の元画像（最初に選択された画像）
+  const [continuedSourceImage, setContinuedSourceImage] = useState(null); // 続けてシミュレーション用のソース画像
   const [selectedPrompt, setSelectedPrompt] = useState(null);
   const [customPrompt, setCustomPrompt] = useState('');
   const [loading, setLoading] = useState(false);
@@ -60,6 +62,8 @@ export default function ImageSimulationSection({
   // 画像選択ハンドラー
   const handlePhotoSelect = (photo) => {
     setSelectedPhoto(photo);
+    setOriginalPhoto(photo); // ビューワー表示用に保持
+    setContinuedSourceImage(null); // 続けてシミュレーション用をリセット
     setActiveStep(1);
     setResult(null);
     setError(null);
@@ -85,11 +89,21 @@ export default function ImageSimulationSection({
     setActiveStep(2);
 
     try {
-      const response = await axios.post(`/api/v1/customer/${accessToken}/image_simulations`, {
-        source_photo_type: selectedPhoto.type,
-        source_photo_id: selectedPhoto.id,
+      // リクエストパラメータを構築
+      const requestParams = {
         prompt: selectedPrompt.prompt
-      });
+      };
+
+      // 続けてシミュレーションの場合はbase64画像を送信
+      if (continuedSourceImage) {
+        requestParams.source_image_base64 = continuedSourceImage;
+        requestParams.original_photo_id = originalPhoto?.id; // 元画像IDを保持（履歴用）
+      } else {
+        requestParams.source_photo_type = selectedPhoto.type;
+        requestParams.source_photo_id = selectedPhoto.id;
+      }
+
+      const response = await axios.post(`/api/v1/customer/${accessToken}/image_simulations`, requestParams);
 
       if (response.data.success) {
         setResult({
@@ -125,6 +139,8 @@ export default function ImageSimulationSection({
   const handleReset = () => {
     setActiveStep(0);
     setSelectedPhoto(null);
+    setOriginalPhoto(null);
+    setContinuedSourceImage(null);
     setSelectedPrompt(null);
     setCustomPrompt('');
     setResult(null);
@@ -135,12 +151,28 @@ export default function ImageSimulationSection({
   const handleChangePhoto = () => {
     setActiveStep(0);
     setSelectedPhoto(null);
+    setOriginalPhoto(null);
+    setContinuedSourceImage(null);
     setResult(null);
     setError(null);
   };
 
-  // 別のシミュレーションを試す
+  // 別のシミュレーションを試す（元画像に戻る）
   const handleChangePrompt = () => {
+    setActiveStep(1);
+    setContinuedSourceImage(null); // 元画像からシミュレーションし直し
+    setSelectedPrompt(null);
+    setCustomPrompt('');
+    setResult(null);
+    setError(null);
+  };
+
+  // シミュレーションを続ける（生成した画像をソースにして続ける）
+  const handleContinueSimulation = () => {
+    if (!result?.imageUrl) return;
+
+    // 生成した画像を次のソースとして設定
+    setContinuedSourceImage(result.imageUrl);
     setActiveStep(1);
     setSelectedPrompt(null);
     setCustomPrompt('');
@@ -255,27 +287,32 @@ export default function ImageSimulationSection({
                 <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Box
                     component="img"
-                    src={selectedPhoto.url}
-                    alt="選択した画像"
+                    src={continuedSourceImage || selectedPhoto.url}
+                    alt={continuedSourceImage ? "前回の生成画像" : "選択した画像"}
                     sx={{
                       width: 100,
                       height: 75,
                       objectFit: 'cover',
                       borderRadius: 1,
                       border: '2px solid',
-                      borderColor: 'primary.main'
+                      borderColor: continuedSourceImage ? 'secondary.main' : 'primary.main'
                     }}
                   />
                   <Box>
                     <Typography variant="body2" fontWeight="bold">
-                      選択中の画像
+                      {continuedSourceImage ? '前回の生成画像から続行' : '選択中の画像'}
                     </Typography>
+                    {continuedSourceImage && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        ※ビューワーには元画像が表示されます
+                      </Typography>
+                    )}
                     <Button
                       size="small"
                       onClick={handleChangePhoto}
                       sx={{ textTransform: 'none', p: 0 }}
                     >
-                      変更する
+                      {continuedSourceImage ? '別の画像を選ぶ' : '変更する'}
                     </Button>
                   </Box>
                 </Box>
@@ -311,7 +348,7 @@ export default function ImageSimulationSection({
           {activeStep === 2 && (
             <Box>
               <ImageSimulationResult
-                originalImageUrl={selectedPhoto?.url}
+                originalImageUrl={originalPhoto?.url}
                 resultImageUrl={result?.imageUrl}
                 prompt={result?.prompt}
                 loading={loading}
@@ -323,13 +360,23 @@ export default function ImageSimulationSection({
               {!loading && (
                 <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                   {result && (
-                    <Button
-                      variant="outlined"
-                      onClick={handleChangePrompt}
-                      disabled={quota.remaining === 0}
-                    >
-                      別のシミュレーションを試す
-                    </Button>
+                    <>
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={handleContinueSimulation}
+                        disabled={quota.remaining === 0}
+                      >
+                        シミュレーションを続ける
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        onClick={handleChangePrompt}
+                        disabled={quota.remaining === 0}
+                      >
+                        別のシミュレーションを試す
+                      </Button>
+                    </>
                   )}
                   <Button
                     variant="outlined"

@@ -70,11 +70,12 @@ class Api::V1::CustomerImageSimulationsController < ApplicationController
     end
 
     # シミュレーションレコードを作成
+    # シミュレーションを続ける場合は元のphoto情報を引き継ぐ
     simulation = CustomerImageSimulation.new(
       property_publication: @property_publication,
       session_id: session_id,
-      source_photo_type: params[:source_photo_type],
-      source_photo_id: params[:source_photo_id],
+      source_photo_type: params[:source_photo_type] || 'continued',
+      source_photo_id: params[:source_photo_id] || params[:original_photo_id],
       prompt: params[:prompt],
       simulation_date: Date.current,
       ip_address: request.remote_ip,
@@ -175,13 +176,23 @@ class Api::V1::CustomerImageSimulationsController < ApplicationController
   end
 
   def valid_params?
-    params[:source_photo_type].present? &&
-      params[:source_photo_id].present? &&
-      params[:prompt].present?
+    prompt_valid = params[:prompt].present?
+
+    # 元画像はphoto ID または base64のどちらかが必要
+    source_valid = (params[:source_photo_type].present? && params[:source_photo_id].present?) ||
+                   params[:source_image_base64].present?
+
+    prompt_valid && source_valid
   end
 
   # 元画像を取得してリサイズ後にBase64エンコード
   def fetch_and_encode_source_image
+    # base64画像が直接指定されている場合（シミュレーションを続ける場合）
+    if params[:source_image_base64].present?
+      return process_base64_source_image(params[:source_image_base64])
+    end
+
+    # 通常のフロー: photo IDから画像を取得
     photo_record = case params[:source_photo_type]
     when 'room_photo'
       RoomPhoto.find_by(id: params[:source_photo_id])
@@ -206,6 +217,27 @@ class Api::V1::CustomerImageSimulationsController < ApplicationController
     Base64.strict_encode64(resized_image_data)
   rescue StandardError => e
     Rails.logger.error("Failed to fetch image: #{e.message}")
+    nil
+  end
+
+  # base64画像を処理（シミュレーションを続ける場合）
+  def process_base64_source_image(base64_data)
+    # data:image/jpeg;base64, のようなプレフィックスを除去
+    clean_base64 = base64_data.sub(/\Adata:image\/\w+;base64,/, '')
+
+    # Base64デコード
+    image_data = Base64.decode64(clean_base64)
+
+    # MIMEタイプを検出
+    @detected_mime_type = detect_mime_type(image_data)
+    Rails.logger.info("CustomerImageSimulation - Continue simulation, detected MIME type: #{@detected_mime_type}")
+
+    # リサイズ（必要に応じて）
+    resized_image_data = resize_image(image_data)
+
+    Base64.strict_encode64(resized_image_data)
+  rescue StandardError => e
+    Rails.logger.error("Failed to process base64 image: #{e.message}")
     nil
   end
 
