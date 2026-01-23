@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -47,13 +47,16 @@ import {
   Map as MapIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
+import { useThemeMode } from "../../contexts/ThemeContext";
 import ChangePasswordDialog from "./ChangePasswordDialog";
 
 export default function Header() {
   const { user, tenant, logout } = useAuth();
+  const { zoomLevel } = useThemeMode();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [adminMenuAnchor, setAdminMenuAnchor] = useState(null);
   const [contentMenuAnchor, setContentMenuAnchor] = useState(null);
@@ -63,6 +66,39 @@ export default function Header() {
   const [mobileResponseExpanded, setMobileResponseExpanded] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+
+  // Adjust menu positions when CSS zoom is applied
+  // MUI Menu uses getBoundingClientRect which returns zoomed coordinates,
+  // but positions the menu without considering zoom, causing misalignment
+  useEffect(() => {
+    if (zoomLevel === 100) return;
+
+    const menuConfigs = [
+      { anchor: userMenuAnchor, id: 'user-menu-popover' },
+      { anchor: contentMenuAnchor, id: 'content-menu-popover' },
+      { anchor: responseMenuAnchor, id: 'response-menu-popover' },
+      { anchor: adminMenuAnchor, id: 'admin-menu-popover' },
+    ];
+
+    const activeMenu = menuConfigs.find(config => config.anchor);
+    if (!activeMenu) return;
+
+    const timer = setTimeout(() => {
+      const popover = document.getElementById(activeMenu.id);
+      if (popover) {
+        const paper = popover.querySelector('.MuiPaper-root');
+        if (paper) {
+          const zoomFactor = zoomLevel / 100;
+          const currentLeft = parseFloat(paper.style.left) || 0;
+          const currentTop = parseFloat(paper.style.top) || 0;
+          paper.style.left = `${currentLeft / zoomFactor}px`;
+          paper.style.top = `${currentTop / zoomFactor}px`;
+        }
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [userMenuAnchor, contentMenuAnchor, responseMenuAnchor, adminMenuAnchor, zoomLevel]);
   
   const navStyle = ({ isActive }) => ({
     fontWeight: isActive ? "700" : "400",
@@ -261,6 +297,7 @@ export default function Header() {
                   コンテンツ
                 </Button>
                 <Menu
+                  id="content-menu-popover"
                   anchorEl={contentMenuAnchor}
                   open={Boolean(contentMenuAnchor)}
                   onClose={handleContentMenuClose}
@@ -307,6 +344,7 @@ export default function Header() {
                   反響
                 </Button>
                 <Menu
+                  id="response-menu-popover"
                   anchorEl={responseMenuAnchor}
                   open={Boolean(responseMenuAnchor)}
                   onClose={handleResponseMenuClose}
@@ -353,6 +391,7 @@ export default function Header() {
                   管理
                 </Button>
                 <Menu
+                  id="admin-menu-popover"
                   anchorEl={adminMenuAnchor}
                   open={Boolean(adminMenuAnchor)}
                   onClose={handleAdminMenuClose}
@@ -401,6 +440,7 @@ export default function Header() {
                     {user.name}
                   </Button>
                   <Menu
+                    id="user-menu-popover"
                     anchorEl={userMenuAnchor}
                     open={Boolean(userMenuAnchor)}
                     onClose={handleUserMenuClose}
