@@ -140,7 +140,7 @@ export default function LeftPanel({
                 : (isMdUp ? '103px' : '80px'),
               left: isPinned ? '2px' : (isHovered ? 0 : '16px'),
               height: isPinned || isHovered
-                ? (isMdUp ? 'calc(100vh - 60px)' : 'calc(100vh - 4px)')
+                ? (isMdUp ? 'calc(100vh * var(--vh-correction, 1) - 60px)' : 'calc(100vh * var(--vh-correction, 1) - 4px)')
                 : 'auto',
               zIndex: isPinned ? 1100 : (isHovered ? 1350 : 1300),
               flexShrink: isPinned ? 0 : undefined,
