@@ -109,6 +109,7 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
       onClose={onClose}
       maxWidth="md"
       fullWidth
+      disableRestoreFocus
       sx={{
         zIndex: 1400, // LeftPanelのz-index(1350)より上に表示
       }}

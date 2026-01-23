@@ -584,6 +584,7 @@ export default function FloorplanRegistrationModal({
       maxWidth="md"
       fullWidth
       fullScreen={isMobile}
+      disableRestoreFocus
       PaperProps={{
         sx: {
           borderRadius: isMobile ? 0 : 3,
