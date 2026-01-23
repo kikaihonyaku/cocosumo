@@ -4,7 +4,6 @@ import {
   CssBaseline,
   Box,
   useMediaQuery,
-  Fade,
   Button,
   Paper,
   Collapse,
@@ -33,7 +32,6 @@ export default function MapSystem() {
   const [selectedLayers, setSelectedLayers] = useState([]);
   const [rightPanelVisible, setRightPanelVisible] = useState(false);
   const [leftPanelHovered, setLeftPanelHovered] = useState(false);
-  const [headerVisible, setHeaderVisible] = useState(false);
   const [propertyListMaximized, setPropertyListMaximized] = useState(false);
   const [leftPanelForceClose, setLeftPanelForceClose] = useState(false);
   const [buildingFormModalOpen, setBuildingFormModalOpen] = useState(false);
@@ -504,41 +502,19 @@ export default function MapSystem() {
     <ThemeProvider theme={muiTheme}>
       <CssBaseline />
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-        {/* デスクトップ時のヘッダーホバーエリア */}
+        {/* ヘッダー（デスクトップ時は常時表示） */}
         {!isMobile && (
-          <>
-            <Box
-              sx={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '20px',
-                zIndex: 2200,
-                pointerEvents: 'all',
-              }}
-              onMouseEnter={() => setHeaderVisible(true)}
-              onMouseLeave={() => setHeaderVisible(false)}
-            />
-
-            {/* ヘッダーエリア */}
-            <Fade in={headerVisible} timeout={200}>
-              <Box
-                sx={{
-                  position: 'fixed',
-                  top: headerVisible ? 0 : '-60px',
-                  left: 0,
-                  right: 0,
-                  zIndex: 2100,
-                  transition: 'top 0.2s ease-in-out',
-                }}
-                onMouseEnter={() => setHeaderVisible(true)}
-                onMouseLeave={() => setHeaderVisible(false)}
-              >
-                <Header />
-              </Box>
-            </Fade>
-          </>
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              zIndex: 2100,
+            }}
+          >
+            <Header />
+          </Box>
         )}
 
         {/* コンテンツエリア */}
@@ -548,8 +524,7 @@ export default function MapSystem() {
             flex: 1,
             overflow: 'hidden',
             bgcolor: 'background.default',
-            paddingTop: !isMobile ? (headerVisible ? '45px' : '0px') : '0px',
-            transition: 'padding-top 0.2s ease-in-out',
+            paddingTop: !isMobile ? '45px' : '0px',
           }}
         >
           {/* メインコンテンツエリア */}
