@@ -660,7 +660,7 @@ export default function MapContainer({
     // 既存のマーカーをクリア
     if (layerPointMarkersRef.current[layerId]) {
       layerPointMarkersRef.current[layerId].forEach(marker => {
-        marker.setMap(null);
+        marker.map = null;
       });
     }
 
@@ -675,21 +675,18 @@ export default function MapContainer({
       const [lng, lat] = geometry.coordinates;
 
       // カスタムSVGアイコン（小さい円形マーカー）
-      const markerSvg = `
+      const markerContent = document.createElement('div');
+      markerContent.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12">
           <circle cx="6" cy="6" r="5" fill="${color}" stroke="#ffffff" stroke-width="1" fill-opacity="${opacity || 0.8}"/>
         </svg>
       `;
 
-      const marker = new google.maps.Marker({
+      const marker = new google.maps.marker.AdvancedMarkerElement({
         position: { lat, lng },
         map: map,
         title: properties.name || properties.full_address || '',
-        icon: {
-          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(markerSvg),
-          scaledSize: new google.maps.Size(12, 12),
-          anchor: new google.maps.Point(6, 6),
-        },
+        content: markerContent,
         zIndex: 500, // 物件マーカーより下、ポリゴンより上
       });
 
@@ -769,7 +766,7 @@ export default function MapContainer({
     // ポイントマーカーをクリア
     if (layerPointMarkersRef.current[layerId]) {
       layerPointMarkersRef.current[layerId].forEach(marker => {
-        marker.setMap(null);
+        marker.map = null;
       });
       delete layerPointMarkersRef.current[layerId];
     }
@@ -830,7 +827,7 @@ export default function MapContainer({
 
     // 既存のマーカーをクリア
     if (pickMarkerRef.current) {
-      pickMarkerRef.current.setMap(null);
+      pickMarkerRef.current.map = null;
       pickMarkerRef.current = null;
     }
 
@@ -845,22 +842,22 @@ export default function MapContainer({
 
         // 選択位置にマーカーを表示
         if (pickMarkerRef.current) {
-          pickMarkerRef.current.setMap(null);
+          pickMarkerRef.current.map = null;
         }
 
-        pickMarkerRef.current = new google.maps.Marker({
+        // カスタム円形マーカーを作成
+        const pickMarkerContent = document.createElement('div');
+        pickMarkerContent.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" fill="#e91e63" stroke="#ffffff" stroke-width="3"/>
+          </svg>
+        `;
+
+        pickMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
           position: { lat, lng },
           map: map,
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 12,
-            fillColor: '#e91e63',
-            fillOpacity: 1,
-            strokeColor: '#ffffff',
-            strokeWeight: 3,
-          },
+          content: pickMarkerContent,
           zIndex: 2000,
-          animation: google.maps.Animation.DROP,
         });
 
         // コールバックを呼び出し
@@ -877,7 +874,7 @@ export default function MapContainer({
         pickClickListenerRef.current = null;
       }
       if (pickMarkerRef.current) {
-        pickMarkerRef.current.setMap(null);
+        pickMarkerRef.current.map = null;
         pickMarkerRef.current = null;
       }
       if (map) {
@@ -1003,7 +1000,8 @@ export default function MapContainer({
 
     storesWithLocation.forEach(store => {
       // 店舗アイコン（ビル/オフィスの形をしたピン）
-      const storeIconSvg = `
+      const storeIconContent = document.createElement('div');
+      storeIconContent.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
           <!-- ピンの形（下向きの針） -->
           <path d="M18 44 L10 30 L26 30 Z" fill="#1565c0"/>
@@ -1021,18 +1019,14 @@ export default function MapContainer({
         </svg>
       `;
 
-      const marker = new google.maps.Marker({
+      const marker = new google.maps.marker.AdvancedMarkerElement({
         position: {
           lat: parseFloat(store.latitude),
           lng: parseFloat(store.longitude)
         },
         map: map,
         title: store.name,
-        icon: {
-          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(storeIconSvg),
-          scaledSize: new google.maps.Size(36, 44),
-          anchor: new google.maps.Point(18, 44),
-        },
+        content: storeIconContent,
         zIndex: 1000, // 物件マーカーより上に表示
       });
 
@@ -1055,7 +1049,7 @@ export default function MapContainer({
       });
 
       marker.addListener('click', () => {
-        infoWindow.open(map, marker);
+        infoWindow.open({ map, anchor: marker });
       });
 
       storeMarkersRef.current.push(marker);
@@ -1063,7 +1057,7 @@ export default function MapContainer({
 
     return () => {
       storeMarkersRef.current.forEach(marker => {
-        marker.setMap(null);
+        marker.map = null;
       });
       storeMarkersRef.current = [];
     };

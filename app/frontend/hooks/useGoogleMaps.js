@@ -12,7 +12,19 @@ const getGoogleMapsApiKey = () => {
   return import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 };
 
+// Google Maps Map IDを取得する関数
+const getGoogleMapsMapId = () => {
+  // 本番環境：meta tagから取得
+  const metaTag = document.querySelector('meta[name="google-maps-map-id"]');
+  if (metaTag) {
+    return metaTag.getAttribute('content') || '';
+  }
+  // 開発環境：Viteの環境変数から取得
+  return import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || '';
+};
+
 const GOOGLE_MAPS_API_KEY = getGoogleMapsApiKey();
+const GOOGLE_MAPS_MAP_ID = getGoogleMapsMapId();
 
 export function useGoogleMaps(mapElementId, options = {}) {
   const [map, setMap] = useState(null);
@@ -43,7 +55,7 @@ export function useGoogleMaps(mapElementId, options = {}) {
           apiKey: GOOGLE_MAPS_API_KEY,
           version: 'weekly',
           language: 'ja',
-          libraries: ['visualization', 'geometry']
+          libraries: ['visualization', 'geometry', 'marker']
         });
 
         console.log('Loading Google Maps API...');
@@ -63,8 +75,12 @@ export function useGoogleMaps(mapElementId, options = {}) {
           throw new Error(`Map element with id "${mapElementId}" not found after ${retries} retries`);
         }
 
-        console.log('Creating map with options:', defaultOptions);
-        const newMap = new google.maps.Map(mapElement, defaultOptions);
+        const mapOptions = {
+          ...defaultOptions,
+          mapId: GOOGLE_MAPS_MAP_ID,
+        };
+        console.log('Creating map with options:', mapOptions);
+        const newMap = new google.maps.Map(mapElement, mapOptions);
 
         // InfoWindowを初期化
         infoWindowRef.current = new google.maps.InfoWindow();
@@ -86,19 +102,37 @@ export function useGoogleMaps(mapElementId, options = {}) {
     initializeMap();
   }, [mapElementId]);
 
-  // マーカーを追加する関数
-  const addMarker = (id, markerOptions) => {
-    if (!map || !window.google) return null;
+  // アイコンURLからマーカーコンテンツを作成するヘルパー関数
+  const createMarkerContent = (iconUrl, title) => {
+    if (!iconUrl) return undefined;
 
-    const marker = new window.google.maps.Marker({
+    const img = document.createElement('img');
+    img.src = iconUrl;
+    img.alt = title || '';
+    img.style.width = '32px';
+    img.style.height = '32px';
+    return img;
+  };
+
+  // マーカーを追加する関数（AdvancedMarkerElement使用）
+  const addMarker = (id, markerOptions) => {
+    if (!map || !window.google?.maps?.marker?.AdvancedMarkerElement) return null;
+
+    const { position, title, icon, onClick, ...rest } = markerOptions;
+
+    // AdvancedMarkerElementを作成
+    const marker = new window.google.maps.marker.AdvancedMarkerElement({
       map: map,
-      ...markerOptions
+      position: position,
+      title: title,
+      content: createMarkerContent(icon, title),
+      ...rest
     });
 
     // クリックイベントを追加
-    if (markerOptions.onClick) {
+    if (onClick) {
       marker.addListener('click', () => {
-        markerOptions.onClick(marker, id);
+        onClick(marker, id);
       });
     }
 
@@ -110,7 +144,7 @@ export function useGoogleMaps(mapElementId, options = {}) {
   const removeMarker = (id) => {
     const marker = markersRef.current.get(id);
     if (marker) {
-      marker.setMap(null);
+      marker.map = null;
       markersRef.current.delete(id);
     }
   };
@@ -118,7 +152,7 @@ export function useGoogleMaps(mapElementId, options = {}) {
   // 全マーカーをクリアする関数
   const clearMarkers = () => {
     markersRef.current.forEach(marker => {
-      marker.setMap(null);
+      marker.map = null;
     });
     markersRef.current.clear();
   };
@@ -139,8 +173,8 @@ export function useGoogleMaps(mapElementId, options = {}) {
       infoWindowRef.current = new google.maps.InfoWindow(infoWindowOptions);
 
       if (marker) {
-        // マーカーが指定されている場合はマーカーに表示
-        infoWindowRef.current.open(map, marker);
+        // マーカーが指定されている場合はマーカーに表示（AdvancedMarkerElement対応）
+        infoWindowRef.current.open({ map, anchor: marker });
       } else if (position) {
         // 位置座標が指定されている場合は座標に表示
         infoWindowRef.current.setPosition(position);
