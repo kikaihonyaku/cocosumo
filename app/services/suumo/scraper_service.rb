@@ -136,6 +136,9 @@ module Suumo
         @logger.info "[SUUMO Scraper] Updated building: #{property_data[:building_name]}"
         @stats[:buildings_updated] += 1
 
+        # ジオコーディングをバックグラウンドで実行（locationがない場合）
+        GeocodeBuildingJob.perform_later(existing.id) if existing.location.blank?
+
         # Download building images (skip existing)
         unless @options[:skip_images]
           download_building_images(existing, property_data[:building_image_urls] || [])
@@ -156,6 +159,9 @@ module Suumo
       if building.save
         @logger.info "[SUUMO Scraper] Created building: #{building.name}"
         @stats[:buildings_created] += 1
+
+        # ジオコーディングをバックグラウンドで実行
+        GeocodeBuildingJob.perform_later(building.id) if building.location.blank?
 
         # Download building images
         unless @options[:skip_images]
