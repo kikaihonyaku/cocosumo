@@ -51,7 +51,7 @@ const VirtualStagingViewer = () => {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          minHeight: '100vh',
+          minHeight: 'calc(100vh * var(--vh-correction, 1))',
         }}
       >
         <CircularProgress />
@@ -70,7 +70,7 @@ const VirtualStagingViewer = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: 'calc(100vh * var(--vh-correction, 1))',
         bgcolor: 'background.default',
         py: 2,
       }}

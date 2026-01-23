@@ -5,6 +5,7 @@ import { CssBaseline, useMediaQuery, Box, CircularProgress } from "@mui/material
 import muiTheme from "./theme/muiTheme";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { TenantProvider } from "./contexts/TenantContext";
+import { ThemeContextProvider } from "./contexts/ThemeContext";
 import Header from "./components/shared/Header";
 import ImpersonationBanner from "./components/shared/ImpersonationBanner";
 import Landing from "./pages/Landing";
@@ -54,7 +55,7 @@ function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh * var(--vh-correction, 1))' }}>
         <CircularProgress />
       </Box>
     );
@@ -110,7 +111,7 @@ function Layout() {
   // 地図システムページのモバイル表示：共通ヘッダー付きで全画面
   if (isMobile && isMapSystem) {
     return (
-      <div style={{ fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif", height: "100vh", display: "flex", flexDirection: "column" }}>
+      <div style={{ fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif", height: "calc(100vh * var(--vh-correction, 1))", display: "flex", flexDirection: "column" }}>
         <Header />
         <div style={{ flex: 1, overflow: "hidden" }}>
           <Outlet />
@@ -139,8 +140,9 @@ export default function App() {
   return (
     <ThemeProvider theme={muiTheme}>
       <CssBaseline />
-      <AuthProvider>
-        <TenantProvider>
+      <ThemeContextProvider disableMuiProvider>
+        <AuthProvider>
+          <TenantProvider>
           <Routes>
           {/* 公開ページ */}
           <Route path="/" element={<Landing />} />
@@ -201,9 +203,10 @@ export default function App() {
             {/* 管理者用ルート */}
             <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
           </Route>
-        </Routes>
-        </TenantProvider>
-      </AuthProvider>
+          </Routes>
+          </TenantProvider>
+        </AuthProvider>
+      </ThemeContextProvider>
     </ThemeProvider>
   );
 }

@@ -71,7 +71,7 @@ export default function VrTourViewer() {
 
   if (loading) {
     return (
-      <Box sx={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <Box sx={{ height: 'calc(100vh * var(--vh-correction, 1))', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <CircularProgress />
       </Box>
     );
@@ -79,7 +79,7 @@ export default function VrTourViewer() {
 
   if (error || !vrTour) {
     return (
-      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ height: 'calc(100vh * var(--vh-correction, 1))', display: 'flex', flexDirection: 'column' }}>
         <AppBar position="static" color="default" elevation={1}>
           <Toolbar>
             <IconButton

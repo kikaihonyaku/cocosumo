@@ -81,7 +81,7 @@ function PasswordScreen({ onSubmit, error }) {
   return (
     <Box
       sx={{
-        height: '100vh',
+        height: 'calc(100vh * var(--vh-correction, 1))',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -246,7 +246,7 @@ export default function SalesPresentation() {
 
   if (loading) {
     return (
-      <Box sx={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Box sx={{ height: 'calc(100vh * var(--vh-correction, 1))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <CircularProgress size={60} />
       </Box>
     );
@@ -254,7 +254,7 @@ export default function SalesPresentation() {
 
   if (error) {
     return (
-      <Box sx={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+      <Box sx={{ height: 'calc(100vh * var(--vh-correction, 1))', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
         <Alert severity="error" sx={{ maxWidth: 500 }}>
           <Typography variant="h6" gutterBottom>エラー</Typography>
           {error}
@@ -272,7 +272,7 @@ export default function SalesPresentation() {
   const talkingPoints = currentStep.config?.talking_points || [];
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
+    <Box sx={{ minHeight: 'calc(100vh * var(--vh-correction, 1))', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
       {/* ヘッダー */}
       <AppBar position="sticky" color="default" elevation={1}>
         <Toolbar>

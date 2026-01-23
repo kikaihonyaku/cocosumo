@@ -413,7 +413,7 @@ export default function CustomerDetail() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', bgcolor: 'grey.50' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh * var(--vh-correction, 1) - 64px)', bgcolor: 'grey.50' }}>
       {/* Header - 2 rows */}
       <Paper
         elevation={0}

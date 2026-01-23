@@ -539,7 +539,7 @@ export default function VrTourEditor() {
 
   return (
     <ThemeProvider theme={muiTheme}>
-      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ height: 'calc(100vh * var(--vh-correction, 1))', display: 'flex', flexDirection: 'column' }}>
         {/* ヘッダー */}
         <AppBar position="static" elevation={0} sx={{
           bgcolor: 'primary.main',

@@ -126,7 +126,7 @@ class ErrorBoundary extends Component {
       return (
         <Box
           sx={{
-            minHeight: '100vh',
+            minHeight: 'calc(100vh * var(--vh-correction, 1))',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

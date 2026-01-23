@@ -306,7 +306,7 @@ export default function RoomDetail() {
     return (
       <ThemeProvider theme={muiTheme}>
         <CssBaseline />
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh * var(--vh-correction, 1))', bgcolor: 'background.default' }}>
           <CircularProgress size={60} />
         </Box>
       </ThemeProvider>
@@ -317,7 +317,7 @@ export default function RoomDetail() {
     return (
       <ThemeProvider theme={muiTheme}>
         <CssBaseline />
-        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: 'background.default', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh * var(--vh-correction, 1))', bgcolor: 'background.default', gap: 2 }}>
           <Typography variant="h6" color="error">
             {error || '部屋が見つかりません'}
           </Typography>
@@ -332,7 +332,7 @@ export default function RoomDetail() {
   return (
     <ThemeProvider theme={muiTheme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh * var(--vh-correction, 1))', bgcolor: 'background.default' }}>
         {/* ヘッダー */}
         <AppBar position="static" elevation={0} sx={{
           bgcolor: 'primary.main',

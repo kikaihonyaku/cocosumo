@@ -464,7 +464,7 @@ export default function BuildingDetail() {
           display="flex"
           justifyContent="center"
           alignItems="center"
-          minHeight="100vh"
+          minHeight="calc(100vh * var(--vh-correction, 1))"
           bgcolor="background.default"
         >
           <CircularProgress size={60} />
@@ -482,7 +482,7 @@ export default function BuildingDetail() {
           flexDirection="column"
           justifyContent="center"
           alignItems="center"
-          minHeight="100vh"
+          minHeight="calc(100vh * var(--vh-correction, 1))"
           bgcolor="background.default"
           gap={2}
         >
@@ -500,7 +500,7 @@ export default function BuildingDetail() {
   return (
     <ThemeProvider theme={muiTheme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh * var(--vh-correction, 1))', bgcolor: 'background.default' }}>
 
         {/* ヘッダー */}
         <AppBar position="static" elevation={0} sx={{
