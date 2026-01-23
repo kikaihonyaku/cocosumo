@@ -1072,6 +1072,8 @@ export default function MapContainer({
           width: '100%',
           height: '100%',
           borderRadius: 0,
+          // モバイルでピンチズーム時にブラウザがズームするのを防ぐ
+          touchAction: 'none',
         }}
       >
         {/* Google Maps will be rendered here */}
