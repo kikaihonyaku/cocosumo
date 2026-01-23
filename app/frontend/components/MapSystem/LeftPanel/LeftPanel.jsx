@@ -133,13 +133,14 @@ export default function LeftPanel({
               color: 'white',
               overflow: 'hidden',
               transition: 'width 0.3s ease, left 0.3s ease, top 0.3s ease',
-              position: 'absolute',
-              top: isPinned || isHovered ? '2px' : '80px',
+              // デスクトップ時はfixedでヘッダー（56px）の下に配置
+              position: isMdUp ? 'fixed' : 'absolute',
+              top: isPinned || isHovered
+                ? (isMdUp ? '58px' : '2px')
+                : (isMdUp ? '103px' : '80px'),
               left: isPinned ? '2px' : (isHovered ? 0 : '16px'),
-              // デスクトップ時はヘッダー（45px）の下から表示するため高さを調整
-              // モバイル時はヘッダーがないため全高を使用
               height: isPinned || isHovered
-                ? (isMdUp ? 'calc(100vh - 49px)' : 'calc(100vh - 4px)')
+                ? (isMdUp ? 'calc(100vh - 60px)' : 'calc(100vh - 4px)')
                 : 'auto',
               zIndex: isPinned ? 1100 : (isHovered ? 1350 : 1300),
               flexShrink: isPinned ? 0 : undefined,

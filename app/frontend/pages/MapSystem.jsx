@@ -525,7 +525,7 @@ export default function MapSystem() {
             flex: 1,
             overflow: 'hidden',
             bgcolor: 'background.default',
-            paddingTop: !isMobile ? '45px' : '0px',
+            paddingTop: !isMobile ? '56px' : '0px',
           }}
         >
           {/* メインコンテンツエリア */}
@@ -729,14 +729,15 @@ export default function MapSystem() {
                   square
                   sx={{
                     width: isMobile ? 'calc(100% - 16px)' : 320,
-                    position: isMobile ? 'fixed' : 'relative',
-                    top: isMobile ? '50%' : '2px',
+                    // デスクトップ時はfixedでヘッダー（56px）の下に配置
+                    position: 'fixed',
+                    top: isMobile ? '50%' : '58px',
                     left: isMobile ? '50%' : 'auto',
                     right: isMobile ? 'auto' : '2px',
-                    height: isMobile ? 'auto' : 'calc(100% - 4px)',
-                    maxHeight: isMobile ? '70vh' : 'calc(100% - 4px)',
+                    height: isMobile ? 'auto' : 'calc(100vh - 60px)',
+                    maxHeight: isMobile ? '70vh' : 'calc(100vh - 60px)',
                     transform: isMobile ? 'translate(-50%, -50%)' : 'none',
-                    zIndex: isMobile ? 1400 : 'auto',
+                    zIndex: isMobile ? 1400 : 1100,
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
