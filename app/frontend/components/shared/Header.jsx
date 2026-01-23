@@ -309,6 +309,7 @@ export default function Header() {
                     vertical: 'top',
                     horizontal: 'left',
                   }}
+                  sx={{ zIndex: 2200 }}
                 >
                   {contentMenuItems.map((item) => (
                     <MenuItem
@@ -356,6 +357,7 @@ export default function Header() {
                     vertical: 'top',
                     horizontal: 'left',
                   }}
+                  sx={{ zIndex: 2200 }}
                 >
                   {responseMenuItems.map((item) => (
                     <MenuItem
@@ -403,6 +405,7 @@ export default function Header() {
                     vertical: 'top',
                     horizontal: 'left',
                   }}
+                  sx={{ zIndex: 2200 }}
                 >
                   {adminMenuItems.map((item) => (
                     <MenuItem
@@ -452,6 +455,7 @@ export default function Header() {
                       vertical: 'top',
                       horizontal: 'right',
                     }}
+                    sx={{ zIndex: 2200 }}
                   >
                     {tenant && (
                       <MenuItem disabled>
