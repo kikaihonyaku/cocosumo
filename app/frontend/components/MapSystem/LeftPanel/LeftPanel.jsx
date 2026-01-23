@@ -136,7 +136,11 @@ export default function LeftPanel({
               position: 'absolute',
               top: isPinned || isHovered ? '2px' : '80px',
               left: isPinned ? '2px' : (isHovered ? 0 : '16px'),
-              height: isPinned ? 'calc(100vh - 4px)' : (isHovered ? 'calc(100vh - 4px)' : 'auto'),
+              // デスクトップ時はヘッダー（45px）の下から表示するため高さを調整
+              // モバイル時はヘッダーがないため全高を使用
+              height: isPinned || isHovered
+                ? (isMdUp ? 'calc(100vh - 49px)' : 'calc(100vh - 4px)')
+                : 'auto',
               zIndex: isPinned ? 1100 : (isHovered ? 1350 : 1300),
               flexShrink: isPinned ? 0 : undefined,
               display: 'flex',
