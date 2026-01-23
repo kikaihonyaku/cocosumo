@@ -61,7 +61,14 @@ export default function MapContainer({
   // 描画関連のref
   const circleRef = useRef(null);
   const polygonRef = useRef(null);
-  const drawingManagerRef = useRef(null);
+  // 自前描画用の状態
+  const isDrawingRef = useRef(false);
+  const drawingStartPointRef = useRef(null);
+  const polygonPointsRef = useRef([]);
+  const previewCircleRef = useRef(null);
+  const previewPolygonRef = useRef(null);
+  const previewPolylineRef = useRef(null);
+  const drawingListenersRef = useRef([]);
   // レイヤーポリゴンのInfoWindow参照（1つだけ表示）
   const layerInfoWindowRef = useRef(null);
   // 店舗マーカーのref
@@ -242,101 +249,253 @@ export default function MapContainer({
     updateGeoFilterAndSearch(clearedGeoFilter);
   }, [clearDrawings, onClearGeoFilter, onDrawingModeChange, updateGeoFilterAndSearch]);
 
-  // Drawing Managerの初期化
+  // 描画オプション（共通）
+  const drawingOptions = {
+    fillColor: '#0168B7',
+    fillOpacity: 0.2,
+    strokeWeight: 2,
+    strokeColor: '#0168B7',
+    clickable: true,
+    editable: true,
+    draggable: true,
+  };
+
+  // プレビュー用オプション（編集不可）
+  const previewOptions = {
+    fillColor: '#0168B7',
+    fillOpacity: 0.1,
+    strokeWeight: 2,
+    strokeColor: '#0168B7',
+    strokeOpacity: 0.5,
+    clickable: false,
+    editable: false,
+    draggable: false,
+  };
+
+  // 描画リスナーをクリアするヘルパー関数
+  const clearDrawingListeners = useCallback(() => {
+    drawingListenersRef.current.forEach(listener => {
+      window.google?.maps?.event?.removeListener(listener);
+    });
+    drawingListenersRef.current = [];
+  }, []);
+
+  // プレビューをクリアするヘルパー関数
+  const clearPreviews = useCallback(() => {
+    if (previewCircleRef.current) {
+      previewCircleRef.current.setMap(null);
+      previewCircleRef.current = null;
+    }
+    if (previewPolygonRef.current) {
+      previewPolygonRef.current.setMap(null);
+      previewPolygonRef.current = null;
+    }
+    if (previewPolylineRef.current) {
+      previewPolylineRef.current.setMap(null);
+      previewPolylineRef.current = null;
+    }
+    polygonPointsRef.current = [];
+    isDrawingRef.current = false;
+    drawingStartPointRef.current = null;
+  }, []);
+
+  // 円の描画を完了するヘルパー関数
+  const finishCircleDrawing = useCallback((center, radius) => {
+    clearDrawings();
+    clearPreviews();
+
+    const circle = new window.google.maps.Circle({
+      ...drawingOptions,
+      center: center,
+      radius: radius,
+      map: map,
+    });
+
+    circleRef.current = circle;
+
+    const newGeoFilter = createCircleGeoFilter(center, radius);
+    onGeoFilterChange?.(newGeoFilter);
+    onDrawingModeChange?.(null);
+
+    // 円の変更イベントをリッスン
+    window.google.maps.event.addListener(circle, 'center_changed', () => {
+      const updatedGeoFilter = createCircleGeoFilter(circle.getCenter(), circle.getRadius());
+      updateGeoFilterAndSearch(updatedGeoFilter);
+    });
+
+    window.google.maps.event.addListener(circle, 'radius_changed', () => {
+      const updatedGeoFilter = createCircleGeoFilter(circle.getCenter(), circle.getRadius());
+      updateGeoFilterAndSearch(updatedGeoFilter);
+    });
+
+    onApplyFilters?.(null, newGeoFilter);
+  }, [map, clearDrawings, clearPreviews, onGeoFilterChange, onDrawingModeChange, onApplyFilters, updateGeoFilterAndSearch]);
+
+  // ポリゴンの描画を完了するヘルパー関数
+  const finishPolygonDrawing = useCallback((points) => {
+    if (points.length < 3) return;
+
+    clearDrawings();
+    clearPreviews();
+
+    const polygon = new window.google.maps.Polygon({
+      ...drawingOptions,
+      paths: points,
+      map: map,
+    });
+
+    polygonRef.current = polygon;
+
+    const path = polygon.getPath();
+    const newGeoFilter = createPolygonGeoFilter(pathToWKT(path));
+    onGeoFilterChange?.(newGeoFilter);
+    onDrawingModeChange?.(null);
+
+    // ポリゴンの変更イベントをリッスン
+    const handlePathChange = () => {
+      const updatedGeoFilter = createPolygonGeoFilter(pathToWKT(polygon.getPath()));
+      updateGeoFilterAndSearch(updatedGeoFilter);
+    };
+
+    window.google.maps.event.addListener(path, 'set_at', handlePathChange);
+    window.google.maps.event.addListener(path, 'insert_at', handlePathChange);
+
+    onApplyFilters?.(null, newGeoFilter);
+  }, [map, clearDrawings, clearPreviews, onGeoFilterChange, onDrawingModeChange, onApplyFilters, updateGeoFilterAndSearch]);
+
+  // 描画モードの変更と自前描画ロジック
   useEffect(() => {
     if (!map || !window.google || !showDrawingTools) return;
 
-    // DrawingManagerを作成
-    const drawingManager = new window.google.maps.drawing.DrawingManager({
-      drawingMode: null,
-      drawingControl: false, // カスタムUIを使用
-      circleOptions: {
-        fillColor: '#0168B7',
-        fillOpacity: 0.2,
-        strokeWeight: 2,
-        strokeColor: '#0168B7',
-        clickable: true,
-        editable: true,
-        draggable: true,
-      },
-      polygonOptions: {
-        fillColor: '#0168B7',
-        fillOpacity: 0.2,
-        strokeWeight: 2,
-        strokeColor: '#0168B7',
-        clickable: true,
-        editable: true,
-        draggable: true,
-      },
-    });
-
-    drawingManager.setMap(map);
-    drawingManagerRef.current = drawingManager;
-
-    // 円が描画完了した時のイベント
-    window.google.maps.event.addListener(drawingManager, 'circlecomplete', (circle) => {
-      clearDrawings();
-      circleRef.current = circle;
-
-      const newGeoFilter = createCircleGeoFilter(circle.getCenter(), circle.getRadius());
-      onGeoFilterChange?.(newGeoFilter);
-      onDrawingModeChange?.(null);
-      drawingManager.setDrawingMode(null);
-
-      // 円の変更イベントをリッスン
-      window.google.maps.event.addListener(circle, 'center_changed', () => {
-        const updatedGeoFilter = createCircleGeoFilter(circle.getCenter(), circle.getRadius());
-        updateGeoFilterAndSearch(updatedGeoFilter);
-      });
-
-      window.google.maps.event.addListener(circle, 'radius_changed', () => {
-        const updatedGeoFilter = createCircleGeoFilter(circle.getCenter(), circle.getRadius());
-        updateGeoFilterAndSearch(updatedGeoFilter);
-      });
-
-      onApplyFilters?.(null, newGeoFilter);
-    });
-
-    // ポリゴンが描画完了した時のイベント
-    window.google.maps.event.addListener(drawingManager, 'polygoncomplete', (polygon) => {
-      clearDrawings();
-      polygonRef.current = polygon;
-
-      const path = polygon.getPath();
-      const newGeoFilter = createPolygonGeoFilter(pathToWKT(path));
-      onGeoFilterChange?.(newGeoFilter);
-      onDrawingModeChange?.(null);
-      drawingManager.setDrawingMode(null);
-
-      // ポリゴンの変更イベントをリッスン
-      const handlePathChange = () => {
-        const updatedGeoFilter = createPolygonGeoFilter(pathToWKT(polygon.getPath()));
-        updateGeoFilterAndSearch(updatedGeoFilter);
-      };
-
-      window.google.maps.event.addListener(path, 'set_at', handlePathChange);
-      window.google.maps.event.addListener(path, 'insert_at', handlePathChange);
-
-      onApplyFilters?.(null, newGeoFilter);
-    });
-
-    return () => {
-      drawingManager.setMap(null);
-    };
-  }, [map, showDrawingTools, onGeoFilterChange, onDrawingModeChange, onApplyFilters, clearDrawings]);
-
-  // 描画モードの変更
-  useEffect(() => {
-    if (!drawingManagerRef.current || !showDrawingTools) return;
+    // 既存のリスナーをクリア
+    clearDrawingListeners();
+    clearPreviews();
 
     if (drawingMode === 'circle') {
-      drawingManagerRef.current.setDrawingMode(window.google.maps.drawing.OverlayType.CIRCLE);
+      // 円描画モード
+      map.setOptions({ draggableCursor: 'crosshair' });
+
+      const mousedownListener = map.addListener('mousedown', (e) => {
+        isDrawingRef.current = true;
+        drawingStartPointRef.current = e.latLng;
+
+        // プレビュー円を作成
+        previewCircleRef.current = new window.google.maps.Circle({
+          ...previewOptions,
+          center: e.latLng,
+          radius: 0,
+          map: map,
+        });
+
+        // ドラッグ中は地図の移動を無効化
+        map.setOptions({ draggable: false });
+      });
+
+      const mousemoveListener = map.addListener('mousemove', (e) => {
+        if (!isDrawingRef.current || !drawingStartPointRef.current || !previewCircleRef.current) return;
+
+        // 中心からの距離を計算
+        const center = drawingStartPointRef.current;
+        const radius = window.google.maps.geometry?.spherical?.computeDistanceBetween(center, e.latLng);
+
+        if (radius !== undefined) {
+          previewCircleRef.current.setRadius(radius);
+        } else {
+          // geometry ライブラリがない場合は簡易計算
+          const lat1 = center.lat();
+          const lng1 = center.lng();
+          const lat2 = e.latLng.lat();
+          const lng2 = e.latLng.lng();
+          const R = 6371000; // 地球の半径（メートル）
+          const dLat = (lat2 - lat1) * Math.PI / 180;
+          const dLng = (lng2 - lng1) * Math.PI / 180;
+          const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLng/2) * Math.sin(dLng/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          const distance = R * c;
+          previewCircleRef.current.setRadius(distance);
+        }
+      });
+
+      const mouseupListener = map.addListener('mouseup', (e) => {
+        if (!isDrawingRef.current || !drawingStartPointRef.current || !previewCircleRef.current) return;
+
+        const center = drawingStartPointRef.current;
+        const radius = previewCircleRef.current.getRadius();
+
+        // 地図のドラッグを再度有効化
+        map.setOptions({ draggable: true });
+
+        // 最小半径のチェック（10メートル以上）
+        if (radius >= 10) {
+          finishCircleDrawing(center, radius);
+        } else {
+          clearPreviews();
+        }
+
+        isDrawingRef.current = false;
+        drawingStartPointRef.current = null;
+      });
+
+      drawingListenersRef.current = [mousedownListener, mousemoveListener, mouseupListener];
+
     } else if (drawingMode === 'polygon') {
-      drawingManagerRef.current.setDrawingMode(window.google.maps.drawing.OverlayType.POLYGON);
+      // ポリゴン描画モード
+      map.setOptions({ draggableCursor: 'crosshair' });
+
+      const clickListener = map.addListener('click', (e) => {
+        polygonPointsRef.current.push(e.latLng);
+
+        // プレビューポリゴンを更新
+        if (polygonPointsRef.current.length >= 3) {
+          if (!previewPolygonRef.current) {
+            previewPolygonRef.current = new window.google.maps.Polygon({
+              ...previewOptions,
+              paths: polygonPointsRef.current,
+              map: map,
+            });
+          } else {
+            previewPolygonRef.current.setPath(polygonPointsRef.current);
+          }
+        }
+
+        // プレビューポリラインを更新（最初の2点からでも線を表示）
+        if (!previewPolylineRef.current) {
+          previewPolylineRef.current = new window.google.maps.Polyline({
+            ...previewOptions,
+            path: polygonPointsRef.current,
+            map: map,
+          });
+        } else {
+          previewPolylineRef.current.setPath(polygonPointsRef.current);
+        }
+      });
+
+      const dblclickListener = map.addListener('dblclick', (e) => {
+        e.stop(); // デフォルトのズームを防止
+
+        if (polygonPointsRef.current.length >= 3) {
+          finishPolygonDrawing([...polygonPointsRef.current]);
+        } else {
+          clearPreviews();
+        }
+      });
+
+      drawingListenersRef.current = [clickListener, dblclickListener];
+
     } else {
-      drawingManagerRef.current.setDrawingMode(null);
+      // 通常モード
+      map.setOptions({ draggableCursor: null, draggable: true });
     }
-  }, [drawingMode, showDrawingTools]);
+
+    return () => {
+      clearDrawingListeners();
+      if (map) {
+        map.setOptions({ draggableCursor: null, draggable: true });
+      }
+    };
+  }, [map, drawingMode, showDrawingTools, clearDrawingListeners, clearPreviews, finishCircleDrawing, finishPolygonDrawing]);
 
 
   // レイヤーポリゴンの状態管理（useRefを使用して無限ループを防ぐ）
