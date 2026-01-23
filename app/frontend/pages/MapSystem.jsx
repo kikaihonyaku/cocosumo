@@ -4,6 +4,7 @@ import {
   CssBaseline,
   Box,
   useMediaQuery,
+  Fade,
   Button,
   Paper,
   Collapse,
