@@ -13,6 +13,8 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   IconButton,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -54,6 +56,8 @@ export default function MapContainer({
   onMapPick = null,
   onCancelMapPick = null,
 }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mapType, setMapType] = useState('roadmap');
   const [layerLoadingStates, setLayerLoadingStates] = useState({});
@@ -1162,7 +1166,7 @@ export default function MapContainer({
           sx={{
             position: 'absolute',
             top: 16,
-            right: 60,
+            right: isMobile ? 10 : 60,
             p: 1,
             display: 'flex',
             alignItems: 'center',
@@ -1234,7 +1238,7 @@ export default function MapContainer({
           sx={{
             position: 'absolute',
             top: 70,
-            right: 60,
+            right: isMobile ? 10 : 60,
             p: 1.5,
             zIndex: 100,
             bgcolor: 'primary.main',
@@ -1251,7 +1255,7 @@ export default function MapContainer({
       <Box
         sx={{
           position: 'absolute',
-          top: 60, // GoogleMapボタンと重ならないよう調整
+          top: isMobile ? 80 : 60, // モバイル時は範囲指定ツールの下に配置
           right: 10,
           display: 'flex',
           flexDirection: 'column',
