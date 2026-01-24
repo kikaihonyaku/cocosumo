@@ -566,6 +566,7 @@ export default function Header() {
         onClose={handleMobileMenuClose}
         sx={{
           display: { xs: 'block', md: 'none' },
+          zIndex: 1400, // LeftPanelの虫眼鏡ボタン(z-index: 1300)より上に表示
           '& .MuiDrawer-paper': {
             width: 280,
             bgcolor: 'primary.main',
