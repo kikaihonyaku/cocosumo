@@ -1327,7 +1327,7 @@ export default function MapContainer({
         )}
 
         {/* 物件新規登録ボタン */}
-        <Tooltip title="物件新規登録" placement="left">
+        <Tooltip title="物件登録" placement="left">
           <Fab
             size="small"
             color="secondary"

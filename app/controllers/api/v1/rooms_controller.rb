@@ -282,6 +282,155 @@ class Api::V1::RoomsController < ApplicationController
     end
   end
 
+  # GET /api/v1/rooms/advanced_search
+  # 詳細検索（複数条件でフィルタリング）
+  def advanced_search
+    @rooms = Room.joins(:building)
+                 .includes(:building)
+                 .where(buildings: { tenant_id: current_tenant.id })
+                 .where(buildings: { discarded_at: nil })
+
+    # 建物名で検索
+    if params[:building_name].present?
+      @rooms = @rooms.where("buildings.name ILIKE ?", "%#{params[:building_name]}%")
+    end
+
+    # 住所で検索
+    if params[:address].present?
+      @rooms = @rooms.where("buildings.address ILIKE ?", "%#{params[:address]}%")
+    end
+
+    # 部屋番号で検索
+    if params[:room_number].present?
+      @rooms = @rooms.where("rooms.room_number ILIKE ?", "%#{params[:room_number]}%")
+    end
+
+    # 間取りで検索（複数選択可能）
+    if params[:room_types].present?
+      room_types = Array(params[:room_types])
+      @rooms = @rooms.where(room_type: room_types)
+    end
+
+    # ステータスで検索（複数選択可能）
+    if params[:statuses].present?
+      statuses = Array(params[:statuses]).map(&:to_i)
+      @rooms = @rooms.where(status: statuses)
+    end
+
+    # 賃料範囲
+    if params[:rent_min].present?
+      @rooms = @rooms.where("rooms.rent >= ?", params[:rent_min].to_i)
+    end
+    if params[:rent_max].present?
+      @rooms = @rooms.where("rooms.rent <= ?", params[:rent_max].to_i)
+    end
+
+    # 面積範囲
+    if params[:area_min].present?
+      @rooms = @rooms.where("rooms.area >= ?", params[:area_min].to_f)
+    end
+    if params[:area_max].present?
+      @rooms = @rooms.where("rooms.area <= ?", params[:area_max].to_f)
+    end
+
+    # 階数範囲
+    if params[:floor_min].present?
+      @rooms = @rooms.where("rooms.floor >= ?", params[:floor_min].to_i)
+    end
+    if params[:floor_max].present?
+      @rooms = @rooms.where("rooms.floor <= ?", params[:floor_max].to_i)
+    end
+
+    # 向き
+    if params[:directions].present?
+      directions = Array(params[:directions])
+      @rooms = @rooms.where(direction: directions)
+    end
+
+    # ペット可
+    if params[:pets_allowed] == 'true'
+      @rooms = @rooms.where(pets_allowed: true)
+    end
+
+    # 二人入居可
+    if params[:two_person_allowed] == 'true'
+      @rooms = @rooms.where(two_person_allowed: true)
+    end
+
+    # 事務所利用可
+    if params[:office_use_allowed] == 'true'
+      @rooms = @rooms.where(office_use_allowed: true)
+    end
+
+    # 建物種別
+    if params[:building_types].present?
+      building_types = Array(params[:building_types])
+      @rooms = @rooms.where(buildings: { building_type: building_types })
+    end
+
+    # ソート
+    sort_column = params[:sort] || 'buildings.name'
+    sort_direction = params[:direction] == 'desc' ? 'DESC' : 'ASC'
+
+    allowed_sorts = {
+      'building_name' => 'buildings.name',
+      'room_number' => 'rooms.room_number',
+      'rent' => 'rooms.rent',
+      'area' => 'rooms.area',
+      'floor' => 'rooms.floor',
+      'created_at' => 'rooms.created_at'
+    }
+
+    sort_sql = allowed_sorts[sort_column] || 'buildings.name'
+    @rooms = @rooms.order(Arel.sql("#{sort_sql} #{sort_direction}"))
+
+    # ページネーション
+    page = (params[:page] || 1).to_i
+    per_page = (params[:per_page] || 50).to_i
+    per_page = [per_page, 100].min # 最大100件
+
+    total_count = @rooms.count
+    @rooms = @rooms.offset((page - 1) * per_page).limit(per_page)
+
+    render json: {
+      rooms: @rooms.map do |room|
+        {
+          id: room.id,
+          room_number: room.room_number,
+          floor: room.floor,
+          room_type: room.room_type,
+          room_type_label: room.room_type_label,
+          area: room.area,
+          rent: room.rent,
+          management_fee: room.management_fee,
+          deposit: room.deposit,
+          key_money: room.key_money,
+          status: room.status,
+          status_label: room.status_label,
+          direction: room.direction,
+          pets_allowed: room.pets_allowed,
+          two_person_allowed: room.two_person_allowed,
+          office_use_allowed: room.office_use_allowed,
+          available_date: room.available_date,
+          building: {
+            id: room.building.id,
+            name: room.building.name,
+            address: room.building.address,
+            building_type: room.building.building_type,
+            structure: room.building.structure,
+            floors: room.building.floors
+          }
+        }
+      end,
+      pagination: {
+        current_page: page,
+        per_page: per_page,
+        total_count: total_count,
+        total_pages: (total_count.to_f / per_page).ceil
+      }
+    }
+  end
+
   # GET /api/v1/rooms/search
   # 建物名・部屋番号で物件を検索
   def search

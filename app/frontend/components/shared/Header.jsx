@@ -27,6 +27,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   CloudDownload as CloudDownloadIcon,
+  CloudUpload as CloudUploadIcon,
   Layers as LayersIcon,
   Store as StoreIcon,
   Analytics as AnalyticsIcon,
@@ -44,7 +45,9 @@ import {
   Logout as LogoutIcon,
   Person as PersonIcon,
   Settings as SettingsIcon,
-  Map as MapIcon
+  Map as MapIcon,
+  Apartment as ApartmentIcon,
+  MeetingRoom as MeetingRoomIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { useThemeMode } from "../../contexts/ThemeContext";
@@ -61,9 +64,11 @@ export default function Header() {
   const [adminMenuAnchor, setAdminMenuAnchor] = useState(null);
   const [contentMenuAnchor, setContentMenuAnchor] = useState(null);
   const [responseMenuAnchor, setResponseMenuAnchor] = useState(null);
+  const [propertyMenuAnchor, setPropertyMenuAnchor] = useState(null);
   const [mobileAdminExpanded, setMobileAdminExpanded] = useState(false);
   const [mobileContentExpanded, setMobileContentExpanded] = useState(false);
   const [mobileResponseExpanded, setMobileResponseExpanded] = useState(false);
+  const [mobilePropertyExpanded, setMobilePropertyExpanded] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
@@ -78,6 +83,7 @@ export default function Header() {
       { anchor: contentMenuAnchor, id: 'content-menu-popover' },
       { anchor: responseMenuAnchor, id: 'response-menu-popover' },
       { anchor: adminMenuAnchor, id: 'admin-menu-popover' },
+      { anchor: propertyMenuAnchor, id: 'property-menu-popover' },
     ];
 
     const activeMenu = menuConfigs.find(config => config.anchor);
@@ -98,7 +104,7 @@ export default function Header() {
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [userMenuAnchor, contentMenuAnchor, responseMenuAnchor, adminMenuAnchor, zoomLevel]);
+  }, [userMenuAnchor, contentMenuAnchor, responseMenuAnchor, adminMenuAnchor, propertyMenuAnchor, zoomLevel]);
   
   const navStyle = ({ isActive }) => ({
     fontWeight: isActive ? "700" : "400",
@@ -156,6 +162,18 @@ export default function Header() {
     setMobileResponseExpanded(!mobileResponseExpanded);
   };
 
+  const handlePropertyMenuOpen = (event) => {
+    setPropertyMenuAnchor(event.currentTarget);
+  };
+
+  const handlePropertyMenuClose = () => {
+    setPropertyMenuAnchor(null);
+  };
+
+  const handleMobilePropertyToggle = () => {
+    setMobilePropertyExpanded(!mobilePropertyExpanded);
+  };
+
   const handleUserMenuOpen = (event) => {
     setUserMenuAnchor(event.currentTarget);
   };
@@ -182,6 +200,12 @@ export default function Header() {
     handleUserMenuClose();
     navigate('/profile');
   };
+
+  const propertyMenuItems = [
+    { to: "/map", label: "物件一覧(地図)", icon: <MapIcon fontSize="small" /> },
+    { to: "/rooms", label: "物件一覧(部屋)", icon: <MeetingRoomIcon fontSize="small" /> },
+    { to: "/bulk-import", label: "一括登録", icon: <CloudUploadIcon fontSize="small" /> },
+  ];
 
   const contentMenuItems = [
     { to: "/vr-tours", label: "VRルームツアー", icon: <ViewInArIcon fontSize="small" /> },
@@ -217,9 +241,8 @@ export default function Header() {
 
   const adminMenuItems = getAdminMenuItems();
 
-  const menuItems = [
-    { to: "/map", label: "物件管理", icon: <MapIcon fontSize="small" /> },
-  ];
+  // Direct navigation items (no submenu)
+  const menuItems = [];
 
   return (
     <>
@@ -280,6 +303,54 @@ export default function Header() {
                     </Box>
                   </NavLink>
                 ))}
+                {/* 物件管理メニュー */}
+                <Button
+                  onClick={handlePropertyMenuOpen}
+                  sx={{
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    textTransform: 'none',
+                    '&:hover': {
+                      color: 'white',
+                      bgcolor: 'rgba(255, 255, 255, 0.1)'
+                    }
+                  }}
+                  endIcon={<ExpandMoreIcon />}
+                  startIcon={<ApartmentIcon />}
+                >
+                  物件管理
+                </Button>
+                <Menu
+                  id="property-menu-popover"
+                  anchorEl={propertyMenuAnchor}
+                  open={Boolean(propertyMenuAnchor)}
+                  onClose={handlePropertyMenuClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'left',
+                  }}
+                  sx={{ zIndex: 2200 }}
+                >
+                  {propertyMenuItems.map((item) => (
+                    <MenuItem
+                      key={item.to}
+                      component={NavLink}
+                      to={item.to}
+                      onClick={handlePropertyMenuClose}
+                      sx={{
+                        '&.active': {
+                          bgcolor: 'action.selected',
+                        }
+                      }}
+                    >
+                      <ListItemIcon>{item.icon}</ListItemIcon>
+                      <ListItemText>{item.label}</ListItemText>
+                    </MenuItem>
+                  ))}
+                </Menu>
                 {/* コンテンツメニュー */}
                 <Button
                   onClick={handleContentMenuOpen}
@@ -540,6 +611,48 @@ export default function Header() {
               </ListItemButton>
             </ListItem>
           ))}
+
+          {/* 物件管理メニュー（折りたたみ式） */}
+          <ListItem disablePadding>
+            <ListItemButton onClick={handleMobilePropertyToggle}>
+              <ListItemIcon sx={{ color: 'white', minWidth: 36 }}>
+                <ApartmentIcon />
+              </ListItemIcon>
+              <ListItemText primary="物件管理" sx={{ color: 'white' }} />
+              {mobilePropertyExpanded ? (
+                <ExpandLessIcon sx={{ color: 'white' }} />
+              ) : (
+                <ExpandMoreIcon sx={{ color: 'white' }} />
+              )}
+            </ListItemButton>
+          </ListItem>
+          <Collapse in={mobilePropertyExpanded} timeout="auto" unmountOnExit>
+            <List component="div" disablePadding>
+              {propertyMenuItems.map((item) => (
+                <ListItem key={item.to} disablePadding>
+                  <ListItemButton
+                    component={NavLink}
+                    to={item.to}
+                    onClick={handleMobileMenuClose}
+                    sx={{
+                      pl: 4,
+                      '&.active': {
+                        bgcolor: 'rgba(255, 255, 255, 0.2)',
+                      },
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: 'rgba(255, 255, 255, 0.7)', minWidth: 36 }}>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.label}
+                      sx={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          </Collapse>
 
           {/* コンテンツメニュー（折りたたみ式） */}
           <ListItem disablePadding>

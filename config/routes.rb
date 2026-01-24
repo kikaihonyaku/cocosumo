@@ -46,6 +46,14 @@ Rails.application.routes.draw do
       # 設備マスタ
       resources :facilities, only: [:index]
 
+      # 一括物件登録
+      resources :bulk_imports, only: [:create, :show] do
+        member do
+          patch 'items/:item_id', to: 'bulk_imports#update_item', as: :update_item
+          post :register
+        end
+      end
+
       # 物件管理
       resources :buildings do
         # 募集図面からの物件登録
@@ -156,6 +164,7 @@ Rails.application.routes.draw do
       resources :rooms, only: [:show, :update, :destroy] do
         collection do
           get :search
+          get :advanced_search
         end
         member do
           post :upload_floorplan

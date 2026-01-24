@@ -47,6 +47,8 @@ import UserManagement from "./pages/admin/UserManagement";
 import ProfileSettings from "./pages/ProfileSettings";
 import CustomerList from "./pages/CustomerList";
 import CustomerDetail from "./pages/CustomerDetail";
+import BulkImport from "./pages/BulkImport";
+import RoomList from "./pages/RoomList";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -171,6 +173,8 @@ export default function App() {
             <Route path="/admin/stores" element={<StoreManagement />} />
             <Route path="/admin/layers" element={<LayerManagement />} />
             <Route path="/admin/suumo-import" element={<SuumoImport />} />
+            <Route path="/bulk-import" element={<BulkImport />} />
+            <Route path="/rooms" element={<RoomList />} />
             <Route path="/analytics/inquiries" element={<InquiryAnalytics />} />
             <Route path="/analytics/customer-accesses" element={<CustomerAccessAnalytics />} />
             <Route path="/admin/publications" element={<PropertyPublicationsManager />} />
