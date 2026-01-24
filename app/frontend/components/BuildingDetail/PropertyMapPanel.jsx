@@ -1560,6 +1560,8 @@ export default function PropertyMapPanel({
               height: '100%',
               width: '100%',
               bgcolor: 'grey.100',
+              // モバイルでピンチズーム時にブラウザがズームするのを防ぐ
+              touchAction: 'none',
             }}
           />
 
