@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_17_002015) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_23_192623) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -180,6 +180,45 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_17_002015) do
     t.index ["store_id"], name: "index_buildings_on_store_id"
     t.index ["tenant_id", "external_key"], name: "index_buildings_on_tenant_id_and_external_key", unique: true, where: "(external_key IS NOT NULL)"
     t.index ["tenant_id"], name: "index_buildings_on_tenant_id"
+  end
+
+  create_table "bulk_import_histories", force: :cascade do |t|
+    t.bigint "tenant_id", null: false
+    t.bigint "user_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.integer "total_files", default: 0
+    t.integer "analyzed_count", default: 0
+    t.integer "buildings_created", default: 0
+    t.integer "buildings_matched", default: 0
+    t.integer "rooms_created", default: 0
+    t.integer "error_count", default: 0
+    t.text "log_data"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_bulk_import_histories_on_created_at"
+    t.index ["status"], name: "index_bulk_import_histories_on_status"
+    t.index ["tenant_id"], name: "index_bulk_import_histories_on_tenant_id"
+    t.index ["user_id"], name: "index_bulk_import_histories_on_user_id"
+  end
+
+  create_table "bulk_import_items", force: :cascade do |t|
+    t.bigint "bulk_import_history_id", null: false
+    t.string "status", default: "pending", null: false
+    t.string "original_filename", null: false
+    t.jsonb "extracted_data", default: {}
+    t.jsonb "edited_data", default: {}
+    t.jsonb "similar_buildings", default: []
+    t.bigint "selected_building_id"
+    t.bigint "created_building_id"
+    t.bigint "created_room_id"
+    t.text "error_message"
+    t.integer "display_order", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["bulk_import_history_id"], name: "index_bulk_import_items_on_bulk_import_history_id"
+    t.index ["status"], name: "index_bulk_import_items_on_status"
   end
 
   create_table "customer_accesses", force: :cascade do |t|
@@ -757,6 +796,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_17_002015) do
   add_foreign_key "building_routes", "tenants"
   add_foreign_key "buildings", "stores"
   add_foreign_key "buildings", "tenants"
+  add_foreign_key "bulk_import_histories", "tenants"
+  add_foreign_key "bulk_import_histories", "users"
+  add_foreign_key "bulk_import_items", "buildings", column: "created_building_id", on_delete: :nullify
+  add_foreign_key "bulk_import_items", "buildings", column: "selected_building_id", on_delete: :nullify
+  add_foreign_key "bulk_import_items", "bulk_import_histories"
+  add_foreign_key "bulk_import_items", "rooms", column: "created_room_id", on_delete: :nullify
   add_foreign_key "customer_accesses", "customers"
   add_foreign_key "customer_accesses", "property_inquiries"
   add_foreign_key "customer_accesses", "property_publications"
