@@ -1,6 +1,9 @@
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
+  # Prepare the ingress controller used to receive mail (SendGrid Inbound Parse)
+  config.action_mailbox.ingress = :sendgrid
+
   # Settings specified here will take precedence over those in config/application.rb.
 
   # Code is not reloaded between requests.

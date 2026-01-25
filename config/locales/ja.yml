@@ -12,6 +12,7 @@ ja:
           phone: "電話"
           walk_in: "飛び込み"
           referral: "紹介"
+          email: "メール"
           other_media: "その他"
         origin_type:
           document_request: "資料請求"

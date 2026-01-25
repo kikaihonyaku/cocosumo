@@ -26,6 +26,7 @@ class PropertyInquiry < ApplicationRecord
     phone: 12,
     walk_in: 13,
     referral: 14,
+    email: 15,
     other_media: 99
   }, prefix: true
 
@@ -43,7 +44,7 @@ class PropertyInquiry < ApplicationRecord
     completed: 2
   }, prefix: true
 
-  enum :channel, { web_form: 0, line: 1 }, prefix: true
+  enum :channel, { web_form: 0, line: 1, email: 2 }, prefix: true
 
   # Validations
   validates :name, presence: true
