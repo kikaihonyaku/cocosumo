@@ -52,3 +52,4 @@ google-credentials.json
 
 # Test coverage
 /coverage/
+vendor/bundle/
