@@ -2,18 +2,21 @@ import React, { useState, useEffect } from 'react';
 import {
   Container, Typography, Box, Paper, TextField, Button, Alert,
   Snackbar, CircularProgress, Divider, List, ListItem, ListItemText,
-  ListItemIcon, Card, CardContent, Avatar
+  ListItemIcon, Card, CardContent, Avatar, Slider
 } from '@mui/material';
 import {
   Person as PersonIcon, Email as EmailIcon, Phone as PhoneIcon,
   Work as WorkIcon, Badge as BadgeIcon, Store as StoreIcon,
-  Lock as LockIcon, Schedule as ScheduleIcon, Save as SaveIcon
+  Lock as LockIcon, Schedule as ScheduleIcon, Save as SaveIcon,
+  ZoomIn as ZoomInIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { useThemeMode, ZOOM_LEVELS } from '../contexts/ThemeContext';
 import ChangePasswordDialog from '../components/shared/ChangePasswordDialog';
 
 export default function ProfileSettings() {
   const { user: authUser, checkAuthStatus } = useAuth();
+  const { zoomLevel, setZoomLevel } = useThemeMode();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -217,6 +220,30 @@ export default function ProfileSettings() {
             </Box>
           </Paper>
         )}
+
+        {/* 表示設定セクション */}
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            <ZoomInIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+            表示設定
+          </Typography>
+          <Box>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              画面の表示倍率: {zoomLevel}%
+            </Typography>
+            <Slider
+              value={zoomLevel}
+              onChange={(e, val) => setZoomLevel(val)}
+              step={null}
+              marks={ZOOM_LEVELS.map(v => ({ value: v, label: `${v}%` }))}
+              min={75}
+              max={125}
+            />
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              画面全体の表示サイズを調整できます。設定はこのブラウザに保存されます。
+            </Typography>
+          </Box>
+        </Paper>
       </Box>
 
       {/* パスワード変更ダイアログ */}

@@ -14,6 +14,11 @@ export const THEME_MODES = {
   SYSTEM: 'system'
 };
 
+// Zoom levels
+export const ZOOM_LEVELS = [75, 80, 90, 100, 110, 125];
+const DEFAULT_ZOOM = 100;
+const ZOOM_STORAGE_KEY = 'cocosumo_zoom_level';
+
 // Storage key
 const THEME_STORAGE_KEY = 'cocosumo_theme_mode';
 
@@ -198,12 +203,27 @@ function getSystemPreference() {
     : 'light';
 }
 
+// Get initial zoom level
+function getInitialZoomLevel() {
+  if (typeof window === 'undefined') return DEFAULT_ZOOM;
+  const saved = localStorage.getItem(ZOOM_STORAGE_KEY);
+  if (saved) {
+    const parsed = parseInt(saved, 10);
+    if (ZOOM_LEVELS.includes(parsed)) return parsed;
+  }
+  return DEFAULT_ZOOM;
+}
+
 /**
  * Theme Provider Component
+ * @param {Object} props
+ * @param {React.ReactNode} props.children
+ * @param {boolean} props.disableMuiProvider - Set to true to disable internal MuiThemeProvider (use when wrapping with external ThemeProvider)
  */
-export function ThemeContextProvider({ children }) {
+export function ThemeContextProvider({ children, disableMuiProvider = false }) {
   const [themeMode, setThemeMode] = useState(getInitialThemeMode);
   const [systemPreference, setSystemPreference] = useState(getSystemPreference);
+  const [zoomLevel, setZoomLevelState] = useState(getInitialZoomLevel);
 
   // Listen for system preference changes
   useEffect(() => {
@@ -234,6 +254,30 @@ export function ThemeContextProvider({ children }) {
     document.body.classList.remove('theme-light', 'theme-dark');
     document.body.classList.add(`theme-${effectiveMode}`);
   }, [themeMode, systemPreference]);
+
+  // Persist zoom level and apply zoom to body
+  useEffect(() => {
+    localStorage.setItem(ZOOM_STORAGE_KEY, zoomLevel.toString());
+
+    // Apply zoom to body
+    document.body.style.zoom = `${zoomLevel}%`;
+
+    // Set CSS custom property for viewport height correction
+    const correction = 100 / zoomLevel;
+    document.documentElement.style.setProperty('--vh-correction', correction.toString());
+
+    return () => {
+      document.body.style.zoom = '';
+      document.documentElement.style.removeProperty('--vh-correction');
+    };
+  }, [zoomLevel]);
+
+  // Zoom level setter
+  const setZoomLevel = useCallback((level) => {
+    if (ZOOM_LEVELS.includes(level)) {
+      setZoomLevelState(level);
+    }
+  }, []);
 
   // Calculate effective mode
   const effectiveMode = useMemo(() => {
@@ -277,8 +321,18 @@ export function ThemeContextProvider({ children }) {
     setSystemMode,
     toggleTheme,
     cycleTheme,
-    theme
-  }), [themeMode, effectiveMode, setLightMode, setDarkMode, setSystemMode, toggleTheme, cycleTheme, theme]);
+    theme,
+    zoomLevel,
+    setZoomLevel
+  }), [themeMode, effectiveMode, setLightMode, setDarkMode, setSystemMode, toggleTheme, cycleTheme, theme, zoomLevel, setZoomLevel]);
+
+  if (disableMuiProvider) {
+    return (
+      <ThemeContext.Provider value={contextValue}>
+        {children}
+      </ThemeContext.Provider>
+    );
+  }
 
   return (
     <ThemeContext.Provider value={contextValue}>

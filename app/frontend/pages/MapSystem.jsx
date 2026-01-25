@@ -502,7 +502,7 @@ export default function MapSystem() {
   return (
     <ThemeProvider theme={muiTheme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh * var(--vh-correction, 1))' }}>
         {/* ヘッダー（デスクトップ時は常時表示） */}
         {!isMobile && (
           <Box
@@ -734,8 +734,8 @@ export default function MapSystem() {
                     top: isMobile ? '50%' : '58px',
                     left: isMobile ? '50%' : 'auto',
                     right: isMobile ? 'auto' : '2px',
-                    height: isMobile ? 'auto' : 'calc(100vh - 60px)',
-                    maxHeight: isMobile ? '70vh' : 'calc(100vh - 60px)',
+                    height: isMobile ? 'auto' : 'calc(100vh * var(--vh-correction, 1) - 60px)',
+                    maxHeight: isMobile ? 'calc(70vh * var(--vh-correction, 1))' : 'calc(100vh * var(--vh-correction, 1) - 60px)',
                     transform: isMobile ? 'translate(-50%, -50%)' : 'none',
                     zIndex: isMobile ? 1400 : 1100,
                     display: 'flex',
@@ -1008,7 +1008,7 @@ export default function MapSystem() {
             <Box
               sx={{
                 position: 'fixed',
-                bottom: 0,
+                bottom: 'calc(16px * var(--vh-correction, 1))',
                 left: 0,
                 right: 0,
                 height: '80px',
