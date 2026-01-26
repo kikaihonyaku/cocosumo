@@ -118,7 +118,7 @@ class Api::V1::SuperAdmin::TenantsController < ApplicationController
   end
 
   def tenant_with_stats(tenant)
-    tenant.as_json.merge(
+    tenant.as_json(methods: [:inquiry_email_address]).merge(
       statistics: tenant.statistics,
       created_by_name: tenant.created_by&.name
     )

@@ -13,7 +13,7 @@ class Api::V1::AuthController < ApplicationController
         tenant_id: current_user.tenant_id,
         auth_provider: current_user.auth_provider
       },
-      tenant: current_tenant&.as_json(only: [:id, :name, :subdomain, :status]),
+      tenant: current_tenant&.as_json(only: [:id, :name, :subdomain, :status], methods: [:inquiry_email_address]),
       impersonating: impersonating?,
       original_tenant: original_tenant&.as_json(only: [:id, :name, :subdomain])
     }

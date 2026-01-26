@@ -236,6 +236,7 @@ export default function TenantManagement() {
             <TableRow>
               <TableCell>テナント名</TableCell>
               <TableCell>サブドメイン</TableCell>
+              <TableCell>問い合わせ受付メール</TableCell>
               <TableCell align="center">ステータス</TableCell>
               <TableCell align="center">プラン</TableCell>
               <TableCell align="center">ユーザー数</TableCell>
@@ -248,7 +249,12 @@ export default function TenantManagement() {
               <TableRow key={tenant.id}>
                 <TableCell>{tenant.name}</TableCell>
                 <TableCell>
-                  <code>{tenant.subdomain}.lvh.me</code>
+                  <code>{tenant.subdomain}.cocosumo.space</code>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                    {tenant.inquiry_email_address || '-'}
+                  </Typography>
                 </TableCell>
                 <TableCell align="center">{getStatusChip(tenant.status)}</TableCell>
                 <TableCell align="center">{tenant.plan || 'basic'}</TableCell>

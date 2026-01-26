@@ -52,6 +52,7 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { useThemeMode } from "../../contexts/ThemeContext";
 import ChangePasswordDialog from "./ChangePasswordDialog";
+import TenantInfoDialog from "./TenantInfoDialog";
 
 export default function Header() {
   const { user, tenant, logout } = useAuth();
@@ -71,6 +72,7 @@ export default function Header() {
   const [mobilePropertyExpanded, setMobilePropertyExpanded] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [tenantInfoOpen, setTenantInfoOpen] = useState(false);
 
   // Adjust menu positions when CSS zoom is applied
   // MUI Menu uses getBoundingClientRect which returns zoomed coordinates,
@@ -189,6 +191,15 @@ export default function Header() {
 
   const handleChangePasswordClose = () => {
     setChangePasswordOpen(false);
+  };
+
+  const handleTenantInfoOpen = () => {
+    handleUserMenuClose();
+    setTenantInfoOpen(true);
+  };
+
+  const handleTenantInfoClose = () => {
+    setTenantInfoOpen(false);
   };
 
   const handleLogoutFromMenu = async () => {
@@ -529,10 +540,12 @@ export default function Header() {
                     sx={{ zIndex: 2200 }}
                   >
                     {tenant && (
-                      <MenuItem disabled>
-                        <Typography variant="body2" color="text.secondary">
-                          {tenant.name}
-                        </Typography>
+                      <MenuItem onClick={handleTenantInfoOpen}>
+                        <ListItemIcon><BusinessIcon fontSize="small" /></ListItemIcon>
+                        <ListItemText
+                          primary={tenant.name}
+                          primaryTypographyProps={{ variant: 'body2' }}
+                        />
                       </MenuItem>
                     )}
                     <Divider />
@@ -787,9 +800,26 @@ export default function Header() {
             <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.3)', my: 2 }} />
             <Box sx={{ p: 2 }}>
               {tenant && (
-                <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', mb: 1, display: 'block' }}>
+                <Button
+                  variant="text"
+                  size="small"
+                  startIcon={<BusinessIcon />}
+                  onClick={() => {
+                    handleMobileMenuClose();
+                    setTenantInfoOpen(true);
+                  }}
+                  sx={{
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    mb: 1,
+                    justifyContent: 'flex-start',
+                    textTransform: 'none',
+                    '&:hover': {
+                      bgcolor: 'rgba(255, 255, 255, 0.1)'
+                    }
+                  }}
+                >
                   {tenant.name}
-                </Typography>
+                </Button>
               )}
               <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', mb: 1 }}>
                 {user.name}
@@ -861,6 +891,13 @@ export default function Header() {
       <ChangePasswordDialog
         open={changePasswordOpen}
         onClose={handleChangePasswordClose}
+      />
+
+      {/* テナント情報ダイアログ */}
+      <TenantInfoDialog
+        open={tenantInfoOpen}
+        onClose={handleTenantInfoClose}
+        tenant={tenant}
       />
     </>
   );
