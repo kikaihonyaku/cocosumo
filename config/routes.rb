@@ -365,7 +365,8 @@ Rails.application.routes.draw do
 
   # React Router用のキャッチオールルート
   # /vr/:id は React Router で処理されるため、ここでは定義しない
+  # /rails/ は Rails 内部ルート（Action Mailbox Conductor 等）のため除外
   get '*path', to: 'pages#index', constraints: ->(request) do
-    !request.xhr? && request.format.html?
+    !request.xhr? && request.format.html? && !request.path.start_with?('/rails/')
   end
 end

@@ -22,6 +22,9 @@ class Tenant < ApplicationRecord
     message: 'は予約されています'
   }
 
+  # Callbacks
+  after_create :setup_inquiry_room
+
   # Scopes
   scope :ordered, -> { order(created_at: :desc) }
 
@@ -46,5 +49,36 @@ class Tenant < ApplicationRecord
       rooms_count: Room.joins(:building).where(buildings: { tenant_id: id }).count,
       stores_count: stores.count
     }
+  end
+
+  # メール問い合わせ用のメールアドレスを返す
+  def inquiry_email_address
+    "#{subdomain}-inquiry@inbound.cocosumo.space"
+  end
+
+  private
+
+  # メール問い合わせ用のBuilding/Roomを自動作成
+  def setup_inquiry_room
+    building = buildings.create!(
+      name: '一般問い合わせ',
+      address: name,
+      building_type: :office
+    )
+
+    room = building.rooms.create!(
+      room_number: 'INQUIRY',
+      floor: 1,
+      room_type: :other,
+      status: :maintenance,
+      description: 'メール問い合わせ用（システム自動作成）'
+    )
+
+    update_columns(
+      settings: (settings || {}).merge(
+        'default_inquiry_room_id' => room.id,
+        'inquiry_email_address' => "#{subdomain}-inquiry"
+      )
+    )
   end
 end
