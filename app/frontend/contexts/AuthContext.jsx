@@ -90,6 +90,7 @@ export const AuthProvider = ({ children }) => {
 
       if (response.ok && data.success) {
         setUser(data.user);
+        setTenant(data.tenant);
         setIsAuthenticated(true);
         return { success: true };
       } else {

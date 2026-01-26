@@ -73,7 +73,8 @@ class Api::V1::AuthController < ApplicationController
           role: user.role,
           tenant_id: user.tenant_id,
           auth_provider: user.auth_provider
-        }
+        },
+        tenant: user.tenant&.as_json(only: [:id, :name, :subdomain, :status], methods: [:inquiry_email_address])
       }
     else
       user.increment_failed_login!
