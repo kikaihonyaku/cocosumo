@@ -45,12 +45,32 @@ class Customer < ApplicationRecord
   scope :by_priority, ->(priority) { where(priority: priority) }
   scope :active_deals, -> { where.not(deal_status: [:contracted, :lost]) }
 
-  # 顧客を検索または作成
+  # 顧客を検索または初期化（保存はしない）
   def self.find_or_initialize_by_contact(tenant:, email: nil, line_user_id: nil, name:, phone: nil)
     customer = nil
     customer = tenant.customers.find_by(email: email) if email.present?
     customer ||= tenant.customers.find_by(line_user_id: line_user_id) if line_user_id.present?
     customer || tenant.customers.new(email: email, line_user_id: line_user_id, name: name, phone: phone)
+  end
+
+  # 顧客を検索または作成（レースコンディション対応）
+  def self.find_or_create_by_contact!(tenant:, email: nil, line_user_id: nil, name:, phone: nil)
+    customer = find_or_initialize_by_contact(
+      tenant: tenant,
+      email: email,
+      line_user_id: line_user_id,
+      name: name,
+      phone: phone
+    )
+    return customer if customer.persisted?
+
+    customer.save!
+    customer
+  rescue ActiveRecord::RecordNotUnique
+    # レースコンディション発生時は再度検索
+    tenant.customers.find_by(email: email) ||
+      tenant.customers.find_by(line_user_id: line_user_id) ||
+      raise # 見つからない場合は元のエラーを再raise
   end
 
   # 問い合わせ件数

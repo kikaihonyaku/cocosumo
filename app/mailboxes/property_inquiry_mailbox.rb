@@ -12,7 +12,7 @@ class PropertyInquiryMailbox < ApplicationMailbox
   before_processing :check_rate_limit
 
   def process
-    customer = Customer.find_or_initialize_by_contact(
+    customer = Customer.find_or_create_by_contact!(
       tenant: @tenant,
       email: sender_email,
       name: sender_name,
@@ -21,7 +21,7 @@ class PropertyInquiryMailbox < ApplicationMailbox
 
     default_room = find_default_inquiry_room
 
-    inquiry = PropertyInquiry.new(
+    inquiry = PropertyInquiry.create!(
       room: default_room,
       customer: customer,
       name: sender_name,
@@ -31,11 +31,6 @@ class PropertyInquiryMailbox < ApplicationMailbox
       origin_type: :general_inquiry,
       channel: :email
     )
-
-    ActiveRecord::Base.transaction do
-      customer.save!
-      inquiry.save!
-    end
 
     Rails.logger.info "[PropertyInquiryMailbox] Created inquiry ##{inquiry.id} for tenant #{@tenant.subdomain}"
   rescue ActiveRecord::RecordInvalid => e
