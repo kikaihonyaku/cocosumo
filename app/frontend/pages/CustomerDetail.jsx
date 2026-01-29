@@ -8,14 +8,12 @@ import {
   CircularProgress,
   Alert,
   Button,
-  Divider,
   List,
   ListItem,
   ListItemText,
   ListItemIcon,
   IconButton,
   Tooltip,
-  TextField,
   Card,
   CardContent,
   Tabs,
@@ -158,9 +156,6 @@ export default function CustomerDetail() {
   const [accesses, setAccesses] = useState([]);
   const [activities, setActivities] = useState([]);
   const [users, setUsers] = useState([]);
-  const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ notes: '' });
-  const [saving, setSaving] = useState(false);
 
   // Dialog states
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
@@ -170,6 +165,7 @@ export default function CustomerDetail() {
 
   // Case (inquiry) selector state
   const [selectedInquiryId, setSelectedInquiryId] = useState(null);
+  const [selectedPropertyInquiryId, setSelectedPropertyInquiryId] = useState(null);
 
   // Inquiry status/user change menu states
   const [statusMenuAnchor, setStatusMenuAnchor] = useState(null);
@@ -254,7 +250,6 @@ export default function CustomerDetail() {
       setAccesses(Array.isArray(accessesRes.data) ? accessesRes.data : []);
       setActivities(Array.isArray(activitiesRes.data) ? activitiesRes.data : []);
       setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
-      setEditForm({ notes: customerRes.data.notes || '' });
     } catch (err) {
       console.error('Failed to load customer:', err);
       if (err.response?.status === 404) {
@@ -281,22 +276,6 @@ export default function CustomerDetail() {
   useEffect(() => {
     loadCustomer();
   }, [loadCustomer]);
-
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      await axios.patch(`/api/v1/customers/${id}`, {
-        customer: { notes: editForm.notes }
-      });
-      setCustomer(prev => ({ ...prev, notes: editForm.notes }));
-      setEditing(false);
-    } catch (err) {
-      console.error('Failed to save customer:', err);
-      setError('保存に失敗しました');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleCopyUrl = (url) => {
     navigator.clipboard.writeText(url);
@@ -338,6 +317,12 @@ export default function CustomerDetail() {
   // Handler for inquiry card click (toggle selection)
   const handleInquiryClick = (inquiryId) => {
     setSelectedInquiryId(prev => prev === inquiryId ? null : inquiryId);
+    setSelectedPropertyInquiryId(null);
+  };
+
+  // Handler for property inquiry card click (toggle selection)
+  const handlePropertyInquiryClick = (piId) => {
+    setSelectedPropertyInquiryId(prev => prev === piId ? null : piId);
   };
 
   // Inquiry status menu handlers
@@ -407,7 +392,7 @@ export default function CustomerDetail() {
           flexShrink: 0
         }}
       >
-        {/* Row 1: Customer info */}
+        {/* Row 1: Customer info + contact */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 0.5 }}>
           <IconButton onClick={() => navigate('/customers')} size="small">
             <ArrowBackIcon />
@@ -452,26 +437,66 @@ export default function CustomerDetail() {
 
           <Box sx={{ flex: 1 }} />
 
-          {/* Create inquiry button */}
-          <Button
-            variant="contained"
-            color="primary"
-            size="small"
-            startIcon={<AddIcon />}
-            onClick={() => setCreateInquiryDialogOpen(true)}
-          >
-            案件作成
-          </Button>
+          {/* Contact info in header */}
+          {customer.email && (
+            <Tooltip title={customer.email}>
+              <Chip
+                size="small"
+                icon={<EmailIcon />}
+                label={customer.email}
+                component="a"
+                href={`mailto:${customer.email}`}
+                clickable
+                variant="outlined"
+                sx={{ height: 24, maxWidth: 200, fontSize: '0.75rem' }}
+              />
+            </Tooltip>
+          )}
+          {customer.phone && (
+            <Tooltip title={customer.phone}>
+              <Chip
+                size="small"
+                icon={<PhoneIcon />}
+                label={customer.phone}
+                component="a"
+                href={`tel:${customer.phone}`}
+                clickable
+                variant="outlined"
+                sx={{ height: 24, fontSize: '0.75rem' }}
+              />
+            </Tooltip>
+          )}
         </Box>
 
-        {/* Row 2: Dates */}
+        {/* Row 2: Dates + stats */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 5.5 }}>
           <Typography variant="caption" color="text.secondary">
             登録日: {customer.created_at}
             {customer.deal_status_changed_at && (
               <> | ステータス更新: {customer.deal_status_changed_at}</>
             )}
+            {customer.last_contacted_at && (
+              <> | 最終連絡: {customer.last_contacted_at}</>
+            )}
+            {customer.last_inquiry_at && (
+              <> | 最終問合せ: {customer.last_inquiry_at}</>
+            )}
           </Typography>
+          <Box sx={{ flex: 1 }} />
+          <Chip
+            size="small"
+            icon={<QuestionAnswerIcon />}
+            label={`問い合わせ ${customer.inquiry_count || 0}件`}
+            variant="outlined"
+            sx={{ height: 22, fontSize: '0.7rem' }}
+          />
+          <Chip
+            size="small"
+            icon={<KeyIcon />}
+            label={`アクセス権 ${customer.access_count || 0}件`}
+            variant="outlined"
+            sx={{ height: 22, fontSize: '0.7rem' }}
+          />
         </Box>
       </Paper>
 
@@ -487,7 +512,7 @@ export default function CustomerDetail() {
           p: 1
         }}
       >
-        {/* Left Column - Customer Info */}
+        {/* Left Column - Inquiry List */}
         <Paper
           elevation={2}
           sx={{
@@ -515,147 +540,134 @@ export default function CustomerDetail() {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <PersonIcon color="primary" fontSize="small" />
+              <FlagIcon color="primary" fontSize="small" />
               <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                顧客情報
+                案件一覧
               </Typography>
+              <Chip label={inquiries.length} size="small" color="primary" variant="outlined" sx={{ height: 20, fontSize: '0.75rem' }} />
             </Box>
+            <Tooltip title="案件を作成">
+              <IconButton size="small" color="primary" onClick={() => setCreateInquiryDialogOpen(true)}>
+                <AddIcon />
+              </IconButton>
+            </Tooltip>
           </Box>
 
-          <Box sx={{ p: 2, overflow: 'auto', flex: 1 }}>
-            {/* Contact Info */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {customer.email && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <EmailIcon color="action" fontSize="small" />
-                  <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
-                    <a href={`mailto:${customer.email}`} style={{ color: 'inherit' }}>
-                      {customer.email}
-                    </a>
-                  </Typography>
-                </Box>
-              )}
-
-              {customer.phone && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <PhoneIcon color="action" fontSize="small" />
-                  <Typography variant="body2">
-                    <a href={`tel:${customer.phone}`} style={{ color: 'inherit' }}>
-                      {customer.phone}
-                    </a>
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-
-            <Divider sx={{ my: 1.5 }} />
-
-            {/* Stats */}
-            <Box sx={{ display: 'flex', gap: 2, mb: 1.5 }}>
-              <Box sx={{ textAlign: 'center', flex: 1 }}>
-                <Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
-                  {customer.inquiry_count}
+          <Box sx={{ p: 1.5, overflow: 'auto', flex: 1 }}>
+            {inquiries.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <FlagIcon sx={{ fontSize: 48, color: 'grey.300', mb: 1 }} />
+                <Typography color="text.secondary" sx={{ mb: 2 }}>
+                  案件はありません
                 </Typography>
-                <Typography variant="caption" color="text.secondary">問い合わせ</Typography>
-              </Box>
-              <Box sx={{ textAlign: 'center', flex: 1 }}>
-                <Typography variant="h5" color="info.main" sx={{ fontWeight: 600 }}>
-                  {customer.access_count}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">アクセス権</Typography>
-              </Box>
-            </Box>
-
-            {/* Dates */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 1.5 }}>
-              {customer.last_contacted_at && (
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="caption" color="text.secondary">最終連絡</Typography>
-                  <Typography variant="caption">{customer.last_contacted_at}</Typography>
-                </Box>
-              )}
-              {customer.last_inquiry_at && (
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="caption" color="text.secondary">最終問合せ</Typography>
-                  <Typography variant="caption">{customer.last_inquiry_at}</Typography>
-                </Box>
-              )}
-            </Box>
-
-            <Divider sx={{ my: 1.5 }} />
-
-            {/* Notes Section */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                メモ
-              </Typography>
-              {!editing && (
-                <IconButton size="small" onClick={() => setEditing(true)}>
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              )}
-            </Box>
-
-            {editing ? (
-              <Box>
-                <TextField
-                  multiline
-                  rows={3}
-                  fullWidth
-                  value={editForm.notes}
-                  onChange={(e) => setEditForm({ notes: e.target.value })}
-                  placeholder="社内メモを入力..."
+                <Button
                   size="small"
-                />
-                <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                  <Button
-                    size="small"
-                    variant="contained"
-                    onClick={handleSave}
-                    disabled={saving}
-                  >
-                    保存
-                  </Button>
-                  <Button
-                    size="small"
-                    onClick={() => {
-                      setEditing(false);
-                      setEditForm({ notes: customer.notes || '' });
-                    }}
-                    disabled={saving}
-                  >
-                    取消
-                  </Button>
-                </Box>
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  onClick={() => setCreateInquiryDialogOpen(true)}
+                >
+                  案件を作成
+                </Button>
               </Box>
             ) : (
-              <Typography
-                variant="body2"
-                color={customer.notes ? 'text.primary' : 'text.secondary'}
-                sx={{ fontSize: '0.85rem', whiteSpace: 'pre-wrap' }}
-              >
-                {customer.notes || 'メモなし'}
-              </Typography>
-            )}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {inquiries.map((inquiry) => {
+                  const inquiryDealStatusInfo = getDealStatusInfo(inquiry.deal_status);
+                  const isSelected = selectedInquiryId === inquiry.id;
+                  return (
+                    <Card
+                      key={inquiry.id}
+                      variant="outlined"
+                      onClick={() => handleInquiryClick(inquiry.id)}
+                      sx={{
+                        bgcolor: isSelected ? 'primary.50' : 'grey.50',
+                        cursor: 'pointer',
+                        borderLeft: isSelected ? '3px solid' : '1px solid',
+                        borderLeftColor: isSelected ? 'primary.main' : 'divider',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: isSelected ? 'primary.100' : 'grey.100',
+                          borderLeftColor: isSelected ? 'primary.dark' : 'primary.light'
+                        }
+                      }}
+                    >
+                      <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                        {/* Inquiry Header: Deal Status + Priority */}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <FlagIcon sx={{ fontSize: 16, color: `${inquiryDealStatusInfo.color}.main` }} />
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                              案件 #{inquiry.id}
+                            </Typography>
+                          </Box>
+                          <Chip
+                            size="small"
+                            label={inquiry.deal_status_label || inquiryDealStatusInfo.label}
+                            color={inquiryDealStatusInfo.color}
+                            sx={{ height: 18, fontSize: '0.65rem' }}
+                          />
+                        </Box>
 
-            {/* Inquired Properties */}
-            {customer.inquired_properties && customer.inquired_properties.length > 0 && (
-              <>
-                <Divider sx={{ my: 1.5 }} />
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem', mb: 1 }}>
-                  問い合わせ物件
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {customer.inquired_properties.map((title, index) => (
-                    <Chip
-                      key={index}
-                      size="small"
-                      label={title}
-                      sx={{ height: 22, fontSize: '0.7rem' }}
-                    />
-                  ))}
-                </Box>
-              </>
+                        {/* Assigned User */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                          <PersonIcon sx={{ fontSize: 14, color: inquiry.assigned_user ? 'primary.main' : 'action.disabled' }} />
+                          <Typography variant="caption" color={inquiry.assigned_user ? 'text.secondary' : 'text.disabled'}>
+                            担当: {inquiry.assigned_user?.name || '未設定'}
+                          </Typography>
+                          {inquiry.priority_label && inquiry.priority !== 'normal' && (
+                            <Chip
+                              size="small"
+                              label={inquiry.priority_label}
+                              color={inquiry.priority === 'urgent' ? 'error' : inquiry.priority === 'high' ? 'warning' : 'default'}
+                              sx={{ height: 16, fontSize: '0.6rem', ml: 0.5 }}
+                            />
+                          )}
+                        </Box>
+
+                        {/* Notes */}
+                        {inquiry.notes && (
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              whiteSpace: 'pre-wrap',
+                              bgcolor: 'white',
+                              p: 1,
+                              borderRadius: 1,
+                              maxHeight: 40,
+                              overflow: 'auto',
+                              fontSize: '0.8rem',
+                              mb: 0.5
+                            }}
+                          >
+                            {inquiry.notes}
+                          </Typography>
+                        )}
+
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {inquiry.created_at}
+                          </Typography>
+                          <Tooltip title="この案件に対応履歴を追加">
+                            <Button
+                              size="small"
+                              startIcon={<AddIcon />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedInquiryId(inquiry.id);
+                                setEditingActivity(null);
+                                setActivityDialogOpen(true);
+                              }}
+                              sx={{ minWidth: 'auto', px: 1, py: 0.25, fontSize: '0.65rem' }}
+                            >
+                              履歴追加
+                            </Button>
+                          </Tooltip>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </Box>
             )}
           </Box>
         </Paper>
@@ -734,17 +746,19 @@ export default function CustomerDetail() {
 
           <Box sx={{ p: 2, overflow: 'auto', flex: 1 }}>
             {(() => {
-              // Filter activities if a specific inquiry is selected
-              const filteredActivities = selectedInquiryId
-                ? activities.filter(a => a.inquiry_id === selectedInquiryId)
-                : activities;
+              // Filter activities if a specific inquiry or property inquiry is selected
+              const filteredActivities = selectedPropertyInquiryId
+                ? activities.filter(a => a.property_inquiry_id === selectedPropertyInquiryId)
+                : selectedInquiryId
+                  ? activities.filter(a => a.inquiry_id === selectedInquiryId)
+                  : activities;
 
               if (filteredActivities.length === 0) {
                 return (
                   <Box sx={{ textAlign: 'center', py: 6 }}>
                     <NoteIcon sx={{ fontSize: 48, color: 'grey.300', mb: 1 }} />
                     <Typography color="text.secondary">
-                      {selectedInquiryId ? 'この案件に関連する対応履歴はありません' : '対応履歴はありません'}
+                      {selectedPropertyInquiryId ? 'この問い合わせに関連する対応履歴はありません' : selectedInquiryId ? 'この案件に関連する対応履歴はありません' : '対応履歴はありません'}
                     </Typography>
                     <Button
                       size="small"
@@ -809,7 +823,7 @@ export default function CustomerDetail() {
                               )}
                             </Box>
                             {/* Case label - only show when not filtered and there's a linked inquiry */}
-                            {!selectedInquiryId && activity.property_inquiry_id && (
+                            {!selectedPropertyInquiryId && !selectedInquiryId && activity.property_inquiry_id && (
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                 <HomeIcon sx={{ fontSize: 14, color: 'primary.main' }} />
                                 <Typography variant="caption" color="primary.main" sx={{ fontWeight: 500 }}>
@@ -932,175 +946,93 @@ export default function CustomerDetail() {
               />
             </Tabs>
 
-            {/* Inquiries Tab Panel */}
+            {/* Inquiries Tab Panel - Selected inquiry's PropertyInquiries */}
             <Box sx={{ p: 2, flex: 1, overflow: 'auto', display: rightTab === 0 ? 'block' : 'none' }}>
-              {inquiries.length === 0 ? (
-                <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <Typography color="text.secondary" sx={{ mb: 2 }}>
-                    案件はありません
+              {!selectedInquiryId ? (
+                <Box sx={{ textAlign: 'center', py: 6 }}>
+                  <QuestionAnswerIcon sx={{ fontSize: 48, color: 'grey.300', mb: 1 }} />
+                  <Typography color="text.secondary">
+                    左の案件一覧から案件を選択してください
                   </Typography>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    startIcon={<AddIcon />}
-                    onClick={() => setCreateInquiryDialogOpen(true)}
-                  >
-                    案件を作成
-                  </Button>
                 </Box>
-              ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  {inquiries.map((inquiry) => {
-                    const inquiryDealStatusInfo = getDealStatusInfo(inquiry.deal_status);
-                    const isSelected = selectedInquiryId === inquiry.id;
-                    return (
-                      <Card
-                        key={inquiry.id}
-                        variant="outlined"
-                        onClick={() => handleInquiryClick(inquiry.id)}
-                        sx={{
-                          bgcolor: isSelected ? 'primary.50' : 'grey.50',
-                          cursor: 'pointer',
-                          borderLeft: isSelected ? '3px solid' : '1px solid',
-                          borderLeftColor: isSelected ? 'primary.main' : 'divider',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            bgcolor: isSelected ? 'primary.100' : 'grey.100',
-                            borderLeftColor: isSelected ? 'primary.dark' : 'primary.light'
-                          }
-                        }}
-                      >
-                        <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                          {/* Inquiry Header: Deal Status + Priority */}
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <FlagIcon sx={{ fontSize: 16, color: `${inquiryDealStatusInfo.color}.main` }} />
-                              <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                                案件 #{inquiry.id}
+              ) : (() => {
+                const selectedInquiry = inquiries.find(i => i.id === selectedInquiryId);
+                const propertyInquiries = selectedInquiry?.property_inquiries || [];
+                return propertyInquiries.length === 0 ? (
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <HomeIcon sx={{ fontSize: 48, color: 'grey.300', mb: 1 }} />
+                    <Typography color="text.secondary">
+                      この案件に紐づく物件問い合わせはありません
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    {propertyInquiries.map((pi) => {
+                      const piStatusInfo = getInquiryStatusInfo(pi.status);
+                      const isPiSelected = selectedPropertyInquiryId === pi.id;
+                      return (
+                        <Card
+                          key={pi.id}
+                          variant="outlined"
+                          onClick={() => handlePropertyInquiryClick(pi.id)}
+                          sx={{
+                            bgcolor: isPiSelected ? 'primary.50' : 'grey.50',
+                            cursor: 'pointer',
+                            borderLeft: isPiSelected ? '3px solid' : '1px solid',
+                            borderLeftColor: isPiSelected ? 'primary.main' : 'divider',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              bgcolor: isPiSelected ? 'primary.100' : 'grey.100',
+                              borderLeftColor: isPiSelected ? 'primary.dark' : 'primary.light'
+                            }
+                          }}
+                        >
+                          <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <HomeIcon sx={{ fontSize: 16, color: 'action.active' }} />
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                                  {pi.property_title || '物件名なし'}
+                                </Typography>
+                              </Box>
+                              <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                                <Tooltip title="クリックしてステータスを変更">
+                                  <Chip
+                                    size="small"
+                                    label={pi.status_label || piStatusInfo.label}
+                                    color={piStatusInfo.color}
+                                    onClick={(e) => handleStatusClick(e, pi.id)}
+                                    sx={{ height: 20, fontSize: '0.65rem', cursor: 'pointer' }}
+                                  />
+                                </Tooltip>
+                                {pi.room?.id && (
+                                  <Tooltip title="部屋詳細を開く">
+                                    <IconButton
+                                      size="small"
+                                      component={RouterLink}
+                                      to={`/room/${pi.room.id}`}
+                                      sx={{ p: 0.25 }}
+                                    >
+                                      <OpenInNewIcon sx={{ fontSize: 14 }} />
+                                    </IconButton>
+                                  </Tooltip>
+                                )}
+                              </Box>
+                            </Box>
+                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
+                              <Chip size="small" label={pi.origin_type_label || pi.origin_type} variant="outlined" color="primary" sx={{ height: 18, fontSize: '0.65rem' }} />
+                              <Chip size="small" label={pi.media_type_label || pi.media_type} variant="outlined" sx={{ height: 18, fontSize: '0.65rem' }} />
+                              <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
+                                {pi.created_at}
                               </Typography>
                             </Box>
-                            <Chip
-                              size="small"
-                              label={inquiry.deal_status_label || inquiryDealStatusInfo.label}
-                              color={inquiryDealStatusInfo.color}
-                              sx={{ height: 18, fontSize: '0.65rem' }}
-                            />
-                          </Box>
-
-                          {/* Assigned User */}
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                            <PersonIcon sx={{ fontSize: 14, color: inquiry.assigned_user ? 'primary.main' : 'action.disabled' }} />
-                            <Typography variant="caption" color={inquiry.assigned_user ? 'text.secondary' : 'text.disabled'}>
-                              担当: {inquiry.assigned_user?.name || '未設定'}
-                            </Typography>
-                            {inquiry.priority_label && inquiry.priority !== 'normal' && (
-                              <Chip
-                                size="small"
-                                label={inquiry.priority_label}
-                                color={inquiry.priority === 'urgent' ? 'error' : inquiry.priority === 'high' ? 'warning' : 'default'}
-                                sx={{ height: 16, fontSize: '0.6rem', ml: 0.5 }}
-                              />
-                            )}
-                          </Box>
-
-                          {/* Notes */}
-                          {inquiry.notes && (
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                whiteSpace: 'pre-wrap',
-                                bgcolor: 'white',
-                                p: 1,
-                                borderRadius: 1,
-                                maxHeight: 40,
-                                overflow: 'auto',
-                                fontSize: '0.8rem',
-                                mb: 0.5
-                              }}
-                            >
-                              {inquiry.notes}
-                            </Typography>
-                          )}
-
-                          {/* Property Inquiries (nested) */}
-                          {inquiry.property_inquiries && inquiry.property_inquiries.length > 0 && (
-                            <Box sx={{ mt: 0.5, pl: 1, borderLeft: '2px solid', borderColor: 'divider' }}>
-                              {inquiry.property_inquiries.map((pi) => {
-                                const piStatusInfo = getInquiryStatusInfo(pi.status);
-                                return (
-                                  <Box key={pi.id} sx={{ mb: 0.5, p: 0.5 }}>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <HomeIcon sx={{ fontSize: 14, color: 'action.active' }} />
-                                        <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                                          {pi.property_title || '物件名なし'}
-                                        </Typography>
-                                      </Box>
-                                      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                                        <Tooltip title="クリックしてステータスを変更">
-                                          <Chip
-                                            size="small"
-                                            label={pi.status_label || piStatusInfo.label}
-                                            color={piStatusInfo.color}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleStatusClick(e, pi.id);
-                                            }}
-                                            sx={{ height: 16, fontSize: '0.6rem', cursor: 'pointer' }}
-                                          />
-                                        </Tooltip>
-                                        {pi.room?.id && (
-                                          <Tooltip title="部屋詳細を開く">
-                                            <IconButton
-                                              size="small"
-                                              component={RouterLink}
-                                              to={`/room/${pi.room.id}`}
-                                              onClick={(e) => e.stopPropagation()}
-                                              sx={{ p: 0.15 }}
-                                            >
-                                              <OpenInNewIcon sx={{ fontSize: 12 }} />
-                                            </IconButton>
-                                          </Tooltip>
-                                        )}
-                                      </Box>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.25 }}>
-                                      <Chip size="small" label={pi.origin_type_label || pi.origin_type} variant="outlined" color="primary" sx={{ height: 16, fontSize: '0.6rem' }} />
-                                      <Chip size="small" label={pi.media_type_label || pi.media_type} variant="outlined" sx={{ height: 16, fontSize: '0.6rem' }} />
-                                      <Typography variant="caption" color="text.secondary">{pi.created_at}</Typography>
-                                    </Box>
-                                  </Box>
-                                );
-                              })}
-                            </Box>
-                          )}
-
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              {inquiry.created_at}
-                            </Typography>
-                            <Tooltip title="この案件に対応履歴を追加">
-                              <Button
-                                size="small"
-                                startIcon={<AddIcon />}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedInquiryId(inquiry.id);
-                                  setEditingActivity(null);
-                                  setActivityDialogOpen(true);
-                                }}
-                                sx={{ minWidth: 'auto', px: 1, py: 0.25, fontSize: '0.65rem' }}
-                              >
-                                履歴追加
-                              </Button>
-                            </Tooltip>
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </Box>
-              )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </Box>
+                );
+              })()}
             </Box>
 
             {/* Accesses Tab Panel */}
@@ -1226,7 +1158,7 @@ export default function CustomerDetail() {
       <StatusChangeDialog
         open={statusDialogOpen}
         onClose={() => setStatusDialogOpen(false)}
-        inquiryId={customer.latest_inquiry_id}
+        inquiryId={selectedInquiryId || customer.latest_inquiry_id}
         currentStatus={customer.deal_status}
         onChanged={loadCustomer}
       />
