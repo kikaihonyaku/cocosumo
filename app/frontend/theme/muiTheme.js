@@ -303,10 +303,8 @@ const muiTheme = createTheme({
     MuiCheckbox: {
       styleOverrides: {
         root: {
-          color: 'rgba(255, 255, 255, 0.7)',
-          '&.Mui-checked': {
-            color: '#ffffff',
-          },
+          // デフォルトはMUI標準色（白背景のテーブル等で使用）
+          // 青背景で使う場合は個別にsx={{ color: 'rgba(255,255,255,0.7)', '&.Mui-checked': { color: '#fff' } }}を指定
         },
       },
     },
