@@ -280,6 +280,7 @@ Rails.application.routes.draw do
       resources :property_inquiries, only: [:update] do
         member do
           post :reply
+          post :change_deal_status
         end
       end
 

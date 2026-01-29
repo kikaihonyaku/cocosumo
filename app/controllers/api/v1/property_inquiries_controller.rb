@@ -24,7 +24,7 @@ class Api::V1::PropertyInquiriesController < ApplicationController
       @customer.save!
 
       # Inquiry（案件）を自動作成または検索
-      @inquiry = @customer.inquiries.where(tenant: tenant).active_deals.order(created_at: :desc).first
+      @inquiry = @customer.inquiries.where(tenant: tenant).where(status: :active).order(created_at: :desc).first
       @inquiry ||= tenant.inquiries.create!(customer: @customer)
 
       @property_inquiry = @property_publication.property_inquiries.build(inquiry_params)
@@ -276,6 +276,42 @@ class Api::V1::PropertyInquiriesController < ApplicationController
     render json: { error: "問い合わせが見つかりませんでした" }, status: :not_found
   end
 
+  # POST /api/v1/property_inquiries/:id/change_deal_status (認証必要)
+  def change_deal_status
+    return render json: { error: "認証が必要です" }, status: :unauthorized unless current_user
+
+    @inquiry = PropertyInquiry.find(params[:id])
+
+    unless authorized_for_inquiry?(@inquiry)
+      return render json: { error: "この問い合わせを編集する権限がありません" }, status: :forbidden
+    end
+
+    new_status = params[:deal_status]
+    reason = params[:reason]
+
+    unless PropertyInquiry.deal_statuses.key?(new_status)
+      return render json: { error: "無効なステータスです" }, status: :unprocessable_entity
+    end
+
+    @inquiry.change_deal_status!(new_status, user: current_user, reason: reason)
+
+    render json: {
+      success: true,
+      message: "商談ステータスを「#{@inquiry.deal_status_label}」に変更しました",
+      property_inquiry: {
+        id: @inquiry.id,
+        deal_status: @inquiry.deal_status,
+        deal_status_label: @inquiry.deal_status_label,
+        deal_status_changed_at: @inquiry.deal_status_changed_at&.strftime("%Y/%m/%d %H:%M"),
+        lost_reason: @inquiry.lost_reason
+      }
+    }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "問い合わせが見つかりませんでした" }, status: :not_found
+  rescue => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
   # POST /api/v1/inquiries/:id/reply (認証必要) - 返信メール送信
   def reply
     return render json: { error: "認証が必要です" }, status: :unauthorized unless current_user
@@ -334,7 +370,7 @@ class Api::V1::PropertyInquiriesController < ApplicationController
   end
 
   def update_params
-    params.require(:property_inquiry).permit(:status)
+    params.require(:property_inquiry).permit(:status, :deal_status, :priority, :assigned_user_id)
   end
 
   def send_notification_emails(property_inquiry)
@@ -388,11 +424,17 @@ class Api::V1::PropertyInquiriesController < ApplicationController
       origin_type: inquiry.origin_type,
       origin_type_label: inquiry.origin_type_label,
       status_label: inquiry.status_label,
+      deal_status: inquiry.deal_status,
+      deal_status_label: inquiry.deal_status_label,
+      deal_status_changed_at: inquiry.deal_status_changed_at&.strftime("%Y/%m/%d %H:%M"),
+      priority: inquiry.priority,
+      priority_label: inquiry.priority_label,
+      lost_reason: inquiry.lost_reason,
       property_title: inquiry.property_title,
       inquiry_id: inquiry.inquiry_id,
-      assigned_user: inquiry.inquiry&.assigned_user ? {
-        id: inquiry.inquiry.assigned_user.id,
-        name: inquiry.inquiry.assigned_user.name
+      assigned_user: inquiry.assigned_user ? {
+        id: inquiry.assigned_user.id,
+        name: inquiry.assigned_user.name
       } : nil,
       room: room ? {
         id: room.id,

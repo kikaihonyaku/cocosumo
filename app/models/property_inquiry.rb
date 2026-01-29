@@ -7,12 +7,15 @@ class PropertyInquiry < ApplicationRecord
   belongs_to :property_publication, optional: true
   belongs_to :customer
   belongs_to :inquiry
+  belongs_to :assigned_user, class_name: "User", optional: true
   has_many :customer_accesses
   has_many :customer_activities
 
   # Callbacks for automatic activity recording
   after_create :record_inquiry_activity
   after_update :record_status_change_activity, if: :saved_change_to_status?
+  before_save :track_deal_status_change
+  after_update :record_deal_status_change_activity, if: :saved_change_to_deal_status?
 
   # Enums
   enum :media_type, {
@@ -45,6 +48,23 @@ class PropertyInquiry < ApplicationRecord
 
   enum :channel, { web_form: 0, line: 1, email: 2 }, prefix: true
 
+  enum :deal_status, {
+    new_inquiry: 0,
+    contacting: 1,
+    viewing_scheduled: 2,
+    viewing_done: 3,
+    application: 4,
+    contracted: 5,
+    lost: 6
+  }, default: :new_inquiry, prefix: :deal
+
+  enum :priority, {
+    low: 0,
+    normal: 1,
+    high: 2,
+    urgent: 3
+  }, default: :normal, prefix: :priority
+
   # Validations
   validates :name, presence: true
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
@@ -56,6 +76,9 @@ class PropertyInquiry < ApplicationRecord
   # Scopes
   scope :recent, -> { order(created_at: :desc) }
   scope :active, -> { where.not(status: :completed) }
+  scope :active_deals, -> { where.not(deal_status: [ :contracted, :lost ]) }
+  scope :by_deal_status, ->(status) { where(deal_status: status) }
+  scope :by_priority, ->(priority) { where(priority: priority) }
 
   # Get formatted created time
   def formatted_created_at
@@ -78,6 +101,38 @@ class PropertyInquiry < ApplicationRecord
 
   def status_label
     I18n.t("activerecord.enums.property_inquiry.status.#{status}", default: status)
+  end
+
+  # ステータスラベル
+  def deal_status_label
+    {
+      "new_inquiry" => "新規反響",
+      "contacting" => "対応中",
+      "viewing_scheduled" => "内見予約",
+      "viewing_done" => "内見済",
+      "application" => "申込",
+      "contracted" => "成約",
+      "lost" => "失注"
+    }[deal_status] || deal_status
+  end
+
+  # 優先度ラベル
+  def priority_label
+    {
+      "low" => "低",
+      "normal" => "通常",
+      "high" => "高",
+      "urgent" => "緊急"
+    }[priority] || priority
+  end
+
+  # ステータス変更（履歴付き）
+  def change_deal_status!(new_status, user: nil, reason: nil)
+    old_status = deal_status
+    self.deal_status = new_status
+    self.lost_reason = reason if new_status.to_s == "lost"
+    self.changed_by = user
+    save!
   end
 
   # 物件タイトル（room経由で取得）
@@ -129,6 +184,24 @@ class PropertyInquiry < ApplicationRecord
       direction: :internal,
       subject: "案件ステータスを「#{new_label}」に変更",
       content: "#{property_title}：#{old_label} → #{new_label}"
+    )
+  end
+
+  def track_deal_status_change
+    if deal_status_changed?
+      self.deal_status_changed_at = Time.current
+    end
+  end
+
+  def record_deal_status_change_activity
+    customer_activities.create!(
+      customer: customer,
+      inquiry: inquiry,
+      user: changed_by,
+      activity_type: :status_change,
+      direction: :internal,
+      subject: "商談ステータスを「#{deal_status_label}」に変更",
+      content: lost_reason.present? ? "#{property_title} - 理由: #{lost_reason}" : property_title
     )
   end
 end

@@ -49,9 +49,10 @@ import ActivityDialog from '../components/Customer/ActivityDialog';
 import StatusChangeDialog from '../components/Customer/StatusChangeDialog';
 import CreateInquiryDialog from '../components/Customer/CreateInquiryDialog';
 import EditInquiryDialog from '../components/Customer/EditInquiryDialog';
+import EditPropertyInquiryDialog from '../components/Customer/EditPropertyInquiryDialog';
 import AddPropertyDialog from '../components/Customer/AddPropertyDialog';
 
-// Status label mapping
+// Customer status mapping
 const getStatusInfo = (status) => {
   const statusMap = {
     active: { label: 'アクティブ', color: 'success' },
@@ -60,7 +61,18 @@ const getStatusInfo = (status) => {
   return statusMap[status] || { label: status || 'アクティブ', color: 'success' };
 };
 
-// Deal status mapping
+// Inquiry status mapping (active/on_hold/closed)
+const INQUIRY_STATUS_MAP = {
+  active: { label: 'アクティブ', color: 'success' },
+  on_hold: { label: '保留中', color: 'warning' },
+  closed: { label: 'クローズ', color: 'default' }
+};
+
+const getInquiryStatusInfo = (status) => {
+  return INQUIRY_STATUS_MAP[status] || { label: status || 'アクティブ', color: 'default' };
+};
+
+// Deal status mapping (on PropertyInquiry)
 const DEAL_STATUS_MAP = {
   new_inquiry: { label: '新規反響', color: 'info' },
   contacting: { label: '対応中', color: 'primary' },
@@ -85,6 +97,19 @@ const PRIORITY_MAP = {
 
 const getPriorityInfo = (priority) => {
   return PRIORITY_MAP[priority] || PRIORITY_MAP.normal;
+};
+
+// PI status mapping (pending/in_progress/completed)
+const getPIStatusInfo = (status) => {
+  const statusMap = {
+    pending: { label: '未対応', color: 'error' },
+    status_pending: { label: '未対応', color: 'error' },
+    in_progress: { label: '対応中', color: 'warning' },
+    status_in_progress: { label: '対応中', color: 'warning' },
+    completed: { label: '完了', color: 'success' },
+    status_completed: { label: '完了', color: 'success' }
+  };
+  return statusMap[status] || { label: status || '未対応', color: 'default' };
 };
 
 // Activity type icons
@@ -121,19 +146,6 @@ const getActivityDotColor = (activityType) => {
   return colorMap[activityType] || 'grey';
 };
 
-// Inquiry status mapping
-const getInquiryStatusInfo = (status) => {
-  const statusMap = {
-    pending: { label: '未対応', color: 'error' },
-    status_pending: { label: '未対応', color: 'error' },
-    in_progress: { label: '対応中', color: 'warning' },
-    status_in_progress: { label: '対応中', color: 'warning' },
-    completed: { label: '完了', color: 'success' },
-    status_completed: { label: '完了', color: 'success' }
-  };
-  return statusMap[status] || { label: status || '未対応', color: 'default' };
-};
-
 // Access status mapping
 const getAccessStatusInfo = (status) => {
   const statusMap = {
@@ -162,8 +174,10 @@ export default function CustomerDetail() {
   // Dialog states
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [statusDialogInquiry, setStatusDialogInquiry] = useState(null);
   const [createInquiryDialogOpen, setCreateInquiryDialogOpen] = useState(false);
   const [editingInquiry, setEditingInquiry] = useState(null);
+  const [editingPropertyInquiry, setEditingPropertyInquiry] = useState(null);
   const [editingActivity, setEditingActivity] = useState(null);
   const [addPropertyDialogOpen, setAddPropertyDialogOpen] = useState(false);
 
@@ -171,11 +185,9 @@ export default function CustomerDetail() {
   const [selectedInquiryId, setSelectedInquiryId] = useState(null);
   const [selectedPropertyInquiryId, setSelectedPropertyInquiryId] = useState(null);
 
-  // Inquiry status/user change menu states
+  // PI status change menu states
   const [statusMenuAnchor, setStatusMenuAnchor] = useState(null);
-  const [statusMenuInquiryId, setStatusMenuInquiryId] = useState(null);
-  const [userMenuAnchor, setUserMenuAnchor] = useState(null);
-  const [userMenuInquiryId, setUserMenuInquiryId] = useState(null);
+  const [statusMenuPIId, setStatusMenuPIId] = useState(null);
 
   // Tab state for right column
   const [rightTab, setRightTab] = useState(0);
@@ -283,7 +295,6 @@ export default function CustomerDetail() {
 
   const handleCopyUrl = (url) => {
     navigator.clipboard.writeText(url);
-    // Simple feedback - could be improved with a snackbar
     alert('URLをコピーしました');
   };
 
@@ -329,37 +340,36 @@ export default function CustomerDetail() {
     setSelectedPropertyInquiryId(prev => prev === piId ? null : piId);
   };
 
-  // Inquiry status menu handlers
-  const handleStatusClick = (event, inquiryId) => {
+  // PI status menu handlers (for pending/in_progress/completed)
+  const handlePIStatusClick = (event, piId) => {
     event.stopPropagation();
     setStatusMenuAnchor(event.currentTarget);
-    setStatusMenuInquiryId(inquiryId);
+    setStatusMenuPIId(piId);
   };
 
   const handleStatusMenuClose = () => {
     setStatusMenuAnchor(null);
-    setStatusMenuInquiryId(null);
+    setStatusMenuPIId(null);
   };
 
-  const handleStatusChange = async (newStatus) => {
-    if (!statusMenuInquiryId) return;
+  const handlePIStatusChange = async (newStatus) => {
+    if (!statusMenuPIId) return;
 
     try {
-      const response = await axios.patch(`/api/v1/property_inquiries/${statusMenuInquiryId}`, {
+      const response = await axios.patch(`/api/v1/property_inquiries/${statusMenuPIId}`, {
         property_inquiry: { status: newStatus }
       });
 
-      // Update local state - PropertyInquiry is nested inside Inquiry
+      // Update local state
       setInquiries(prev => prev.map(inquiry => ({
         ...inquiry,
         property_inquiries: (inquiry.property_inquiries || []).map(pi =>
-          pi.id === statusMenuInquiryId
+          pi.id === statusMenuPIId
             ? { ...pi, status: newStatus, status_label: response.data.inquiry?.status_label }
             : pi
         )
       })));
 
-      // Reload activities to show the new status change activity
       loadActivities();
     } catch (err) {
       console.error('Failed to update status:', err);
@@ -367,20 +377,6 @@ export default function CustomerDetail() {
       handleStatusMenuClose();
     }
   };
-
-  // Inquiry assigned user menu handlers
-  const handleUserClick = (event, inquiryId) => {
-    event.stopPropagation();
-    setUserMenuAnchor(event.currentTarget);
-    setUserMenuInquiryId(inquiryId);
-  };
-
-  const handleUserMenuClose = () => {
-    setUserMenuAnchor(null);
-    setUserMenuInquiryId(null);
-  };
-
-  // handleUserChange removed - assigned_user is now on Inquiry level
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh * var(--vh-correction, 1) - 64px)', bgcolor: 'grey.50' }}>
@@ -411,16 +407,16 @@ export default function CustomerDetail() {
                 <ChatIcon color="success" fontSize="small" />
               </Tooltip>
             )}
-            <Tooltip title="クリックしてステータスを変更">
+            {/* 顧客レベルの最新deal_status（PI由来） */}
+            {customer.deal_status && (
               <Chip
                 size="small"
                 icon={<FlagIcon />}
                 label={customer.deal_status_label || dealStatusInfo.label}
                 color={dealStatusInfo.color}
-                onClick={() => setStatusDialogOpen(true)}
-                sx={{ cursor: 'pointer', height: 22 }}
+                sx={{ height: 22 }}
               />
-            </Tooltip>
+            )}
             {(customer.priority === 'high' || customer.priority === 'urgent') && (
               <Chip
                 size="small"
@@ -576,7 +572,7 @@ export default function CustomerDetail() {
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {inquiries.map((inquiry) => {
-                  const inquiryDealStatusInfo = getDealStatusInfo(inquiry.deal_status);
+                  const inquiryStatusInfo = getInquiryStatusInfo(inquiry.status);
                   const isSelected = selectedInquiryId === inquiry.id;
                   return (
                     <Card
@@ -596,36 +592,35 @@ export default function CustomerDetail() {
                       }}
                     >
                       <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                        {/* Inquiry Header: Deal Status + Priority */}
+                        {/* Inquiry Header: Status */}
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <FlagIcon sx={{ fontSize: 16, color: `${inquiryDealStatusInfo.color}.main` }} />
+                            <FlagIcon sx={{ fontSize: 16, color: `${inquiryStatusInfo.color}.main` }} />
                             <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
                               案件 #{inquiry.id}
                             </Typography>
                           </Box>
-                          <Chip
-                            size="small"
-                            label={inquiry.deal_status_label || inquiryDealStatusInfo.label}
-                            color={inquiryDealStatusInfo.color}
-                            sx={{ height: 18, fontSize: '0.65rem' }}
-                          />
-                        </Box>
-
-                        {/* Assigned User */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                          <PersonIcon sx={{ fontSize: 14, color: inquiry.assigned_user ? 'primary.main' : 'action.disabled' }} />
-                          <Typography variant="caption" color={inquiry.assigned_user ? 'text.secondary' : 'text.disabled'}>
-                            担当: {inquiry.assigned_user?.name || '未設定'}
-                          </Typography>
-                          {inquiry.priority_label && inquiry.priority !== 'normal' && (
+                          <Tooltip title="クリックしてステータスを変更">
                             <Chip
                               size="small"
-                              label={inquiry.priority_label}
-                              color={inquiry.priority === 'urgent' ? 'error' : inquiry.priority === 'high' ? 'warning' : 'default'}
-                              sx={{ height: 16, fontSize: '0.6rem', ml: 0.5 }}
+                              label={inquiry.status_label || inquiryStatusInfo.label}
+                              color={inquiryStatusInfo.color}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setStatusDialogInquiry(inquiry);
+                                setStatusDialogOpen(true);
+                              }}
+                              sx={{ height: 18, fontSize: '0.65rem', cursor: 'pointer' }}
                             />
-                          )}
+                          </Tooltip>
+                        </Box>
+
+                        {/* PI count */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                          <HomeIcon sx={{ fontSize: 14, color: 'action.active' }} />
+                          <Typography variant="caption" color="text.secondary">
+                            物件: {(inquiry.property_inquiries || []).length}件
+                          </Typography>
                         </Box>
 
                         {/* Notes */}
@@ -996,7 +991,9 @@ export default function CustomerDetail() {
                       </Box>
                     ) : (<>
                     {propertyInquiries.map((pi) => {
-                      const piStatusInfo = getInquiryStatusInfo(pi.status);
+                      const piStatusInfo = getPIStatusInfo(pi.status);
+                      const piDealStatusInfo = getDealStatusInfo(pi.deal_status);
+                      const piPriorityInfo = getPriorityInfo(pi.priority);
                       const isPiSelected = selectedPropertyInquiryId === pi.id;
                       return (
                         <Card
@@ -1029,7 +1026,7 @@ export default function CustomerDetail() {
                                     size="small"
                                     label={pi.status_label || piStatusInfo.label}
                                     color={piStatusInfo.color}
-                                    onClick={(e) => handleStatusClick(e, pi.id)}
+                                    onClick={(e) => handlePIStatusClick(e, pi.id)}
                                     sx={{ height: 20, fontSize: '0.65rem', cursor: 'pointer' }}
                                   />
                                 </Tooltip>
@@ -1047,12 +1044,49 @@ export default function CustomerDetail() {
                                 )}
                               </Box>
                             </Box>
+                            {/* Deal status + Priority + Assigned user (now on PI) */}
+                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5, alignItems: 'center' }}>
+                              <Chip
+                                size="small"
+                                icon={<FlagIcon />}
+                                label={pi.deal_status_label || piDealStatusInfo.label}
+                                color={piDealStatusInfo.color}
+                                sx={{ height: 18, fontSize: '0.65rem' }}
+                              />
+                              {pi.priority && pi.priority !== 'normal' && (
+                                <Chip
+                                  size="small"
+                                  label={pi.priority_label || piPriorityInfo.label}
+                                  color={piPriorityInfo.color}
+                                  sx={{ height: 18, fontSize: '0.65rem' }}
+                                />
+                              )}
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                                <PersonIcon sx={{ fontSize: 14, color: pi.assigned_user ? 'primary.main' : 'action.disabled' }} />
+                                <Typography variant="caption" color={pi.assigned_user ? 'text.secondary' : 'text.disabled'} sx={{ fontSize: '0.65rem' }}>
+                                  {pi.assigned_user?.name || '未設定'}
+                                </Typography>
+                              </Box>
+                            </Box>
                             <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
                               <Chip size="small" label={pi.origin_type_label || pi.origin_type} variant="outlined" color="primary" sx={{ height: 18, fontSize: '0.65rem' }} />
                               <Chip size="small" label={pi.media_type_label || pi.media_type} variant="outlined" sx={{ height: 18, fontSize: '0.65rem' }} />
                               <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
                                 {pi.created_at}
                               </Typography>
+                              <Box sx={{ flex: 1 }} />
+                              <Tooltip title="商談情報を編集">
+                                <IconButton
+                                  size="small"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingPropertyInquiry(pi);
+                                  }}
+                                  sx={{ p: 0.25 }}
+                                >
+                                  <EditIcon sx={{ fontSize: 14 }} />
+                                </IconButton>
+                              </Tooltip>
                             </Box>
                           </CardContent>
                         </Card>
@@ -1184,20 +1218,31 @@ export default function CustomerDetail() {
         }}
       />
 
-      {/* Status Change Dialog */}
+      {/* Status Change Dialog (Inquiry status: active/on_hold/closed) */}
       <StatusChangeDialog
         open={statusDialogOpen}
-        onClose={() => setStatusDialogOpen(false)}
-        inquiryId={selectedInquiryId || customer.latest_inquiry_id}
-        currentStatus={customer.deal_status}
+        onClose={() => {
+          setStatusDialogOpen(false);
+          setStatusDialogInquiry(null);
+        }}
+        inquiryId={statusDialogInquiry?.id}
+        currentStatus={statusDialogInquiry?.status || 'active'}
         onChanged={loadCustomer}
       />
 
-      {/* Edit Inquiry Dialog */}
+      {/* Edit Inquiry Dialog (notes only) */}
       <EditInquiryDialog
         open={Boolean(editingInquiry)}
         onClose={() => setEditingInquiry(null)}
         inquiry={editingInquiry}
+        onUpdated={loadCustomer}
+      />
+
+      {/* Edit Property Inquiry Dialog (deal_status/priority/assigned_user) */}
+      <EditPropertyInquiryDialog
+        open={Boolean(editingPropertyInquiry)}
+        onClose={() => setEditingPropertyInquiry(null)}
+        propertyInquiry={editingPropertyInquiry}
         users={users}
         onUpdated={loadCustomer}
       />
@@ -1223,7 +1268,7 @@ export default function CustomerDetail() {
         }}
       />
 
-      {/* PropertyInquiry Status Menu */}
+      {/* PropertyInquiry Status Menu (pending/in_progress/completed) */}
       <Menu
         anchorEl={statusMenuAnchor}
         open={Boolean(statusMenuAnchor)}
@@ -1231,14 +1276,14 @@ export default function CustomerDetail() {
       >
         {(() => {
           const allPIs = inquiries.flatMap(i => i.property_inquiries || []);
-          const currentPI = allPIs.find(pi => pi.id === statusMenuInquiryId);
+          const currentPI = allPIs.find(pi => pi.id === statusMenuPIId);
           return ['pending', 'in_progress', 'completed'].map(s => {
             const labels = { pending: '未対応', in_progress: '対応中', completed: '完了' };
             const colors = { pending: 'error', in_progress: 'warning', completed: 'success' };
             return (
               <MenuItem
                 key={s}
-                onClick={() => handleStatusChange(s)}
+                onClick={() => handlePIStatusChange(s)}
                 selected={currentPI?.status === s}
               >
                 <Chip size="small" label={labels[s]} color={colors[s]} sx={{ mr: 1 }} />
@@ -1248,8 +1293,6 @@ export default function CustomerDetail() {
           });
         })()}
       </Menu>
-
-      {/* Inquiry Assigned User Menu - not used (assigned_user is on Inquiry level) */}
     </Box>
   );
 }

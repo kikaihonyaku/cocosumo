@@ -6,23 +6,15 @@ class Api::V1::InquiriesController < ApplicationController
   # GET /api/v1/inquiries
   def index
     @inquiries = current_user.tenant.inquiries
-                              .includes(:customer, :assigned_user, property_inquiries: { room: :building })
+                              .includes(:customer, property_inquiries: { room: :building })
                               .recent
-
-    if params[:deal_status].present?
-      @inquiries = @inquiries.by_deal_status(params[:deal_status])
-    end
-
-    if params[:priority].present?
-      @inquiries = @inquiries.by_priority(params[:priority])
-    end
-
-    if params[:assigned_user_id].present?
-      @inquiries = @inquiries.where(assigned_user_id: params[:assigned_user_id])
-    end
 
     if params[:customer_id].present?
       @inquiries = @inquiries.where(customer_id: params[:customer_id])
+    end
+
+    if params[:status].present?
+      @inquiries = @inquiries.where(status: params[:status])
     end
 
     # ページネーション
@@ -55,9 +47,6 @@ class Api::V1::InquiriesController < ApplicationController
 
     @inquiry = current_user.tenant.inquiries.build(
       customer: customer,
-      assigned_user_id: params[:assigned_user_id],
-      deal_status: params[:deal_status] || :new_inquiry,
-      priority: params[:priority] || :normal,
       notes: params[:notes]
     )
 
@@ -89,18 +78,17 @@ class Api::V1::InquiriesController < ApplicationController
 
   # POST /api/v1/inquiries/:id/change_status
   def change_status
-    new_status = params[:deal_status]
-    reason = params[:reason]
+    new_status = params[:status]
 
-    unless Inquiry.deal_statuses.key?(new_status)
+    unless Inquiry.statuses.key?(new_status)
       return render json: { error: "無効なステータスです" }, status: :unprocessable_entity
     end
 
-    @inquiry.change_deal_status!(new_status, user: current_user, reason: reason)
+    @inquiry.update!(status: new_status)
 
     render json: {
       success: true,
-      message: "ステータスを「#{@inquiry.deal_status_label}」に変更しました",
+      message: "ステータスを「#{@inquiry.status_label}」に変更しました",
       inquiry: inquiry_json(@inquiry)
     }
   rescue => e
@@ -126,6 +114,9 @@ class Api::V1::InquiriesController < ApplicationController
       media_type: params[:media_type] || :other_media,
       origin_type: params[:origin_type] || :staff_proposal,
       status: :pending,
+      deal_status: params[:deal_status] || :new_inquiry,
+      priority: params[:priority] || :normal,
+      assigned_user_id: params[:assigned_user_id],
       channel: :web_form,
       source: "staff_created"
     )
@@ -159,23 +150,15 @@ class Api::V1::InquiriesController < ApplicationController
   end
 
   def update_params
-    params.require(:inquiry).permit(:assigned_user_id, :priority, :notes)
+    params.require(:inquiry).permit(:notes)
   end
 
   def inquiry_json(inquiry)
     {
       id: inquiry.id,
-      deal_status: inquiry.deal_status,
-      deal_status_label: inquiry.deal_status_label,
-      deal_status_changed_at: inquiry.deal_status_changed_at&.strftime("%Y/%m/%d %H:%M"),
-      priority: inquiry.priority,
-      priority_label: inquiry.priority_label,
-      lost_reason: inquiry.lost_reason,
+      status: inquiry.status,
+      status_label: inquiry.status_label,
       notes: inquiry.notes,
-      assigned_user: inquiry.assigned_user ? {
-        id: inquiry.assigned_user.id,
-        name: inquiry.assigned_user.name
-      } : nil,
       customer: {
         id: inquiry.customer.id,
         name: inquiry.customer.name
@@ -188,7 +171,7 @@ class Api::V1::InquiriesController < ApplicationController
 
   def inquiry_detail_json(inquiry)
     inquiry_json(inquiry).merge(
-      property_inquiries: inquiry.property_inquiries.includes(:room, :property_publication).map { |pi|
+      property_inquiries: inquiry.property_inquiries.includes(:room, :property_publication, :assigned_user).map { |pi|
         {
           id: pi.id,
           property_title: pi.property_title,
@@ -198,6 +181,16 @@ class Api::V1::InquiriesController < ApplicationController
           origin_type_label: pi.origin_type_label,
           status: pi.status,
           status_label: pi.status_label,
+          deal_status: pi.deal_status,
+          deal_status_label: pi.deal_status_label,
+          deal_status_changed_at: pi.deal_status_changed_at&.strftime("%Y/%m/%d %H:%M"),
+          priority: pi.priority,
+          priority_label: pi.priority_label,
+          lost_reason: pi.lost_reason,
+          assigned_user: pi.assigned_user ? {
+            id: pi.assigned_user.id,
+            name: pi.assigned_user.name
+          } : nil,
           channel: pi.channel,
           message: pi.message,
           created_at: pi.formatted_created_at,

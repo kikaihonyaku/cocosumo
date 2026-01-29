@@ -78,9 +78,9 @@ class Customer < ApplicationRecord
     parts.join(" / ")
   end
 
-  # 最新Inquiryのdeal_statusを返す
+  # 最新PropertyInquiryのdeal_statusを返す
   def current_deal_status
-    inquiries.order(created_at: :desc).first&.deal_status
+    property_inquiries.order(created_at: :desc).first&.deal_status
   end
 
   # 対応履歴を追加

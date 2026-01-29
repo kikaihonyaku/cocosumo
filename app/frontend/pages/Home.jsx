@@ -473,7 +473,7 @@ function AlertsPanel({ alerts, loading, navigate }) {
     );
   }
 
-  const hasHighPriority = alerts?.high_priority_customers?.length > 0;
+  const hasHighPriority = alerts?.high_priority_inquiries?.length > 0;
   const hasExpiring = alerts?.expiring_accesses?.length > 0;
 
   if (!hasHighPriority && !hasExpiring) {
@@ -492,12 +492,12 @@ function AlertsPanel({ alerts, loading, navigate }) {
         <Box sx={{ mb: 2 }}>
           <Typography variant="subtitle2" sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1, color: "error.main" }}>
             <PriorityHighIcon fontSize="small" />
-            優先度が高い顧客
+            優先度が高い問い合わせ
           </Typography>
           <List dense sx={{ py: 0 }}>
-            {alerts.high_priority_customers.slice(0, 3).map((customer) => (
+            {alerts.high_priority_inquiries.slice(0, 3).map((pi) => (
               <ListItem
-                key={customer.id}
+                key={pi.id}
                 sx={{
                   px: 1,
                   py: 0.5,
@@ -505,23 +505,23 @@ function AlertsPanel({ alerts, loading, navigate }) {
                   "&:hover": { bgcolor: "action.hover" },
                   borderRadius: 1
                 }}
-                onClick={() => navigate(`/customers/${customer.id}`)}
+                onClick={() => navigate(`/customers/${pi.customer_id}`)}
               >
                 <ListItemText
                   primary={
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {customer.name}
+                        {pi.customer_name}
                       </Typography>
                       <Chip
-                        label={customer.priority_label}
+                        label={pi.priority_label}
                         size="small"
-                        color={customer.priority === "urgent" ? "error" : "warning"}
+                        color={pi.priority === "urgent" ? "error" : "warning"}
                         sx={{ height: 18, fontSize: "0.7rem" }}
                       />
                     </Box>
                   }
-                  secondary={customer.deal_status_label}
+                  secondary={`${pi.property_title} - ${pi.deal_status_label}`}
                 />
               </ListItem>
             ))}

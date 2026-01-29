@@ -34,10 +34,10 @@ class Api::V1::DashboardsController < ApplicationController
     pending_count = tenant_inquiries.where(status: :pending).count
     in_progress_count = tenant_inquiries.where(status: :in_progress).count
 
-    # アクティブな案件（Inquiry経由）
-    active_customers = tenant.inquiries.active_deals.count
-    contracted_this_month = tenant.inquiries.where(deal_status: :contracted)
-                                   .where("deal_status_changed_at >= ?", this_month_start).count
+    # アクティブな商談（PropertyInquiry経由）
+    active_deals = tenant_inquiries.active_deals.count
+    contracted_this_month = tenant_inquiries.where(deal_status: :contracted)
+                                   .where("property_inquiries.deal_status_changed_at >= ?", this_month_start).count
 
     # 公開中ページ
     published_pages = PropertyPublication.kept.joins(room: :building)
@@ -55,7 +55,7 @@ class Api::V1::DashboardsController < ApplicationController
         in_progress: in_progress_count
       },
       active_customers: {
-        count: active_customers,
+        count: active_deals,
         contracted_this_month: contracted_this_month
       },
       published_pages: published_pages
@@ -72,7 +72,7 @@ class Api::V1::DashboardsController < ApplicationController
   end
 
   def build_deal_status_distribution
-    current_user.tenant.inquiries.group(:deal_status).count
+    tenant_inquiries.group(:deal_status).count
   end
 
   def build_media_breakdown
@@ -101,27 +101,26 @@ class Api::V1::DashboardsController < ApplicationController
   end
 
   def build_alerts
-    tenant = current_user.tenant
-
-    # 優先度高の案件
-    high_priority_customers = tenant.inquiries.active_deals
+    # 優先度高の案件（PropertyInquiry経由）
+    high_priority_inquiries = tenant_inquiries.active_deals
                                     .where(priority: [ :high, :urgent ])
-                                    .includes(:customer, :assigned_user)
+                                    .includes(:customer, :assigned_user, room: :building)
                                     .limit(5)
-                                    .map { |i| {
-                                      id: i.customer_id,
-                                      inquiry_id: i.id,
-                                      name: i.customer.name,
-                                      priority: i.priority,
-                                      priority_label: i.priority_label,
-                                      deal_status: i.deal_status,
-                                      deal_status_label: i.deal_status_label,
-                                      assigned_user_name: i.assigned_user&.name
+                                    .map { |pi| {
+                                      id: pi.id,
+                                      customer_id: pi.customer_id,
+                                      customer_name: pi.customer&.name,
+                                      property_title: pi.property_title,
+                                      priority: pi.priority,
+                                      priority_label: pi.priority_label,
+                                      deal_status: pi.deal_status,
+                                      deal_status_label: pi.deal_status_label,
+                                      assigned_user_name: pi.assigned_user&.name
                                     } }
 
     # 期限切れ間近のアクセス権（7日以内）
     expiring_accesses = CustomerAccess.joins(property_publication: { room: :building })
-                                      .where(buildings: { tenant_id: tenant.id })
+                                      .where(buildings: { tenant_id: current_user.tenant_id })
                                       .where(status: :active)
                                       .where("customer_accesses.expires_at <= ?", 7.days.from_now)
                                       .where("customer_accesses.expires_at > ?", Time.current)
@@ -136,7 +135,7 @@ class Api::V1::DashboardsController < ApplicationController
                                       } }
 
     {
-      high_priority_customers: high_priority_customers,
+      high_priority_inquiries: high_priority_inquiries,
       expiring_accesses: expiring_accesses
     }
   end

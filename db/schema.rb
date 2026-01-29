@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_29_161536) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_29_231419) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -368,18 +368,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_29_161536) do
   create_table "inquiries", force: :cascade do |t|
     t.bigint "tenant_id", null: false
     t.bigint "customer_id", null: false
-    t.bigint "assigned_user_id"
-    t.integer "deal_status", default: 0, null: false
-    t.datetime "deal_status_changed_at"
-    t.integer "priority", default: 1, null: false
-    t.string "lost_reason"
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["assigned_user_id"], name: "index_inquiries_on_assigned_user_id"
+    t.integer "status", default: 0, null: false
     t.index ["customer_id"], name: "index_inquiries_on_customer_id"
-    t.index ["deal_status"], name: "index_inquiries_on_deal_status"
-    t.index ["priority"], name: "index_inquiries_on_priority"
+    t.index ["status"], name: "index_inquiries_on_status"
     t.index ["tenant_id"], name: "index_inquiries_on_tenant_id"
   end
 
@@ -465,12 +459,20 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_29_161536) do
     t.integer "media_type", default: 0
     t.integer "origin_type", default: 0
     t.bigint "inquiry_id", null: false
+    t.integer "deal_status", default: 0, null: false
+    t.datetime "deal_status_changed_at"
+    t.integer "priority", default: 1, null: false
+    t.bigint "assigned_user_id"
+    t.string "lost_reason"
+    t.index ["assigned_user_id"], name: "index_property_inquiries_on_assigned_user_id"
     t.index ["channel"], name: "index_property_inquiries_on_channel"
     t.index ["created_at"], name: "index_property_inquiries_on_created_at"
     t.index ["customer_id"], name: "index_property_inquiries_on_customer_id"
+    t.index ["deal_status"], name: "index_property_inquiries_on_deal_status"
     t.index ["inquiry_id"], name: "index_property_inquiries_on_inquiry_id"
     t.index ["media_type"], name: "index_property_inquiries_on_media_type"
     t.index ["origin_type"], name: "index_property_inquiries_on_origin_type"
+    t.index ["priority"], name: "index_property_inquiries_on_priority"
     t.index ["property_publication_id"], name: "index_property_inquiries_on_property_publication_id"
     t.index ["room_id", "customer_id"], name: "index_property_inquiries_on_room_id_and_customer_id"
     t.index ["room_id"], name: "index_property_inquiries_on_room_id"
@@ -964,7 +966,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_29_161536) do
   add_foreign_key "facility_synonyms", "facilities"
   add_foreign_key "inquiries", "customers"
   add_foreign_key "inquiries", "tenants"
-  add_foreign_key "inquiries", "users", column: "assigned_user_id"
   add_foreign_key "map_layers", "tenants", on_delete: :cascade
   add_foreign_key "owners", "buildings"
   add_foreign_key "owners", "tenants"
@@ -973,6 +974,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_29_161536) do
   add_foreign_key "property_inquiries", "inquiries"
   add_foreign_key "property_inquiries", "property_publications"
   add_foreign_key "property_inquiries", "rooms"
+  add_foreign_key "property_inquiries", "users", column: "assigned_user_id"
   add_foreign_key "property_publication_photos", "property_publications"
   add_foreign_key "property_publication_photos", "room_photos"
   add_foreign_key "property_publication_virtual_stagings", "property_publications"

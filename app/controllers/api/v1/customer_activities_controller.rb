@@ -94,8 +94,8 @@ class Api::V1::CustomerActivitiesController < ApplicationController
       } : nil,
       inquiry: activity.inquiry ? {
         id: activity.inquiry.id,
-        deal_status: activity.inquiry.deal_status,
-        deal_status_label: activity.inquiry.deal_status_label
+        status: activity.inquiry.status,
+        status_label: activity.inquiry.status_label
       } : nil,
       property_inquiry: activity.property_inquiry ? {
         id: activity.property_inquiry.id,

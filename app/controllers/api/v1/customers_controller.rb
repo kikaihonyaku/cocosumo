@@ -23,19 +23,19 @@ class Api::V1::CustomersController < ApplicationController
       @customers = @customers.where(status: params[:status])
     end
 
-    # 商談ステータスフィルタ（Inquiry経由）
+    # 商談ステータスフィルタ（PropertyInquiry経由）
     if params[:deal_status].present?
-      @customers = @customers.joins(:inquiries).where(inquiries: { deal_status: params[:deal_status] }).distinct
+      @customers = @customers.joins(:property_inquiries).where(property_inquiries: { deal_status: params[:deal_status] }).distinct
     end
 
-    # 優先度フィルタ（Inquiry経由）
+    # 優先度フィルタ（PropertyInquiry経由）
     if params[:priority].present?
-      @customers = @customers.joins(:inquiries).where(inquiries: { priority: params[:priority] }).distinct
+      @customers = @customers.joins(:property_inquiries).where(property_inquiries: { priority: params[:priority] }).distinct
     end
 
     # アクティブな商談のみ
     if params[:active_only] == "true"
-      @customers = @customers.joins(:inquiries).merge(Inquiry.active_deals).distinct
+      @customers = @customers.joins(:property_inquiries).merge(PropertyInquiry.active_deals).distinct
     end
 
     # ページネーション
@@ -90,7 +90,7 @@ class Api::V1::CustomersController < ApplicationController
   # GET /api/v1/customers/:id/inquiries
   def inquiries
     customer_inquiries = @customer.inquiries
-                                  .includes(:assigned_user, property_inquiries: { room: :building })
+                                  .includes(property_inquiries: [ :assigned_user, { room: :building } ])
                                   .recent
 
     render json: customer_inquiries.map { |i| inquiry_json(i) }
@@ -131,11 +131,10 @@ class Api::V1::CustomersController < ApplicationController
       # Inquiry（案件）を作成
       @inquiry = current_user.tenant.inquiries.create!(
         customer: @customer,
-        assigned_user: assigned_user,
         notes: params[:message]
       )
 
-      # PropertyInquiry を作成
+      # PropertyInquiry を作成（deal系フィールドはPI側に）
       property_inquiry = PropertyInquiry.new(
         room: room,
         property_publication: property_publication,
@@ -148,6 +147,9 @@ class Api::V1::CustomersController < ApplicationController
         media_type: params[:media_type] || :other_media,
         origin_type: params[:origin_type] || :staff_proposal,
         status: :pending,
+        deal_status: :new_inquiry,
+        priority: params[:priority] || :normal,
+        assigned_user: assigned_user,
         channel: :web_form,
         source: params[:source] || "staff_created"
       )
@@ -184,20 +186,20 @@ class Api::V1::CustomersController < ApplicationController
   end
 
   def customer_summary_json(customer)
-    latest_inquiry = customer.inquiries.order(created_at: :desc).first
+    latest_pi = customer.property_inquiries.order(created_at: :desc).first
     {
       id: customer.id,
       name: customer.name,
       email: customer.email,
       phone: customer.phone,
       status: customer.status,
-      deal_status: latest_inquiry&.deal_status,
-      deal_status_label: latest_inquiry&.deal_status_label,
-      priority: latest_inquiry&.priority,
-      priority_label: latest_inquiry&.priority_label,
-      assigned_user: latest_inquiry&.assigned_user ? {
-        id: latest_inquiry.assigned_user.id,
-        name: latest_inquiry.assigned_user.name
+      deal_status: latest_pi&.deal_status,
+      deal_status_label: latest_pi&.deal_status_label,
+      priority: latest_pi&.priority,
+      priority_label: latest_pi&.priority_label,
+      assigned_user: latest_pi&.assigned_user ? {
+        id: latest_pi.assigned_user.id,
+        name: latest_pi.assigned_user.name
       } : nil,
       inquiry_count: customer.property_inquiries.size,
       access_count: customer.customer_accesses.size,
@@ -209,7 +211,7 @@ class Api::V1::CustomersController < ApplicationController
   end
 
   def customer_detail_json(customer)
-    latest_inquiry = customer.inquiries.order(created_at: :desc).first
+    latest_pi = customer.property_inquiries.order(created_at: :desc).first
     {
       id: customer.id,
       name: customer.name,
@@ -218,22 +220,22 @@ class Api::V1::CustomersController < ApplicationController
       line_user_id: customer.line_user_id.present?,
       notes: customer.notes,
       status: customer.status,
-      deal_status: latest_inquiry&.deal_status,
-      deal_status_label: latest_inquiry&.deal_status_label,
-      deal_status_changed_at: latest_inquiry&.deal_status_changed_at&.strftime("%Y/%m/%d %H:%M"),
-      priority: latest_inquiry&.priority,
-      priority_label: latest_inquiry&.priority_label,
-      assigned_user: latest_inquiry&.assigned_user ? {
-        id: latest_inquiry.assigned_user.id,
-        name: latest_inquiry.assigned_user.name
+      deal_status: latest_pi&.deal_status,
+      deal_status_label: latest_pi&.deal_status_label,
+      deal_status_changed_at: latest_pi&.deal_status_changed_at&.strftime("%Y/%m/%d %H:%M"),
+      priority: latest_pi&.priority,
+      priority_label: latest_pi&.priority_label,
+      assigned_user: latest_pi&.assigned_user ? {
+        id: latest_pi.assigned_user.id,
+        name: latest_pi.assigned_user.name
       } : nil,
-      latest_inquiry_id: latest_inquiry&.id,
+      latest_inquiry_id: customer.inquiries.order(created_at: :desc).first&.id,
       expected_move_date: customer.expected_move_date&.strftime("%Y/%m/%d"),
       budget_min: customer.budget_min,
       budget_max: customer.budget_max,
       preferred_areas: customer.preferred_areas,
       requirements: customer.requirements,
-      lost_reason: latest_inquiry&.lost_reason,
+      lost_reason: latest_pi&.lost_reason,
       inquiry_count: customer.property_inquiries.count,
       access_count: customer.customer_accesses.count,
       last_inquiry_at: customer.last_inquiry_at&.strftime("%Y/%m/%d %H:%M"),
@@ -246,17 +248,9 @@ class Api::V1::CustomersController < ApplicationController
   def inquiry_json(inquiry)
     {
       id: inquiry.id,
-      deal_status: inquiry.deal_status,
-      deal_status_label: inquiry.deal_status_label,
-      deal_status_changed_at: inquiry.deal_status_changed_at&.strftime("%Y/%m/%d %H:%M"),
-      priority: inquiry.priority,
-      priority_label: inquiry.priority_label,
-      lost_reason: inquiry.lost_reason,
+      status: inquiry.status,
+      status_label: inquiry.status_label,
       notes: inquiry.notes,
-      assigned_user: inquiry.assigned_user ? {
-        id: inquiry.assigned_user.id,
-        name: inquiry.assigned_user.name
-      } : nil,
       property_inquiries: inquiry.property_inquiries.map { |pi|
         {
           id: pi.id,
@@ -267,6 +261,16 @@ class Api::V1::CustomersController < ApplicationController
           origin_type_label: pi.origin_type_label,
           status: pi.status,
           status_label: pi.status_label,
+          deal_status: pi.deal_status,
+          deal_status_label: pi.deal_status_label,
+          deal_status_changed_at: pi.deal_status_changed_at&.strftime("%Y/%m/%d %H:%M"),
+          priority: pi.priority,
+          priority_label: pi.priority_label,
+          lost_reason: pi.lost_reason,
+          assigned_user: pi.assigned_user ? {
+            id: pi.assigned_user.id,
+            name: pi.assigned_user.name
+          } : nil,
           channel: pi.channel,
           message: pi.message,
           created_at: pi.formatted_created_at,
