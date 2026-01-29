@@ -9,12 +9,16 @@ default: &default
   timeout: 5000
 
 development:
-  <<: *default
-  database: <%= ENV.fetch("DB_NAME", "cocosumo_development") %>
-  username: <%= ENV.fetch("DB_USER", "cocosumo") %>
-  password: <%= ENV.fetch("DB_PASSWORD", "cocosumo_dev") %>
-  host: <%= ENV.fetch("DB_HOST", "localhost") %>
-  port: <%= ENV.fetch("DB_PORT", 5432) %>
+  primary: &primary_development
+    <<: *default
+    database: <%= ENV.fetch("DB_NAME", "cocosumo_development") %>
+    username: <%= ENV.fetch("DB_USER", "cocosumo") %>
+    password: <%= ENV.fetch("DB_PASSWORD", "cocosumo_dev") %>
+    host: <%= ENV.fetch("DB_HOST", "localhost") %>
+    port: <%= ENV.fetch("DB_PORT", 5432) %>
+  queue:
+    <<: *primary_development
+    migrations_paths: db/queue_migrate
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
