@@ -1,7 +1,7 @@
 class Api::V1::InquiriesController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
-  before_action :set_inquiry, only: [ :show, :update, :change_status ]
+  before_action :set_inquiry, only: [ :show, :update, :change_status, :add_property ]
 
   # GET /api/v1/inquiries
   def index
@@ -105,6 +105,43 @@ class Api::V1::InquiriesController < ApplicationController
     }
   rescue => e
     render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  # POST /api/v1/inquiries/:id/add_property
+  def add_property
+    room = Room.find(params[:room_id])
+
+    unless room.building&.tenant_id == current_user.tenant_id
+      return render json: { error: "この物件への権限がありません" }, status: :forbidden
+    end
+
+    property_inquiry = PropertyInquiry.new(
+      room: room,
+      customer: @inquiry.customer,
+      inquiry: @inquiry,
+      name: @inquiry.customer.name,
+      email: @inquiry.customer.email.presence || "noreply@example.com",
+      phone: @inquiry.customer.phone,
+      message: params[:message].presence || "",
+      media_type: params[:media_type] || :other_media,
+      origin_type: params[:origin_type] || :staff_proposal,
+      status: :pending,
+      channel: :web_form,
+      source: "staff_created"
+    )
+
+    property_inquiry.changed_by = current_user
+    property_inquiry.save!
+
+    render json: {
+      success: true,
+      message: "物件を追加しました",
+      inquiry: inquiry_detail_json(@inquiry.reload)
+    }, status: :created
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "物件が見つかりませんでした" }, status: :not_found
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { errors: [ e.message ] }, status: :unprocessable_entity
   end
 
   private

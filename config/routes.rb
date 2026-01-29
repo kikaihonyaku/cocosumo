@@ -287,6 +287,7 @@ Rails.application.routes.draw do
       resources :inquiries, only: [:index, :show, :create, :update] do
         member do
           post :change_status
+          post :add_property
         end
       end
 

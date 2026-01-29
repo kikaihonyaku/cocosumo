@@ -48,6 +48,8 @@ import axios from 'axios';
 import ActivityDialog from '../components/Customer/ActivityDialog';
 import StatusChangeDialog from '../components/Customer/StatusChangeDialog';
 import CreateInquiryDialog from '../components/Customer/CreateInquiryDialog';
+import EditInquiryDialog from '../components/Customer/EditInquiryDialog';
+import AddPropertyDialog from '../components/Customer/AddPropertyDialog';
 
 // Status label mapping
 const getStatusInfo = (status) => {
@@ -161,7 +163,9 @@ export default function CustomerDetail() {
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [createInquiryDialogOpen, setCreateInquiryDialogOpen] = useState(false);
+  const [editingInquiry, setEditingInquiry] = useState(null);
   const [editingActivity, setEditingActivity] = useState(null);
+  const [addPropertyDialogOpen, setAddPropertyDialogOpen] = useState(false);
 
   // Case (inquiry) selector state
   const [selectedInquiryId, setSelectedInquiryId] = useState(null);
@@ -394,7 +398,7 @@ export default function CustomerDetail() {
       >
         {/* Row 1: Customer info + contact */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 0.5 }}>
-          <IconButton onClick={() => navigate('/customers')} size="small">
+          <IconButton onClick={() => navigate('/customers')} size="small" sx={{ alignSelf: 'center' }}>
             <ArrowBackIcon />
           </IconButton>
           <PersonIcon color="primary" sx={{ fontSize: 24 }} />
@@ -647,21 +651,35 @@ export default function CustomerDetail() {
                           <Typography variant="caption" color="text.secondary">
                             {inquiry.created_at}
                           </Typography>
-                          <Tooltip title="この案件に対応履歴を追加">
-                            <Button
-                              size="small"
-                              startIcon={<AddIcon />}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedInquiryId(inquiry.id);
-                                setEditingActivity(null);
-                                setActivityDialogOpen(true);
-                              }}
-                              sx={{ minWidth: 'auto', px: 1, py: 0.25, fontSize: '0.65rem' }}
-                            >
-                              履歴追加
-                            </Button>
-                          </Tooltip>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Tooltip title="案件を編集">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingInquiry(inquiry);
+                                }}
+                                sx={{ p: 0.25 }}
+                              >
+                                <EditIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="この案件に対応履歴を追加">
+                              <Button
+                                size="small"
+                                startIcon={<AddIcon />}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedInquiryId(inquiry.id);
+                                  setEditingActivity(null);
+                                  setActivityDialogOpen(true);
+                                }}
+                                sx={{ minWidth: 'auto', px: 1, py: 0.25, fontSize: '0.65rem' }}
+                              >
+                                履歴追加
+                              </Button>
+                            </Tooltip>
+                          </Box>
                         </Box>
                       </CardContent>
                     </Card>
@@ -958,15 +976,25 @@ export default function CustomerDetail() {
               ) : (() => {
                 const selectedInquiry = inquiries.find(i => i.id === selectedInquiryId);
                 const propertyInquiries = selectedInquiry?.property_inquiries || [];
-                return propertyInquiries.length === 0 ? (
-                  <Box sx={{ textAlign: 'center', py: 4 }}>
-                    <HomeIcon sx={{ fontSize: 48, color: 'grey.300', mb: 1 }} />
-                    <Typography color="text.secondary">
-                      この案件に紐づく物件問い合わせはありません
-                    </Typography>
-                  </Box>
-                ) : (
+                return (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<AddIcon />}
+                      onClick={() => setAddPropertyDialogOpen(true)}
+                      fullWidth
+                    >
+                      物件を追加
+                    </Button>
+                    {propertyInquiries.length === 0 ? (
+                      <Box sx={{ textAlign: 'center', py: 4 }}>
+                        <HomeIcon sx={{ fontSize: 48, color: 'grey.300', mb: 1 }} />
+                        <Typography color="text.secondary">
+                          この案件に紐づく物件問い合わせはありません
+                        </Typography>
+                      </Box>
+                    ) : (<>
                     {propertyInquiries.map((pi) => {
                       const piStatusInfo = getInquiryStatusInfo(pi.status);
                       const isPiSelected = selectedPropertyInquiryId === pi.id;
@@ -1030,6 +1058,8 @@ export default function CustomerDetail() {
                         </Card>
                       );
                     })}
+                  </>
+                    )}
                   </Box>
                 );
               })()}
@@ -1163,6 +1193,15 @@ export default function CustomerDetail() {
         onChanged={loadCustomer}
       />
 
+      {/* Edit Inquiry Dialog */}
+      <EditInquiryDialog
+        open={Boolean(editingInquiry)}
+        onClose={() => setEditingInquiry(null)}
+        inquiry={editingInquiry}
+        users={users}
+        onUpdated={loadCustomer}
+      />
+
       {/* Create Inquiry Dialog */}
       <CreateInquiryDialog
         open={createInquiryDialogOpen}
@@ -1170,6 +1209,16 @@ export default function CustomerDetail() {
         customerId={id}
         users={users}
         onCreated={() => {
+          loadCustomer();
+        }}
+      />
+
+      {/* Add Property Dialog */}
+      <AddPropertyDialog
+        open={addPropertyDialogOpen}
+        onClose={() => setAddPropertyDialogOpen(false)}
+        inquiryId={selectedInquiryId}
+        onAdded={() => {
           loadCustomer();
         }}
       />
