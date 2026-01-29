@@ -38,7 +38,9 @@ import {
   VisibilityOff as VisibilityOffIcon,
   CloudUpload as CloudUploadIcon,
   AddCircle as AddCircleIcon,
+  Public as PublicIcon,
 } from '@mui/icons-material';
+import { useAuth } from '../../contexts/AuthContext';
 
 // レイヤータイプの定義
 const LAYER_TYPES = {
@@ -63,6 +65,8 @@ const SCHOOL_TYPES = {
 };
 
 export default function LayerManagement() {
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role === 'super_admin';
   const [layers, setLayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -85,6 +89,7 @@ export default function LayerManagement() {
     opacity: 0.8,
     display_order: 0,
     is_active: true,
+    is_global: false,
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -138,6 +143,7 @@ export default function LayerManagement() {
       opacity: 0.8,
       display_order: 0,
       is_active: true,
+      is_global: false,
     });
     setSelectedFile(null);
   };
@@ -162,6 +168,9 @@ export default function LayerManagement() {
       formDataObj.append('opacity', formData.opacity);
       formDataObj.append('display_order', formData.display_order);
       formDataObj.append('is_active', formData.is_active);
+      if (formData.is_global) {
+        formDataObj.append('is_global', 'true');
+      }
 
       const response = await fetch('/api/v1/admin/map_layers', {
         method: 'POST',
@@ -414,6 +423,7 @@ export default function LayerManagement() {
             <TableHead>
               <TableRow>
                 <TableCell>レイヤー名</TableCell>
+                <TableCell>種別</TableCell>
                 <TableCell>タイプ</TableCell>
                 <TableCell align="center">フィーチャー数</TableCell>
                 <TableCell align="center">色</TableCell>
@@ -426,7 +436,7 @@ export default function LayerManagement() {
             <TableBody>
               {layers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 8, color: 'text.secondary' }}>
+                  <TableCell colSpan={9} align="center" sx={{ py: 8, color: 'text.secondary' }}>
                     レイヤーがありません。新規作成ボタンからレイヤーを作成してください。
                   </TableCell>
                 </TableRow>
@@ -440,6 +450,22 @@ export default function LayerManagement() {
                       <Typography variant="caption" color="text.secondary">
                         {layer.layer_key}
                       </Typography>
+                    </TableCell>
+                    <TableCell>
+                      {layer.is_global ? (
+                        <Chip
+                          icon={<PublicIcon />}
+                          label="全体"
+                          size="small"
+                          color="secondary"
+                        />
+                      ) : (
+                        <Chip
+                          label="テナント"
+                          size="small"
+                          variant="outlined"
+                        />
+                      )}
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -483,6 +509,7 @@ export default function LayerManagement() {
                         color="primary"
                         onClick={() => handleEdit(layer)}
                         title="編集"
+                        disabled={layer.is_global && !isSuperAdmin}
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
@@ -491,6 +518,7 @@ export default function LayerManagement() {
                         color="error"
                         onClick={() => handleDelete(layer)}
                         title="削除"
+                        disabled={layer.is_global && !isSuperAdmin}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -499,6 +527,7 @@ export default function LayerManagement() {
                         color="info"
                         onClick={() => handleDataManagement(layer, 'append')}
                         title="データ管理"
+                        disabled={layer.is_global && !isSuperAdmin}
                       >
                         <AddCircleIcon fontSize="small" />
                       </IconButton>
@@ -536,6 +565,19 @@ export default function LayerManagement() {
                 ))}
               </Select>
             </FormControl>
+
+            {/* 全テナント共通レイヤー（super_adminのみ） */}
+            {isSuperAdmin && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.is_global}
+                    onChange={(e) => setFormData({ ...formData, is_global: e.target.checked })}
+                  />
+                }
+                label="全テナント共通レイヤー（グローバル）"
+              />
+            )}
 
             {/* ファイルアップロード */}
             <Box sx={{ border: '2px dashed', borderColor: 'divider', borderRadius: 2, p: 3, textAlign: 'center' }}>

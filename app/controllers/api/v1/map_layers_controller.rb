@@ -6,7 +6,9 @@ class Api::V1::MapLayersController < ApplicationController
   # GET /api/v1/map_layers
   # 有効なレイヤー一覧を取得（一般ユーザー向け）
   def index
-    @layers = current_tenant.map_layers.active.ordered
+    global_layers = MapLayer.global_layers.active.ordered
+    tenant_layers = current_tenant.map_layers.active.ordered
+    @layers = global_layers + tenant_layers
 
     render json: @layers.map(&:display_config)
   end
@@ -26,8 +28,8 @@ class Api::V1::MapLayersController < ApplicationController
   private
 
   def set_map_layer
-    # layer_keyまたはIDでレイヤーを検索
-    @layer = current_tenant.map_layers.active.find_by(layer_key: params[:id]) ||
-             current_tenant.map_layers.active.find(params[:id])
+    # layer_keyまたはIDでレイヤーを検索（グローバルレイヤーも対象）
+    scope = MapLayer.active.where("tenant_id = ? OR is_global = true", current_tenant.id)
+    @layer = scope.find_by(layer_key: params[:id]) || scope.find(params[:id])
   end
 end

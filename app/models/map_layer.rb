@@ -1,5 +1,5 @@
 class MapLayer < ApplicationRecord
-  belongs_to :tenant
+  belongs_to :tenant, optional: true
   has_many :school_districts, dependent: :nullify
   has_many :address_points, dependent: :destroy
 
@@ -9,11 +9,13 @@ class MapLayer < ApplicationRecord
   validates :layer_type, presence: true
   validates :color, presence: true
   validates :opacity, presence: true, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 1 }
+  validate :validate_global_tenant_consistency
 
   # スコープ
   scope :active, -> { where(is_active: true) }
   scope :by_type, ->(type) { where(layer_type: type) }
   scope :ordered, -> { order(display_order: :asc, created_at: :asc) }
+  scope :global_layers, -> { where(is_global: true) }
 
   # レイヤータイプの定義
   LAYER_TYPES = {
@@ -77,7 +79,18 @@ class MapLayer < ApplicationRecord
       is_active: is_active,
       feature_count: feature_count,
       attribution: attribution,
-      display_order: display_order
+      display_order: display_order,
+      is_global: is_global
     }
+  end
+
+  private
+
+  def validate_global_tenant_consistency
+    if is_global?
+      errors.add(:tenant_id, "グローバルレイヤーにはテナントを設定できません") if tenant_id.present?
+    else
+      errors.add(:tenant_id, "テナントレイヤーにはテナントが必要です") if tenant_id.blank?
+    end
   end
 end

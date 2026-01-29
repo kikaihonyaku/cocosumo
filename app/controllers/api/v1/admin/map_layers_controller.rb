@@ -5,11 +5,15 @@ class Api::V1::Admin::MapLayersController < ApplicationController
   before_action :require_login
   before_action :require_admin
   before_action :set_map_layer, only: [:show, :update, :destroy, :append_features, :replace_features]
+  before_action :require_super_admin_for_global!, only: [:update, :destroy, :append_features, :replace_features]
 
   # GET /api/v1/admin/map_layers
   # レイヤー一覧を取得
   def index
-    @layers = current_tenant.map_layers.ordered
+    global_layers = MapLayer.global_layers.ordered
+    tenant_layers = current_tenant.map_layers.ordered
+
+    @layers = global_layers + tenant_layers
 
     # feature_countを更新（古いデータの場合）
     @layers.each do |layer|
@@ -33,7 +37,15 @@ class Api::V1::Admin::MapLayersController < ApplicationController
   # POST /api/v1/admin/map_layers
   # 新規レイヤーを作成
   def create
-    @layer = current_tenant.map_layers.build(layer_params)
+    if params[:is_global].to_s == "true"
+      unless current_user.super_admin?
+        render json: { error: "全体レイヤーの操作にはスーパー管理者権限が必要です" }, status: :forbidden
+        return
+      end
+      @layer = MapLayer.new(layer_params.merge(is_global: true, tenant_id: nil))
+    else
+      @layer = current_tenant.map_layers.build(layer_params)
+    end
 
     # JSONファイルがアップロードされた場合、データをインポート
     if params[:file].present?
@@ -125,7 +137,16 @@ class Api::V1::Admin::MapLayersController < ApplicationController
   private
 
   def set_map_layer
-    @layer = current_tenant.map_layers.find(params[:id])
+    # テナントレイヤーとグローバルレイヤーの両方を検索
+    @layer = MapLayer.where("tenant_id = ? OR is_global = true", current_tenant.id).find(params[:id])
+  end
+
+  def require_super_admin_for_global!
+    return unless @layer&.is_global?
+
+    unless current_user.super_admin?
+      render json: { error: "全体レイヤーの操作にはスーパー管理者権限が必要です" }, status: :forbidden
+    end
   end
 
   def layer_params

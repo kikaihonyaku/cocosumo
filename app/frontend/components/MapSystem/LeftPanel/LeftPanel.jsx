@@ -380,73 +380,99 @@ export default function LeftPanel({
                       </Typography>
                     </Box>
                   ) : (
-                    availableLayers.map(layer => (
-                      <FormControlLabel
-                        key={layer.id}
-                        control={
-                          <Checkbox
-                            checked={selectedLayers.includes(layer.id)}
-                            onChange={(e) => onLayerToggle(layer.id, e.target.checked)}
-                            size="small"
-                            sx={{
-                              color: 'rgba(255, 255, 255, 0.7)',
-                              '&.Mui-checked': {
-                                color: layer.color || 'rgba(255, 255, 255, 0.9)',
-                              },
-                            }}
-                          />
-                        }
-                        label={
-                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                            <Box
+                    (() => {
+                      const globalLayers = availableLayers.filter(l => l.is_global);
+                      const tenantLayers = availableLayers.filter(l => !l.is_global);
+                      const renderLayer = (layer) => (
+                        <FormControlLabel
+                          key={layer.id}
+                          control={
+                            <Checkbox
+                              checked={selectedLayers.includes(layer.id)}
+                              onChange={(e) => onLayerToggle(layer.id, e.target.checked)}
+                              size="small"
                               sx={{
-                                width: 16,
-                                height: 16,
-                                borderRadius: '4px',
-                                bgcolor: layer.color || '#888',
-                                opacity: layer.opacity || 0.5,
-                                border: '1px solid rgba(255, 255, 255, 0.3)',
-                                flexShrink: 0,
-                                mt: 0.25,
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                '&.Mui-checked': {
+                                  color: layer.color || 'rgba(255, 255, 255, 0.9)',
+                                },
                               }}
                             />
-                            <Box>
-                              <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.2 }}>
-                                {layer.label}
-                              </Typography>
-                              <Typography variant="caption" sx={{ opacity: 0.7, lineHeight: 1.3, display: 'block' }}>
-                                {layer.description}
-                              </Typography>
-                              {layer.attribution && (
-                                <Tooltip title={layer.attribution} placement="bottom">
-                                  <Typography
-                                    variant="caption"
-                                    sx={{
-                                      opacity: 0.5,
-                                      lineHeight: 1.2,
-                                      display: 'block',
-                                      mt: 0.5,
-                                      cursor: 'help',
-                                      textDecoration: 'underline',
-                                      textDecorationStyle: 'dotted',
-                                    }}
-                                  >
-                                    出典情報あり
-                                  </Typography>
-                                </Tooltip>
-                              )}
+                          }
+                          label={
+                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                              <Box
+                                sx={{
+                                  width: 16,
+                                  height: 16,
+                                  borderRadius: '4px',
+                                  bgcolor: layer.color || '#888',
+                                  opacity: layer.opacity || 0.5,
+                                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                                  flexShrink: 0,
+                                  mt: 0.25,
+                                }}
+                              />
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.2 }}>
+                                  {layer.label}
+                                </Typography>
+                                <Typography variant="caption" sx={{ opacity: 0.7, lineHeight: 1.3, display: 'block' }}>
+                                  {layer.description}
+                                </Typography>
+                                {layer.attribution && (
+                                  <Tooltip title={layer.attribution} placement="bottom">
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        opacity: 0.5,
+                                        lineHeight: 1.2,
+                                        display: 'block',
+                                        mt: 0.5,
+                                        cursor: 'help',
+                                        textDecoration: 'underline',
+                                        textDecorationStyle: 'dotted',
+                                      }}
+                                    >
+                                      出典情報あり
+                                    </Typography>
+                                  </Tooltip>
+                                )}
+                              </Box>
                             </Box>
-                          </Box>
-                        }
-                        sx={{
-                          alignItems: 'flex-start',
-                          ml: 0,
-                          p: 1,
-                          borderRadius: 1,
-                          '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
-                        }}
-                      />
-                    ))
+                          }
+                          sx={{
+                            alignItems: 'flex-start',
+                            ml: 0,
+                            p: 1,
+                            borderRadius: 1,
+                            '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
+                          }}
+                        />
+                      );
+                      return (
+                        <>
+                          {globalLayers.length > 0 && (
+                            <>
+                              <Typography variant="caption" sx={{ opacity: 0.5, fontWeight: 600, mt: 0.5 }}>
+                                共通レイヤー
+                              </Typography>
+                              {globalLayers.map(renderLayer)}
+                            </>
+                          )}
+                          {tenantLayers.length > 0 && (
+                            <>
+                              {globalLayers.length > 0 && (
+                                <Typography variant="caption" sx={{ opacity: 0.5, fontWeight: 600, mt: 1 }}>
+                                  テナントレイヤー
+                                </Typography>
+                              )}
+                              {tenantLayers.map(renderLayer)}
+                            </>
+                          )}
+                        </>
+                      );
+                    })()
                   )}
                 </Box>
               )}
