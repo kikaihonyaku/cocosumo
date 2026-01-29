@@ -356,16 +356,19 @@ export default function CustomerDetail() {
     if (!statusMenuInquiryId) return;
 
     try {
-      const response = await axios.patch(`/api/v1/inquiries/${statusMenuInquiryId}`, {
+      const response = await axios.patch(`/api/v1/property_inquiries/${statusMenuInquiryId}`, {
         property_inquiry: { status: newStatus }
       });
 
-      // Update local state
-      setInquiries(prev => prev.map(inquiry =>
-        inquiry.id === statusMenuInquiryId
-          ? { ...inquiry, status: newStatus, status_label: response.data.inquiry?.status_label }
-          : inquiry
-      ));
+      // Update local state - PropertyInquiry is nested inside Inquiry
+      setInquiries(prev => prev.map(inquiry => ({
+        ...inquiry,
+        property_inquiries: (inquiry.property_inquiries || []).map(pi =>
+          pi.id === statusMenuInquiryId
+            ? { ...pi, status: newStatus, status_label: response.data.inquiry?.status_label }
+            : pi
+        )
+      })));
 
       // Reload activities to show the new status change activity
       loadActivities();
@@ -388,29 +391,7 @@ export default function CustomerDetail() {
     setUserMenuInquiryId(null);
   };
 
-  const handleUserChange = async (userId) => {
-    if (!userMenuInquiryId) return;
-
-    try {
-      const response = await axios.patch(`/api/v1/inquiries/${userMenuInquiryId}`, {
-        property_inquiry: { assigned_user_id: userId || null }
-      });
-
-      // Update local state
-      setInquiries(prev => prev.map(inquiry =>
-        inquiry.id === userMenuInquiryId
-          ? { ...inquiry, assigned_user: response.data.inquiry?.assigned_user }
-          : inquiry
-      ));
-
-      // Reload activities to show the new assigned user change activity
-      loadActivities();
-    } catch (err) {
-      console.error('Failed to update assigned user:', err);
-    } finally {
-      handleUserMenuClose();
-    }
-  };
+  // handleUserChange removed - assigned_user is now on Inquiry level
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh * var(--vh-correction, 1) - 64px)', bgcolor: 'grey.50' }}>
@@ -755,7 +736,7 @@ export default function CustomerDetail() {
             {(() => {
               // Filter activities if a specific inquiry is selected
               const filteredActivities = selectedInquiryId
-                ? activities.filter(a => a.property_inquiry_id === selectedInquiryId)
+                ? activities.filter(a => a.inquiry_id === selectedInquiryId)
                 : activities;
 
               if (filteredActivities.length === 0) {
@@ -970,7 +951,7 @@ export default function CustomerDetail() {
               ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                   {inquiries.map((inquiry) => {
-                    const inquiryStatusInfo = getInquiryStatusInfo(inquiry.status);
+                    const inquiryDealStatusInfo = getDealStatusInfo(inquiry.deal_status);
                     const isSelected = selectedInquiryId === inquiry.id;
                     return (
                       <Card
@@ -990,74 +971,40 @@ export default function CustomerDetail() {
                         }}
                       >
                         <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                          {/* Inquiry Header: Deal Status + Priority */}
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                              {inquiry.property_title || '物件名なし'}
-                            </Typography>
-                            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                              <Tooltip title="クリックしてステータスを変更">
-                                <Chip
-                                  size="small"
-                                  label={inquiry.status_label || inquiryStatusInfo.label}
-                                  color={inquiryStatusInfo.color}
-                                  onClick={(e) => handleStatusClick(e, inquiry.id)}
-                                  sx={{ height: 18, fontSize: '0.65rem', cursor: 'pointer' }}
-                                />
-                              </Tooltip>
-                              {inquiry.room?.id && (
-                                <Tooltip title="部屋詳細を開く">
-                                  <IconButton
-                                    size="small"
-                                    component={RouterLink}
-                                    to={`/room/${inquiry.room.id}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                    sx={{ p: 0.25 }}
-                                  >
-                                    <OpenInNewIcon sx={{ fontSize: 14 }} />
-                                  </IconButton>
-                                </Tooltip>
-                              )}
-                            </Box>
-                          </Box>
-                          {/* Origin & Media Type Row */}
-                          <Box sx={{ display: 'flex', gap: 0.5, mb: 0.5, flexWrap: 'wrap' }}>
-                            <Chip
-                              size="small"
-                              label={inquiry.origin_type_label || inquiry.origin_type}
-                              variant="outlined"
-                              color="primary"
-                              sx={{ height: 18, fontSize: '0.65rem' }}
-                            />
-                            <Chip
-                              size="small"
-                              label={inquiry.media_type_label || inquiry.media_type}
-                              variant="outlined"
-                              sx={{ height: 18, fontSize: '0.65rem' }}
-                            />
-                          </Box>
-                          {/* Assigned User - always show, clickable */}
-                          <Tooltip title="クリックして担当者を変更">
-                            <Box
-                              onClick={(e) => handleUserClick(e, inquiry.id)}
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 0.5,
-                                mb: 0.5,
-                                cursor: 'pointer',
-                                p: 0.5,
-                                borderRadius: 1,
-                                '&:hover': { bgcolor: 'action.hover' }
-                              }}
-                            >
-                              <PersonIcon sx={{ fontSize: 14, color: inquiry.assigned_user ? 'primary.main' : 'action.disabled' }} />
-                              <Typography variant="caption" color={inquiry.assigned_user ? 'text.secondary' : 'text.disabled'}>
-                                担当: {inquiry.assigned_user?.name || '未設定'}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <FlagIcon sx={{ fontSize: 16, color: `${inquiryDealStatusInfo.color}.main` }} />
+                              <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                                案件 #{inquiry.id}
                               </Typography>
                             </Box>
-                          </Tooltip>
-                          {/* Message if exists */}
-                          {inquiry.message && (
+                            <Chip
+                              size="small"
+                              label={inquiry.deal_status_label || inquiryDealStatusInfo.label}
+                              color={inquiryDealStatusInfo.color}
+                              sx={{ height: 18, fontSize: '0.65rem' }}
+                            />
+                          </Box>
+
+                          {/* Assigned User */}
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                            <PersonIcon sx={{ fontSize: 14, color: inquiry.assigned_user ? 'primary.main' : 'action.disabled' }} />
+                            <Typography variant="caption" color={inquiry.assigned_user ? 'text.secondary' : 'text.disabled'}>
+                              担当: {inquiry.assigned_user?.name || '未設定'}
+                            </Typography>
+                            {inquiry.priority_label && inquiry.priority !== 'normal' && (
+                              <Chip
+                                size="small"
+                                label={inquiry.priority_label}
+                                color={inquiry.priority === 'urgent' ? 'error' : inquiry.priority === 'high' ? 'warning' : 'default'}
+                                sx={{ height: 16, fontSize: '0.6rem', ml: 0.5 }}
+                              />
+                            )}
+                          </Box>
+
+                          {/* Notes */}
+                          {inquiry.notes && (
                             <Typography
                               variant="body2"
                               sx={{
@@ -1065,60 +1012,89 @@ export default function CustomerDetail() {
                                 bgcolor: 'white',
                                 p: 1,
                                 borderRadius: 1,
-                                maxHeight: 60,
+                                maxHeight: 40,
                                 overflow: 'auto',
                                 fontSize: '0.8rem',
-                                mt: 0.5
+                                mb: 0.5
                               }}
                             >
-                              {inquiry.message}
+                              {inquiry.notes}
                             </Typography>
                           )}
+
+                          {/* Property Inquiries (nested) */}
+                          {inquiry.property_inquiries && inquiry.property_inquiries.length > 0 && (
+                            <Box sx={{ mt: 0.5, pl: 1, borderLeft: '2px solid', borderColor: 'divider' }}>
+                              {inquiry.property_inquiries.map((pi) => {
+                                const piStatusInfo = getInquiryStatusInfo(pi.status);
+                                return (
+                                  <Box key={pi.id} sx={{ mb: 0.5, p: 0.5 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <HomeIcon sx={{ fontSize: 14, color: 'action.active' }} />
+                                        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                          {pi.property_title || '物件名なし'}
+                                        </Typography>
+                                      </Box>
+                                      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                                        <Tooltip title="クリックしてステータスを変更">
+                                          <Chip
+                                            size="small"
+                                            label={pi.status_label || piStatusInfo.label}
+                                            color={piStatusInfo.color}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleStatusClick(e, pi.id);
+                                            }}
+                                            sx={{ height: 16, fontSize: '0.6rem', cursor: 'pointer' }}
+                                          />
+                                        </Tooltip>
+                                        {pi.room?.id && (
+                                          <Tooltip title="部屋詳細を開く">
+                                            <IconButton
+                                              size="small"
+                                              component={RouterLink}
+                                              to={`/room/${pi.room.id}`}
+                                              onClick={(e) => e.stopPropagation()}
+                                              sx={{ p: 0.15 }}
+                                            >
+                                              <OpenInNewIcon sx={{ fontSize: 12 }} />
+                                            </IconButton>
+                                          </Tooltip>
+                                        )}
+                                      </Box>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.25 }}>
+                                      <Chip size="small" label={pi.origin_type_label || pi.origin_type} variant="outlined" color="primary" sx={{ height: 16, fontSize: '0.6rem' }} />
+                                      <Chip size="small" label={pi.media_type_label || pi.media_type} variant="outlined" sx={{ height: 16, fontSize: '0.6rem' }} />
+                                      <Typography variant="caption" color="text.secondary">{pi.created_at}</Typography>
+                                    </Box>
+                                  </Box>
+                                );
+                              })}
+                            </Box>
+                          )}
+
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
                             <Typography variant="caption" color="text.secondary">
                               {inquiry.created_at}
                             </Typography>
-                            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                              <Tooltip title="この案件に対応履歴を追加">
-                                <Button
-                                  size="small"
-                                  startIcon={<AddIcon />}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedInquiryId(inquiry.id);
-                                    setEditingActivity(null);
-                                    setActivityDialogOpen(true);
-                                  }}
-                                  sx={{ minWidth: 'auto', px: 1, py: 0.25, fontSize: '0.65rem' }}
-                                >
-                                  履歴追加
-                                </Button>
-                              </Tooltip>
-                              <Chip
+                            <Tooltip title="この案件に対応履歴を追加">
+                              <Button
                                 size="small"
-                                label={inquiry.channel === 'line' ? 'LINE' : 'Web'}
-                                variant="outlined"
-                                sx={{ height: 18, fontSize: '0.65rem' }}
-                              />
-                            </Box>
+                                startIcon={<AddIcon />}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedInquiryId(inquiry.id);
+                                  setEditingActivity(null);
+                                  setActivityDialogOpen(true);
+                                }}
+                                sx={{ minWidth: 'auto', px: 1, py: 0.25, fontSize: '0.65rem' }}
+                              >
+                                履歴追加
+                              </Button>
+                            </Tooltip>
                           </Box>
-                          {inquiry.customer_accesses && inquiry.customer_accesses.length > 0 && (
-                            <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                                {inquiry.customer_accesses.map((access) => (
-                                  <Chip
-                                    key={access.id}
-                                    size="small"
-                                    icon={<KeyIcon sx={{ fontSize: '12px !important' }} />}
-                                    label={access.status === 'active' ? '有効' : '無効'}
-                                    color={access.status === 'active' ? 'info' : 'default'}
-                                    variant="outlined"
-                                    sx={{ height: 18, fontSize: '0.65rem' }}
-                                  />
-                                ))}
-                              </Box>
-                            </Box>
-                          )}
                         </CardContent>
                       </Card>
                     );
@@ -1234,6 +1210,7 @@ export default function CustomerDetail() {
         customerId={id}
         activity={editingActivity}
         inquiries={inquiries}
+        propertyInquiries={inquiries.flatMap(i => i.property_inquiries || [])}
         selectedInquiryId={selectedInquiryId}
         onCreated={() => {
           loadActivities();
@@ -1249,7 +1226,7 @@ export default function CustomerDetail() {
       <StatusChangeDialog
         open={statusDialogOpen}
         onClose={() => setStatusDialogOpen(false)}
-        customerId={id}
+        inquiryId={customer.latest_inquiry_id}
         currentStatus={customer.deal_status}
         onChanged={loadCustomer}
       />
@@ -1265,56 +1242,33 @@ export default function CustomerDetail() {
         }}
       />
 
-      {/* Inquiry Status Menu */}
+      {/* PropertyInquiry Status Menu */}
       <Menu
         anchorEl={statusMenuAnchor}
         open={Boolean(statusMenuAnchor)}
         onClose={handleStatusMenuClose}
       >
-        <MenuItem
-          onClick={() => handleStatusChange('pending')}
-          selected={inquiries.find(i => i.id === statusMenuInquiryId)?.status === 'pending'}
-        >
-          <Chip size="small" label="未対応" color="error" sx={{ mr: 1 }} />
-          未対応
-        </MenuItem>
-        <MenuItem
-          onClick={() => handleStatusChange('in_progress')}
-          selected={inquiries.find(i => i.id === statusMenuInquiryId)?.status === 'in_progress'}
-        >
-          <Chip size="small" label="対応中" color="warning" sx={{ mr: 1 }} />
-          対応中
-        </MenuItem>
-        <MenuItem
-          onClick={() => handleStatusChange('completed')}
-          selected={inquiries.find(i => i.id === statusMenuInquiryId)?.status === 'completed'}
-        >
-          <Chip size="small" label="完了" color="success" sx={{ mr: 1 }} />
-          完了
-        </MenuItem>
+        {(() => {
+          const allPIs = inquiries.flatMap(i => i.property_inquiries || []);
+          const currentPI = allPIs.find(pi => pi.id === statusMenuInquiryId);
+          return ['pending', 'in_progress', 'completed'].map(s => {
+            const labels = { pending: '未対応', in_progress: '対応中', completed: '完了' };
+            const colors = { pending: 'error', in_progress: 'warning', completed: 'success' };
+            return (
+              <MenuItem
+                key={s}
+                onClick={() => handleStatusChange(s)}
+                selected={currentPI?.status === s}
+              >
+                <Chip size="small" label={labels[s]} color={colors[s]} sx={{ mr: 1 }} />
+                {labels[s]}
+              </MenuItem>
+            );
+          });
+        })()}
       </Menu>
 
-      {/* Inquiry Assigned User Menu */}
-      <Menu
-        anchorEl={userMenuAnchor}
-        open={Boolean(userMenuAnchor)}
-        onClose={handleUserMenuClose}
-      >
-        <MenuItem onClick={() => handleUserChange(null)}>
-          <Typography color="text.secondary">担当者なし</Typography>
-        </MenuItem>
-        <Divider />
-        {users.map((user) => (
-          <MenuItem
-            key={user.id}
-            onClick={() => handleUserChange(user.id)}
-            selected={inquiries.find(i => i.id === userMenuInquiryId)?.assigned_user?.id === user.id}
-          >
-            <PersonIcon sx={{ mr: 1, fontSize: 18 }} />
-            {user.name}
-          </MenuItem>
-        ))}
-      </Menu>
+      {/* Inquiry Assigned User Menu - not used (assigned_user is on Inquiry level) */}
     </Box>
   );
 }

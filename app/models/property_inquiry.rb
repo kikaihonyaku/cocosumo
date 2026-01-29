@@ -6,14 +6,13 @@ class PropertyInquiry < ApplicationRecord
   belongs_to :room
   belongs_to :property_publication, optional: true
   belongs_to :customer
-  belongs_to :assigned_user, class_name: 'User', optional: true
+  belongs_to :inquiry
   has_many :customer_accesses
   has_many :customer_activities
 
   # Callbacks for automatic activity recording
   after_create :record_inquiry_activity
   after_update :record_status_change_activity, if: :saved_change_to_status?
-  after_update :record_assigned_user_change_activity, if: :saved_change_to_assigned_user_id?
 
   # Enums
   enum :media_type, {
@@ -60,12 +59,12 @@ class PropertyInquiry < ApplicationRecord
 
   # Get formatted created time
   def formatted_created_at
-    created_at.strftime('%Y年%m月%d日 %H:%M')
+    created_at.strftime("%Y年%m月%d日 %H:%M")
   end
 
   # Get formatted replied time
   def formatted_replied_at
-    replied_at&.strftime('%Y年%m月%d日 %H:%M')
+    replied_at&.strftime("%Y年%m月%d日 %H:%M")
   end
 
   # ラベルメソッド
@@ -107,6 +106,7 @@ class PropertyInquiry < ApplicationRecord
   def record_inquiry_activity
     customer_activities.create!(
       customer: customer,
+      inquiry: inquiry,
       user: changed_by,
       activity_type: :inquiry,
       direction: :inbound,
@@ -123,30 +123,12 @@ class PropertyInquiry < ApplicationRecord
 
     customer_activities.create!(
       customer: customer,
+      inquiry: inquiry,
       user: changed_by,
       activity_type: :status_change,
       direction: :internal,
       subject: "案件ステータスを「#{new_label}」に変更",
       content: "#{property_title}：#{old_label} → #{new_label}"
-    )
-  end
-
-  # 担当者変更時のアクティビティ記録
-  def record_assigned_user_change_activity
-    old_user_id, new_user_id = saved_change_to_assigned_user_id
-    old_user = User.find_by(id: old_user_id)
-    new_user = assigned_user
-
-    old_name = old_user&.name || '未設定'
-    new_name = new_user&.name || '未設定'
-
-    customer_activities.create!(
-      customer: customer,
-      user: changed_by,
-      activity_type: :assigned_user_change,
-      direction: :internal,
-      subject: "担当者を「#{new_name}」に変更",
-      content: "#{property_title}：#{old_name} → #{new_name}"
     )
   end
 end

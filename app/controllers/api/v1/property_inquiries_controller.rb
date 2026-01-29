@@ -1,12 +1,12 @@
 class Api::V1::PropertyInquiriesController < ApplicationController
   skip_before_action :verify_authenticity_token
 
-  # POST /api/v1/property_publications/:publication_id/inquiries
+  # POST /api/v1/property_publications/:publication_id/property_inquiries
   def create
     @property_publication = PropertyPublication.kept.find_by!(publication_id: params[:property_publication_publication_id])
 
     unless @property_publication.published?
-      render json: { error: 'この物件公開ページは公開されていません' }, status: :not_found
+      render json: { error: "この物件公開ページは公開されていません" }, status: :not_found
       return
     end
 
@@ -20,12 +20,17 @@ class Api::V1::PropertyInquiriesController < ApplicationController
       phone: inquiry_params[:phone]
     )
 
-    @property_inquiry = @property_publication.property_inquiries.build(inquiry_params)
-    @property_inquiry.room = @property_publication.room
-    @property_inquiry.customer = @customer
-
     ActiveRecord::Base.transaction do
       @customer.save!
+
+      # Inquiry（案件）を自動作成または検索
+      @inquiry = @customer.inquiries.where(tenant: tenant).active_deals.order(created_at: :desc).first
+      @inquiry ||= tenant.inquiries.create!(customer: @customer)
+
+      @property_inquiry = @property_publication.property_inquiries.build(inquiry_params)
+      @property_inquiry.room = @property_publication.room
+      @property_inquiry.customer = @customer
+      @property_inquiry.inquiry = @inquiry
       @property_inquiry.save!
     end
 
@@ -34,7 +39,7 @@ class Api::V1::PropertyInquiriesController < ApplicationController
 
     render json: {
       success: true,
-      message: 'お問い合わせを受け付けました。担当者より折り返しご連絡いたします。'
+      message: "お問い合わせを受け付けました。担当者より折り返しご連絡いたします。"
     }, status: :created
   rescue ActiveRecord::RecordInvalid => e
     errors = []
@@ -42,12 +47,12 @@ class Api::V1::PropertyInquiriesController < ApplicationController
     errors.concat(@property_inquiry.errors.full_messages) if @property_inquiry&.errors&.any?
     render json: { errors: errors }, status: :unprocessable_entity
   rescue ActiveRecord::RecordNotFound
-    render json: { error: 'この物件公開ページは見つかりませんでした' }, status: :not_found
+    render json: { error: "この物件公開ページは見つかりませんでした" }, status: :not_found
   end
 
   # GET /api/v1/property_publications/:id/inquiries (認証必要)
   def index
-    return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
+    return render json: { error: "認証が必要です" }, status: :unauthorized unless current_user
 
     @property_publication = PropertyPublication.kept.find(params[:property_publication_publication_id])
     @property_inquiries = @property_publication.property_inquiries
@@ -56,17 +61,17 @@ class Api::V1::PropertyInquiriesController < ApplicationController
 
     render json: @property_inquiries.map { |inquiry| inquiry_with_customer_json(inquiry) }
   rescue ActiveRecord::RecordNotFound
-    render json: { error: '物件公開ページが見つかりませんでした' }, status: :not_found
+    render json: { error: "物件公開ページが見つかりませんでした" }, status: :not_found
   end
 
-  # GET /api/v1/inquiries (認証必要) - 全問い合わせ一覧
+  # GET /api/v1/property_inquiries (認証必要) - 全問い合わせ一覧
   def all
-    return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
+    return render json: { error: "認証が必要です" }, status: :unauthorized unless current_user
 
     # ユーザーのテナントに紐づく物件（room経由）
     @inquiries = PropertyInquiry.joins(room: :building)
                                 .where(buildings: { tenant_id: current_user.tenant_id })
-                                .includes(:customer, :customer_accesses, :assigned_user, :property_publication, room: :building)
+                                .includes(:customer, :customer_accesses, :inquiry, :property_publication, room: :building)
                                 .order(created_at: :desc)
                                 .limit(500)
 
@@ -77,7 +82,7 @@ class Api::V1::PropertyInquiriesController < ApplicationController
 
   # GET /api/v1/inquiries/export_csv (認証必要)
   def export_csv
-    return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
+    return render json: { error: "認証が必要です" }, status: :unauthorized unless current_user
 
     # ユーザーのテナントに紐づく物件のみ
     user_publication_ids = PropertyPublication.kept.joins(room: :building)
@@ -90,26 +95,26 @@ class Api::V1::PropertyInquiriesController < ApplicationController
 
     # Date range filter
     if params[:start_date].present?
-      inquiries = inquiries.where('created_at >= ?', Date.parse(params[:start_date]).beginning_of_day)
+      inquiries = inquiries.where("created_at >= ?", Date.parse(params[:start_date]).beginning_of_day)
     end
     if params[:end_date].present?
-      inquiries = inquiries.where('created_at <= ?', Date.parse(params[:end_date]).end_of_day)
+      inquiries = inquiries.where("created_at <= ?", Date.parse(params[:end_date]).end_of_day)
     end
 
-    require 'csv'
+    require "csv"
 
     csv_data = CSV.generate(headers: true, force_quotes: true) do |csv|
-      csv << ['ID', '問い合わせ日時', '物件名', '名前', 'メール', '電話番号', 'メッセージ', '流入元', 'UTMソース', 'UTMメディア', 'UTMキャンペーン', 'リファラー']
+      csv << [ "ID", "問い合わせ日時", "物件名", "名前", "メール", "電話番号", "メッセージ", "流入元", "UTMソース", "UTMメディア", "UTMキャンペーン", "リファラー" ]
 
       inquiries.each do |inquiry|
         csv << [
           inquiry.id,
-          inquiry.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+          inquiry.created_at.strftime("%Y-%m-%d %H:%M:%S"),
           inquiry.property_publication.title,
           inquiry.name,
           inquiry.email,
           inquiry.phone,
-          inquiry.message&.gsub(/\r?\n/, ' '),
+          inquiry.message&.gsub(/\r?\n/, " "),
           inquiry.source,
           inquiry.utm_source,
           inquiry.utm_medium,
@@ -121,12 +126,12 @@ class Api::V1::PropertyInquiriesController < ApplicationController
 
     send_data csv_data,
               filename: "inquiries_#{Date.today.strftime('%Y%m%d')}.csv",
-              type: 'text/csv; charset=utf-8'
+              type: "text/csv; charset=utf-8"
   end
 
   # GET /api/v1/inquiry_analytics (認証必要)
   def analytics
-    return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
+    return render json: { error: "認証が必要です" }, status: :unauthorized unless current_user
 
     # 期間パラメータ（デフォルト: 過去30日）
     days = (params[:days] || 30).to_i
@@ -138,42 +143,42 @@ class Api::V1::PropertyInquiriesController < ApplicationController
                                               .pluck(:id)
 
     base_query = PropertyInquiry.where(property_publication_id: user_publication_ids)
-    period_query = base_query.where('property_inquiries.created_at >= ?', start_date)
+    period_query = base_query.where("property_inquiries.created_at >= ?", start_date)
 
     # 基本統計
     total_count = period_query.count
     previous_period_count = base_query.where(property_inquiries: { created_at: (start_date - days.days)..start_date }).count
 
     # ソース別集計
-    source_breakdown = period_query.group(:source).count.transform_keys { |k| k || 'unknown' }
+    source_breakdown = period_query.group(:source).count.transform_keys { |k| k || "unknown" }
 
     # 日別推移（過去30日）
     daily_trend = period_query.group("DATE(property_inquiries.created_at)").count.transform_keys(&:to_s)
 
     # 週別推移（過去12週）
-    weekly_trend = base_query.where('property_inquiries.created_at >= ?', 12.weeks.ago)
+    weekly_trend = base_query.where("property_inquiries.created_at >= ?", 12.weeks.ago)
                              .group("DATE_TRUNC('week', property_inquiries.created_at)")
                              .count
                              .transform_keys { |k| k.to_date.to_s }
 
     # 物件別ランキング（トップ10）
     top_publications = period_query.joins(:property_publication)
-                                   .group(:property_publication_id, 'property_publications.title')
-                                   .order('count_all DESC')
+                                   .group(:property_publication_id, "property_publications.title")
+                                   .order("count_all DESC")
                                    .limit(10)
                                    .count
                                    .map { |(pub_id, title), count| { id: pub_id, title: title, count: count } }
 
     # キャンペーン別集計
-    campaign_breakdown = period_query.where.not(utm_campaign: [nil, ''])
+    campaign_breakdown = period_query.where.not(utm_campaign: [ nil, "" ])
                                      .group(:utm_campaign)
                                      .count
 
     # テンプレート別パフォーマンス
     template_performance = period_query.joins(:property_publication)
-                                       .group('property_publications.template_type')
+                                       .group("property_publications.template_type")
                                        .count
-                                       .transform_keys { |k| k || 'template1' }
+                                       .transform_keys { |k| k || "template1" }
 
     # テンプレート別の物件数（分母）
     template_publication_counts = PropertyPublication.kept
@@ -182,7 +187,7 @@ class Api::V1::PropertyInquiriesController < ApplicationController
                                                      .count
 
     # テンプレート別パフォーマンス詳細を計算
-    template_breakdown = PropertyPublication::template_types.keys.map do |template|
+    template_breakdown = PropertyPublication.template_types.keys.map do |template|
       inquiry_count = template_performance[template] || 0
       publication_count = template_publication_counts[template] || 0
       avg_per_publication = publication_count > 0 ? (inquiry_count.to_f / publication_count).round(2) : 0
@@ -197,7 +202,7 @@ class Api::V1::PropertyInquiriesController < ApplicationController
 
     # 最新の問い合わせ（5件）
     recent_inquiries = period_query.includes(:property_publication)
-                                   .order('property_inquiries.created_at DESC')
+                                   .order("property_inquiries.created_at DESC")
                                    .limit(5)
                                    .map do |inquiry|
       {
@@ -215,7 +220,7 @@ class Api::V1::PropertyInquiriesController < ApplicationController
                                                  .where(status: :published)
     funnel_data = {
       page_views: publications_with_views.sum(:view_count) || 0,
-      max_scroll_50_percent: publications_with_views.where('max_scroll_depth >= 50').count,
+      max_scroll_50_percent: publications_with_views.where("max_scroll_depth >= 50").count,
       inquiries: total_count
     }
 
@@ -243,13 +248,13 @@ class Api::V1::PropertyInquiriesController < ApplicationController
 
   # PATCH /api/v1/inquiries/:id (認証必要) - ステータス更新
   def update
-    return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
+    return render json: { error: "認証が必要です" }, status: :unauthorized unless current_user
 
     @inquiry = PropertyInquiry.find(params[:id])
 
     # テナント権限チェック
     unless authorized_for_inquiry?(@inquiry)
-      return render json: { error: 'この問い合わせを編集する権限がありません' }, status: :forbidden
+      return render json: { error: "この問い合わせを編集する権限がありません" }, status: :forbidden
     end
 
     # 変更者を設定（対応履歴に記録するため）
@@ -261,36 +266,32 @@ class Api::V1::PropertyInquiriesController < ApplicationController
         inquiry: {
           id: @inquiry.id,
           status: @inquiry.status,
-          status_label: @inquiry.status_label,
-          assigned_user: @inquiry.assigned_user ? {
-            id: @inquiry.assigned_user.id,
-            name: @inquiry.assigned_user.name
-          } : nil
+          status_label: @inquiry.status_label
         }
       }
     else
       render json: { errors: @inquiry.errors.full_messages }, status: :unprocessable_entity
     end
   rescue ActiveRecord::RecordNotFound
-    render json: { error: '問い合わせが見つかりませんでした' }, status: :not_found
+    render json: { error: "問い合わせが見つかりませんでした" }, status: :not_found
   end
 
   # POST /api/v1/inquiries/:id/reply (認証必要) - 返信メール送信
   def reply
-    return render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
+    return render json: { error: "認証が必要です" }, status: :unauthorized unless current_user
 
     @inquiry = PropertyInquiry.find(params[:id])
 
     # テナント権限チェック
     unless authorized_for_inquiry?(@inquiry)
-      return render json: { error: 'この問い合わせに返信する権限がありません' }, status: :forbidden
+      return render json: { error: "この問い合わせに返信する権限がありません" }, status: :forbidden
     end
 
     subject = params[:subject]
     body = params[:body]
 
     if subject.blank? || body.blank?
-      return render json: { error: '件名と本文は必須です' }, status: :unprocessable_entity
+      return render json: { error: "件名と本文は必須です" }, status: :unprocessable_entity
     end
 
     # メール送信
@@ -305,17 +306,17 @@ class Api::V1::PropertyInquiriesController < ApplicationController
 
     render json: {
       success: true,
-      message: '返信メールを送信しました',
+      message: "返信メールを送信しました",
       inquiry: @inquiry.as_json(
-        methods: [:formatted_created_at, :formatted_replied_at],
-        only: [:id, :status, :replied_at]
+        methods: [ :formatted_created_at, :formatted_replied_at ],
+        only: [ :id, :status, :replied_at ]
       )
     }
   rescue ActiveRecord::RecordNotFound
-    render json: { error: '問い合わせが見つかりませんでした' }, status: :not_found
+    render json: { error: "問い合わせが見つかりませんでした" }, status: :not_found
   rescue => e
     Rails.logger.error "Failed to send reply email: #{e.message}"
-    render json: { error: '返信メールの送信に失敗しました' }, status: :internal_server_error
+    render json: { error: "返信メールの送信に失敗しました" }, status: :internal_server_error
   end
 
   private
@@ -333,7 +334,7 @@ class Api::V1::PropertyInquiriesController < ApplicationController
   end
 
   def update_params
-    params.require(:property_inquiry).permit(:status, :assigned_user_id)
+    params.require(:property_inquiry).permit(:status)
   end
 
   def send_notification_emails(property_inquiry)
@@ -388,9 +389,10 @@ class Api::V1::PropertyInquiriesController < ApplicationController
       origin_type_label: inquiry.origin_type_label,
       status_label: inquiry.status_label,
       property_title: inquiry.property_title,
-      assigned_user: inquiry.assigned_user ? {
-        id: inquiry.assigned_user.id,
-        name: inquiry.assigned_user.name
+      inquiry_id: inquiry.inquiry_id,
+      assigned_user: inquiry.inquiry&.assigned_user ? {
+        id: inquiry.inquiry.assigned_user.id,
+        name: inquiry.inquiry.assigned_user.name
       } : nil,
       room: room ? {
         id: room.id,
@@ -435,7 +437,7 @@ class Api::V1::PropertyInquiriesController < ApplicationController
       status: access.status,
       expires_at: access.formatted_expires_at,
       view_count: access.view_count,
-      created_at: access.created_at.strftime('%Y/%m/%d')
+      created_at: access.created_at.strftime("%Y/%m/%d")
     }
   end
 end

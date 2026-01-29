@@ -73,7 +73,7 @@ export default function InquiryList({ publicationId, roomId }) {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`/api/v1/property_publications/${publicationId}/inquiries`);
+      const response = await axios.get(`/api/v1/property_publications/${publicationId}/property_inquiries`);
       setInquiries(response.data);
     } catch (err) {
       console.error('Error loading inquiries:', err);

@@ -6,6 +6,7 @@ class CustomerAccess < ApplicationRecord
   belongs_to :property_publication
   belongs_to :customer, optional: true
   belongs_to :property_inquiry, optional: true
+  belongs_to :inquiry, optional: true
   has_many :customer_routes, dependent: :destroy
 
   # Delegations
@@ -62,8 +63,8 @@ class CustomerAccess < ApplicationRecord
 
   # テナント対応のベースURL（リクエストコンテキストがない場合のフォールバック）
   def tenant_base_url
-    base_domain = ENV.fetch('APP_BASE_DOMAIN', 'cocosumo.space')
-    protocol = Rails.env.production? ? 'https' : (ENV['APP_PROTOCOL'] || 'http')
+    base_domain = ENV.fetch("APP_BASE_DOMAIN", "cocosumo.space")
+    protocol = Rails.env.production? ? "https" : (ENV["APP_PROTOCOL"] || "http")
     subdomain = tenant&.subdomain
 
     if subdomain.present?

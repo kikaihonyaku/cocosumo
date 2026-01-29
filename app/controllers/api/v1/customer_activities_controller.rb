@@ -2,12 +2,12 @@ class Api::V1::CustomerActivitiesController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
   before_action :set_customer
-  before_action :set_activity, only: [:update, :destroy]
+  before_action :set_activity, only: [ :update, :destroy ]
 
   # GET /api/v1/customers/:customer_id/activities
   def index
     @activities = @customer.customer_activities
-                           .includes(:user, :property_inquiry, :customer_access, :property_publication)
+                           .includes(:user, :inquiry, :property_inquiry, :customer_access, :property_publication)
                            .recent
                            .limit(100)
 
@@ -22,7 +22,7 @@ class Api::V1::CustomerActivitiesController < ApplicationController
     if @activity.save
       render json: {
         success: true,
-        message: '対応履歴を追加しました',
+        message: "対応履歴を追加しました",
         activity: activity_json(@activity)
       }, status: :created
     else
@@ -35,7 +35,7 @@ class Api::V1::CustomerActivitiesController < ApplicationController
     if @activity.update(activity_params)
       render json: {
         success: true,
-        message: '対応履歴を更新しました',
+        message: "対応履歴を更新しました",
         activity: activity_json(@activity)
       }
     else
@@ -46,33 +46,33 @@ class Api::V1::CustomerActivitiesController < ApplicationController
   # DELETE /api/v1/customers/:customer_id/activities/:id
   def destroy
     @activity.destroy!
-    render json: { success: true, message: '対応履歴を削除しました' }
+    render json: { success: true, message: "対応履歴を削除しました" }
   end
 
   private
 
   def require_login
     unless current_user
-      render json: { error: '認証が必要です' }, status: :unauthorized
+      render json: { error: "認証が必要です" }, status: :unauthorized
     end
   end
 
   def set_customer
     @customer = current_user.tenant.customers.find(params[:customer_id])
   rescue ActiveRecord::RecordNotFound
-    render json: { error: '顧客が見つかりませんでした' }, status: :not_found
+    render json: { error: "顧客が見つかりませんでした" }, status: :not_found
   end
 
   def set_activity
     @activity = @customer.customer_activities.find(params[:id])
   rescue ActiveRecord::RecordNotFound
-    render json: { error: '対応履歴が見つかりませんでした' }, status: :not_found
+    render json: { error: "対応履歴が見つかりませんでした" }, status: :not_found
   end
 
   def activity_params
     params.require(:activity).permit(
       :activity_type, :direction, :subject, :content,
-      :property_inquiry_id, :customer_access_id, :property_publication_id
+      :inquiry_id, :property_inquiry_id, :customer_access_id, :property_publication_id
     )
   end
 
@@ -86,10 +86,16 @@ class Api::V1::CustomerActivitiesController < ApplicationController
       icon_name: activity.icon_name,
       subject: activity.subject,
       content: activity.content,
+      inquiry_id: activity.inquiry_id,
       property_inquiry_id: activity.property_inquiry_id,
       user: activity.user ? {
         id: activity.user.id,
         name: activity.user.name
+      } : nil,
+      inquiry: activity.inquiry ? {
+        id: activity.inquiry.id,
+        deal_status: activity.inquiry.deal_status,
+        deal_status_label: activity.inquiry.deal_status_label
       } : nil,
       property_inquiry: activity.property_inquiry ? {
         id: activity.property_inquiry.id,

@@ -34,10 +34,10 @@ class Api::V1::DashboardsController < ApplicationController
     pending_count = tenant_inquiries.where(status: :pending).count
     in_progress_count = tenant_inquiries.where(status: :in_progress).count
 
-    # アクティブな顧客
-    active_customers = tenant.customers.active_deals.count
-    contracted_this_month = tenant.customers.where(deal_status: :contracted)
-                                   .where('deal_status_changed_at >= ?', this_month_start).count
+    # アクティブな案件（Inquiry経由）
+    active_customers = tenant.inquiries.active_deals.count
+    contracted_this_month = tenant.inquiries.where(deal_status: :contracted)
+                                   .where("deal_status_changed_at >= ?", this_month_start).count
 
     # 公開中ページ
     published_pages = PropertyPublication.kept.joins(room: :building)
@@ -65,20 +65,20 @@ class Api::V1::DashboardsController < ApplicationController
   def build_inquiry_trend
     # 過去30日の日別問い合わせ数
     start_date = 30.days.ago.beginning_of_day
-    tenant_inquiries.where('property_inquiries.created_at >= ?', start_date)
+    tenant_inquiries.where("property_inquiries.created_at >= ?", start_date)
                     .group("DATE(property_inquiries.created_at)")
                     .count
                     .transform_keys(&:to_s)
   end
 
   def build_deal_status_distribution
-    current_user.tenant.customers.where(status: :active).group(:deal_status).count
+    current_user.tenant.inquiries.group(:deal_status).count
   end
 
   def build_media_breakdown
     # 今月の媒体別問い合わせ
     this_month_start = Date.current.beginning_of_month
-    tenant_inquiries.where('property_inquiries.created_at >= ?', this_month_start)
+    tenant_inquiries.where("property_inquiries.created_at >= ?", this_month_start)
                     .group(:media_type)
                     .count
   end
@@ -103,27 +103,28 @@ class Api::V1::DashboardsController < ApplicationController
   def build_alerts
     tenant = current_user.tenant
 
-    # 優先度高の顧客
-    high_priority_customers = tenant.customers.active_deals
-                                    .where(priority: [:high, :urgent])
-                                    .includes(:assigned_user)
+    # 優先度高の案件
+    high_priority_customers = tenant.inquiries.active_deals
+                                    .where(priority: [ :high, :urgent ])
+                                    .includes(:customer, :assigned_user)
                                     .limit(5)
-                                    .map { |c| {
-                                      id: c.id,
-                                      name: c.name,
-                                      priority: c.priority,
-                                      priority_label: c.priority_label,
-                                      deal_status: c.deal_status,
-                                      deal_status_label: c.deal_status_label,
-                                      assigned_user_name: c.assigned_user&.name
+                                    .map { |i| {
+                                      id: i.customer_id,
+                                      inquiry_id: i.id,
+                                      name: i.customer.name,
+                                      priority: i.priority,
+                                      priority_label: i.priority_label,
+                                      deal_status: i.deal_status,
+                                      deal_status_label: i.deal_status_label,
+                                      assigned_user_name: i.assigned_user&.name
                                     } }
 
     # 期限切れ間近のアクセス権（7日以内）
     expiring_accesses = CustomerAccess.joins(property_publication: { room: :building })
                                       .where(buildings: { tenant_id: tenant.id })
                                       .where(status: :active)
-                                      .where('customer_accesses.expires_at <= ?', 7.days.from_now)
-                                      .where('customer_accesses.expires_at > ?', Time.current)
+                                      .where("customer_accesses.expires_at <= ?", 7.days.from_now)
+                                      .where("customer_accesses.expires_at > ?", Time.current)
                                       .includes(property_publication: { room: :building })
                                       .limit(5)
                                       .map { |a| {
@@ -168,11 +169,11 @@ class Api::V1::DashboardsController < ApplicationController
       icon_name: activity.icon_name,
       subject: activity.subject,
       user_name: activity.user&.name,
-      created_at: activity.created_at.strftime('%m/%d %H:%M')
+      created_at: activity.created_at.strftime("%m/%d %H:%M")
     }
   end
 
   def require_login
-    render json: { error: '認証が必要です' }, status: :unauthorized unless current_user
+    render json: { error: "認証が必要です" }, status: :unauthorized unless current_user
   end
 end

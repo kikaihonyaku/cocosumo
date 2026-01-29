@@ -600,7 +600,7 @@ export default function InquiryAnalyticsDashboard() {
     const startDate = new Date(Date.now() - period * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     // Open CSV download in new tab
-    window.open(`/api/v1/inquiries/export_csv?start_date=${startDate}&end_date=${endDate}`, '_blank');
+    window.open(`/api/v1/property_inquiries/export_csv?start_date=${startDate}&end_date=${endDate}`, '_blank');
   };
 
   if (loading) {

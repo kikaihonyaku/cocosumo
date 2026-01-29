@@ -17,7 +17,8 @@ import {
 import {
   Add as AddIcon,
   Edit as EditIcon,
-  Home as HomeIcon
+  Home as HomeIcon,
+  Flag as FlagIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -41,10 +42,11 @@ const DEFAULT_FORM = {
   direction: 'outbound',
   subject: '',
   content: '',
+  inquiry_id: '',
   property_inquiry_id: ''
 };
 
-export default function ActivityDialog({ open, onClose, customerId, activity, onCreated, onUpdated, inquiries = [], selectedInquiryId = null }) {
+export default function ActivityDialog({ open, onClose, customerId, activity, onCreated, onUpdated, inquiries = [], propertyInquiries = [], selectedInquiryId = null }) {
   const isEditMode = !!activity;
   const [formData, setFormData] = useState(DEFAULT_FORM);
   const [loading, setLoading] = useState(false);
@@ -58,13 +60,14 @@ export default function ActivityDialog({ open, onClose, customerId, activity, on
         direction: activity.direction || 'outbound',
         subject: activity.subject || '',
         content: activity.content || '',
+        inquiry_id: activity.inquiry_id || '',
         property_inquiry_id: activity.property_inquiry_id || ''
       });
     } else {
       // For new activities, pre-select the currently selected inquiry
       setFormData({
         ...DEFAULT_FORM,
-        property_inquiry_id: selectedInquiryId || ''
+        inquiry_id: selectedInquiryId || ''
       });
     }
   }, [activity, selectedInquiryId]);
@@ -76,6 +79,11 @@ export default function ActivityDialog({ open, onClose, customerId, activity, on
   const handleSubmit = async () => {
     if (!formData.subject.trim()) {
       setError('件名を入力してください');
+      return;
+    }
+
+    if (!formData.inquiry_id) {
+      setError('案件を選択してください');
       return;
     }
 
@@ -107,7 +115,7 @@ export default function ActivityDialog({ open, onClose, customerId, activity, on
   const handleClose = () => {
     setFormData({
       ...DEFAULT_FORM,
-      property_inquiry_id: selectedInquiryId || ''
+      inquiry_id: selectedInquiryId || ''
     });
     setError(null);
     onClose();
@@ -138,26 +146,54 @@ export default function ActivityDialog({ open, onClose, customerId, activity, on
 
           {/* Inquiry Selector */}
           {inquiries.length > 0 && (
+            <FormControl fullWidth required>
+              <InputLabel>案件</InputLabel>
+              <Select
+                value={formData.inquiry_id}
+                onChange={handleChange('inquiry_id')}
+                label="案件"
+              >
+                {inquiries.map(inquiry => (
+                  <MenuItem key={inquiry.id} value={inquiry.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <FlagIcon fontSize="small" color="action" />
+                      <Box>
+                        <Typography variant="body2">
+                          {inquiry.deal_status_label || '案件'} #{inquiry.id}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {inquiry.property_inquiries?.map(pi => pi.property_title).join(', ') || '物件なし'}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+
+          {/* Property Inquiry Selector (optional) */}
+          {propertyInquiries.length > 0 && (
             <FormControl fullWidth>
-              <InputLabel>関連案件</InputLabel>
+              <InputLabel>関連物件問い合わせ（任意）</InputLabel>
               <Select
                 value={formData.property_inquiry_id}
                 onChange={handleChange('property_inquiry_id')}
-                label="関連案件"
+                label="関連物件問い合わせ（任意）"
               >
                 <MenuItem value="">
-                  <Typography variant="body2" color="text.secondary">案件に紐付けない</Typography>
+                  <Typography variant="body2" color="text.secondary">物件に紐付けない</Typography>
                 </MenuItem>
-                {inquiries.map(inquiry => (
-                  <MenuItem key={inquiry.id} value={inquiry.id}>
+                {propertyInquiries.map(pi => (
+                  <MenuItem key={pi.id} value={pi.id}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <HomeIcon fontSize="small" color="action" />
                       <Box>
                         <Typography variant="body2">
-                          {inquiry.property_title || '物件名なし'}
+                          {pi.property_title || '物件名なし'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {inquiry.room?.building_name} {inquiry.room?.room_number}
+                          {pi.room?.building_name} {pi.room?.room_number}
                         </Typography>
                       </Box>
                     </Box>

@@ -113,7 +113,7 @@ export default function InquiryManager() {
       setLoading(true);
       setError(null);
       const [inquiriesRes, usersRes] = await Promise.all([
-        axios.get('/api/v1/inquiries'),
+        axios.get('/api/v1/property_inquiries'),
         axios.get('/api/v1/admin/users').catch(() => ({ data: [] }))
       ]);
       setInquiries(inquiriesRes.data.inquiries || []);
@@ -254,7 +254,7 @@ export default function InquiryManager() {
   };
 
   const handleExportCsv = () => {
-    window.open('/api/v1/inquiries/export_csv', '_blank');
+    window.open('/api/v1/property_inquiries/export_csv', '_blank');
   };
 
   const handleClearFilters = () => {
@@ -282,7 +282,7 @@ export default function InquiryManager() {
     if (!statusMenuInquiryId) return;
 
     try {
-      const response = await axios.patch(`/api/v1/inquiries/${statusMenuInquiryId}`, {
+      const response = await axios.patch(`/api/v1/property_inquiries/${statusMenuInquiryId}`, {
         property_inquiry: { status: newStatus }
       });
 
@@ -315,7 +315,7 @@ export default function InquiryManager() {
     if (!userMenuInquiryId) return;
 
     try {
-      const response = await axios.patch(`/api/v1/inquiries/${userMenuInquiryId}`, {
+      const response = await axios.patch(`/api/v1/property_inquiries/${userMenuInquiryId}`, {
         property_inquiry: { assigned_user_id: userId || null }
       });
 

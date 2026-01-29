@@ -268,18 +268,25 @@ Rails.application.routes.draw do
 
       # 問い合わせAPI（認証不要）
       resources :property_publications, only: [], param: :publication_id do
-        resources :inquiries, only: [:create, :index], controller: 'property_inquiries'
+        resources :property_inquiries, only: [:create, :index], controller: 'property_inquiries'
       end
 
       # 問い合わせ分析API（認証必要）
       get 'inquiry_analytics', to: 'property_inquiries#analytics'
-      get 'inquiries', to: 'property_inquiries#all'
-      get 'inquiries/export_csv', to: 'property_inquiries#export_csv'
+      get 'property_inquiries', to: 'property_inquiries#all'
+      get 'property_inquiries/export_csv', to: 'property_inquiries#export_csv'
 
       # 問い合わせ個別操作（認証必要）
-      resources :inquiries, only: [:update], controller: 'property_inquiries' do
+      resources :property_inquiries, only: [:update] do
         member do
           post :reply
+        end
+      end
+
+      # 案件管理（認証必要）
+      resources :inquiries, only: [:index, :show, :create, :update] do
+        member do
+          post :change_status
         end
       end
 
@@ -309,7 +316,6 @@ Rails.application.routes.draw do
         member do
           get :inquiries
           get :accesses
-          post :change_status
           post :create_inquiry
         end
         resources :activities, controller: 'customer_activities', only: [:index, :create, :update, :destroy]

@@ -278,7 +278,7 @@ export default function InquiryForm({ publicationId, sourceType = 'public_page' 
         source_url: window.location.href
       };
 
-      await axios.post(`/api/v1/property_publications/${publicationId}/inquiries`, {
+      await axios.post(`/api/v1/property_publications/${publicationId}/property_inquiries`, {
         property_inquiry: inquiryData
       });
 

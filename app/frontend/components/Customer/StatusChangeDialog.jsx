@@ -29,7 +29,7 @@ const DEAL_STATUSES = [
   { value: 'lost', label: '失注', color: 'error' }
 ];
 
-export default function StatusChangeDialog({ open, onClose, customerId, currentStatus, onChanged }) {
+export default function StatusChangeDialog({ open, onClose, inquiryId, currentStatus, onChanged }) {
   const [newStatus, setNewStatus] = useState(currentStatus || 'new_inquiry');
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,7 +50,7 @@ export default function StatusChangeDialog({ open, onClose, customerId, currentS
       setLoading(true);
       setError(null);
 
-      await axios.post(`/api/v1/customers/${customerId}/change_status`, {
+      await axios.post(`/api/v1/inquiries/${inquiryId}/change_status`, {
         deal_status: newStatus,
         reason: reason.trim() || null
       });
@@ -104,7 +104,7 @@ export default function StatusChangeDialog({ open, onClose, customerId, currentS
                         sx={{ minWidth: 80 }}
                       />
                       {status.value === currentStatus && (
-                        <span style={{ color: '#666', fontSize: '0.85em' }}>（現在）</span>
+                        <span style={{ color: '#666', fontSize: '0.85em' }}>(現在)</span>
                       )}
                     </Box>
                   </MenuItem>

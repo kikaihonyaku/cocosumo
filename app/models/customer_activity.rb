@@ -1,6 +1,7 @@
 class CustomerActivity < ApplicationRecord
   # Associations
   belongs_to :customer
+  belongs_to :inquiry
   belongs_to :user, optional: true
   belongs_to :property_inquiry, optional: true
   belongs_to :customer_access, optional: true
@@ -31,60 +32,60 @@ class CustomerActivity < ApplicationRecord
 
   # Scopes
   scope :recent, -> { order(created_at: :desc) }
-  scope :manual, -> { where.not(activity_type: [:inquiry, :access_issued, :status_change, :assigned_user_change]) }
+  scope :manual, -> { where.not(activity_type: [ :inquiry, :access_issued, :status_change, :assigned_user_change ]) }
 
   # Callbacks
   after_create :update_customer_last_contacted
 
   # フォーマット済み日時
   def formatted_created_at
-    created_at.strftime('%Y/%m/%d %H:%M')
+    created_at.strftime("%Y/%m/%d %H:%M")
   end
 
   # 日付のみ
   def formatted_date
-    created_at.strftime('%m/%d')
+    created_at.strftime("%m/%d")
   end
 
   # アクティビティタイプのラベル
   def activity_type_label
     {
-      'note' => 'メモ',
-      'phone_call' => '電話',
-      'email' => 'メール',
-      'visit' => '来店',
-      'viewing' => '内見',
-      'inquiry' => '問い合わせ',
-      'access_issued' => 'アクセス発行',
-      'status_change' => 'ステータス変更',
-      'line_message' => 'LINE',
-      'assigned_user_change' => '担当者変更'
+      "note" => "メモ",
+      "phone_call" => "電話",
+      "email" => "メール",
+      "visit" => "来店",
+      "viewing" => "内見",
+      "inquiry" => "問い合わせ",
+      "access_issued" => "アクセス発行",
+      "status_change" => "ステータス変更",
+      "line_message" => "LINE",
+      "assigned_user_change" => "担当者変更"
     }[activity_type] || activity_type
   end
 
   # 方向のラベル
   def direction_label
     {
-      'internal' => '社内',
-      'outbound' => '発信',
-      'inbound' => '受信'
+      "internal" => "社内",
+      "outbound" => "発信",
+      "inbound" => "受信"
     }[direction] || direction
   end
 
   # アイコン名（フロントエンド用）
   def icon_name
     {
-      'note' => 'Note',
-      'phone_call' => 'Phone',
-      'email' => 'Email',
-      'visit' => 'Store',
-      'viewing' => 'Home',
-      'inquiry' => 'QuestionAnswer',
-      'access_issued' => 'Key',
-      'status_change' => 'Flag',
-      'line_message' => 'Chat',
-      'assigned_user_change' => 'Person'
-    }[activity_type] || 'Info'
+      "note" => "Note",
+      "phone_call" => "Phone",
+      "email" => "Email",
+      "visit" => "Store",
+      "viewing" => "Home",
+      "inquiry" => "QuestionAnswer",
+      "access_issued" => "Key",
+      "status_change" => "Flag",
+      "line_message" => "Chat",
+      "assigned_user_change" => "Person"
+    }[activity_type] || "Info"
   end
 
   private

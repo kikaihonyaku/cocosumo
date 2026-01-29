@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_25_021240) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_29_144033) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -249,9 +249,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_25_021240) do
     t.text "customer_message"
     t.bigint "customer_id"
     t.bigint "property_inquiry_id"
+    t.bigint "inquiry_id"
     t.index ["access_token"], name: "index_customer_accesses_on_access_token", unique: true
     t.index ["customer_email"], name: "index_customer_accesses_on_customer_email"
     t.index ["customer_id"], name: "index_customer_accesses_on_customer_id"
+    t.index ["inquiry_id"], name: "index_customer_accesses_on_inquiry_id"
     t.index ["property_inquiry_id"], name: "index_customer_accesses_on_property_inquiry_id"
     t.index ["property_publication_id", "status"], name: "index_customer_accesses_on_property_publication_id_and_status"
     t.index ["property_publication_id"], name: "index_customer_accesses_on_property_publication_id"
@@ -269,10 +271,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_25_021240) do
     t.bigint "property_publication_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "inquiry_id", null: false
     t.index ["activity_type"], name: "index_customer_activities_on_activity_type"
     t.index ["customer_access_id"], name: "index_customer_activities_on_customer_access_id"
     t.index ["customer_id", "created_at"], name: "index_customer_activities_on_customer_id_and_created_at"
     t.index ["customer_id"], name: "index_customer_activities_on_customer_id"
+    t.index ["inquiry_id"], name: "index_customer_activities_on_inquiry_id"
     t.index ["property_inquiry_id"], name: "index_customer_activities_on_property_inquiry_id"
     t.index ["property_publication_id"], name: "index_customer_activities_on_property_publication_id"
     t.index ["user_id"], name: "index_customer_activities_on_user_id"
@@ -328,19 +332,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_25_021240) do
     t.datetime "last_contacted_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "deal_status", default: 0, null: false
-    t.datetime "deal_status_changed_at"
-    t.bigint "assigned_user_id"
-    t.string "lost_reason"
     t.date "expected_move_date"
     t.integer "budget_min"
     t.integer "budget_max"
     t.jsonb "preferred_areas", default: []
     t.text "requirements"
-    t.integer "priority", default: 1, null: false
-    t.index ["assigned_user_id"], name: "index_customers_on_assigned_user_id"
-    t.index ["deal_status"], name: "index_customers_on_deal_status"
-    t.index ["priority"], name: "index_customers_on_priority"
     t.index ["tenant_id", "email"], name: "index_customers_on_tenant_id_and_email", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
     t.index ["tenant_id", "line_user_id"], name: "index_customers_on_tenant_id_and_line_user_id", unique: true, where: "(line_user_id IS NOT NULL)"
     t.index ["tenant_id"], name: "index_customers_on_tenant_id"
@@ -367,6 +363,24 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_25_021240) do
     t.datetime "updated_at", null: false
     t.index ["facility_id"], name: "index_facility_synonyms_on_facility_id"
     t.index ["synonym"], name: "index_facility_synonyms_on_synonym", unique: true
+  end
+
+  create_table "inquiries", force: :cascade do |t|
+    t.bigint "tenant_id", null: false
+    t.bigint "customer_id", null: false
+    t.bigint "assigned_user_id"
+    t.integer "deal_status", default: 0, null: false
+    t.datetime "deal_status_changed_at"
+    t.integer "priority", default: 1, null: false
+    t.string "lost_reason"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assigned_user_id"], name: "index_inquiries_on_assigned_user_id"
+    t.index ["customer_id"], name: "index_inquiries_on_customer_id"
+    t.index ["deal_status"], name: "index_inquiries_on_deal_status"
+    t.index ["priority"], name: "index_inquiries_on_priority"
+    t.index ["tenant_id"], name: "index_inquiries_on_tenant_id"
   end
 
   create_table "map_layers", force: :cascade do |t|
@@ -446,13 +460,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_25_021240) do
     t.bigint "customer_id"
     t.integer "channel", default: 0, null: false
     t.bigint "room_id", null: false
-    t.bigint "assigned_user_id"
     t.integer "media_type", default: 0
     t.integer "origin_type", default: 0
-    t.index ["assigned_user_id"], name: "index_property_inquiries_on_assigned_user_id"
+    t.bigint "inquiry_id", null: false
     t.index ["channel"], name: "index_property_inquiries_on_channel"
     t.index ["created_at"], name: "index_property_inquiries_on_created_at"
     t.index ["customer_id"], name: "index_property_inquiries_on_customer_id"
+    t.index ["inquiry_id"], name: "index_property_inquiries_on_inquiry_id"
     t.index ["media_type"], name: "index_property_inquiries_on_media_type"
     t.index ["origin_type"], name: "index_property_inquiries_on_origin_type"
     t.index ["property_publication_id"], name: "index_property_inquiries_on_property_publication_id"
@@ -812,26 +826,30 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_25_021240) do
   add_foreign_key "bulk_import_items", "bulk_import_histories"
   add_foreign_key "bulk_import_items", "rooms", column: "created_room_id", on_delete: :nullify
   add_foreign_key "customer_accesses", "customers"
+  add_foreign_key "customer_accesses", "inquiries"
   add_foreign_key "customer_accesses", "property_inquiries"
   add_foreign_key "customer_accesses", "property_publications"
   add_foreign_key "customer_activities", "customer_accesses"
   add_foreign_key "customer_activities", "customers"
+  add_foreign_key "customer_activities", "inquiries"
   add_foreign_key "customer_activities", "property_inquiries"
   add_foreign_key "customer_activities", "property_publications"
   add_foreign_key "customer_activities", "users"
   add_foreign_key "customer_image_simulations", "property_publications"
   add_foreign_key "customer_routes", "customer_accesses"
   add_foreign_key "customers", "tenants"
-  add_foreign_key "customers", "users", column: "assigned_user_id"
   add_foreign_key "facility_synonyms", "facilities"
+  add_foreign_key "inquiries", "customers"
+  add_foreign_key "inquiries", "tenants"
+  add_foreign_key "inquiries", "users", column: "assigned_user_id"
   add_foreign_key "map_layers", "tenants"
   add_foreign_key "owners", "buildings"
   add_foreign_key "owners", "tenants"
   add_foreign_key "presentation_accesses", "property_publications"
   add_foreign_key "property_inquiries", "customers"
+  add_foreign_key "property_inquiries", "inquiries"
   add_foreign_key "property_inquiries", "property_publications"
   add_foreign_key "property_inquiries", "rooms"
-  add_foreign_key "property_inquiries", "users", column: "assigned_user_id"
   add_foreign_key "property_publication_photos", "property_publications"
   add_foreign_key "property_publication_photos", "room_photos"
   add_foreign_key "property_publication_virtual_stagings", "property_publications"
