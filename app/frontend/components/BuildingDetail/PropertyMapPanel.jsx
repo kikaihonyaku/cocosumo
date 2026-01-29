@@ -1790,8 +1790,8 @@ export default function PropertyMapPanel({
             </Box>
           )}
 
-          {/* ストリートビュー切り替えFAB */}
-          {mapLoaded && !slideshowActive && (
+          {/* ストリートビュー切り替えFAB（モバイルのみ表示） */}
+          {mapLoaded && !slideshowActive && isMobile && (
             <Tooltip title={streetViewVisible ? "地図に戻る" : "ストリートビュー"} placement="left">
               <Fab
                 size="medium"
@@ -1836,6 +1836,27 @@ export default function PropertyMapPanel({
               bgcolor: 'grey.100',
             }}
           />
+
+          {/* 閉じるボタン（ストリートビュー表示中は常時表示） */}
+          {streetViewVisible && (
+            <Tooltip title="ストリートビューを閉じる">
+              <IconButton
+                size="small"
+                onClick={slideshowActive ? handleCloseSlideshow : toggleStreetView}
+                sx={{
+                  position: 'absolute',
+                  top: 15,
+                  right: 64,
+                  zIndex: 11,
+                  color: 'white',
+                  bgcolor: 'rgba(0,0,0,0.5)',
+                  '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
+                }}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
 
           {/* スライドショーコントロールオーバーレイ */}
           {slideshowActive && streetViewVisible && slideshowPoints.length > 0 && (
