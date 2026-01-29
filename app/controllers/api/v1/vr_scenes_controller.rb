@@ -128,7 +128,9 @@ class Api::V1::VrScenesController < ApplicationController
   private
 
   def set_vr_tour
-    @vr_tour = VrTour.find(params[:vr_tour_id])
+    @vr_tour = VrTour.joins(room: :building)
+                      .where(buildings: { tenant_id: current_user.tenant_id })
+                      .find(params[:vr_tour_id])
   end
 
   def set_vr_scene

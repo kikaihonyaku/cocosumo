@@ -18,8 +18,12 @@ class Api::V1::PropertyPublicationsController < ApplicationController
         methods: [:thumbnail_url, :public_url]
       )
     else
-      # 全物件公開ページ一覧
-      @property_publications = PropertyPublication.kept.includes(room: :building).order(updated_at: :desc)
+      # 全物件公開ページ一覧（テナントでフィルタリング）
+      @property_publications = PropertyPublication.kept
+                                                   .joins(room: :building)
+                                                   .where(buildings: { tenant_id: current_user.tenant_id })
+                                                   .includes(room: :building)
+                                                   .order(updated_at: :desc)
       render json: @property_publications.as_json(
         include: {
           room: {

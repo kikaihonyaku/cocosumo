@@ -54,7 +54,9 @@ class Api::V1::VirtualStagingVariationsController < ApplicationController
   private
 
   def set_virtual_staging
-    @virtual_staging = VirtualStaging.find(params[:virtual_staging_id])
+    @virtual_staging = VirtualStaging.joins(room: :building)
+                                      .where(buildings: { tenant_id: current_user.tenant_id })
+                                      .find(params[:virtual_staging_id])
   end
 
   def set_variation

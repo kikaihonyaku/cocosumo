@@ -216,11 +216,16 @@ class Api::V1::PresentationAccessesController < ApplicationController
   private
 
   def set_property_publication
-    @property_publication = PropertyPublication.kept.find(params[:property_publication_id])
+    @property_publication = PropertyPublication.kept
+                                               .joins(room: :building)
+                                               .where(buildings: { tenant_id: current_user.tenant_id })
+                                               .find(params[:property_publication_id])
   end
 
   def set_presentation_access
-    @presentation_access = PresentationAccess.find(params[:id])
+    @presentation_access = PresentationAccess.joins(property_publication: { room: :building })
+                                              .where(buildings: { tenant_id: current_user.tenant_id })
+                                              .find(params[:id])
   end
 
   def presentation_access_params

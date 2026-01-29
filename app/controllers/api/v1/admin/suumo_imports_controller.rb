@@ -10,7 +10,7 @@ class Api::V1::Admin::SuumoImportsController < ApplicationController
   # GET /api/v1/admin/suumo_imports
   # List import histories
   def index
-    histories = SuumoImportHistory.recent.includes(:tenant).limit(50)
+    histories = tenant_scoped_histories.recent.includes(:tenant).limit(50)
 
     render json: {
       histories: histories.map { |h| history_to_json(h) }
@@ -20,7 +20,7 @@ class Api::V1::Admin::SuumoImportsController < ApplicationController
   # GET /api/v1/admin/suumo_imports/:id
   # Get import history detail
   def show
-    history = SuumoImportHistory.find(params[:id])
+    history = tenant_scoped_histories.find(params[:id])
 
     render json: {
       history: history_to_json(history, include_logs: true)
@@ -33,7 +33,8 @@ class Api::V1::Admin::SuumoImportsController < ApplicationController
   # Start a SUUMO import job
   def create
     url = params[:url]
-    tenant_id = params[:tenant_id] || current_tenant&.id
+    tenant = resolve_tenant
+    return unless tenant
 
     unless url.present?
       render json: { error: "URLが必要です" }, status: :unprocessable_entity
@@ -42,12 +43,6 @@ class Api::V1::Admin::SuumoImportsController < ApplicationController
 
     unless url.start_with?("https://suumo.jp/")
       render json: { error: "SUUMOのURLを指定してください" }, status: :unprocessable_entity
-      return
-    end
-
-    tenant = Tenant.find_by(id: tenant_id)
-    unless tenant
-      render json: { error: "テナントが見つかりません" }, status: :unprocessable_entity
       return
     end
 
@@ -86,7 +81,8 @@ class Api::V1::Admin::SuumoImportsController < ApplicationController
   # Run SUUMO import synchronously (for small imports)
   def sync
     url = params[:url]
-    tenant_id = params[:tenant_id] || current_tenant&.id
+    tenant = resolve_tenant
+    return unless tenant
 
     unless url.present?
       render json: { error: "URLが必要です" }, status: :unprocessable_entity
@@ -95,12 +91,6 @@ class Api::V1::Admin::SuumoImportsController < ApplicationController
 
     unless url.start_with?("https://suumo.jp/")
       render json: { error: "SUUMOのURLを指定してください" }, status: :unprocessable_entity
-      return
-    end
-
-    tenant = Tenant.find_by(id: tenant_id)
-    unless tenant
-      render json: { error: "テナントが見つかりません" }, status: :unprocessable_entity
       return
     end
 
@@ -234,7 +224,13 @@ class Api::V1::Admin::SuumoImportsController < ApplicationController
   # GET /api/v1/admin/suumo_imports/tenants
   # List available tenants for import
   def tenants
-    tenants = Tenant.all.map do |tenant|
+    tenant_scope = if current_user.super_admin?
+      Tenant.all
+    else
+      Tenant.where(id: current_user.tenant_id)
+    end
+
+    tenants = tenant_scope.map do |tenant|
       {
         id: tenant.id,
         name: tenant.name,
@@ -247,6 +243,30 @@ class Api::V1::Admin::SuumoImportsController < ApplicationController
   end
 
   private
+
+  def resolve_tenant
+    if current_user.super_admin?
+      tenant_id = params[:tenant_id] || current_tenant&.id
+      tenant = Tenant.find_by(id: tenant_id)
+    else
+      tenant = Tenant.find_by(id: current_user.tenant_id)
+    end
+
+    unless tenant
+      render json: { error: "テナントが見つかりません" }, status: :unprocessable_entity
+      return nil
+    end
+
+    tenant
+  end
+
+  def tenant_scoped_histories
+    if current_user.super_admin?
+      SuumoImportHistory.all
+    else
+      SuumoImportHistory.where(tenant_id: current_user.tenant_id)
+    end
+  end
 
   def history_to_json(history, include_logs: false)
     result = {
