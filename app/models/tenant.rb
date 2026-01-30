@@ -57,6 +57,16 @@ class Tenant < ApplicationRecord
     "#{subdomain}-inquiry@inbound.cocosumo.space"
   end
 
+  # ポータル別メール問い合わせ用のメールアドレスを返す
+  def portal_inquiry_email_address(portal)
+    "#{subdomain}-inquiry-#{portal}@inbound.cocosumo.space"
+  end
+
+  # 全ポータルの問い合わせ用メールアドレスを返す
+  def portal_inquiry_email_addresses
+    { suumo: portal_inquiry_email_address(:suumo) }
+  end
+
   private
 
   # メール問い合わせ用のBuilding/Roomを自動作成

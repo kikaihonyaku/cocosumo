@@ -7,11 +7,23 @@ class PropertyInquiryMailbox < ApplicationMailbox
   MAX_MESSAGE_LENGTH = 10_000
   SPAM_SCORE_THRESHOLD = 5.0
 
+  # 送信元ドメインからポータル種別を自動判定するマッピング
+  PORTAL_SENDER_DOMAINS = {
+    "suumo.jp" => :suumo
+    # "athome.co.jp" => :athome,
+  }.freeze
+
   before_processing :check_spam_score
   before_processing :find_tenant
   before_processing :check_rate_limit
 
   def process
+    portal_type = detect_portal_from_sender
+    if portal_type
+      delegate_to_portal_parser(portal_type)
+      return
+    end
+
     customer = Customer.find_or_create_by_contact!(
       tenant: @tenant,
       email: sender_email,
@@ -21,9 +33,14 @@ class PropertyInquiryMailbox < ApplicationMailbox
 
     default_room = find_default_inquiry_room
 
-    inquiry = PropertyInquiry.create!(
+    inquiry_record = @tenant.inquiries.create!(
+      customer: customer
+    )
+
+    property_inquiry = PropertyInquiry.create!(
       room: default_room,
       customer: customer,
+      inquiry: inquiry_record,
       name: sender_name,
       email: sender_email,
       message: sanitized_body,
@@ -32,7 +49,7 @@ class PropertyInquiryMailbox < ApplicationMailbox
       channel: :email
     )
 
-    Rails.logger.info "[PropertyInquiryMailbox] Created inquiry ##{inquiry.id} for tenant #{@tenant.subdomain}"
+    Rails.logger.info "[PropertyInquiryMailbox] Created inquiry ##{property_inquiry.id} for tenant #{@tenant.subdomain}"
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "[PropertyInquiryMailbox] Failed to create inquiry: #{e.message}"
     bounced!
@@ -117,5 +134,55 @@ class PropertyInquiryMailbox < ApplicationMailbox
     # Strip HTML tags and limit length
     body = ActionController::Base.helpers.strip_tags(body)
     body.truncate(MAX_MESSAGE_LENGTH)
+  end
+
+  def detect_portal_from_sender
+    domain = sender_email&.split("@")&.last
+    PORTAL_SENDER_DOMAINS[domain]
+  end
+
+  def delegate_to_portal_parser(portal_type)
+    parser_class = PortalInquiryMailbox::PORTAL_PARSERS[portal_type]
+    unless parser_class
+      Rails.logger.warn "[PropertyInquiryMailbox] No parser for portal: #{portal_type}"
+      return
+    end
+
+    parsed = parser_class.new.parse(mail)
+
+    name = parsed[:name] || sender_name
+    email = parsed[:email] || sender_email
+    phone = parsed[:phone]
+    message = parsed[:message] || sanitized_body
+    origin_type = parsed[:origin_type] || :general_inquiry
+
+    customer = Customer.find_or_create_by_contact!(
+      tenant: @tenant,
+      email: email,
+      name: name,
+      phone: phone
+    )
+
+    default_room = find_default_inquiry_room
+
+    inquiry_record = @tenant.inquiries.create!(
+      customer: customer
+    )
+
+    property_inquiry = PropertyInquiry.create!(
+      room: default_room,
+      customer: customer,
+      inquiry: inquiry_record,
+      name: name,
+      email: email,
+      phone: phone,
+      message: message,
+      media_type: portal_type,
+      origin_type: origin_type,
+      channel: :email
+    )
+
+    Rails.logger.info "[PropertyInquiryMailbox] Created portal inquiry ##{property_inquiry.id} " \
+                      "(portal: #{portal_type}) for tenant #{@tenant.subdomain}"
   end
 end

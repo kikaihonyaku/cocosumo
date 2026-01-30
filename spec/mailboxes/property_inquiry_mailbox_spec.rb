@@ -64,6 +64,17 @@ RSpec.describe PropertyInquiryMailbox, type: :mailbox do
         }.to change(Customer, :count).by(1)
       end
 
+      it 'creates an Inquiry record' do
+        expect {
+          create_inbound_email(
+            to: 'demo-inquiry@inbound.cocosumo.space',
+            from: { name: sender_name, email: sender_email },
+            subject: 'Property Inquiry',
+            body: 'I am interested in renting a room.'
+          )
+        }.to change(Inquiry, :count).by(1)
+      end
+
       it 'sets correct attributes on PropertyInquiry' do
         create_inbound_email(
           to: 'demo-inquiry@inbound.cocosumo.space',
@@ -144,10 +155,12 @@ RSpec.describe PropertyInquiryMailbox, type: :mailbox do
     context 'with rate limiting' do
       before do
         customer = create(:customer, tenant: tenant, email: sender_email, name: sender_name)
+        inquiry_record = tenant.inquiries.create!(customer: customer)
         PropertyInquiryMailbox::RATE_LIMIT_COUNT.times do
           PropertyInquiry.create!(
             room: room,
             customer: customer,
+            inquiry: inquiry_record,
             name: sender_name,
             email: sender_email,
             message: 'Test',

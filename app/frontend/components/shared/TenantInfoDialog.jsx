@@ -23,9 +23,9 @@ import {
 export default function TenantInfoDialog({ open, onClose, tenant }) {
   if (!tenant) return null;
 
-  const handleCopyEmail = () => {
-    if (tenant.inquiry_email_address) {
-      navigator.clipboard.writeText(tenant.inquiry_email_address);
+  const handleCopyEmail = (email) => {
+    if (email) {
+      navigator.clipboard.writeText(email);
     }
   };
 
@@ -108,7 +108,7 @@ export default function TenantInfoDialog({ open, onClose, tenant }) {
           {/* 問い合わせ受付用メールアドレス */}
           <Box>
             <Typography variant="caption" color="text.secondary">
-              問い合わせ受付用メールアドレス
+              問い合わせ受付用メールアドレス（汎用）
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
               <EmailIcon fontSize="small" color="action" />
@@ -127,7 +127,7 @@ export default function TenantInfoDialog({ open, onClose, tenant }) {
               </Typography>
               {tenant.inquiry_email_address && (
                 <Tooltip title="コピー">
-                  <IconButton size="small" onClick={handleCopyEmail}>
+                  <IconButton size="small" onClick={() => handleCopyEmail(tenant.inquiry_email_address)}>
                     <CopyIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
@@ -137,6 +137,39 @@ export default function TenantInfoDialog({ open, onClose, tenant }) {
               このアドレス宛のメールは自動的に問い合わせとして登録されます
             </Typography>
           </Box>
+
+          {/* ポータルサイト用メールアドレス */}
+          {tenant.portal_inquiry_email_addresses?.suumo && (
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                SUUMO反響受付用メールアドレス
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                <EmailIcon fontSize="small" color="action" />
+                <Typography
+                  variant="body1"
+                  sx={{
+                    fontFamily: 'monospace',
+                    bgcolor: 'grey.100',
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    flexGrow: 1
+                  }}
+                >
+                  {tenant.portal_inquiry_email_addresses.suumo}
+                </Typography>
+                <Tooltip title="コピー">
+                  <IconButton size="small" onClick={() => handleCopyEmail(tenant.portal_inquiry_email_addresses.suumo)}>
+                    <CopyIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                SUUMOの反響通知メール転送先として設定してください
+              </Typography>
+            </Box>
+          )}
         </Box>
       </DialogContent>
 
