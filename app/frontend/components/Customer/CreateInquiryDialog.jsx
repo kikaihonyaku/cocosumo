@@ -97,21 +97,19 @@ export default function CreateInquiryDialog({ open, onClose, customerId, onCreat
   }, [searchQuery, searchRooms]);
 
   const handleSubmit = async () => {
-    if (!selectedRoom) {
-      setError('物件を選択してください');
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
 
       const payload = {
-        room_id: selectedRoom.id,
-        media_type: mediaType,
-        origin_type: originType,
         message: message || null
       };
+
+      if (selectedRoom) {
+        payload.room_id = selectedRoom.id;
+        payload.media_type = mediaType;
+        payload.origin_type = originType;
+      }
 
       if (assignedUserId) {
         payload.assigned_user_id = assignedUserId;
@@ -157,7 +155,7 @@ export default function CreateInquiryDialog({ open, onClose, customerId, onCreat
 
           {/* Room Search */}
           <TextField
-            label="物件を検索"
+            label="物件を検索（任意）"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             fullWidth
@@ -248,37 +246,40 @@ export default function CreateInquiryDialog({ open, onClose, customerId, onCreat
 
           <Divider />
 
-          {/* Origin Type */}
-          <FormControl fullWidth>
-            <InputLabel>発生元</InputLabel>
-            <Select
-              value={originType}
-              onChange={(e) => setOriginType(e.target.value)}
-              label="発生元"
-            >
-              {ORIGIN_TYPES.map(type => (
-                <MenuItem key={type.value} value={type.value}>
-                  {type.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {/* Origin Type / Media Type - PropertyInquiry固有の項目のため物件選択時のみ表示 */}
+          {selectedRoom && (
+            <>
+              <FormControl fullWidth>
+                <InputLabel>発生元</InputLabel>
+                <Select
+                  value={originType}
+                  onChange={(e) => setOriginType(e.target.value)}
+                  label="発生元"
+                >
+                  {ORIGIN_TYPES.map(type => (
+                    <MenuItem key={type.value} value={type.value}>
+                      {type.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
-          {/* Media Type */}
-          <FormControl fullWidth>
-            <InputLabel>媒体</InputLabel>
-            <Select
-              value={mediaType}
-              onChange={(e) => setMediaType(e.target.value)}
-              label="媒体"
-            >
-              {MEDIA_TYPES.map(type => (
-                <MenuItem key={type.value} value={type.value}>
-                  {type.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              <FormControl fullWidth>
+                <InputLabel>媒体</InputLabel>
+                <Select
+                  value={mediaType}
+                  onChange={(e) => setMediaType(e.target.value)}
+                  label="媒体"
+                >
+                  {MEDIA_TYPES.map(type => (
+                    <MenuItem key={type.value} value={type.value}>
+                      {type.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </>
+          )}
 
           {/* Assigned User */}
           {users.length > 0 && (
@@ -323,7 +324,7 @@ export default function CreateInquiryDialog({ open, onClose, customerId, onCreat
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={loading || !selectedRoom}
+          disabled={loading}
         >
           {loading ? '作成中...' : '案件を作成'}
         </Button>

@@ -106,19 +106,18 @@ class Api::V1::CustomersController < ApplicationController
   end
 
   # POST /api/v1/customers/:id/create_inquiry
-  # 顧客詳細画面から新規案件（Inquiry + PropertyInquiry）を作成
+  # 顧客詳細画面から新規案件を作成
+  # room_id がある場合は Inquiry + PropertyInquiry を作成
+  # room_id がない場合は Inquiry のみ作成（一般問い合わせ）
   def create_inquiry
-    room = Room.find(params[:room_id])
+    room = nil
+    if params[:room_id].present?
+      room = Room.find(params[:room_id])
 
-    # テナント権限チェック
-    unless room.building&.tenant_id == current_user.tenant_id
-      return render json: { error: "この物件への案件を作成する権限がありません" }, status: :forbidden
-    end
-
-    # 任意でproperty_publicationを関連付け
-    property_publication = nil
-    if params[:property_publication_id].present?
-      property_publication = PropertyPublication.kept.find_by(id: params[:property_publication_id], room_id: room.id)
+      # テナント権限チェック
+      unless room.building&.tenant_id == current_user.tenant_id
+        return render json: { error: "この物件への案件を作成する権限がありません" }, status: :forbidden
+      end
     end
 
     # 担当者の検証（指定されていれば同じテナントのユーザーか確認）
@@ -135,28 +134,36 @@ class Api::V1::CustomersController < ApplicationController
         assigned_user: assigned_user
       )
 
-      # PropertyInquiry を作成（deal系フィールドはPI側に）
-      property_inquiry = PropertyInquiry.new(
-        room: room,
-        property_publication: property_publication,
-        customer: @customer,
-        inquiry: @inquiry,
-        name: @customer.name,
-        email: @customer.email.presence || "noreply@example.com",
-        phone: @customer.phone,
-        message: params[:message].presence || "",
-        media_type: params[:media_type] || :other_media,
-        origin_type: params[:origin_type] || :staff_proposal,
-        status: :pending,
-        deal_status: :new_inquiry,
-        priority: params[:priority] || :normal,
-        assigned_user: assigned_user,
-        channel: :web_form,
-        source: params[:source] || "staff_created"
-      )
+      # room_id がある場合のみ PropertyInquiry を作成
+      if room
+        # 任意でproperty_publicationを関連付け
+        property_publication = nil
+        if params[:property_publication_id].present?
+          property_publication = PropertyPublication.kept.find_by(id: params[:property_publication_id], room_id: room.id)
+        end
 
-      property_inquiry.changed_by = current_user
-      property_inquiry.save!
+        property_inquiry = PropertyInquiry.new(
+          room: room,
+          property_publication: property_publication,
+          customer: @customer,
+          inquiry: @inquiry,
+          name: @customer.name,
+          email: @customer.email.presence || "noreply@example.com",
+          phone: @customer.phone,
+          message: params[:message].presence || "",
+          media_type: params[:media_type] || :other_media,
+          origin_type: params[:origin_type] || :staff_proposal,
+          status: :pending,
+          deal_status: :new_inquiry,
+          priority: params[:priority] || :normal,
+          assigned_user: assigned_user,
+          channel: :web_form,
+          source: params[:source] || "staff_created"
+        )
+
+        property_inquiry.changed_by = current_user
+        property_inquiry.save!
+      end
     end
 
     render json: {
