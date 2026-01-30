@@ -292,7 +292,7 @@ Rails.application.routes.draw do
         end
       end
 
-      # 顧客アクセス管理（物件公開ページ単位）
+      # 顧客マイページ管理（物件公開ページ単位）
       resources :property_publications, only: [] do
         resources :customer_accesses, only: [:index, :create]
       end

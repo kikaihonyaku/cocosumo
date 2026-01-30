@@ -166,7 +166,7 @@ export default function CustomerAccessPanel({ publicationId, onAccessCreated }) 
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="subtitle1" fontWeight="bold">
-          顧客アクセス管理
+          顧客マイページ管理
         </Typography>
         <Button
           variant="contained"

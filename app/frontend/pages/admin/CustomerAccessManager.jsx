@@ -188,7 +188,7 @@ export default function CustomerAccessManager() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5" fontWeight="bold">
-          顧客アクセス管理
+          顧客マイページ管理
         </Typography>
         <Button
           variant="outlined"
