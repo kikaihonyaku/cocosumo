@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_29_231419) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_30_043835) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -372,6 +372,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_29_231419) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "status", default: 0, null: false
+    t.bigint "assigned_user_id"
+    t.index ["assigned_user_id"], name: "index_inquiries_on_assigned_user_id"
     t.index ["customer_id"], name: "index_inquiries_on_customer_id"
     t.index ["status"], name: "index_inquiries_on_status"
     t.index ["tenant_id"], name: "index_inquiries_on_tenant_id"
@@ -966,6 +968,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_29_231419) do
   add_foreign_key "facility_synonyms", "facilities"
   add_foreign_key "inquiries", "customers"
   add_foreign_key "inquiries", "tenants"
+  add_foreign_key "inquiries", "users", column: "assigned_user_id"
   add_foreign_key "map_layers", "tenants", on_delete: :cascade
   add_foreign_key "owners", "buildings"
   add_foreign_key "owners", "tenants"

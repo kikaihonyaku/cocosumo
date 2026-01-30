@@ -4,7 +4,8 @@
 
 ## 概要
 
-開発者ブログは `db/seeds/blog_posts.rb` にseedデータとして管理されています。
+開発者ブログは `db/seeds/blog_posts/` ディレクトリに記事ごとの個別ファイルとして管理されています。
+`db/seeds/blog_posts.rb` はローダーとして機能し、ディレクトリ内のファイルを自動読み込みします。
 gitのコミットログから開発内容を抽出し、読み物として面白いストーリー形式で記事を作成します。
 
 ## 作成手順
@@ -22,7 +23,7 @@ git log <commit_hash> -1 --format="%B"
 
 ### 2. 既存記事の文体確認
 
-`db/seeds/blog_posts.rb` を読み、既存記事の文体・構成を確認します。
+`db/seeds/blog_posts/` 内の既存記事を読み、文体・構成を確認します。
 
 **基本構成:**
 1. 課題提起（なぜこの機能を作ったのか）
@@ -34,7 +35,7 @@ git log <commit_hash> -1 --format="%B"
 
 ### 3. 記事の作成
 
-`db/seeds/blog_posts.rb` に新しい記事を追加します。
+`db/seeds/blog_posts/` に新しいファイルを作成します。ファイル名は `NNN_slug.rb` の形式です（例: `027_feature_name.rb`）。
 
 ```ruby
 # 記事N: タイトル

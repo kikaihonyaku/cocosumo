@@ -10,8 +10,8 @@ CoCoスモの開発者ブログ記事を作成するためのスキルです。
 ## 使用方法
 
 1. まず [開発者ブログガイド](../../../docs/DEVELOPMENT_BLOG_GUIDE.md) を読んで、文体・構成を確認
-2. `db/seeds/blog_posts.rb` の既存記事を参考にする
-3. ガイドに従って記事を作成
+2. `db/seeds/blog_posts/` の既存記事を参考にする
+3. ガイドに従って新しい記事ファイルを作成
 
 ## 記事の基本構成
 
@@ -41,9 +41,15 @@ CoCoスモの開発者ブログ記事を作成するためのスキルです。
 | published_at | 公開日時 |
 | commit_hash | 関連するgitコミットハッシュ |
 
-## 記事追加のテンプレート
+## 記事追加の手順
+
+1. `db/seeds/blog_posts/` 内の既存ファイルを確認し、次の番号を決める
+2. `NNN_slug.rb` の形式でファイルを作成（例: `027_feature_name.rb`）
+
+### テンプレート
 
 ```ruby
+# 記事N: タイトル
 blog_post_N = BlogPost.find_or_create_by!(public_id: 'feature-name-YYYY') do |post|
   post.title = "記事タイトル"
   post.summary = "記事の要約（1-2文）"

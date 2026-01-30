@@ -51,16 +51,23 @@ const ORIGIN_TYPES = [
   { value: 'other_origin', label: 'その他' }
 ];
 
-export default function AddPropertyDialog({ open, onClose, inquiryId, onAdded }) {
+export default function AddPropertyDialog({ open, onClose, inquiryId, defaultAssignedUserId, users = [], onAdded }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [rooms, setRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [message, setMessage] = useState('');
   const [mediaType, setMediaType] = useState('other_media');
   const [originType, setOriginType] = useState('staff_proposal');
+  const [assignedUserId, setAssignedUserId] = useState('');
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (open) {
+      setAssignedUserId(defaultAssignedUserId || '');
+    }
+  }, [open, defaultAssignedUserId]);
 
   const searchRooms = useCallback(async (query) => {
     if (!query.trim()) {
@@ -104,6 +111,7 @@ export default function AddPropertyDialog({ open, onClose, inquiryId, onAdded })
         room_id: selectedRoom.id,
         media_type: mediaType,
         origin_type: originType,
+        assigned_user_id: assignedUserId || null,
         message: message || null
       });
 
@@ -124,6 +132,7 @@ export default function AddPropertyDialog({ open, onClose, inquiryId, onAdded })
     setMessage('');
     setMediaType('other_media');
     setOriginType('staff_proposal');
+    setAssignedUserId('');
     setError(null);
     onClose();
   };
@@ -260,6 +269,26 @@ export default function AddPropertyDialog({ open, onClose, inquiryId, onAdded })
               ))}
             </Select>
           </FormControl>
+
+          {users.length > 0 && (
+            <FormControl fullWidth>
+              <InputLabel>担当者</InputLabel>
+              <Select
+                value={assignedUserId}
+                onChange={(e) => setAssignedUserId(e.target.value)}
+                label="担当者"
+              >
+                <MenuItem value="">
+                  <em>未設定</em>
+                </MenuItem>
+                {users.map(u => (
+                  <MenuItem key={u.id} value={u.id}>
+                    {u.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
           <TextField
             label="メモ（任意）"

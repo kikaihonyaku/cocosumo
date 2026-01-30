@@ -6,7 +6,7 @@ class Api::V1::InquiriesController < ApplicationController
   # GET /api/v1/inquiries
   def index
     @inquiries = current_user.tenant.inquiries
-                              .includes(:customer, property_inquiries: { room: :building })
+                              .includes(:customer, :assigned_user, property_inquiries: { room: :building })
                               .recent
 
     if params[:customer_id].present?
@@ -116,7 +116,7 @@ class Api::V1::InquiriesController < ApplicationController
       status: :pending,
       deal_status: params[:deal_status] || :new_inquiry,
       priority: params[:priority] || :normal,
-      assigned_user_id: params[:assigned_user_id],
+      assigned_user_id: params[:assigned_user_id] || @inquiry.assigned_user_id,
       channel: :web_form,
       source: "staff_created"
     )
@@ -150,7 +150,7 @@ class Api::V1::InquiriesController < ApplicationController
   end
 
   def update_params
-    params.require(:inquiry).permit(:notes)
+    params.require(:inquiry).permit(:notes, :assigned_user_id)
   end
 
   def inquiry_json(inquiry)
@@ -159,6 +159,10 @@ class Api::V1::InquiriesController < ApplicationController
       status: inquiry.status,
       status_label: inquiry.status_label,
       notes: inquiry.notes,
+      assigned_user: inquiry.assigned_user ? {
+        id: inquiry.assigned_user.id,
+        name: inquiry.assigned_user.name
+      } : nil,
       customer: {
         id: inquiry.customer.id,
         name: inquiry.customer.name

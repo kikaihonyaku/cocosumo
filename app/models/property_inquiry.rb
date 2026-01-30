@@ -16,6 +16,8 @@ class PropertyInquiry < ApplicationRecord
   after_update :record_status_change_activity, if: :saved_change_to_status?
   before_save :track_deal_status_change
   after_update :record_deal_status_change_activity, if: :saved_change_to_deal_status?
+  after_save :sync_assigned_user_to_inquiry
+  after_save :sync_inquiry_status
 
   # Enums
   enum :media_type, {
@@ -190,6 +192,27 @@ class PropertyInquiry < ApplicationRecord
   def track_deal_status_change
     if deal_status_changed?
       self.deal_status_changed_at = Time.current
+    end
+  end
+
+  COMPLETED_DEAL_STATUSES = %w[contracted lost].freeze
+
+  def sync_assigned_user_to_inquiry
+    if assigned_user_id.present? && inquiry.assigned_user_id.nil?
+      inquiry.update_column(:assigned_user_id, assigned_user_id)
+    end
+  end
+
+  def sync_inquiry_status
+    return if inquiry.on_hold?
+
+    all_pis = inquiry.property_inquiries.reload
+    all_completed = all_pis.any? && all_pis.all? { |pi| COMPLETED_DEAL_STATUSES.include?(pi.deal_status) }
+
+    if all_completed && !inquiry.closed?
+      inquiry.update_column(:status, Inquiry.statuses[:closed])
+    elsif !all_completed && inquiry.closed?
+      inquiry.update_column(:status, Inquiry.statuses[:active])
     end
   end
 

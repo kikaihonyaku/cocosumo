@@ -2,6 +2,7 @@ class Inquiry < ApplicationRecord
   # Associations
   belongs_to :tenant
   belongs_to :customer
+  belongs_to :assigned_user, class_name: "User", optional: true
   has_many :property_inquiries, dependent: :destroy
   has_many :rooms, through: :property_inquiries
   has_many :customer_activities, dependent: :destroy

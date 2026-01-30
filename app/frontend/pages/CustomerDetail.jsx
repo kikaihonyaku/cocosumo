@@ -10,6 +10,7 @@ import {
   Button,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   ListItemIcon,
   IconButton,
@@ -326,8 +327,6 @@ export default function CustomerDetail() {
   }
 
   const statusInfo = getStatusInfo(customer.status);
-  const dealStatusInfo = getDealStatusInfo(customer.deal_status);
-  const priorityInfo = getPriorityInfo(customer.priority);
 
   // Handler for inquiry card click (toggle selection)
   const handleInquiryClick = (inquiryId) => {
@@ -407,25 +406,6 @@ export default function CustomerDetail() {
                 <ChatIcon color="success" fontSize="small" />
               </Tooltip>
             )}
-            {/* 顧客レベルの最新deal_status（PI由来） */}
-            {customer.deal_status && (
-              <Chip
-                size="small"
-                icon={<FlagIcon />}
-                label={customer.deal_status_label || dealStatusInfo.label}
-                color={dealStatusInfo.color}
-                sx={{ height: 22 }}
-              />
-            )}
-            {(customer.priority === 'high' || customer.priority === 'urgent') && (
-              <Chip
-                size="small"
-                icon={priorityInfo.icon}
-                label={customer.priority_label || priorityInfo.label}
-                color={priorityInfo.color}
-                sx={{ height: 22 }}
-              />
-            )}
             <Chip
               size="small"
               label={statusInfo.label}
@@ -437,7 +417,6 @@ export default function CustomerDetail() {
 
           <Box sx={{ flex: 1 }} />
 
-          {/* Contact info in header */}
           {customer.email && (
             <Tooltip title={customer.email}>
               <Chip
@@ -472,9 +451,6 @@ export default function CustomerDetail() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 5.5 }}>
           <Typography variant="caption" color="text.secondary">
             登録日: {customer.created_at}
-            {customer.deal_status_changed_at && (
-              <> | ステータス更新: {customer.deal_status_changed_at}</>
-            )}
             {customer.last_contacted_at && (
               <> | 最終連絡: {customer.last_contacted_at}</>
             )}
@@ -553,7 +529,7 @@ export default function CustomerDetail() {
             </Tooltip>
           </Box>
 
-          <Box sx={{ p: 1.5, overflow: 'auto', flex: 1 }}>
+          <Box sx={{ overflow: 'auto', flex: 1 }}>
             {inquiries.length === 0 ? (
               <Box sx={{ textAlign: 'center', py: 4 }}>
                 <FlagIcon sx={{ fontSize: 48, color: 'grey.300', mb: 1 }} />
@@ -570,117 +546,131 @@ export default function CustomerDetail() {
                 </Button>
               </Box>
             ) : (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <List dense disablePadding>
                 {inquiries.map((inquiry) => {
                   const inquiryStatusInfo = getInquiryStatusInfo(inquiry.status);
                   const isSelected = selectedInquiryId === inquiry.id;
                   return (
-                    <Card
+                    <ListItem
                       key={inquiry.id}
-                      variant="outlined"
-                      onClick={() => handleInquiryClick(inquiry.id)}
-                      sx={{
-                        bgcolor: isSelected ? 'primary.50' : 'grey.50',
-                        cursor: 'pointer',
-                        borderLeft: isSelected ? '3px solid' : '1px solid',
-                        borderLeftColor: isSelected ? 'primary.main' : 'divider',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          bgcolor: isSelected ? 'primary.100' : 'grey.100',
-                          borderLeftColor: isSelected ? 'primary.dark' : 'primary.light'
-                        }
-                      }}
+                      disablePadding
+                      sx={{ borderBottom: '1px solid', borderColor: 'divider' }}
                     >
-                      <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                        {/* Inquiry Header: Status */}
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <FlagIcon sx={{ fontSize: 16, color: `${inquiryStatusInfo.color}.main` }} />
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                              案件 #{inquiry.id}
-                            </Typography>
-                          </Box>
-                          <Tooltip title="クリックしてステータスを変更">
-                            <Chip
+                      <ListItemButton
+                        selected={isSelected}
+                        onClick={() => handleInquiryClick(inquiry.id)}
+                        sx={{
+                          py: 1,
+                          alignItems: 'flex-start',
+                          '&.Mui-selected': {
+                            bgcolor: 'primary.50',
+                            borderLeft: '3px solid',
+                            borderLeftColor: 'primary.main',
+                            '&:hover': { bgcolor: 'primary.100' },
+                          },
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 36, mt: 0.5 }}>
+                          <FlagIcon fontSize="small" color={inquiryStatusInfo.color} />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <Typography component="span" variant="body2" fontWeight={600}>
+                                案件 #{inquiry.id}
+                              </Typography>
+                              <Chip
+                                size="small"
+                                label={inquiry.status_label || inquiryStatusInfo.label}
+                                color={inquiryStatusInfo.color}
+                                sx={{ height: 18, fontSize: '0.65rem' }}
+                              />
+                            </Box>
+                          }
+                          secondary={
+                            <Box component="span" sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, mt: 0.25 }}>
+                              <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <HomeIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                                <Typography component="span" variant="caption" color="text.secondary">
+                                  {(inquiry.property_inquiries || []).length}件
+                                </Typography>
+                                <Typography component="span" variant="caption" color="text.secondary">・</Typography>
+                                <Typography component="span" variant="caption" color="text.secondary">
+                                  {inquiry.created_at}
+                                </Typography>
+                              </Box>
+                              {inquiry.assigned_user && (
+                                <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                                  <PersonIcon sx={{ fontSize: 14, color: 'primary.main' }} />
+                                  <Typography component="span" variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                                    {inquiry.assigned_user.name}
+                                  </Typography>
+                                </Box>
+                              )}
+                              {inquiry.notes && (
+                                <Tooltip title={inquiry.notes} placement="bottom-start">
+                                  <Typography
+                                    component="span"
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{
+                                      display: '-webkit-box',
+                                      WebkitLineClamp: 2,
+                                      WebkitBoxOrient: 'vertical',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'pre-wrap',
+                                      lineHeight: 1.4,
+                                    }}
+                                  >
+                                    {inquiry.notes}
+                                  </Typography>
+                                </Tooltip>
+                              )}
+                            </Box>
+                          }
+                        />
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            ml: 0.5,
+                            mt: 0.25,
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Tooltip title="編集" placement="right">
+                            <IconButton
                               size="small"
-                              label={inquiry.status_label || inquiryStatusInfo.label}
-                              color={inquiryStatusInfo.color}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setStatusDialogInquiry(inquiry);
-                                setStatusDialogOpen(true);
+                                setEditingInquiry(inquiry);
                               }}
-                              sx={{ height: 18, fontSize: '0.65rem', cursor: 'pointer' }}
-                            />
+                              sx={{ p: 0.5 }}
+                            >
+                              <EditIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="履歴追加" placement="right">
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedInquiryId(inquiry.id);
+                                setEditingActivity(null);
+                                setActivityDialogOpen(true);
+                              }}
+                              sx={{ p: 0.5 }}
+                            >
+                              <AddIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
                           </Tooltip>
                         </Box>
-
-                        {/* PI count */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                          <HomeIcon sx={{ fontSize: 14, color: 'action.active' }} />
-                          <Typography variant="caption" color="text.secondary">
-                            物件: {(inquiry.property_inquiries || []).length}件
-                          </Typography>
-                        </Box>
-
-                        {/* Notes */}
-                        {inquiry.notes && (
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              whiteSpace: 'pre-wrap',
-                              bgcolor: 'white',
-                              p: 1,
-                              borderRadius: 1,
-                              maxHeight: 40,
-                              overflow: 'auto',
-                              fontSize: '0.8rem',
-                              mb: 0.5
-                            }}
-                          >
-                            {inquiry.notes}
-                          </Typography>
-                        )}
-
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
-                          <Typography variant="caption" color="text.secondary">
-                            {inquiry.created_at}
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Tooltip title="案件を編集">
-                              <IconButton
-                                size="small"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingInquiry(inquiry);
-                                }}
-                                sx={{ p: 0.25 }}
-                              >
-                                <EditIcon sx={{ fontSize: 16 }} />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="この案件に対応履歴を追加">
-                              <Button
-                                size="small"
-                                startIcon={<AddIcon />}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedInquiryId(inquiry.id);
-                                  setEditingActivity(null);
-                                  setActivityDialogOpen(true);
-                                }}
-                                sx={{ minWidth: 'auto', px: 1, py: 0.25, fontSize: '0.65rem' }}
-                              >
-                                履歴追加
-                              </Button>
-                            </Tooltip>
-                          </Box>
-                        </Box>
-                      </CardContent>
-                    </Card>
+                      </ListItemButton>
+                    </ListItem>
                   );
                 })}
-              </Box>
+              </List>
             )}
           </Box>
         </Paper>
@@ -1235,6 +1225,7 @@ export default function CustomerDetail() {
         open={Boolean(editingInquiry)}
         onClose={() => setEditingInquiry(null)}
         inquiry={editingInquiry}
+        users={users}
         onUpdated={loadCustomer}
       />
 
@@ -1263,6 +1254,8 @@ export default function CustomerDetail() {
         open={addPropertyDialogOpen}
         onClose={() => setAddPropertyDialogOpen(false)}
         inquiryId={selectedInquiryId}
+        defaultAssignedUserId={inquiries.find(i => i.id === selectedInquiryId)?.assigned_user?.id}
+        users={users}
         onAdded={() => {
           loadCustomer();
         }}

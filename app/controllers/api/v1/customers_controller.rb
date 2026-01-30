@@ -90,7 +90,7 @@ class Api::V1::CustomersController < ApplicationController
   # GET /api/v1/customers/:id/inquiries
   def inquiries
     customer_inquiries = @customer.inquiries
-                                  .includes(property_inquiries: [ :assigned_user, { room: :building } ])
+                                  .includes(:assigned_user, property_inquiries: [ :assigned_user, { room: :building } ])
                                   .recent
 
     render json: customer_inquiries.map { |i| inquiry_json(i) }
@@ -131,7 +131,8 @@ class Api::V1::CustomersController < ApplicationController
       # Inquiry（案件）を作成
       @inquiry = current_user.tenant.inquiries.create!(
         customer: @customer,
-        notes: params[:message]
+        notes: params[:message],
+        assigned_user: assigned_user
       )
 
       # PropertyInquiry を作成（deal系フィールドはPI側に）
@@ -251,6 +252,10 @@ class Api::V1::CustomersController < ApplicationController
       status: inquiry.status,
       status_label: inquiry.status_label,
       notes: inquiry.notes,
+      assigned_user: inquiry.assigned_user ? {
+        id: inquiry.assigned_user.id,
+        name: inquiry.assigned_user.name
+      } : nil,
       property_inquiries: inquiry.property_inquiries.map { |pi|
         {
           id: pi.id,
