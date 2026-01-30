@@ -650,7 +650,7 @@ export default function CustomerDetail() {
           label={
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <KeyIcon fontSize="small" />
-              <span>アクセス権</span>
+              <span>顧客マイページ</span>
               <Chip label={accesses.length} size="small" sx={{ height: 18, fontSize: '0.7rem' }} />
             </Box>
           }
@@ -801,7 +801,7 @@ export default function CustomerDetail() {
       <Box sx={{ p: 2, flex: 1, overflow: 'auto', display: rightTab === 1 ? 'block' : 'none' }}>
         {accesses.length === 0 ? (
           <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-            発行済みアクセス権はありません
+            発行済み顧客マイページはありません
           </Typography>
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -1009,7 +1009,7 @@ export default function CustomerDetail() {
               <Chip
                 size="small"
                 icon={<KeyIcon />}
-                label={`アクセス権 ${customer.access_count || 0}件`}
+                label={`顧客マイページ ${customer.access_count || 0}件`}
                 variant="outlined"
                 sx={{ height: 22, fontSize: '0.7rem' }}
               />
