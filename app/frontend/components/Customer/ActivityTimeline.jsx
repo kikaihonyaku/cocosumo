@@ -77,6 +77,8 @@ export default function ActivityTimeline({
             </Box>
           </ListItemIcon>
           <ListItemText
+            primaryTypographyProps={{ component: 'div' }}
+            secondaryTypographyProps={{ component: 'div' }}
             primary={
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>

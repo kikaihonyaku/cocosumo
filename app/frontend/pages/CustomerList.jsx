@@ -22,7 +22,12 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Card,
+  CardContent,
+  CardActionArea,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -78,6 +83,8 @@ const getPriorityInfo = (priority) => {
 
 export default function CustomerList() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [customers, setCustomers] = useState([]);
@@ -170,12 +177,12 @@ export default function CustomerList() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 1.5, md: 3 } }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 1.5, md: 3 } }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <PersonIcon color="primary" sx={{ fontSize: 32 }} />
-          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+          <PersonIcon color="primary" sx={{ fontSize: isMobile ? 24 : 32 }} />
+          <Typography variant={isMobile ? 'h6' : 'h5'} sx={{ fontWeight: 600 }}>
             顧客管理
           </Typography>
           <Chip
@@ -185,14 +192,20 @@ export default function CustomerList() {
             variant="outlined"
           />
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={loadCustomers}
-          disabled={loading}
-        >
-          更新
-        </Button>
+        {isMobile ? (
+          <IconButton onClick={loadCustomers} disabled={loading} color="primary">
+            <RefreshIcon />
+          </IconButton>
+        ) : (
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={loadCustomers}
+            disabled={loading}
+          >
+            更新
+          </Button>
+        )}
       </Box>
 
       {error && (
@@ -209,7 +222,7 @@ export default function CustomerList() {
             placeholder="名前、メール、電話番号で検索..."
             value={searchQuery}
             onChange={handleSearch}
-            sx={{ minWidth: 300 }}
+            sx={{ minWidth: isMobile ? undefined : 300, width: isMobile ? '100%' : undefined }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -218,7 +231,7 @@ export default function CustomerList() {
               )
             }}
           />
-          <FormControl size="small" sx={{ minWidth: 130 }}>
+          <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 130, flex: isMobile ? 1 : undefined }}>
             <InputLabel>商談ステータス</InputLabel>
             <Select
               value={dealStatusFilter}
@@ -235,7 +248,7 @@ export default function CustomerList() {
               <MenuItem value="lost">失注</MenuItem>
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 100 }}>
+          <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 100, flex: isMobile ? 1 : undefined }}>
             <InputLabel>優先度</InputLabel>
             <Select
               value={priorityFilter}
@@ -249,7 +262,7 @@ export default function CustomerList() {
               <MenuItem value="low">低</MenuItem>
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
+          <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 120, flex: isMobile ? 1 : undefined }}>
             <InputLabel>顧客状態</InputLabel>
             <Select
               value={statusFilter}
@@ -264,152 +277,253 @@ export default function CustomerList() {
         </Box>
       </Paper>
 
-      {/* Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell sx={{ fontWeight: 600 }}>顧客名</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>商談ステータス</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>連絡先</TableCell>
-              <TableCell sx={{ fontWeight: 600 }} align="center">問い合わせ</TableCell>
-              <TableCell sx={{ fontWeight: 600 }} align="center">アクセス権</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>最終連絡</TableCell>
-              <TableCell sx={{ fontWeight: 600 }} align="center">操作</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {customers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                  <Typography color="text.secondary">
-                    顧客が見つかりませんでした
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              customers.map((customer) => {
-                const statusInfo = getStatusInfo(customer.status);
-                const dealStatusInfo = getDealStatusInfo(customer.deal_status);
-                const priorityInfo = getPriorityInfo(customer.priority);
-                return (
-                  <TableRow
-                    key={customer.id}
-                    hover
-                    sx={{ cursor: 'pointer' }}
-                    onClick={() => handleViewCustomer(customer.id)}
-                  >
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {customer.name}
-                        </Typography>
-                        {customer.has_line && (
-                          <Tooltip title="LINE連携済み">
-                            <ChatIcon fontSize="small" color="success" />
-                          </Tooltip>
-                        )}
-                        {(customer.priority === 'high' || customer.priority === 'urgent') && (
-                          <Tooltip title={`優先度: ${customer.priority_label || priorityInfo.label}`}>
+      {/* Mobile: Card List / Desktop: Table */}
+      {isMobile ? (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {customers.length === 0 ? (
+            <Paper sx={{ py: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">
+                顧客が見つかりませんでした
+              </Typography>
+            </Paper>
+          ) : (
+            customers.map((customer) => {
+              const dealStatusInfo = getDealStatusInfo(customer.deal_status);
+              const priorityInfo = getPriorityInfo(customer.priority);
+              return (
+                <Card key={customer.id} variant="outlined">
+                  <CardActionArea onClick={() => handleViewCustomer(customer.id)}>
+                    <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                      {/* Row 1: Name + Deal Status */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0, flex: 1 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                            {customer.name}
+                          </Typography>
+                          {customer.has_line && (
+                            <ChatIcon fontSize="small" color="success" sx={{ fontSize: 16, flexShrink: 0 }} />
+                          )}
+                          {(customer.priority === 'high' || customer.priority === 'urgent') && (
                             <Chip
                               size="small"
                               icon={priorityInfo.icon}
                               label={customer.priority_label || priorityInfo.label}
                               color={priorityInfo.color}
-                              sx={{ height: 20, fontSize: '0.7rem' }}
+                              sx={{ height: 18, fontSize: '0.65rem', flexShrink: 0 }}
                             />
-                          </Tooltip>
-                        )}
-                        {customer.status === 'archived' && (
-                          <Chip
-                            size="small"
-                            label={statusInfo.label}
-                            color={statusInfo.color}
-                            variant="outlined"
-                            sx={{ height: 20, fontSize: '0.7rem' }}
-                          />
-                        )}
+                          )}
+                        </Box>
+                        <Chip
+                          icon={<FlagIcon fontSize="small" />}
+                          label={customer.deal_status_label || dealStatusInfo.label}
+                          size="small"
+                          color={dealStatusInfo.color}
+                          sx={{ height: 22, flexShrink: 0, ml: 1 }}
+                        />
                       </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        icon={<FlagIcon fontSize="small" />}
-                        label={customer.deal_status_label || dealStatusInfo.label}
-                        size="small"
-                        color={dealStatusInfo.color}
-                        sx={{ height: 24 }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      {/* Row 2: Contact info */}
+                      <Box sx={{ display: 'flex', gap: 1.5, mb: 0.5, flexWrap: 'wrap' }}>
                         {customer.email && (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <EmailIcon fontSize="small" color="action" sx={{ fontSize: 16 }} />
-                            <Typography variant="caption">{customer.email}</Typography>
+                            <EmailIcon color="action" sx={{ fontSize: 14 }} />
+                            <Typography variant="caption" noWrap sx={{ maxWidth: 160 }}>{customer.email}</Typography>
                           </Box>
                         )}
                         {customer.phone && (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <PhoneIcon fontSize="small" color="action" sx={{ fontSize: 16 }} />
+                            <PhoneIcon color="action" sx={{ fontSize: 14 }} />
                             <Typography variant="caption">{customer.phone}</Typography>
                           </Box>
                         )}
                       </Box>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Chip
-                        icon={<QuestionAnswerIcon fontSize="small" />}
-                        label={customer.inquiry_count}
-                        size="small"
-                        color={customer.inquiry_count > 0 ? 'primary' : 'default'}
-                        variant="outlined"
-                      />
-                    </TableCell>
-                    <TableCell align="center">
-                      <Chip
-                        icon={<KeyIcon fontSize="small" />}
-                        label={customer.access_count}
-                        size="small"
-                        color={customer.access_count > 0 ? 'info' : 'default'}
-                        variant="outlined"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="caption" color="text.secondary">
-                        {customer.last_contacted_at || customer.last_inquiry_at || '-'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Tooltip title="詳細を見る">
-                        <IconButton
+                      {/* Row 3: Stats + Last Contact */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Chip
+                          icon={<QuestionAnswerIcon sx={{ fontSize: 14 }} />}
+                          label={customer.inquiry_count}
                           size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewCustomer(customer.id);
-                          }}
-                        >
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-        <TablePagination
-          component="div"
-          count={pagination.total_count}
-          page={page}
-          onPageChange={handleChangePage}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          rowsPerPageOptions={[25, 50, 100]}
-          labelRowsPerPage="表示件数:"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}件`}
-        />
-      </TableContainer>
+                          color={customer.inquiry_count > 0 ? 'primary' : 'default'}
+                          variant="outlined"
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                        <Chip
+                          icon={<KeyIcon sx={{ fontSize: 14 }} />}
+                          label={customer.access_count}
+                          size="small"
+                          color={customer.access_count > 0 ? 'info' : 'default'}
+                          variant="outlined"
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                        <Box sx={{ flex: 1 }} />
+                        <Typography variant="caption" color="text.secondary">
+                          {customer.last_contacted_at || customer.last_inquiry_at || '-'}
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
+              );
+            })
+          )}
+          <TablePagination
+            component="div"
+            count={pagination.total_count}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[25, 50, 100]}
+            labelRowsPerPage="件数:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}`}
+          />
+        </Box>
+      ) : (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'grey.100' }}>
+                <TableCell sx={{ fontWeight: 600 }}>顧客名</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>商談ステータス</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>連絡先</TableCell>
+                <TableCell sx={{ fontWeight: 600 }} align="center">問い合わせ</TableCell>
+                <TableCell sx={{ fontWeight: 600 }} align="center">アクセス権</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>最終連絡</TableCell>
+                <TableCell sx={{ fontWeight: 600 }} align="center">操作</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {customers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                    <Typography color="text.secondary">
+                      顧客が見つかりませんでした
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                customers.map((customer) => {
+                  const statusInfo = getStatusInfo(customer.status);
+                  const dealStatusInfo = getDealStatusInfo(customer.deal_status);
+                  const priorityInfo = getPriorityInfo(customer.priority);
+                  return (
+                    <TableRow
+                      key={customer.id}
+                      hover
+                      sx={{ cursor: 'pointer' }}
+                      onClick={() => handleViewCustomer(customer.id)}
+                    >
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {customer.name}
+                          </Typography>
+                          {customer.has_line && (
+                            <Tooltip title="LINE連携済み">
+                              <ChatIcon fontSize="small" color="success" />
+                            </Tooltip>
+                          )}
+                          {(customer.priority === 'high' || customer.priority === 'urgent') && (
+                            <Tooltip title={`優先度: ${customer.priority_label || priorityInfo.label}`}>
+                              <Chip
+                                size="small"
+                                icon={priorityInfo.icon}
+                                label={customer.priority_label || priorityInfo.label}
+                                color={priorityInfo.color}
+                                sx={{ height: 20, fontSize: '0.7rem' }}
+                              />
+                            </Tooltip>
+                          )}
+                          {customer.status === 'archived' && (
+                            <Chip
+                              size="small"
+                              label={statusInfo.label}
+                              color={statusInfo.color}
+                              variant="outlined"
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          icon={<FlagIcon fontSize="small" />}
+                          label={customer.deal_status_label || dealStatusInfo.label}
+                          size="small"
+                          color={dealStatusInfo.color}
+                          sx={{ height: 24 }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                          {customer.email && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <EmailIcon fontSize="small" color="action" sx={{ fontSize: 16 }} />
+                              <Typography variant="caption">{customer.email}</Typography>
+                            </Box>
+                          )}
+                          {customer.phone && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <PhoneIcon fontSize="small" color="action" sx={{ fontSize: 16 }} />
+                              <Typography variant="caption">{customer.phone}</Typography>
+                            </Box>
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Chip
+                          icon={<QuestionAnswerIcon fontSize="small" />}
+                          label={customer.inquiry_count}
+                          size="small"
+                          color={customer.inquiry_count > 0 ? 'primary' : 'default'}
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Chip
+                          icon={<KeyIcon fontSize="small" />}
+                          label={customer.access_count}
+                          size="small"
+                          color={customer.access_count > 0 ? 'info' : 'default'}
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="caption" color="text.secondary">
+                          {customer.last_contacted_at || customer.last_inquiry_at || '-'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Tooltip title="詳細を見る">
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewCustomer(customer.id);
+                            }}
+                          >
+                            <VisibilityIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+          <TablePagination
+            component="div"
+            count={pagination.total_count}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[25, 50, 100]}
+            labelRowsPerPage="表示件数:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}件`}
+          />
+        </TableContainer>
+      )}
     </Box>
   );
 }
