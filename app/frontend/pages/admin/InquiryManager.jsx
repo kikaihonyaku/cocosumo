@@ -55,6 +55,7 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import CustomerAccessDialog from '../../components/CustomerAccess/CustomerAccessDialog';
+import PublicationSelectDialog from '../../components/CustomerAccess/PublicationSelectDialog';
 
 // Status label mapping (new status values)
 const getStatusInfo = (status) => {
@@ -107,6 +108,11 @@ export default function InquiryManager() {
   // Customer access dialog state
   const [customerAccessDialogOpen, setCustomerAccessDialogOpen] = useState(false);
   const [customerAccessInquiry, setCustomerAccessInquiry] = useState(null);
+  const [customerAccessPublicationId, setCustomerAccessPublicationId] = useState(null);
+
+  // Publication select dialog state
+  const [publicationSelectDialogOpen, setPublicationSelectDialogOpen] = useState(false);
+  const [publicationSelectInquiry, setPublicationSelectInquiry] = useState(null);
 
   const loadInquiries = useCallback(async () => {
     try {
@@ -244,13 +250,33 @@ export default function InquiryManager() {
   };
 
   const handleOpenCustomerAccessDialog = (inquiry) => {
-    setCustomerAccessInquiry(inquiry);
-    setCustomerAccessDialogOpen(true);
+    if (inquiry.property_publication?.id) {
+      setCustomerAccessInquiry(inquiry);
+      setCustomerAccessPublicationId(inquiry.property_publication.id);
+      setCustomerAccessDialogOpen(true);
+    } else {
+      setPublicationSelectInquiry(inquiry);
+      setPublicationSelectDialogOpen(true);
+    }
   };
 
   const handleCloseCustomerAccessDialog = () => {
     setCustomerAccessDialogOpen(false);
     setCustomerAccessInquiry(null);
+    setCustomerAccessPublicationId(null);
+  };
+
+  const handlePublicationSelected = (publication) => {
+    setPublicationSelectDialogOpen(false);
+    setCustomerAccessInquiry(publicationSelectInquiry);
+    setCustomerAccessPublicationId(publication.id);
+    setCustomerAccessDialogOpen(true);
+    setPublicationSelectInquiry(null);
+  };
+
+  const handleClosePublicationSelectDialog = () => {
+    setPublicationSelectDialogOpen(false);
+    setPublicationSelectInquiry(null);
   };
 
   const handleExportCsv = () => {
@@ -648,10 +674,19 @@ export default function InquiryManager() {
       </Menu>
 
       {/* Customer Access Dialog */}
+      {/* Publication Select Dialog */}
+      <PublicationSelectDialog
+        open={publicationSelectDialogOpen}
+        onClose={handleClosePublicationSelectDialog}
+        roomId={publicationSelectInquiry?.room?.id}
+        onSelect={handlePublicationSelected}
+      />
+
+      {/* Customer Access Dialog */}
       <CustomerAccessDialog
         open={customerAccessDialogOpen}
         onClose={handleCloseCustomerAccessDialog}
-        publicationId={customerAccessInquiry?.property_publication?.id}
+        publicationId={customerAccessPublicationId}
         inquiry={customerAccessInquiry}
         onCreated={() => {
           // アクセス権発行後の処理（必要に応じてリロードなど）
@@ -871,7 +906,7 @@ export default function InquiryManager() {
                   color="secondary"
                   startIcon={<PersonAddIcon />}
                   onClick={() => handleOpenCustomerAccessDialog(selectedInquiry)}
-                  disabled={!selectedInquiry.property_publication?.id}
+                  disabled={!selectedInquiry.room?.id && !selectedInquiry.property_publication?.id}
                 >
                   顧客ページ発行
                 </Button>
