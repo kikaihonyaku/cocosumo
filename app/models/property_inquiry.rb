@@ -16,6 +16,7 @@ class PropertyInquiry < ApplicationRecord
   after_update :record_status_change_activity, if: :saved_change_to_status?
   before_save :track_deal_status_change
   after_update :record_deal_status_change_activity, if: :saved_change_to_deal_status?
+  after_update :record_assigned_user_change_activity, if: :saved_change_to_assigned_user_id?
   after_save :sync_assigned_user_to_inquiry
   after_save :sync_inquiry_status
 
@@ -200,6 +201,18 @@ class PropertyInquiry < ApplicationRecord
   def sync_assigned_user_to_inquiry
     if assigned_user_id.present? && inquiry.assigned_user_id.nil?
       inquiry.update_column(:assigned_user_id, assigned_user_id)
+
+      new_user = User.find_by(id: assigned_user_id)
+      CustomerActivity.create!(
+        customer: customer,
+        inquiry: inquiry,
+        property_inquiry: self,
+        user: nil,
+        activity_type: :assigned_user_change,
+        direction: :internal,
+        subject: "（自動）案件の主担当者を「#{new_user&.name || '不明'}」に設定",
+        content: property_title
+      )
     end
   end
 
@@ -210,10 +223,53 @@ class PropertyInquiry < ApplicationRecord
     all_completed = all_pis.any? && all_pis.all? { |pi| COMPLETED_DEAL_STATUSES.include?(pi.deal_status) }
 
     if all_completed && !inquiry.closed?
+      old_label = inquiry.status_label
       inquiry.update_column(:status, Inquiry.statuses[:closed])
+
+      CustomerActivity.create!(
+        customer: customer,
+        inquiry: inquiry,
+        property_inquiry: self,
+        user: nil,
+        activity_type: :status_change,
+        direction: :internal,
+        subject: "（自動）案件ステータスを「クローズ」に変更",
+        content: "#{old_label} → クローズ"
+      )
     elsif !all_completed && inquiry.closed?
       inquiry.update_column(:status, Inquiry.statuses[:active])
+
+      CustomerActivity.create!(
+        customer: customer,
+        inquiry: inquiry,
+        property_inquiry: self,
+        user: nil,
+        activity_type: :status_change,
+        direction: :internal,
+        subject: "（自動）案件ステータスを「アクティブ」に変更",
+        content: "クローズ → アクティブ"
+      )
     end
+  end
+
+  # 主担当者変更時のアクティビティ記録
+  def record_assigned_user_change_activity
+    old_user_id, new_user_id = saved_change_to_assigned_user_id
+    old_user = User.find_by(id: old_user_id)
+    new_user = User.find_by(id: new_user_id)
+
+    old_name = old_user&.name || "未設定"
+    new_name = new_user&.name || "未設定"
+
+    customer_activities.create!(
+      customer: customer,
+      inquiry: inquiry,
+      user: changed_by,
+      activity_type: :assigned_user_change,
+      direction: :internal,
+      subject: "主担当者を「#{new_name}」に変更",
+      content: "#{property_title}：#{old_name} → #{new_name}"
+    )
   end
 
   def record_deal_status_change_activity

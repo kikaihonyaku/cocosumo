@@ -65,6 +65,7 @@ class Api::V1::InquiriesController < ApplicationController
 
   # PATCH /api/v1/inquiries/:id
   def update
+    @inquiry.changed_by = current_user
     if @inquiry.update(update_params)
       render json: {
         success: true,
@@ -84,6 +85,7 @@ class Api::V1::InquiriesController < ApplicationController
       return render json: { error: "無効なステータスです" }, status: :unprocessable_entity
     end
 
+    @inquiry.changed_by = current_user
     @inquiry.update!(status: new_status)
 
     render json: {
