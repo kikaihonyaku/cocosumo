@@ -29,7 +29,12 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Card,
+  CardContent,
+  CardActionArea,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -79,6 +84,8 @@ const STATUS_OPTIONS = [
 ];
 
 export default function InquiryManager() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -385,24 +392,41 @@ export default function InquiryManager() {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" fontWeight="bold">
+        <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight="bold">
           問い合わせ管理
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            onClick={handleExportCsv}
-          >
-            CSVエクスポート
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={loadInquiries}
-          >
-            更新
-          </Button>
+          {isMobile ? (
+            <>
+              <Tooltip title="CSVエクスポート">
+                <IconButton onClick={handleExportCsv} size="small">
+                  <DownloadIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="更新">
+                <IconButton onClick={loadInquiries} size="small">
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outlined"
+                startIcon={<DownloadIcon />}
+                onClick={handleExportCsv}
+              >
+                CSVエクスポート
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<RefreshIcon />}
+                onClick={loadInquiries}
+              >
+                更新
+              </Button>
+            </>
+          )}
         </Box>
       </Box>
 
@@ -415,10 +439,27 @@ export default function InquiryManager() {
       {/* Filters */}
       <Paper sx={{ mb: 2, p: 2 }}>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-          <FilterListIcon color="action" />
+          {!isMobile && <FilterListIcon color="action" />}
+
+          {/* Search */}
+          <TextField
+            placeholder="検索..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+            size="small"
+            sx={{ minWidth: isMobile ? undefined : 200, flex: isMobile ? 1 : undefined }}
+            fullWidth={isMobile}
+          />
 
           {/* Status Filter */}
-          <FormControl size="small" sx={{ minWidth: 120 }}>
+          <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 120, flex: isMobile ? 1 : undefined }}>
             <InputLabel>ステータス</InputLabel>
             <Select
               value={statusFilter}
@@ -441,7 +482,7 @@ export default function InquiryManager() {
           </FormControl>
 
           {/* Assigned User Filter */}
-          <FormControl size="small" sx={{ minWidth: 140 }}>
+          <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 140, flex: isMobile ? 1 : undefined }}>
             <InputLabel>担当者</InputLabel>
             <Select
               value={assignedUserFilter}
@@ -468,7 +509,7 @@ export default function InquiryManager() {
           </FormControl>
 
           {/* Customer Filter */}
-          <FormControl size="small" sx={{ minWidth: 160 }}>
+          <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 160, flex: isMobile ? 1 : undefined }}>
             <InputLabel>顧客</InputLabel>
             <Select
               value={customerFilter}
@@ -485,22 +526,6 @@ export default function InquiryManager() {
             </Select>
           </FormControl>
 
-          {/* Search */}
-          <TextField
-            placeholder="検索..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
-            size="small"
-            sx={{ minWidth: 200 }}
-          />
-
           {/* Clear Filters */}
           {hasActiveFilters && (
             <Button
@@ -512,120 +537,198 @@ export default function InquiryManager() {
             </Button>
           )}
 
-          <Box sx={{ flex: 1 }} />
+          {!isMobile && <Box sx={{ flex: 1 }} />}
 
           {/* Result count */}
           <Typography variant="body2" color="text.secondary">
             {filteredInquiries.length} 件
-            {hasActiveFilters && ` / ${inquiries.length} 件中`}
+            {hasActiveFilters && !isMobile && ` / ${inquiries.length} 件中`}
           </Typography>
         </Box>
       </Paper>
 
-      <Paper>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>日時</TableCell>
-                <TableCell>発生元</TableCell>
-                <TableCell>媒体</TableCell>
-                <TableCell>ステータス</TableCell>
-                <TableCell>担当者</TableCell>
-                <TableCell>顧客名</TableCell>
-                <TableCell>物件</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {paginatedInquiries.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                    <Typography color="text.secondary">
-                      {hasActiveFilters ? '該当する問い合わせがありません' : '問い合わせがありません'}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginatedInquiries.map((inquiry) => {
-                  const statusInfo = getStatusInfo(inquiry.status);
-
-                  return (
-                    <TableRow
-                      key={inquiry.id}
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => handleOpenDetail(inquiry)}
-                    >
-                      <TableCell>
-                        <Typography variant="body2">
-                          {inquiry.formatted_created_at || formatDate(inquiry.created_at)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={inquiry.origin_type_label || inquiry.origin_type || '-'}
-                          color="primary"
-                          variant="outlined"
-                          sx={{ height: 24 }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={inquiry.media_type_label || inquiry.media_type || '-'}
-                          variant="outlined"
-                          sx={{ height: 24 }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={inquiry.status_label || statusInfo.label}
-                          color={statusInfo.color}
-                          onClick={(e) => handleStatusClick(e, inquiry.id)}
-                          sx={{ height: 24, cursor: 'pointer' }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          icon={inquiry.assigned_user ? <PersonIcon fontSize="small" /> : <PersonOutlineIcon fontSize="small" />}
-                          label={inquiry.assigned_user?.name || '未設定'}
-                          variant={inquiry.assigned_user ? 'filled' : 'outlined'}
-                          onClick={(e) => handleUserClick(e, inquiry.id)}
-                          sx={{ height: 24, cursor: 'pointer' }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="medium">
-                          {inquiry.name}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
+      {isMobile ? (
+        /* Mobile: Card-based list */
+        <Box>
+          {paginatedInquiries.length === 0 ? (
+            <Paper sx={{ py: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">
+                {hasActiveFilters ? '該当する問い合わせがありません' : '問い合わせがありません'}
+              </Typography>
+            </Paper>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {paginatedInquiries.map((inquiry) => {
+                const statusInfo = getStatusInfo(inquiry.status);
+                return (
+                  <Card key={inquiry.id} variant="outlined">
+                    <CardActionArea onClick={() => handleOpenDetail(inquiry)}>
+                      <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                          <Typography variant="body2" fontWeight="medium">
+                            {inquiry.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap', ml: 1 }}>
+                            {inquiry.formatted_created_at || formatDate(inquiry.created_at)}
+                          </Typography>
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" noWrap>
                           {inquiry.property_title || inquiry.room?.building_name || '-'}
                         </Typography>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          component="div"
-          count={filteredInquiries.length}
-          page={page}
-          onPageChange={handleChangePage}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          rowsPerPageOptions={[10, 25, 50, 100]}
-          labelRowsPerPage="表示件数:"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}件`}
-        />
-      </Paper>
+                        <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                          <Chip
+                            size="small"
+                            label={inquiry.status_label || statusInfo.label}
+                            color={statusInfo.color}
+                            sx={{ height: 22 }}
+                          />
+                          <Chip
+                            size="small"
+                            label={inquiry.origin_type_label || inquiry.origin_type || '-'}
+                            color="primary"
+                            variant="outlined"
+                            sx={{ height: 22 }}
+                          />
+                          <Chip
+                            size="small"
+                            label={inquiry.media_type_label || inquiry.media_type || '-'}
+                            variant="outlined"
+                            sx={{ height: 22 }}
+                          />
+                          <Chip
+                            size="small"
+                            icon={inquiry.assigned_user ? <PersonIcon sx={{ fontSize: 14 }} /> : <PersonOutlineIcon sx={{ fontSize: 14 }} />}
+                            label={inquiry.assigned_user?.name || '未設定'}
+                            variant={inquiry.assigned_user ? 'filled' : 'outlined'}
+                            sx={{ height: 22 }}
+                          />
+                        </Box>
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
+                );
+              })}
+            </Box>
+          )}
+          <TablePagination
+            component="div"
+            count={filteredInquiries.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[10, 25, 50]}
+            labelRowsPerPage=""
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}`}
+          />
+        </Box>
+      ) : (
+        /* Desktop: Table view */
+        <Paper>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>日時</TableCell>
+                  <TableCell>発生元</TableCell>
+                  <TableCell>媒体</TableCell>
+                  <TableCell>ステータス</TableCell>
+                  <TableCell>担当者</TableCell>
+                  <TableCell>顧客名</TableCell>
+                  <TableCell>物件</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedInquiries.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                      <Typography color="text.secondary">
+                        {hasActiveFilters ? '該当する問い合わせがありません' : '問い合わせがありません'}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedInquiries.map((inquiry) => {
+                    const statusInfo = getStatusInfo(inquiry.status);
+
+                    return (
+                      <TableRow
+                        key={inquiry.id}
+                        hover
+                        sx={{ cursor: 'pointer' }}
+                        onClick={() => handleOpenDetail(inquiry)}
+                      >
+                        <TableCell>
+                          <Typography variant="body2">
+                            {inquiry.formatted_created_at || formatDate(inquiry.created_at)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            label={inquiry.origin_type_label || inquiry.origin_type || '-'}
+                            color="primary"
+                            variant="outlined"
+                            sx={{ height: 24 }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            label={inquiry.media_type_label || inquiry.media_type || '-'}
+                            variant="outlined"
+                            sx={{ height: 24 }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            label={inquiry.status_label || statusInfo.label}
+                            color={statusInfo.color}
+                            onClick={(e) => handleStatusClick(e, inquiry.id)}
+                            sx={{ height: 24, cursor: 'pointer' }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            icon={inquiry.assigned_user ? <PersonIcon fontSize="small" /> : <PersonOutlineIcon fontSize="small" />}
+                            label={inquiry.assigned_user?.name || '未設定'}
+                            variant={inquiry.assigned_user ? 'filled' : 'outlined'}
+                            onClick={(e) => handleUserClick(e, inquiry.id)}
+                            sx={{ height: 24, cursor: 'pointer' }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight="medium">
+                            {inquiry.name}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
+                            {inquiry.property_title || inquiry.room?.building_name || '-'}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            component="div"
+            count={filteredInquiries.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            labelRowsPerPage="表示件数:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}件`}
+          />
+        </Paper>
+      )}
 
       {/* Status change menu */}
       <Menu
@@ -699,6 +802,7 @@ export default function InquiryManager() {
         onClose={handleCloseDetail}
         maxWidth="md"
         fullWidth
+        fullScreen={isMobile}
       >
         {selectedInquiry && (
           <>
@@ -787,7 +891,7 @@ export default function InquiryManager() {
               </Box>
 
               {/* Customer & Property info */}
-              <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
+              <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 2 : 3, mb: 3 }}>
                 <Paper variant="outlined" sx={{ flex: 1, p: 2 }}>
                   <Typography variant="subtitle2" gutterBottom color="primary">
                     顧客情報
@@ -887,64 +991,137 @@ export default function InquiryManager() {
                 </Box>
               )}
             </DialogContent>
-            <DialogActions sx={{ justifyContent: 'space-between', px: 3, py: 2 }}>
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<PersonIcon />}
-                  onClick={() => {
-                    handleViewCustomer(selectedInquiry);
-                    handleCloseDetail();
-                  }}
-                  disabled={!selectedInquiry.customer?.id}
-                >
-                  顧客情報を見る
-                </Button>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  startIcon={<PersonAddIcon />}
-                  onClick={() => handleOpenCustomerAccessDialog(selectedInquiry)}
-                  disabled={!selectedInquiry.room?.id && !selectedInquiry.property_publication?.id}
-                >
-                  顧客ページ発行
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<OpenInNewIcon />}
-                  onClick={() => handleOpenPublicPage(selectedInquiry)}
-                  disabled={!selectedInquiry.property_publication?.publication_id}
-                >
-                  公開ページ
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<EditIcon />}
-                  onClick={() => handleEditPublication(selectedInquiry)}
-                  disabled={!selectedInquiry.property_publication?.room?.id}
-                >
-                  編集
-                </Button>
-              </Box>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  startIcon={<EmailIcon />}
-                  href={`mailto:${selectedInquiry.email}`}
-                >
-                  メール
-                </Button>
-                {selectedInquiry.phone && (
-                  <Button
-                    variant="outlined"
-                    startIcon={<PhoneIcon />}
-                    href={`tel:${selectedInquiry.phone}`}
-                  >
-                    電話
-                  </Button>
+            <DialogActions sx={{
+              justifyContent: 'space-between',
+              px: isMobile ? 2 : 3,
+              py: 2,
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: isMobile ? 1 : 0,
+              alignItems: isMobile ? 'stretch' : 'center'
+            }}>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', ...(isMobile && { flexDirection: 'column' }) }}>
+                {isMobile ? (
+                  <>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<PersonIcon />}
+                      onClick={() => {
+                        handleViewCustomer(selectedInquiry);
+                        handleCloseDetail();
+                      }}
+                      disabled={!selectedInquiry.customer?.id}
+                      fullWidth
+                    >
+                      顧客情報
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      startIcon={<PersonAddIcon />}
+                      onClick={() => handleOpenCustomerAccessDialog(selectedInquiry)}
+                      disabled={!selectedInquiry.room?.id && !selectedInquiry.property_publication?.id}
+                      fullWidth
+                    >
+                      顧客ページ発行
+                    </Button>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Tooltip title="公開ページ">
+                        <span>
+                          <IconButton
+                            onClick={() => handleOpenPublicPage(selectedInquiry)}
+                            disabled={!selectedInquiry.property_publication?.publication_id}
+                          >
+                            <OpenInNewIcon />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                      <Tooltip title="編集">
+                        <span>
+                          <IconButton
+                            onClick={() => handleEditPublication(selectedInquiry)}
+                            disabled={!selectedInquiry.property_publication?.room?.id}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                      <Tooltip title="メール">
+                        <IconButton href={`mailto:${selectedInquiry.email}`}>
+                          <EmailIcon />
+                        </IconButton>
+                      </Tooltip>
+                      {selectedInquiry.phone && (
+                        <Tooltip title="電話">
+                          <IconButton href={`tel:${selectedInquiry.phone}`}>
+                            <PhoneIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<PersonIcon />}
+                      onClick={() => {
+                        handleViewCustomer(selectedInquiry);
+                        handleCloseDetail();
+                      }}
+                      disabled={!selectedInquiry.customer?.id}
+                    >
+                      顧客情報を見る
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      startIcon={<PersonAddIcon />}
+                      onClick={() => handleOpenCustomerAccessDialog(selectedInquiry)}
+                      disabled={!selectedInquiry.room?.id && !selectedInquiry.property_publication?.id}
+                    >
+                      顧客ページ発行
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<OpenInNewIcon />}
+                      onClick={() => handleOpenPublicPage(selectedInquiry)}
+                      disabled={!selectedInquiry.property_publication?.publication_id}
+                    >
+                      公開ページ
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<EditIcon />}
+                      onClick={() => handleEditPublication(selectedInquiry)}
+                      disabled={!selectedInquiry.property_publication?.room?.id}
+                    >
+                      編集
+                    </Button>
+                  </>
                 )}
               </Box>
+              {!isMobile && (
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<EmailIcon />}
+                    href={`mailto:${selectedInquiry.email}`}
+                  >
+                    メール
+                  </Button>
+                  {selectedInquiry.phone && (
+                    <Button
+                      variant="outlined"
+                      startIcon={<PhoneIcon />}
+                      href={`tel:${selectedInquiry.phone}`}
+                    >
+                      電話
+                    </Button>
+                  )}
+                </Box>
+              )}
             </DialogActions>
           </>
         )}

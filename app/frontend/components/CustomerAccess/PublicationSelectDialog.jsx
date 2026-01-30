@@ -77,6 +77,7 @@ export default function PublicationSelectDialog({ open, onClose, roomId, onSelec
               >
                 <ListItemText
                   primary={pub.title || `公開ページ #${pub.id}`}
+                  secondaryTypographyProps={{ component: 'div' }}
                   secondary={
                     <Box sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center' }}>
                       {pub.status && (
