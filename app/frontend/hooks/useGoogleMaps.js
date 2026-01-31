@@ -77,7 +77,7 @@ export function useGoogleMaps(mapElementId, options = {}) {
 
         const mapOptions = {
           ...defaultOptions,
-          mapId: GOOGLE_MAPS_MAP_ID,
+          ...(GOOGLE_MAPS_MAP_ID ? { mapId: GOOGLE_MAPS_MAP_ID } : {}),
         };
         console.log('Creating map with options:', mapOptions);
         const newMap = new google.maps.Map(mapElement, mapOptions);
