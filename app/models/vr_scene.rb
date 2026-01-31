@@ -17,29 +17,25 @@ class VrScene < ApplicationRecord
   # Default scope - order by display_order
   default_scope -> { order(display_order: :asc) }
 
-  # Get photo URL
+  # Get photo URL (プロキシ経由でCORS回避)
   def photo_url
     return nil unless room_photo&.photo&.attached?
 
-    if Rails.env.production?
-      room_photo.photo.url
-    else
-      Rails.application.routes.url_helpers.rails_blob_path(room_photo.photo, only_path: true)
-    end
+    "/api/v1/vr_scenes/#{id}/photo"
   end
 
   # Get before photo URL (for virtual staging)
   def before_photo_url
-    return nil unless virtual_staging&.before_photo
+    return nil unless virtual_staging&.before_photo&.photo&.attached?
 
-    virtual_staging.before_photo_url
+    "/api/v1/vr_scenes/#{id}/before_photo"
   end
 
   # Get after photo URL (for virtual staging)
   def after_photo_url
-    return nil unless virtual_staging&.after_photo
+    return nil unless virtual_staging&.after_photo&.photo&.attached?
 
-    virtual_staging.after_photo_url
+    "/api/v1/vr_scenes/#{id}/after_photo"
   end
 
   # Check if this is a virtual staging scene

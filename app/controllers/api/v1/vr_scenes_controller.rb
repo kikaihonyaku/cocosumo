@@ -1,7 +1,7 @@
 class Api::V1::VrScenesController < ApplicationController
   skip_before_action :verify_authenticity_token
-  before_action :require_login
-  before_action :set_vr_tour
+  before_action :require_login, except: [:photo, :before_photo, :after_photo]
+  before_action :set_vr_tour, except: [:photo, :before_photo, :after_photo]
   before_action :set_vr_scene, only: [:show, :update, :destroy, :reorder]
 
   # GET /api/v1/vr_tours/:vr_tour_id/vr_scenes
@@ -123,6 +123,48 @@ class Api::V1::VrScenesController < ApplicationController
     @vr_scene.update(display_order: new_order)
 
     render json: { success: true, message: 'シーンの順序を変更しました' }
+  end
+
+  # GET /api/v1/vr_scenes/:id/photo
+  # CORS回避のため、パノラマ画像をプロキシ経由で提供（認証不要）
+  def photo
+    vr_scene = VrScene.find(params[:id])
+
+    if vr_scene.room_photo&.photo&.attached?
+      blob = vr_scene.room_photo.photo.blob
+      expires_in 1.hour, public: true
+      send_data blob.download, type: blob.content_type, disposition: 'inline'
+    else
+      head :not_found
+    end
+  end
+
+  # GET /api/v1/vr_scenes/:id/before_photo
+  # バーチャルステージングのBefore画像をプロキシ経由で提供（認証不要）
+  def before_photo
+    vr_scene = VrScene.find(params[:id])
+
+    if vr_scene.virtual_staging&.before_photo&.photo&.attached?
+      blob = vr_scene.virtual_staging.before_photo.photo.blob
+      expires_in 1.hour, public: true
+      send_data blob.download, type: blob.content_type, disposition: 'inline'
+    else
+      head :not_found
+    end
+  end
+
+  # GET /api/v1/vr_scenes/:id/after_photo
+  # バーチャルステージングのAfter画像をプロキシ経由で提供（認証不要）
+  def after_photo
+    vr_scene = VrScene.find(params[:id])
+
+    if vr_scene.virtual_staging&.after_photo&.photo&.attached?
+      blob = vr_scene.virtual_staging.after_photo.photo.blob
+      expires_in 1.hour, public: true
+      send_data blob.download, type: blob.content_type, disposition: 'inline'
+    else
+      head :not_found
+    end
   end
 
   private

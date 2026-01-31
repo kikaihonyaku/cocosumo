@@ -229,6 +229,11 @@ Rails.application.routes.draw do
       # 公開VRツアー表示用（認証不要、public_idで取得）
       get 'vr_tours/:public_id/public', to: 'vr_tours#show_public', as: :public_vr_tour
 
+      # VRシーン画像プロキシ（認証不要、CORS回避用）
+      get 'vr_scenes/:id/photo', to: 'vr_scenes#photo'
+      get 'vr_scenes/:id/before_photo', to: 'vr_scenes#before_photo'
+      get 'vr_scenes/:id/after_photo', to: 'vr_scenes#after_photo'
+
       # バーチャルステージング一覧
       resources :virtual_stagings, only: [:index] do
         resources :variations, controller: 'virtual_staging_variations', only: [:create, :update, :destroy] do
