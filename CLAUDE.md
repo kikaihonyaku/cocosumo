@@ -19,7 +19,7 @@ bin/rails server
 bin/vite dev
 
 # Database setup
-rails db:create db:migrate db:seed
+bin/rails db:create db:migrate db:seed
 
 # Run linter
 rubocop
