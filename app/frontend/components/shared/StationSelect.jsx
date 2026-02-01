@@ -38,10 +38,11 @@ export default function StationSelect({ railwayData = [], value = [], onChange, 
 
     railwayData.forEach(company => {
       company.lines.forEach(line => {
-        lineMap[line.id] = line;
-        allLines.push(line);
+        const lineWithCompany = { ...line, company: company.company };
+        lineMap[line.id] = lineWithCompany;
+        allLines.push(lineWithCompany);
         line.stations.forEach(station => {
-          stationMap[station.id] = { ...station, railway_line: line };
+          stationMap[station.id] = { ...station, railway_line: lineWithCompany };
         });
       });
     });
@@ -106,43 +107,42 @@ export default function StationSelect({ railwayData = [], value = [], onChange, 
           return (
             <Box key={index} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
               {/* 路線選択 */}
-              <FormControl size="small" sx={{ minWidth: 160, flex: 1 }}>
-                <InputLabel>路線</InputLabel>
-                <Select
-                  value={selectedLineId || ''}
-                  label="路線"
-                  onChange={(e) => handleLineChange(index, e.target.value)}
-                  disabled={disabled}
-                >
-                  {allLines.map(line => (
-                    <MenuItem key={line.id} value={line.id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {line.color && (
-                          <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: line.color, flexShrink: 0 }} />
-                        )}
-                        <Typography variant="body2" noWrap>{line.name}</Typography>
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Autocomplete
+                options={allLines}
+                value={selectedLine || null}
+                onChange={(_, newValue) => handleLineChange(index, newValue?.id || '')}
+                groupBy={(option) => option.company}
+                getOptionLabel={(option) => option.name}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderOption={(props, option) => {
+                  const { key, ...rest } = props;
+                  return (
+                    <li key={key} {...rest}>
+                      {option.color && (
+                        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: option.color, flexShrink: 0, mr: 1 }} />
+                      )}
+                      <Typography variant="body2" noWrap>{option.name}</Typography>
+                    </li>
+                  );
+                }}
+                renderInput={(params) => <TextField {...params} label="路線" />}
+                disabled={disabled}
+                size="small"
+                sx={{ minWidth: 160, flex: 1 }}
+              />
 
               {/* 駅選択 */}
-              <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
-                <InputLabel>駅</InputLabel>
-                <Select
-                  value={entry.station_id || ''}
-                  label="駅"
-                  onChange={(e) => handleStationChange(index, e.target.value)}
-                  disabled={disabled || !selectedLineId}
-                >
-                  {stationsForLine.map(station => (
-                    <MenuItem key={station.id} value={station.id}>
-                      {station.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Autocomplete
+                options={stationsForLine}
+                value={stationsForLine.find(s => s.id === entry.station_id) || null}
+                onChange={(_, newValue) => handleStationChange(index, newValue?.id || '')}
+                getOptionLabel={(option) => option.name}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderInput={(params) => <TextField {...params} label="駅" />}
+                disabled={disabled || !selectedLineId}
+                size="small"
+                sx={{ minWidth: 120, flex: 1 }}
+              />
 
               {/* 徒歩分数 */}
               <TextField
