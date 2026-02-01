@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_31_234335) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_01_100000) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -158,6 +158,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_31_234335) do
     t.index ["building_id"], name: "index_building_routes_on_building_id"
     t.index ["route_geometry"], name: "index_building_routes_on_route_geometry", using: :gist
     t.index ["tenant_id"], name: "index_building_routes_on_tenant_id"
+  end
+
+  create_table "building_stations", force: :cascade do |t|
+    t.bigint "building_id", null: false
+    t.bigint "station_id", null: false
+    t.integer "walking_minutes"
+    t.integer "display_order", default: 0
+    t.string "raw_text"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["building_id", "station_id"], name: "index_building_stations_on_building_id_and_station_id", unique: true
+    t.index ["building_id"], name: "index_building_stations_on_building_id"
+    t.index ["station_id"], name: "index_building_stations_on_station_id"
   end
 
   create_table "buildings", force: :cascade do |t|
@@ -567,6 +580,21 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_31_234335) do
     t.index ["updated_by_id"], name: "index_property_publications_on_updated_by_id"
   end
 
+  create_table "railway_lines", force: :cascade do |t|
+    t.string "code", null: false
+    t.string "name", null: false
+    t.string "company", null: false
+    t.string "company_code", null: false
+    t.string "color"
+    t.integer "display_order", default: 0
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_railway_lines_on_code", unique: true
+    t.index ["company_code"], name: "index_railway_lines_on_company_code"
+    t.index ["is_active"], name: "index_railway_lines_on_is_active"
+  end
+
   create_table "room_facilities", force: :cascade do |t|
     t.bigint "room_id", null: false
     t.bigint "facility_id", null: false
@@ -766,6 +794,23 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_31_234335) do
     t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
+  create_table "stations", force: :cascade do |t|
+    t.bigint "railway_line_id", null: false
+    t.string "code", null: false
+    t.string "name", null: false
+    t.string "name_kana"
+    t.st_point "location", geographic: true
+    t.integer "display_order", default: 0
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_stations_on_code", unique: true
+    t.index ["is_active"], name: "index_stations_on_is_active"
+    t.index ["location"], name: "index_stations_on_location", using: :gist
+    t.index ["name"], name: "index_stations_on_name"
+    t.index ["railway_line_id"], name: "index_stations_on_railway_line_id"
+  end
+
   create_table "stores", force: :cascade do |t|
     t.bigint "tenant_id", null: false
     t.string "name", null: false
@@ -957,6 +1002,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_31_234335) do
   add_foreign_key "building_photos", "buildings"
   add_foreign_key "building_routes", "buildings"
   add_foreign_key "building_routes", "tenants"
+  add_foreign_key "building_stations", "buildings"
+  add_foreign_key "building_stations", "stations"
   add_foreign_key "buildings", "stores"
   add_foreign_key "buildings", "tenants"
   add_foreign_key "bulk_import_histories", "tenants"
@@ -1012,6 +1059,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_31_234335) do
   add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "stations", "railway_lines"
   add_foreign_key "stores", "tenants"
   add_foreign_key "suumo_import_histories", "tenants"
   add_foreign_key "tenants", "users", column: "created_by_id"

@@ -44,6 +44,8 @@ import {
   Business as BusinessIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import useRailwayLines from '../hooks/useRailwayLines';
+import { StationFilter } from '../components/shared/StationSelect';
 
 // ステータスマッピング
 const STATUS_MAP = {
@@ -126,6 +128,14 @@ export default function RoomList() {
   const [officeUseAllowed, setOfficeUseAllowed] = useState(false);
   const [selectedBuildingTypes, setSelectedBuildingTypes] = useState([]);
 
+  // 沿線・駅フィルター
+  const [selectedRailwayLineIds, setSelectedRailwayLineIds] = useState([]);
+  const [selectedStationIds, setSelectedStationIds] = useState([]);
+  const [maxWalkingMinutes, setMaxWalkingMinutes] = useState('');
+
+  // 路線マスタデータ
+  const { railwayData } = useRailwayLines();
+
   // ページネーション
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
@@ -170,6 +180,13 @@ export default function RoomList() {
       if (selectedBuildingTypes.length > 0) {
         selectedBuildingTypes.forEach(t => params.append('building_types[]', t));
       }
+      if (selectedRailwayLineIds.length > 0) {
+        selectedRailwayLineIds.forEach(id => params.append('railway_line_ids[]', id));
+      }
+      if (selectedStationIds.length > 0) {
+        selectedStationIds.forEach(id => params.append('station_ids[]', id));
+      }
+      if (maxWalkingMinutes) params.append('max_walking_minutes', maxWalkingMinutes);
 
       const response = await axios.get(`/api/v1/rooms/advanced_search?${params.toString()}`);
       setRooms(response.data.rooms);
@@ -191,7 +208,7 @@ export default function RoomList() {
     selectedRoomTypes, selectedStatuses,
     rentMin, rentMax, areaMin, areaMax,
     selectedDirections, petsAllowed, twoPersonAllowed, officeUseAllowed,
-    selectedBuildingTypes
+    selectedBuildingTypes, selectedRailwayLineIds, selectedStationIds, maxWalkingMinutes
   ]);
 
   // ページやソートが変わったら再検索
@@ -221,6 +238,9 @@ export default function RoomList() {
     setTwoPersonAllowed(false);
     setOfficeUseAllowed(false);
     setSelectedBuildingTypes([]);
+    setSelectedRailwayLineIds([]);
+    setSelectedStationIds([]);
+    setMaxWalkingMinutes('');
     setRooms([]);
     setHasSearched(false);
     setPagination({
@@ -500,7 +520,22 @@ export default function RoomList() {
               </Box>
             </Grid>
 
-            {/* 5行目: ボタン */}
+            {/* 5行目: 沿線・駅 */}
+            {railwayData.length > 0 && (
+              <Grid size={12}>
+                <StationFilter
+                  railwayData={railwayData}
+                  selectedLineIds={selectedRailwayLineIds}
+                  onLineChange={setSelectedRailwayLineIds}
+                  selectedStationIds={selectedStationIds}
+                  onStationChange={setSelectedStationIds}
+                  maxWalkingMinutes={maxWalkingMinutes}
+                  onMaxWalkingMinutesChange={setMaxWalkingMinutes}
+                />
+              </Grid>
+            )}
+
+            {/* 6行目: ボタン */}
             <Grid size={12}>
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                 <Button

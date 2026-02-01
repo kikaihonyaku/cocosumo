@@ -24,6 +24,7 @@ import PropertyTable from "../components/MapSystem/BottomPanel/PropertyTable";
 import FloorplanRegistrationModal from "../components/MapSystem/FloorplanRegistrationModal";
 import SearchModal from "../components/MapSystem/LeftPanel/SearchModal";
 import { usePropertyFilter } from "../hooks/usePropertyFilter";
+import useRailwayLines from "../hooks/useRailwayLines";
 import { getRoomTypeLabel } from "../utils/formatters";
 
 export default function MapSystem() {
@@ -59,6 +60,9 @@ export default function MapSystem() {
   const [facilitiesMaster, setFacilitiesMaster] = useState({});
   const [facilitiesCategories, setFacilitiesCategories] = useState({});
   const [popularFacilities, setPopularFacilities] = useState([]);
+
+  // 路線・駅データ
+  const { railwayData } = useRailwayLines();
 
   // 詳細検索関連のステート
   const [leftPanelActiveTab, setLeftPanelActiveTab] = useState(0);
@@ -192,6 +196,16 @@ export default function MapSystem() {
       }
       if (conditions.storeId) {
         params.append('store_id', conditions.storeId);
+      }
+      // 路線・駅フィルタ
+      if (conditions.railwayLineIds && conditions.railwayLineIds.length > 0) {
+        conditions.railwayLineIds.forEach(id => params.append('railway_line_ids[]', id));
+      }
+      if (conditions.stationIds && conditions.stationIds.length > 0) {
+        conditions.stationIds.forEach(id => params.append('station_ids[]', id));
+      }
+      if (conditions.maxWalkingMinutes) {
+        params.append('max_walking_minutes', conditions.maxWalkingMinutes);
       }
 
       const queryString = params.toString();
@@ -576,6 +590,8 @@ export default function MapSystem() {
               facilitiesMaster={facilitiesMaster}
               facilitiesCategories={facilitiesCategories}
               popularFacilities={popularFacilities}
+              // 路線・駅データ
+              railwayData={railwayData}
             />
             {/* 上部エリア（地図 + 右ペイン） */}
             <Box

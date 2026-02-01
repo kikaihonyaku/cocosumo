@@ -57,6 +57,9 @@ function matchesRangeSelection(value, ranges) {
  * @param {Array} filters.areaRange - [min, max]
  * @param {Array} filters.ageRange - [min, max]
  * @param {Array} filters.facilities - ['air_conditioner', 'auto_lock', ...] 設備コード
+ * @param {Array} filters.railwayLineIds - 路線IDの配列
+ * @param {Array} filters.stationIds - 駅IDの配列
+ * @param {number} filters.maxWalkingMinutes - 最大徒歩分数
  * @param {Object} rangeSelections - 棒グラフ選択
  * @param {Array} rangeSelections.selectedRentRanges
  * @param {Array} rangeSelections.selectedAreaRanges
@@ -73,7 +76,10 @@ export function filterRooms(rooms, filters, rangeSelections = {}) {
     roomTypes = [],
     areaRange = [0, 200],
     ageRange = [0, AGE_MAX_THRESHOLD],
-    facilities = []
+    facilities = [],
+    railwayLineIds = [],
+    stationIds = [],
+    maxWalkingMinutes = null
   } = filters || {};
 
   const {
@@ -137,6 +143,33 @@ export function filterRooms(rooms, filters, rangeSelections = {}) {
       const roomFacilities = room.facility_codes || [];
       const hasAllFacilities = facilities.every(f => roomFacilities.includes(f));
       if (!hasAllFacilities) return false;
+    }
+
+    // 沿線フィルタ（指定路線のいずれかの駅が紐づく建物）
+    if (railwayLineIds.length > 0) {
+      const buildingStations = room.building?.building_stations || [];
+      const hasMatchingLine = buildingStations.some(bs =>
+        railwayLineIds.includes(bs.station?.railway_line_id)
+      );
+      if (!hasMatchingLine) return false;
+    }
+
+    // 駅フィルタ（指定駅のいずれかが紐づく建物）
+    if (stationIds.length > 0) {
+      const buildingStations = room.building?.building_stations || [];
+      const hasMatchingStation = buildingStations.some(bs =>
+        stationIds.includes(bs.station_id)
+      );
+      if (!hasMatchingStation) return false;
+    }
+
+    // 徒歩分数フィルタ（指定分数以内の駅がある建物）
+    if (maxWalkingMinutes != null && maxWalkingMinutes !== '') {
+      const buildingStations = room.building?.building_stations || [];
+      const hasNearStation = buildingStations.some(bs =>
+        bs.walking_minutes != null && bs.walking_minutes <= Number(maxWalkingMinutes)
+      );
+      if (!hasNearStation) return false;
     }
 
     return true;

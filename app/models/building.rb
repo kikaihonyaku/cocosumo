@@ -8,6 +8,8 @@ class Building < ApplicationRecord
   has_many :owners, dependent: :destroy
   has_many :building_photos, dependent: :destroy
   has_many :building_routes, dependent: :destroy
+  has_many :building_stations, dependent: :destroy
+  has_many :stations, through: :building_stations
   has_one_attached :exterior_image
   has_many_attached :photos
 

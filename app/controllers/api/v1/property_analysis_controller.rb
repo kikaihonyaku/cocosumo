@@ -5,7 +5,7 @@ class Api::V1::PropertyAnalysisController < ApplicationController
   # GET /api/v1/property_analysis
   # 全物件データを返す（GISフィルタは適用しない - ピン表示用）
   def show
-    buildings = current_tenant.buildings.kept.includes(:building_photos, rooms: { room_facilities: :facility })
+    buildings = current_tenant.buildings.kept.includes(:building_photos, :building_stations, rooms: { room_facilities: :facility })
 
     # ベース検索条件のみ適用（GISは含まない）
     buildings = apply_base_filters(buildings)
@@ -20,6 +20,17 @@ class Api::V1::PropertyAnalysisController < ApplicationController
         room_data = room.as_json(only: [:id, :rent, :area, :room_type, :status, :floor, :room_number])
         room_data['facility_codes'] = room.room_facilities.map { |rf| rf.facility.code }
         room_data
+      end
+      # 駅情報を追加
+      building_data['building_stations'] = building.building_stations.ordered.map do |bs|
+        {
+          station_id: bs.station_id,
+          walking_minutes: bs.walking_minutes,
+          station_name: bs.station.name,
+          railway_line_id: bs.station.railway_line_id,
+          railway_line_name: bs.station.railway_line.name,
+          railway_line_color: bs.station.railway_line.color
+        }
       end
       building_data
     end
@@ -109,6 +120,37 @@ class Api::V1::PropertyAnalysisController < ApplicationController
       elsif !external_import_bool && !own_registration_bool
         buildings = buildings.none
       end
+    end
+
+    # 路線フィルタ（指定路線の駅が紐づく建物に絞り込み）
+    if params[:railway_line_ids].present?
+      line_ids = Array(params[:railway_line_ids]).map(&:to_i)
+      buildings = buildings.where(
+        'buildings.id IN (
+          SELECT bs.building_id FROM building_stations bs
+          INNER JOIN stations s ON s.id = bs.station_id
+          WHERE s.railway_line_id IN (?)
+        )',
+        line_ids
+      )
+    end
+
+    # 駅フィルタ（指定駅が紐づく建物に絞り込み）
+    if params[:station_ids].present?
+      station_ids = Array(params[:station_ids]).map(&:to_i)
+      buildings = buildings.where(
+        'buildings.id IN (SELECT bs.building_id FROM building_stations bs WHERE bs.station_id IN (?))',
+        station_ids
+      )
+    end
+
+    # 最大徒歩分数フィルタ
+    if params[:max_walking_minutes].present?
+      max_minutes = params[:max_walking_minutes].to_i
+      buildings = buildings.where(
+        'buildings.id IN (SELECT bs.building_id FROM building_stations bs WHERE bs.walking_minutes IS NOT NULL AND bs.walking_minutes <= ?)',
+        max_minutes
+      )
     end
 
     # 設備フィルタ（指定された全ての設備を持つ部屋がある建物のみ）

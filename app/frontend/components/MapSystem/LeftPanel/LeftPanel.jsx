@@ -60,6 +60,8 @@ export default function LeftPanel({
   facilitiesMaster = {},
   facilitiesCategories = {},
   popularFacilities = [],
+  // 路線・駅データ
+  railwayData = [],
 }) {
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [expanded, setExpanded] = useState({
@@ -488,6 +490,7 @@ export default function LeftPanel({
         currentConditions={searchConditions}
         isLoading={isLoading}
         stores={stores}
+        railwayData={railwayData}
       />
     </>
   );

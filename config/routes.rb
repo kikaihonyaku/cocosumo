@@ -46,6 +46,13 @@ Rails.application.routes.draw do
       # 設備マスタ
       resources :facilities, only: [:index]
 
+      # 沿線・駅マスタ
+      resources :railway_lines, only: [:index] do
+        collection do
+          get :stations_search
+        end
+      end
+
       # 一括物件登録
       resources :bulk_imports, only: [:create, :show] do
         member do

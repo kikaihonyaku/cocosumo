@@ -32,7 +32,10 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   Save as SaveIcon,
+  Train as TrainIcon,
 } from '@mui/icons-material';
+import StationSelect from '../shared/StationSelect';
+import useRailwayLines from '../../hooks/useRailwayLines';
 
 export default function BuildingInfoPanel({
   property,
@@ -82,6 +85,10 @@ export default function BuildingInfoPanel({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // 路線・駅データ
+  const { railwayData } = useRailwayLines();
+  const [buildingStations, setBuildingStations] = useState([]);
+
   useEffect(() => {
     if (property) {
       setFormData({
@@ -101,6 +108,16 @@ export default function BuildingInfoPanel({
         store_id: property.store_id || '',
         ...property
       });
+      // 駅情報を初期化
+      if (property.building_stations) {
+        setBuildingStations(
+          property.building_stations.map(bs => ({
+            station_id: bs.station_id || bs.station?.id,
+            walking_minutes: bs.walking_minutes || '',
+            _selectedLineId: bs.station?.railway_line?.id || '',
+          }))
+        );
+      }
     }
   }, [property]);
 
@@ -114,7 +131,14 @@ export default function BuildingInfoPanel({
   };
 
   const handleSubmit = () => {
-    onSave(formData);
+    onSave({
+      ...formData,
+      building_stations: buildingStations.filter(bs => bs.station_id).map((bs, i) => ({
+        station_id: bs.station_id,
+        walking_minutes: bs.walking_minutes || null,
+        display_order: i,
+      })),
+    });
     setHasUnsavedChanges(false);
   };
 
@@ -395,6 +419,19 @@ export default function BuildingInfoPanel({
               </Box>
             )}
           </Stack>
+        </Box>
+
+        {/* 最寄り駅 */}
+        <Box>
+          <StationSelect
+            railwayData={railwayData}
+            value={buildingStations}
+            onChange={(newStations) => {
+              setBuildingStations(newStations);
+              setHasUnsavedChanges(true);
+            }}
+            disabled={loading}
+          />
         </Box>
 
         {/* 建築情報 */}

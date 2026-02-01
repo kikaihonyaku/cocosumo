@@ -198,13 +198,18 @@ export default function BuildingDetail() {
     try {
       setSaving(true);
 
+      const { building_stations, ...buildingData } = formData;
+
       const response = await fetch(`/api/v1/buildings/${id}`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ building: formData }),
+        body: JSON.stringify({
+          building: buildingData,
+          building_stations: building_stations,
+        }),
       });
 
       if (!response.ok) {

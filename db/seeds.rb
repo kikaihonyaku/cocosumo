@@ -156,3 +156,6 @@ load Rails.root.join('db/seeds/blog_posts.rb')
 
 # 設備マスタのシードデータを読み込み
 load Rails.root.join('db/seeds/facilities.rb')
+
+# 沿線・駅マスタのシードデータを読み込み
+load Rails.root.join('db/seeds/railway_stations.rb')

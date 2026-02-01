@@ -22,8 +22,9 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
+import { StationFilter } from '../../shared/StationSelect';
 
-export default function SearchModal({ isOpen, onClose, onSearch, currentConditions = {}, isLoading = false, stores = [] }) {
+export default function SearchModal({ isOpen, onClose, onSearch, currentConditions = {}, isLoading = false, stores = [], railwayData = [] }) {
   const [searchForm, setSearchForm] = useState({
     propertyName: '',
     address: '',
@@ -33,8 +34,11 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
     maxRooms: '',
     maxVacancyRate: '',
     hasVacancy: '',
-    externalImport: true,     // 外部取込み（デフォルト: チェックあり）
-    ownRegistration: true     // 自社登録（デフォルト: チェックあり）
+    externalImport: true,
+    ownRegistration: true,
+    railwayLineIds: [],
+    stationIds: [],
+    maxWalkingMinutes: '',
   });
 
   // モーダルが開かれた時に現在の条件を設定
@@ -50,7 +54,10 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
         maxVacancyRate: currentConditions.maxVacancyRate || '',
         hasVacancy: currentConditions.hasVacancy || '',
         externalImport: currentConditions.externalImport !== undefined ? currentConditions.externalImport : true,
-        ownRegistration: currentConditions.ownRegistration !== undefined ? currentConditions.ownRegistration : true
+        ownRegistration: currentConditions.ownRegistration !== undefined ? currentConditions.ownRegistration : true,
+        railwayLineIds: currentConditions.railwayLineIds || [],
+        stationIds: currentConditions.stationIds || [],
+        maxWalkingMinutes: currentConditions.maxWalkingMinutes || '',
       });
     }
   }, [isOpen, currentConditions]);
@@ -78,8 +85,11 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
       maxRooms: '',
       maxVacancyRate: '',
       hasVacancy: '',
-      externalImport: true,    // デフォルトは両方チェックあり
-      ownRegistration: true
+      externalImport: true,
+      ownRegistration: true,
+      railwayLineIds: [],
+      stationIds: [],
+      maxWalkingMinutes: '',
     };
     setSearchForm(defaultForm);
   };
@@ -295,6 +305,24 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
                 />
               </Box>
             </Box>
+
+            {/* アクセスセクション */}
+            {railwayData.length > 0 && (
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: 'primary.main' }}>
+                  アクセス
+                </Typography>
+                <StationFilter
+                  railwayData={railwayData}
+                  selectedLineIds={searchForm.railwayLineIds}
+                  onLineChange={(ids) => handleInputChange('railwayLineIds', ids)}
+                  selectedStationIds={searchForm.stationIds}
+                  onStationChange={(ids) => handleInputChange('stationIds', ids)}
+                  maxWalkingMinutes={searchForm.maxWalkingMinutes}
+                  onMaxWalkingMinutesChange={(val) => handleInputChange('maxWalkingMinutes', val)}
+                />
+              </Box>
+            )}
 
             {/* 登録元セクション */}
             <Box>

@@ -123,7 +123,18 @@ class Api::V1::BuildingsController < ApplicationController
       rooms: {
         methods: [:status_label, :room_type_label]
       },
-      owners: {}
+      owners: {},
+      building_stations: {
+        include: {
+          station: {
+            include: {
+              railway_line: { only: [:id, :code, :name, :color] }
+            },
+            only: [:id, :code, :name, :name_kana]
+          }
+        },
+        only: [:id, :station_id, :walking_minutes, :display_order]
+      }
     })
   end
 
@@ -140,10 +151,16 @@ class Api::V1::BuildingsController < ApplicationController
 
   # PATCH/PUT /api/v1/buildings/:id
   def update
-    if @building.update(building_params)
-      render json: @building
-    else
-      render json: { errors: @building.errors.full_messages }, status: :unprocessable_entity
+    Building.transaction do
+      if @building.update(building_params)
+        # building_stationsの更新
+        if params[:building_stations].present?
+          update_building_stations(params[:building_stations])
+        end
+        render json: @building
+      else
+        render json: { errors: @building.errors.full_messages }, status: :unprocessable_entity
+      end
     end
   end
 
@@ -569,6 +586,22 @@ class Api::V1::BuildingsController < ApplicationController
 
   def set_building
     @building = current_tenant.buildings.find(params[:id])
+  end
+
+  def update_building_stations(stations_data)
+    @building.building_stations.destroy_all
+
+    Array(stations_data).each_with_index do |station_data, index|
+      station_id = station_data[:station_id] || station_data['station_id']
+      next unless station_id.present?
+
+      @building.building_stations.create!(
+        station_id: station_id,
+        walking_minutes: station_data[:walking_minutes] || station_data['walking_minutes'],
+        display_order: index,
+        raw_text: station_data[:raw_text] || station_data['raw_text']
+      )
+    end
   end
 
   def building_params

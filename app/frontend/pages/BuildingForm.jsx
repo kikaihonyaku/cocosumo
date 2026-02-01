@@ -15,6 +15,8 @@ import {
   Checkbox,
   Divider
 } from "@mui/material";
+import StationSelect from "../components/shared/StationSelect";
+import useRailwayLines from "../hooks/useRailwayLines";
 
 export default function BuildingForm() {
   const navigate = useNavigate();
@@ -25,6 +27,8 @@ export default function BuildingForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [stores, setStores] = useState([]);
+  const [buildingStations, setBuildingStations] = useState([]);
+  const { railwayData } = useRailwayLines();
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -85,6 +89,15 @@ export default function BuildingForm() {
           parking_spaces: data.parking_spaces || "",
           store_id: data.store_id || ""
         });
+        if (data.building_stations) {
+          setBuildingStations(
+            data.building_stations.map(bs => ({
+              station_id: bs.station_id || bs.station?.id,
+              walking_minutes: bs.walking_minutes || '',
+              _selectedLineId: bs.station?.railway_line?.id || '',
+            }))
+          );
+        }
       } else {
         setError('物件情報の取得に失敗しました');
       }
@@ -119,7 +132,14 @@ export default function BuildingForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ building: formData })
+        body: JSON.stringify({
+          building: formData,
+          building_stations: buildingStations.filter(bs => bs.station_id).map((bs, i) => ({
+            station_id: bs.station_id,
+            walking_minutes: bs.walking_minutes || null,
+            display_order: i,
+          })),
+        })
       });
 
       const data = await response.json();
@@ -273,6 +293,18 @@ export default function BuildingForm() {
                 onChange={handleChange}
                 disabled={submitting}
               />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Divider sx={{ my: 1 }} />
+              <Box sx={{ mt: 2, mb: 1 }}>
+                <StationSelect
+                  railwayData={railwayData}
+                  value={buildingStations}
+                  onChange={setBuildingStations}
+                  disabled={submitting}
+                />
+              </Box>
             </Grid>
 
             <Grid item xs={12}>

@@ -368,6 +368,37 @@ class Api::V1::RoomsController < ApplicationController
       @rooms = @rooms.where(buildings: { building_type: building_types })
     end
 
+    # 路線フィルタ
+    if params[:railway_line_ids].present?
+      line_ids = Array(params[:railway_line_ids]).map(&:to_i)
+      @rooms = @rooms.where(
+        'rooms.building_id IN (
+          SELECT bs.building_id FROM building_stations bs
+          INNER JOIN stations s ON s.id = bs.station_id
+          WHERE s.railway_line_id IN (?)
+        )',
+        line_ids
+      )
+    end
+
+    # 駅フィルタ
+    if params[:station_ids].present?
+      station_ids = Array(params[:station_ids]).map(&:to_i)
+      @rooms = @rooms.where(
+        'rooms.building_id IN (SELECT bs.building_id FROM building_stations bs WHERE bs.station_id IN (?))',
+        station_ids
+      )
+    end
+
+    # 最大徒歩分数フィルタ
+    if params[:max_walking_minutes].present?
+      max_minutes = params[:max_walking_minutes].to_i
+      @rooms = @rooms.where(
+        'rooms.building_id IN (SELECT bs.building_id FROM building_stations bs WHERE bs.walking_minutes IS NOT NULL AND bs.walking_minutes <= ?)',
+        max_minutes
+      )
+    end
+
     # ソート
     sort_column = params[:sort] || 'buildings.name'
     sort_direction = params[:direction] == 'desc' ? 'DESC' : 'ASC'

@@ -31,11 +31,13 @@ module Suumo
         rooms_skipped: 0,
         images_downloaded: 0,
         images_skipped: 0,
+        stations_linked: 0,
         errors: []
       }
 
       @data_mapper = DataMapper.new
       @image_downloader = ImageDownloader.new
+      @access_info_parser = AccessInfoParser.new
     end
 
     def scrape(search_url)
@@ -102,6 +104,9 @@ module Suumo
       # Find or create building
       building = find_or_create_building(property_data)
       return unless building
+
+      # アクセス情報から駅を自動紐付け
+      link_building_stations(building, property_data[:access_info]) unless @options[:dry_run]
 
       # Process each room in the property
       property_data[:rooms].each do |room_data|
@@ -305,6 +310,30 @@ module Suumo
 
         sleep(0.5) # Small delay between image downloads
       end
+    end
+
+    def link_building_stations(building, access_info)
+      return if access_info.blank?
+
+      resolved = @access_info_parser.parse_and_resolve(access_info)
+      return if resolved.empty?
+
+      # 既存の紐付けをクリアして再作成
+      building.building_stations.destroy_all
+
+      resolved.each_with_index do |entry, index|
+        building.building_stations.create!(
+          station: entry[:station],
+          walking_minutes: entry[:walking_minutes],
+          display_order: index,
+          raw_text: entry[:raw_text]
+        )
+        @stats[:stations_linked] += 1
+      end
+
+      @logger.info "[SUUMO Scraper] Linked #{resolved.size} stations to #{building.name}"
+    rescue StandardError => e
+      @logger.error "[SUUMO Scraper] Failed to link stations for #{building.name}: #{e.message}"
     end
 
     def detect_room_photo_type(url, index)
