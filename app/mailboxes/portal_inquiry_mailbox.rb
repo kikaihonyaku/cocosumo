@@ -73,7 +73,11 @@ class PortalInquiryMailbox < ApplicationMailbox
       return
     end
 
-    subdomain = recipient.match(/^(.+)-inquiry-(?:suumo|athome|homes|lifull)@/i)&.[](1)
+    # 新形式: {subdomain}-s{store_id}-inquiry-{portal}@ / 旧形式: {subdomain}-inquiry-{portal}@
+    match = recipient.match(/^(.+?)(?:-s(\d+))?-inquiry-(?:suumo|athome|homes|lifull)@/i)
+    subdomain = match&.[](1)
+    store_id = match&.[](2)&.to_i
+
     unless subdomain
       Rails.logger.warn "[PortalInquiryMailbox] Invalid address format: #{recipient}"
       bounced!
@@ -84,7 +88,15 @@ class PortalInquiryMailbox < ApplicationMailbox
     unless @tenant
       Rails.logger.warn "[PortalInquiryMailbox] Tenant not found for subdomain: #{subdomain}"
       bounced!
+      return
     end
+
+    # store_idが指定されている場合はそのstoreを取得、なければテナントの最初の店舗にフォールバック
+    if store_id.present? && store_id > 0
+      @store = @tenant.stores.find_by(id: store_id)
+      Rails.logger.warn "[PortalInquiryMailbox] Store not found: #{store_id}" unless @store
+    end
+    @store ||= @tenant.stores.first
   end
 
   def detect_portal

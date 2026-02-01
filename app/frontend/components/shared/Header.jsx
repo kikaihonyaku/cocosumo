@@ -55,7 +55,7 @@ import ChangePasswordDialog from "./ChangePasswordDialog";
 import TenantInfoDialog from "./TenantInfoDialog";
 
 export default function Header() {
-  const { user, tenant, logout } = useAuth();
+  const { user, tenant, store, logout } = useAuth();
   const { zoomLevel } = useThemeMode();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -898,6 +898,7 @@ export default function Header() {
         open={tenantInfoOpen}
         onClose={handleTenantInfoClose}
         tenant={tenant}
+        store={store}
       />
     </>
   );

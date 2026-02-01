@@ -13,7 +13,8 @@ class Api::V1::AuthController < ApplicationController
         tenant_id: current_user.tenant_id,
         auth_provider: current_user.auth_provider
       },
-      tenant: current_tenant&.as_json(only: [:id, :name, :subdomain, :status], methods: [:inquiry_email_address, :portal_inquiry_email_addresses]),
+      tenant: current_tenant&.as_json(only: [:id, :name, :subdomain, :status]),
+      store: current_user.store&.as_json(only: [:id, :name], methods: [:inquiry_email_address, :portal_inquiry_email_addresses]),
       impersonating: impersonating?,
       original_tenant: original_tenant&.as_json(only: [:id, :name, :subdomain])
     }
@@ -74,7 +75,8 @@ class Api::V1::AuthController < ApplicationController
           tenant_id: user.tenant_id,
           auth_provider: user.auth_provider
         },
-        tenant: user.tenant&.as_json(only: [:id, :name, :subdomain, :status], methods: [:inquiry_email_address, :portal_inquiry_email_addresses])
+        tenant: user.tenant&.as_json(only: [:id, :name, :subdomain, :status]),
+        store: user.store&.as_json(only: [:id, :name], methods: [:inquiry_email_address, :portal_inquiry_email_addresses])
       }
     else
       user.increment_failed_login!

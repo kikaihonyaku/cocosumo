@@ -1,13 +1,13 @@
 class PropertyInquiryMailer < ApplicationMailer
   # 管理者（物件担当者）への通知メール
-  def notify_admin(property_inquiry)
+  def notify_admin(property_inquiry, store: nil)
     @inquiry = property_inquiry
     @publication = property_inquiry.property_publication
     @room = @publication.room
     @building = @room.building
 
-    # 管理者のメールアドレスを取得（テナントのユーザー）
-    admin_email = @building.tenant&.user&.email
+    # 店舗メール → テナントユーザーメールの順でフォールバック
+    admin_email = store&.email.presence || @building.tenant&.user&.email
     return unless admin_email.present?
 
     @property_url = property_public_url(@publication)
@@ -34,15 +34,15 @@ class PropertyInquiryMailer < ApplicationMailer
   end
 
   # 顧客への返信メール
-  def reply_to_customer(property_inquiry, subject, body)
+  def reply_to_customer(property_inquiry, subject, body, store: nil)
     @inquiry = property_inquiry
     @body = body
     @publication = property_inquiry.property_publication
     @room = @publication.room
     @building = @room.building
 
-    # 返信元アドレス（管理者のメールアドレス）
-    reply_from = @building.tenant&.user&.email
+    # 返信元アドレス: 店舗メール → テナントユーザーメール → デフォルト
+    reply_from = store&.email.presence || @building.tenant&.user&.email
     reply_from = default_from if reply_from.blank?
 
     mail(

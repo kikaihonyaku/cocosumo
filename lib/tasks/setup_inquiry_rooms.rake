@@ -29,7 +29,6 @@ namespace :tenant do
       # Update tenant settings
       settings = tenant.settings || {}
       settings['default_inquiry_room_id'] = room.id
-      settings['inquiry_email_address'] = "#{tenant.subdomain}-inquiry"
       tenant.update!(settings: settings)
 
       puts "  -> Created room ##{room.id} and updated settings"
@@ -38,16 +37,23 @@ namespace :tenant do
     puts "Done!"
   end
 
-  desc "Show inquiry email addresses for all active tenants"
+  desc "Show inquiry email addresses for all active stores"
   task list_inquiry_emails: :environment do
-    puts "Inquiry Email Addresses:"
-    puts "-" * 50
+    puts "Inquiry Email Addresses (per store):"
+    puts "-" * 70
 
     Tenant.where(status: :active).order(:subdomain).each do |tenant|
-      email = "#{tenant.subdomain}-inquiry@inbound.cocosumo.space"
       room_id = tenant.settings&.dig('default_inquiry_room_id')
-      status = room_id.present? ? "configured (room ##{room_id})" : "NOT CONFIGURED"
-      puts "#{email.ljust(40)} #{status}"
+      room_status = room_id.present? ? "configured (room ##{room_id})" : "NOT CONFIGURED"
+
+      if tenant.stores.any?
+        tenant.stores.ordered.each do |store|
+          email = store.inquiry_email_address
+          puts "#{email.ljust(50)} #{store.name} [#{room_status}]"
+        end
+      else
+        puts "#{tenant.subdomain.ljust(50)} (店舗なし) [#{room_status}]"
+      end
     end
   end
 end

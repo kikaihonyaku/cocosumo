@@ -8,6 +8,7 @@ class Tenant < ApplicationRecord
   has_many :inquiries, dependent: :destroy
   has_many :admin_audit_logs
   has_many :bulk_import_histories
+  has_many :email_templates, dependent: :destroy
   belongs_to :created_by, class_name: "User", optional: true
 
   # Enums
@@ -52,21 +53,6 @@ class Tenant < ApplicationRecord
     }
   end
 
-  # メール問い合わせ用のメールアドレスを返す
-  def inquiry_email_address
-    "#{subdomain}-inquiry@inbound.cocosumo.space"
-  end
-
-  # ポータル別メール問い合わせ用のメールアドレスを返す
-  def portal_inquiry_email_address(portal)
-    "#{subdomain}-inquiry-#{portal}@inbound.cocosumo.space"
-  end
-
-  # 全ポータルの問い合わせ用メールアドレスを返す
-  def portal_inquiry_email_addresses
-    { suumo: portal_inquiry_email_address(:suumo) }
-  end
-
   private
 
   # メール問い合わせ用のBuilding/Roomを自動作成
@@ -87,8 +73,7 @@ class Tenant < ApplicationRecord
 
     update_columns(
       settings: (settings || {}).merge(
-        "default_inquiry_room_id" => room.id,
-        "inquiry_email_address" => "#{subdomain}-inquiry"
+        "default_inquiry_room_id" => room.id
       )
     )
   end

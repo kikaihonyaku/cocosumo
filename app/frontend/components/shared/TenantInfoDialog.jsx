@@ -17,10 +17,11 @@ import {
   ContentCopy as CopyIcon,
   Business as BusinessIcon,
   Email as EmailIcon,
-  Language as LanguageIcon
+  Language as LanguageIcon,
+  Store as StoreIcon
 } from '@mui/icons-material';
 
-export default function TenantInfoDialog({ open, onClose, tenant }) {
+export default function TenantInfoDialog({ open, onClose, tenant, store }) {
   if (!tenant) return null;
 
   const handleCopyEmail = (email) => {
@@ -105,41 +106,56 @@ export default function TenantInfoDialog({ open, onClose, tenant }) {
 
           <Divider />
 
-          {/* 問い合わせ受付用メールアドレス */}
-          <Box>
-            <Typography variant="caption" color="text.secondary">
-              問い合わせ受付用メールアドレス（汎用）
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-              <EmailIcon fontSize="small" color="action" />
-              <Typography
-                variant="body1"
-                sx={{
-                  fontFamily: 'monospace',
-                  bgcolor: 'grey.100',
-                  px: 1,
-                  py: 0.5,
-                  borderRadius: 1,
-                  flexGrow: 1
-                }}
-              >
-                {tenant.inquiry_email_address || '未設定'}
+          {/* 所属店舗 */}
+          {store && (
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                所属店舗
               </Typography>
-              {tenant.inquiry_email_address && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <StoreIcon fontSize="small" color="action" />
+                <Typography variant="body1">
+                  {store.name}
+                </Typography>
+              </Box>
+            </Box>
+          )}
+
+          {/* 問い合わせ受付用メールアドレス */}
+          {store?.inquiry_email_address && (
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                問い合わせ受付用メールアドレス（汎用）
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                <EmailIcon fontSize="small" color="action" />
+                <Typography
+                  variant="body1"
+                  sx={{
+                    fontFamily: 'monospace',
+                    bgcolor: 'grey.100',
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    flexGrow: 1
+                  }}
+                >
+                  {store.inquiry_email_address}
+                </Typography>
                 <Tooltip title="コピー">
-                  <IconButton size="small" onClick={() => handleCopyEmail(tenant.inquiry_email_address)}>
+                  <IconButton size="small" onClick={() => handleCopyEmail(store.inquiry_email_address)}>
                     <CopyIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
-              )}
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                このアドレス宛のメールは自動的に問い合わせとして登録されます
+              </Typography>
             </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-              このアドレス宛のメールは自動的に問い合わせとして登録されます
-            </Typography>
-          </Box>
+          )}
 
           {/* ポータルサイト用メールアドレス */}
-          {tenant.portal_inquiry_email_addresses?.suumo && (
+          {store?.portal_inquiry_email_addresses?.suumo && (
             <Box>
               <Typography variant="caption" color="text.secondary">
                 SUUMO反響受付用メールアドレス
@@ -157,16 +173,28 @@ export default function TenantInfoDialog({ open, onClose, tenant }) {
                     flexGrow: 1
                   }}
                 >
-                  {tenant.portal_inquiry_email_addresses.suumo}
+                  {store.portal_inquiry_email_addresses.suumo}
                 </Typography>
                 <Tooltip title="コピー">
-                  <IconButton size="small" onClick={() => handleCopyEmail(tenant.portal_inquiry_email_addresses.suumo)}>
+                  <IconButton size="small" onClick={() => handleCopyEmail(store.portal_inquiry_email_addresses.suumo)}>
                     <CopyIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
               </Box>
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
                 SUUMOの反響通知メール転送先として設定してください
+              </Typography>
+            </Box>
+          )}
+
+          {/* 店舗未所属の場合 */}
+          {!store && (
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                問い合わせ受付用メールアドレス
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                店舗に所属していないため、問い合わせ用メールアドレスは表示できません
               </Typography>
             </Box>
           )}

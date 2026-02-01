@@ -1,8 +1,10 @@
 class Store < ApplicationRecord
   belongs_to :tenant
   has_many :buildings, dependent: :nullify
+  has_many :users
 
   validates :name, presence: true
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
 
   # Geocoding - Set location from address
   geocoded_by :address do |obj, results|
@@ -35,6 +37,21 @@ class Store < ApplicationRecord
   def longitude=(val)
     @pending_longitude = val
     update_location_from_coords
+  end
+
+  # メール問い合わせ用のメールアドレスを返す
+  def inquiry_email_address
+    "#{tenant.subdomain}-s#{id}-inquiry@inbound.cocosumo.space"
+  end
+
+  # ポータル別メール問い合わせ用のメールアドレスを返す
+  def portal_inquiry_email_address(portal)
+    "#{tenant.subdomain}-s#{id}-inquiry-#{portal}@inbound.cocosumo.space"
+  end
+
+  # 全ポータルの問い合わせ用メールアドレスを返す
+  def portal_inquiry_email_addresses
+    { suumo: portal_inquiry_email_address(:suumo) }
   end
 
   private
