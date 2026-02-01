@@ -152,7 +152,7 @@ export default function StationSelect({ railwayData = [], value = [], onChange, 
                 value={entry.walking_minutes || ''}
                 onChange={(e) => handleWalkingMinutesChange(index, e.target.value ? parseInt(e.target.value) : '')}
                 disabled={disabled}
-                sx={{ width: 80 }}
+                sx={{ width: 80, flexShrink: 0 }}
                 slotProps={{ htmlInput: { min: 0, max: 99 } }}
                 InputProps={{
                   endAdornment: <Typography variant="caption" color="text.secondary">分</Typography>
