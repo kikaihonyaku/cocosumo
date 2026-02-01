@@ -1,7 +1,7 @@
 class User < ApplicationRecord
   # Associations
   belongs_to :tenant
-  belongs_to :store, optional: true
+  belongs_to :store
 
   # Secure password
   has_secure_password validations: false

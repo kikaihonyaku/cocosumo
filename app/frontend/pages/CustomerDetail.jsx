@@ -44,7 +44,8 @@ import {
   PriorityHigh as PriorityHighIcon,
   Warning as WarningIcon,
   ViewList as ViewListIcon,
-  ChatBubbleOutline as ChatBubbleOutlineIcon
+  ChatBubbleOutline as ChatBubbleOutlineIcon,
+  Send as SendIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import ActivityDialog from '../components/Customer/ActivityDialog';
@@ -55,6 +56,7 @@ import EditPropertyInquiryDialog from '../components/Customer/EditPropertyInquir
 import AddPropertyDialog from '../components/Customer/AddPropertyDialog';
 import ActivityTimeline from '../components/Customer/ActivityTimeline';
 import ActivityChatView from '../components/Customer/ActivityChatView';
+import EmailComposeDialog from '../components/Customer/EmailComposeDialog';
 
 // Customer status mapping
 const getStatusInfo = (status) => {
@@ -153,6 +155,7 @@ export default function CustomerDetail() {
   const [editingPropertyInquiry, setEditingPropertyInquiry] = useState(null);
   const [editingActivity, setEditingActivity] = useState(null);
   const [addPropertyDialogOpen, setAddPropertyDialogOpen] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 
   // Case (inquiry) selector state
   const [selectedInquiryId, setSelectedInquiryId] = useState(null);
@@ -584,6 +587,14 @@ export default function CustomerDetail() {
           <Button
             size="small"
             variant="outlined"
+            startIcon={<SendIcon />}
+            onClick={() => setEmailDialogOpen(true)}
+          >
+            メール
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
             startIcon={<AddIcon />}
             onClick={() => {
               setEditingActivity(null);
@@ -943,6 +954,11 @@ export default function CustomerDetail() {
                   </IconButton>
                 </Tooltip>
               )}
+              <Tooltip title="メール送信">
+                <IconButton size="small" onClick={() => setEmailDialogOpen(true)}>
+                  <SendIcon fontSize="small" color="primary" />
+                </IconButton>
+              </Tooltip>
               {customer.phone && (
                 <Tooltip title={customer.phone}>
                   <IconButton size="small" component="a" href={`tel:${customer.phone}`}>
@@ -967,6 +983,18 @@ export default function CustomerDetail() {
                   />
                 </Tooltip>
               )}
+              <Tooltip title="メール送信">
+                <Chip
+                  size="small"
+                  icon={<SendIcon />}
+                  label="メール送信"
+                  clickable
+                  color="primary"
+                  variant="outlined"
+                  onClick={() => setEmailDialogOpen(true)}
+                  sx={{ height: 24, fontSize: '0.75rem' }}
+                />
+              </Tooltip>
               {customer.phone && (
                 <Tooltip title={customer.phone}>
                   <Chip
@@ -1219,6 +1247,19 @@ export default function CustomerDetail() {
         defaultAssignedUserId={inquiries.find(i => i.id === selectedInquiryId)?.assigned_user?.id}
         users={users}
         onAdded={() => {
+          loadCustomer();
+        }}
+      />
+
+      {/* Email Compose Dialog */}
+      <EmailComposeDialog
+        open={emailDialogOpen}
+        onClose={() => setEmailDialogOpen(false)}
+        customer={customer}
+        inquiries={inquiries}
+        selectedInquiryId={selectedInquiryId}
+        onSent={() => {
+          loadActivities();
           loadCustomer();
         }}
       />

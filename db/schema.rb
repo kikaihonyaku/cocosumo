@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_30_043835) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_31_234335) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -340,6 +340,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_30_043835) do
     t.index ["tenant_id", "email"], name: "index_customers_on_tenant_id_and_email", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
     t.index ["tenant_id", "line_user_id"], name: "index_customers_on_tenant_id_and_line_user_id", unique: true, where: "(line_user_id IS NOT NULL)"
     t.index ["tenant_id"], name: "index_customers_on_tenant_id"
+  end
+
+  create_table "email_templates", force: :cascade do |t|
+    t.bigint "tenant_id", null: false
+    t.string "name", null: false
+    t.string "subject", null: false
+    t.text "body", null: false
+    t.integer "position", default: 0
+    t.datetime "discarded_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tenant_id"], name: "index_email_templates_on_tenant_id"
   end
 
   create_table "facilities", force: :cascade do |t|
@@ -763,6 +775,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_30_043835) do
     t.decimal "latitude", precision: 10, scale: 7
     t.decimal "longitude", precision: 10, scale: 7
     t.st_point "location", geographic: true
+    t.string "email"
     t.index ["location"], name: "index_stores_on_location", using: :gist
     t.index ["tenant_id"], name: "index_stores_on_tenant_id"
   end
@@ -965,6 +978,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_30_043835) do
   add_foreign_key "customer_image_simulations", "property_publications"
   add_foreign_key "customer_routes", "customer_accesses"
   add_foreign_key "customers", "tenants"
+  add_foreign_key "email_templates", "tenants"
   add_foreign_key "facility_synonyms", "facilities"
   add_foreign_key "inquiries", "customers"
   add_foreign_key "inquiries", "tenants"

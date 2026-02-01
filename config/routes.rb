@@ -324,9 +324,12 @@ Rails.application.routes.draw do
           get :inquiries
           get :accesses
           post :create_inquiry
+          post :send_email
         end
         resources :activities, controller: 'customer_activities', only: [:index, :create, :update, :destroy]
       end
+
+      resources :email_templates, only: [:index, :create, :update, :destroy]
 
       # 顧客向け公開API（認証不要）
       get 'customer/:access_token', to: 'customer_accesses#show_public'

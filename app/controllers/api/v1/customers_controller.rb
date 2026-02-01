@@ -1,7 +1,7 @@
 class Api::V1::CustomersController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
-  before_action :set_customer, only: [ :show, :update, :destroy, :inquiries, :accesses, :create_inquiry ]
+  before_action :set_customer, only: [ :show, :update, :destroy, :inquiries, :accesses, :create_inquiry, :send_email ]
 
   # GET /api/v1/customers
   def index
@@ -175,6 +175,44 @@ class Api::V1::CustomersController < ApplicationController
     render json: { error: "物件が見つかりませんでした" }, status: :not_found
   rescue ActiveRecord::RecordInvalid => e
     render json: { errors: [ e.message ] }, status: :unprocessable_entity
+  end
+
+  # POST /api/v1/customers/:id/send_email
+  # 顧客詳細画面からメールを送信し、対応履歴に記録
+  def send_email
+    subject = params[:subject].to_s.strip
+    body = params[:body].to_s.strip
+    inquiry_id = params[:inquiry_id]
+
+    if subject.blank? || body.blank?
+      return render json: { errors: [ "件名と本文は必須です" ] }, status: :unprocessable_entity
+    end
+
+    if @customer.email.blank?
+      return render json: { errors: [ "顧客のメールアドレスが登録されていません" ] }, status: :unprocessable_entity
+    end
+
+    if current_user.store&.email.blank?
+      return render json: { errors: [ "店舗のメールアドレスが設定されていません。管理者に連絡してください。" ] }, status: :unprocessable_entity
+    end
+
+    inquiry = @customer.inquiries.find_by(id: inquiry_id)
+    unless inquiry
+      return render json: { errors: [ "案件が見つかりませんでした" ] }, status: :unprocessable_entity
+    end
+
+    CustomerMailer.send_to_customer(@customer, current_user, subject, body, inquiry).deliver_later
+
+    @customer.add_activity!(
+      activity_type: :email,
+      direction: :outbound,
+      inquiry: inquiry,
+      user: current_user,
+      subject: subject,
+      content: body
+    )
+
+    render json: { success: true, message: "メールを送信しました" }
   end
 
   private
