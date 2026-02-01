@@ -480,7 +480,7 @@ export default function VrTourViewerContent({
       </AppBar>
 
       {/* VRビューア */}
-      <Box sx={{ height: '100vh', width: '100%', position: 'relative' }} id={containerId}>
+      <Box sx={{ height: 'calc(100vh * var(--vh-correction, 1))', width: '100%', position: 'relative' }} id={containerId}>
         {currentScene && (currentScene.photo_url || currentScene['virtual_staging_scene?']) ? (
           <>
             <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>

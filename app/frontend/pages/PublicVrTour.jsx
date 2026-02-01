@@ -53,7 +53,7 @@ export default function PublicVrTour() {
 
   if (loading) {
     return (
-      <Box sx={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: '#000' }}>
+      <Box sx={{ height: 'calc(100vh * var(--vh-correction, 1))', display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: '#000' }}>
         <CircularProgress sx={{ color: 'white' }} />
       </Box>
     );
@@ -61,7 +61,7 @@ export default function PublicVrTour() {
 
   if (error || !vrTour) {
     return (
-      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#000' }}>
+      <Box sx={{ height: 'calc(100vh * var(--vh-correction, 1))', display: 'flex', flexDirection: 'column', bgcolor: '#000' }}>
         <AppBar position="static" sx={{ bgcolor: 'rgba(0, 0, 0, 0.9)' }} elevation={0}>
           <Toolbar>
             <Typography variant="h6" color="white">VRツアー</Typography>
@@ -80,7 +80,7 @@ export default function PublicVrTour() {
   const publicUrl = window.location.href;
 
   return (
-    <Box sx={{ height: '100vh', position: 'relative', bgcolor: '#000' }}>
+    <Box sx={{ height: 'calc(100vh * var(--vh-correction, 1))', position: 'relative', bgcolor: '#000' }}>
       <VrTourViewerContent
         vrTour={vrTour}
         scenes={scenes}

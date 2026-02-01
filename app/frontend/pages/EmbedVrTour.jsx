@@ -77,7 +77,7 @@ export default function EmbedVrTour() {
   if (loading) {
     return (
       <Box sx={{
-        height: '100vh',
+        height: 'calc(100vh * var(--vh-correction, 1))',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -91,7 +91,7 @@ export default function EmbedVrTour() {
   if (error || !vrTour || !currentScene) {
     return (
       <Box sx={{
-        height: '100vh',
+        height: 'calc(100vh * var(--vh-correction, 1))',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -106,7 +106,7 @@ export default function EmbedVrTour() {
   }
 
   return (
-    <Box sx={{ height: '100vh', width: '100vw', position: 'relative', bgcolor: '#000' }}>
+    <Box sx={{ height: 'calc(100vh * var(--vh-correction, 1))', width: '100vw', position: 'relative', bgcolor: '#000' }}>
       <PanoramaViewer
         ref={panoramaViewerRef}
         key={currentScene.id}
