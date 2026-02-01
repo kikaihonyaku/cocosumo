@@ -256,8 +256,11 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
 
             {/* アクセスセクション */}
             <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: 'primary.main' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, color: 'primary.main' }}>
                 アクセス
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5 }}>
+                路線・駅の入力欄をクリックしてテキストを入力すると候補を絞り込めます
               </Typography>
               {railwayData.length > 0 ? (
                 <StationFilter

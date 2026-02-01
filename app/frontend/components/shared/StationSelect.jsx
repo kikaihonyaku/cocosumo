@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
+  Autocomplete,
   Box,
   Typography,
   FormControl,
@@ -8,7 +9,6 @@ import {
   MenuItem,
   Checkbox,
   ListItemText,
-  OutlinedInput,
   Chip,
   TextField,
   IconButton,
@@ -191,84 +191,93 @@ export function StationFilter({
   maxWalkingMinutes = '',
   onMaxWalkingMinutesChange,
 }) {
-  const { allLines, stationsForSelectedLines } = useMemo(() => {
-    const allLines = railwayData.flatMap(company => company.lines);
-    const stationsForSelectedLines = selectedLineIds.length > 0
-      ? allLines.filter(l => selectedLineIds.includes(l.id)).flatMap(l => l.stations.map(s => ({ ...s, railway_line_name: l.name, railway_line_color: l.color })))
-      : allLines.flatMap(l => l.stations.map(s => ({ ...s, railway_line_name: l.name, railway_line_color: l.color })));
-    return { allLines, stationsForSelectedLines };
-  }, [railwayData, selectedLineIds]);
+  const { allLines, stationsForSelectedLines, selectedLineObjects, selectedStationObjects } = useMemo(() => {
+    const allLines = railwayData.flatMap(company =>
+      company.lines.map(l => ({ ...l, company: company.company }))
+    );
+    const filteredLines = selectedLineIds.length > 0
+      ? allLines.filter(l => selectedLineIds.includes(l.id))
+      : allLines;
+    const stationsForSelectedLines = filteredLines.flatMap(l =>
+      l.stations.map(s => ({ ...s, railway_line_name: l.name, railway_line_color: l.color }))
+    );
+    const selectedLineObjects = allLines.filter(l => selectedLineIds.includes(l.id));
+    const selectedStationObjects = stationsForSelectedLines.filter(s => selectedStationIds.includes(s.id));
+    return { allLines, stationsForSelectedLines, selectedLineObjects, selectedStationObjects };
+  }, [railwayData, selectedLineIds, selectedStationIds]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {/* 路線マルチセレクト */}
-      <FormControl fullWidth size="small">
-        <InputLabel>路線</InputLabel>
-        <Select
-          multiple
-          value={selectedLineIds}
-          onChange={(e) => onLineChange(e.target.value)}
-          input={<OutlinedInput label="路線" />}
-          renderValue={(selected) =>
-            selected.map(id => allLines.find(l => l.id === id)?.name).filter(Boolean).join(', ')
-          }
-          MenuProps={{
-            sx: { zIndex: 1500 },
-            anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
-            transformOrigin: { vertical: 'top', horizontal: 'left' },
-            PaperProps: { sx: { maxHeight: 300 } },
-          }}
-        >
-          {railwayData.map(company => [
-            <MenuItem key={`company-${company.company_code}`} disabled sx={{ opacity: '1 !important' }}>
-              <Typography variant="caption" color="primary" fontWeight={600}>
-                {company.company}
-              </Typography>
-            </MenuItem>,
-            ...company.lines.map(line => (
-              <MenuItem key={line.id} value={line.id}>
-                <Checkbox checked={selectedLineIds.includes(line.id)} />
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {line.color && (
-                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: line.color, flexShrink: 0 }} />
-                  )}
-                  <ListItemText primary={line.name} />
-                </Box>
-              </MenuItem>
-            ))
-          ]).flat()}
-        </Select>
-      </FormControl>
+      <Autocomplete
+        multiple
+        disableCloseOnSelect
+        options={allLines}
+        value={selectedLineObjects}
+        onChange={(_, newValue) => onLineChange(newValue.map(l => l.id))}
+        groupBy={(option) => option.company}
+        getOptionLabel={(option) => option.name}
+        isOptionEqualToValue={(option, value) => option.id === value.id}
+        renderOption={(props, option, { selected }) => {
+          const { key, ...rest } = props;
+          return (
+            <li key={key} {...rest}>
+              <Checkbox checked={selected} sx={{ mr: 1 }} />
+              {option.color && (
+                <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: option.color, flexShrink: 0, mr: 1 }} />
+              )}
+              <Typography variant="body2">{option.name}</Typography>
+            </li>
+          );
+        }}
+        renderTags={(value, getTagProps) =>
+          value.map((option, index) => {
+            const { key, ...rest } = getTagProps({ index });
+            return (
+              <Chip
+                key={key}
+                label={option.name}
+                size="small"
+                sx={option.color ? { borderLeft: `3px solid ${option.color}` } : undefined}
+                {...rest}
+              />
+            );
+          })
+        }
+        renderInput={(params) => <TextField {...params} label="路線" size="small" />}
+        slotProps={{ popper: { sx: { zIndex: 1500 } } }}
+      />
 
       {/* 駅マルチセレクト */}
-      <FormControl fullWidth size="small">
-        <InputLabel>駅</InputLabel>
-        <Select
-          multiple
-          value={selectedStationIds}
-          onChange={(e) => onStationChange(e.target.value)}
-          input={<OutlinedInput label="駅" />}
-          renderValue={(selected) =>
-            selected.map(id => stationsForSelectedLines.find(s => s.id === id)?.name).filter(Boolean).join(', ')
-          }
-          MenuProps={{
-            sx: { zIndex: 1500 },
-            anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
-            transformOrigin: { vertical: 'top', horizontal: 'left' },
-            PaperProps: { sx: { maxHeight: 300 } },
-          }}
-        >
-          {stationsForSelectedLines.map(station => (
-            <MenuItem key={station.id} value={station.id}>
-              <Checkbox checked={selectedStationIds.includes(station.id)} />
-              <ListItemText
-                primary={station.name}
-                secondary={station.railway_line_name}
-              />
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      <Autocomplete
+        multiple
+        disableCloseOnSelect
+        options={stationsForSelectedLines}
+        value={selectedStationObjects}
+        onChange={(_, newValue) => onStationChange(newValue.map(s => s.id))}
+        groupBy={(option) => option.railway_line_name}
+        getOptionLabel={(option) => option.name}
+        isOptionEqualToValue={(option, value) => option.id === value.id}
+        renderOption={(props, option, { selected }) => {
+          const { key, ...rest } = props;
+          return (
+            <li key={key} {...rest}>
+              <Checkbox checked={selected} sx={{ mr: 1 }} />
+              <Typography variant="body2">{option.name}</Typography>
+            </li>
+          );
+        }}
+        renderTags={(value, getTagProps) =>
+          value.map((option, index) => {
+            const { key, ...rest } = getTagProps({ index });
+            return (
+              <Chip key={key} label={option.name} size="small" {...rest} />
+            );
+          })
+        }
+        renderInput={(params) => <TextField {...params} label="駅" size="small" />}
+        slotProps={{ popper: { sx: { zIndex: 1500 } } }}
+      />
 
       {/* 最大徒歩分数 */}
       <TextField
