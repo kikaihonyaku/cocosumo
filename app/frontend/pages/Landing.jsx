@@ -38,6 +38,22 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   ),
+  Mail: () => (
+    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+  ),
+  Map: () => (
+    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  ),
+  Chart: () => (
+    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+  ),
   Check: () => (
     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -162,34 +178,34 @@ function BlogSection() {
 // 機能データ
 const features = [
   {
-    icon: Icons.Building,
-    title: "物件管理",
-    description: "建物・部屋情報をGoogleマップ連携のGISシステムで一元管理。位置情報と共に効率的に物件を管理できます。"
-  },
-  {
-    icon: Icons.AI,
-    title: "AI画像生成",
-    description: "Gemini AIを活用し、室内写真から「家具なし」「家具あり」の画像を自動生成。Before/After表示で効果的な訴求が可能です。"
-  },
-  {
-    icon: Icons.VR,
-    title: "VRルームツアー",
-    description: "360度パノラマビューでVRルームツアーを簡単に作成・編集。遠隔地の顧客にもリアルな物件体験を提供できます。"
-  },
-  {
-    icon: Icons.Link,
-    title: "簡単埋め込み",
-    description: "作成したコンテンツはiframeで簡単に外部サイトへ埋め込み可能。自社ホームページへシームレスに統合できます。"
+    icon: Icons.Mail,
+    title: "反響自動取込",
+    description: "SUUMOなどポータルサイトからの反響メールを自動でパース。顧客の名前・連絡先・問い合わせ内容を自動登録し、対応漏れを防ぎます。"
   },
   {
     icon: Icons.Users,
-    title: "マルチテナント対応",
-    description: "会社ごとに独立した環境を提供。チームメンバー間で物件情報を共有し、効率的に業務を進められます。"
+    title: "顧客・案件管理",
+    description: "反響から成約まで、顧客ごとの対応履歴を一元管理。商談ステータスの追跡、メール送信、チャット風の対応履歴表示で、チーム全体の営業状況を可視化します。"
   },
   {
-    icon: Icons.Settings,
-    title: "管理者機能",
-    description: "ユーザーアカウントの発行・管理を管理者画面から簡単に実行。権限管理も柔軟に設定できます。"
+    icon: Icons.Link,
+    title: "顧客マイページ",
+    description: "お客様専用の物件紹介ページを発行。VRツアーやバーチャルステージングを組み込んだ提案ページで、閲覧状況もトラッキングできます。"
+  },
+  {
+    icon: Icons.VR,
+    title: "VRツアー＆バーチャルステージング",
+    description: "360度パノラマのVRルームツアーと、AIによるバーチャルステージングで、遠隔地のお客様にもリアルな物件体験を提供。空室でも家具付きイメージを自動生成します。"
+  },
+  {
+    icon: Icons.AI,
+    title: "AI画像編集＆コンテンツ作成",
+    description: "物件写真のAI編集、複数テンプレートの公開ページ作成、QRコード生成まで。魅力的な物件コンテンツをワンストップで制作できます。"
+  },
+  {
+    icon: Icons.Map,
+    title: "GISマップ物件管理",
+    description: "Googleマップ連携のGISシステムで物件を地図上に一元管理。学区・駅・公園などのレイヤー表示や、エリア検索で物件探しを効率化します。"
   },
 ];
 
@@ -271,39 +287,39 @@ function DemoSlideshow() {
 // カルーセル用スライドデータ
 const slides = [
   {
-    icon: Icons.Building,
-    title: "物件管理",
-    description: "建物・部屋情報をGoogleマップ連携のGISシステムで一元管理。位置情報と共に効率的に物件を管理できます。",
+    icon: Icons.Mail,
+    title: "反響自動取込",
+    description: "SUUMOなどポータルサイトからの反響メールを自動でパース。顧客の名前・連絡先・問い合わせ内容を自動登録し、対応漏れを防ぎます。",
     gradient: "from-[#1e3a5f] to-[#2d5a8a]",
   },
   {
-    icon: Icons.AI,
-    title: "AI画像生成",
-    description: "Gemini AIを活用し、室内写真から「家具なし」「家具あり」の画像を自動生成。Before/After表示で効果的な訴求が可能です。",
+    icon: Icons.Users,
+    title: "顧客・案件管理",
+    description: "反響から成約まで、顧客ごとの対応履歴を一元管理。商談ステータスの追跡、メール送信、チャット風の対応履歴表示で、チーム全体の営業状況を可視化します。",
     gradient: "from-[#2d5a8a] to-[#3b7abf]",
   },
   {
-    icon: Icons.VR,
-    title: "VRルームツアー",
-    description: "360度パノラマビューでVRルームツアーを簡単に作成・編集。遠隔地の顧客にもリアルな物件体験を提供できます。",
+    icon: Icons.Link,
+    title: "顧客マイページ",
+    description: "お客様専用の物件紹介ページを発行。VRツアーやバーチャルステージングを組み込んだ提案ページで、閲覧状況もトラッキングできます。",
     gradient: "from-[#1e3a5f] to-[#0f2640]",
   },
   {
-    icon: Icons.Link,
-    title: "簡単埋め込み",
-    description: "作成したコンテンツはiframeで簡単に外部サイトへ埋め込み可能。自社ホームページへシームレスに統合できます。",
+    icon: Icons.VR,
+    title: "VRツアー＆バーチャルステージング",
+    description: "360度パノラマのVRルームツアーと、AIによるバーチャルステージングで、遠隔地のお客様にもリアルな物件体験を提供。空室でも家具付きイメージを自動生成します。",
     gradient: "from-[#8b6914] to-[#c9a227]",
   },
   {
-    icon: Icons.Users,
-    title: "マルチテナント対応",
-    description: "会社ごとに独立した環境を提供。チームメンバー間で物件情報を共有し、効率的に業務を進められます。",
+    icon: Icons.AI,
+    title: "AI画像編集＆コンテンツ作成",
+    description: "物件写真のAI編集、複数テンプレートの公開ページ作成、QRコード生成まで。魅力的な物件コンテンツをワンストップで制作できます。",
     gradient: "from-[#2d5a8a] to-[#1e3a5f]",
   },
   {
-    icon: Icons.Settings,
-    title: "管理者機能",
-    description: "ユーザーアカウントの発行・管理を管理者画面から簡単に実行。権限管理も柔軟に設定できます。",
+    icon: Icons.Map,
+    title: "GISマップ物件管理",
+    description: "Googleマップ連携のGISシステムで物件を地図上に一元管理。学区・駅・公園などのレイヤー表示や、エリア検索で物件探しを効率化します。",
     gradient: "from-[#0f2640] to-[#1e3a5f]",
   },
 ];
@@ -421,7 +437,11 @@ const faqs = [
   },
   {
     question: "導入にはどのくらいの時間がかかりますか？",
-    answer: "アカウント作成後、すぐにご利用いただけます。物件データのインポートについても、CSVファイルから一括登録が可能です。また、SUUMOからの自動インポート機能もご用意しています。"
+    answer: "アカウント作成後、すぐにご利用いただけます。物件データのインポートについても、CSVファイルから一括登録が可能です。また、反響メール自動取込の設定も簡単に行えます。"
+  },
+  {
+    question: "ポータルサイトからの反響は自動で取り込めますか？",
+    answer: "はい、SUUMOなどのポータルサイトからの反響通知メールを自動で取り込みます。顧客の名前・連絡先を自動抽出し、案件として登録されます。転送設定をするだけで、手入力は不要です。"
   },
   {
     question: "VRツアーの作成に特別な機材は必要ですか？",
@@ -440,8 +460,8 @@ const faqs = [
 // 実績データ
 const stats = [
   { value: "500+", label: "登録物件数" },
-  { value: "50%", label: "業務時間削減" },
-  { value: "24/7", label: "システム稼働" },
+  { value: "50%", label: "対応時間削減" },
+  { value: "26/2", label: "システム稼働" },
 ];
 
 export default function Landing() {
@@ -481,7 +501,7 @@ export default function Landing() {
         <div className="container mx-auto px-4">
           <div className="inline-flex items-center gap-2 bg-[#c9a227]/10 text-[#c9a227] px-4 py-2 rounded-full text-sm font-medium">
             <span className="w-2 h-2 bg-[#c9a227] rounded-full animate-pulse"></span>
-            不動産業務をDXで変革
+            反響対応を、もっとスマートに
           </div>
         </div>
       </section>
@@ -525,9 +545,9 @@ export default function Landing() {
       <section className="py-12 bg-white">
         <div className="container mx-auto px-4 text-center">
           <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto">
-            AI画像生成、VRツアー作成、物件管理を一つのプラットフォームで。
+            反響の受付から顧客対応、物件提案、成約まで。
             <br />
-            不動産会社の業務効率を劇的に向上させます。
+            不動産の営業プロセスをワンストップで支援します。
           </p>
         </div>
       </section>
@@ -546,6 +566,42 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* CoCoスモが選ばれる理由セクション */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-[#1e3a5f] mb-4">
+              CoCoスモが選ばれる理由
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {[
+              {
+                emoji: "\u{1F4E8}",
+                title: "反響を逃さない",
+                description: "ポータルサイトからの反響メールを自動取込。顧客情報を即座に登録し、対応漏れゼロへ",
+              },
+              {
+                emoji: "\u{1F3E0}",
+                title: "物件の魅力を最大化",
+                description: "VRツアー、バーチャルステージング、AI画像編集で、オンラインでも物件の魅力を余すことなく伝える",
+              },
+              {
+                emoji: "\u{1F4CA}",
+                title: "営業状況を可視化",
+                description: "ダッシュボードで反響数・商談ステータス・対応状況を一目で把握。データに基づく営業判断を支援",
+              },
+            ].map((item, index) => (
+              <div key={index} className="text-center p-8">
+                <div className="text-5xl mb-5">{item.emoji}</div>
+                <h3 className="text-xl font-bold text-[#1e3a5f] mb-3">{item.title}</h3>
+                <p className="text-gray-600 leading-relaxed">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* 機能紹介セクション */}
       <section id="features" className="py-20">
         <div className="container mx-auto px-4">
@@ -554,7 +610,7 @@ export default function Landing() {
               主な機能
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              不動産業務に必要なすべての機能を、一つのプラットフォームで提供します
+              反響対応から成約まで、営業プロセスをワンストップで支援します
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -615,10 +671,10 @@ export default function Landing() {
                 </div>
                 <ul className="space-y-4 mb-8">
                   {[
-                    "物件管理（無制限）",
-                    "AI画像生成",
-                    "VRツアー作成",
-                    "マルチテナント対応",
+                    "反響自動取込（ポータル連携）",
+                    "顧客・案件管理",
+                    "VRツアー＆バーチャルステージング",
+                    "AI画像編集・公開ページ作成",
                     "メールサポート",
                   ].map((item, index) => (
                     <li key={index} className="flex items-center gap-3">
