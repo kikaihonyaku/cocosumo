@@ -212,7 +212,12 @@ export function StationFilter({
           renderValue={(selected) =>
             selected.map(id => allLines.find(l => l.id === id)?.name).filter(Boolean).join(', ')
           }
-          MenuProps={{ sx: { zIndex: 1500 } }}
+          MenuProps={{
+            sx: { zIndex: 1500 },
+            anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+            transformOrigin: { vertical: 'top', horizontal: 'left' },
+            PaperProps: { sx: { maxHeight: 300 } },
+          }}
         >
           {railwayData.map(company => [
             <MenuItem key={`company-${company.company_code}`} disabled sx={{ opacity: '1 !important' }}>
@@ -246,7 +251,12 @@ export function StationFilter({
           renderValue={(selected) =>
             selected.map(id => stationsForSelectedLines.find(s => s.id === id)?.name).filter(Boolean).join(', ')
           }
-          MenuProps={{ sx: { zIndex: 1500, maxHeight: 400 } }}
+          MenuProps={{
+            sx: { zIndex: 1500 },
+            anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+            transformOrigin: { vertical: 'top', horizontal: 'left' },
+            PaperProps: { sx: { maxHeight: 300 } },
+          }}
         >
           {stationsForSelectedLines.map(station => (
             <MenuItem key={station.id} value={station.id}>

@@ -62,7 +62,7 @@ export default function MapSystem() {
   const [popularFacilities, setPopularFacilities] = useState([]);
 
   // 路線・駅データ
-  const { railwayData } = useRailwayLines();
+  const { railwayData, loading: railwayLoading, error: railwayError } = useRailwayLines();
 
   // 詳細検索関連のステート
   const [leftPanelActiveTab, setLeftPanelActiveTab] = useState(0);
@@ -592,6 +592,8 @@ export default function MapSystem() {
               popularFacilities={popularFacilities}
               // 路線・駅データ
               railwayData={railwayData}
+              railwayLoading={railwayLoading}
+              railwayError={railwayError}
             />
             {/* 上部エリア（地図 + 右ペイン） */}
             <Box
@@ -1093,6 +1095,9 @@ export default function MapSystem() {
           currentConditions={searchConditions}
           isLoading={isLoading}
           stores={stores}
+          railwayData={railwayData}
+          railwayLoading={railwayLoading}
+          railwayError={railwayError}
         />
       </Box>
     </ThemeProvider>

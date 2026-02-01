@@ -24,7 +24,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
 import { StationFilter } from '../../shared/StationSelect';
 
-export default function SearchModal({ isOpen, onClose, onSearch, currentConditions = {}, isLoading = false, stores = [], railwayData = [] }) {
+export default function SearchModal({ isOpen, onClose, onSearch, currentConditions = {}, isLoading = false, stores = [], railwayData = [], railwayLoading = false, railwayError = null }) {
   const [searchForm, setSearchForm] = useState({
     propertyName: '',
     address: '',
@@ -254,6 +254,39 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
               </Box>
             </Box>
 
+            {/* アクセスセクション */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: 'primary.main' }}>
+                アクセス
+              </Typography>
+              {railwayData.length > 0 ? (
+                <StationFilter
+                  railwayData={railwayData}
+                  selectedLineIds={searchForm.railwayLineIds}
+                  onLineChange={(ids) => handleInputChange('railwayLineIds', ids)}
+                  selectedStationIds={searchForm.stationIds}
+                  onStationChange={(ids) => handleInputChange('stationIds', ids)}
+                  maxWalkingMinutes={searchForm.maxWalkingMinutes}
+                  onMaxWalkingMinutesChange={(val) => handleInputChange('maxWalkingMinutes', val)}
+                />
+              ) : railwayError ? (
+                <Typography variant="body2" sx={{ color: 'error.main' }}>
+                  {railwayError}
+                </Typography>
+              ) : railwayLoading ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CircularProgress size={16} />
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    路線データを読み込み中...
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  路線データがありません
+                </Typography>
+              )}
+            </Box>
+
             {/* 戸数条件セクション */}
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: 'primary.main' }}>
@@ -305,24 +338,6 @@ export default function SearchModal({ isOpen, onClose, onSearch, currentConditio
                 />
               </Box>
             </Box>
-
-            {/* アクセスセクション */}
-            {railwayData.length > 0 && (
-              <Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: 'primary.main' }}>
-                  アクセス
-                </Typography>
-                <StationFilter
-                  railwayData={railwayData}
-                  selectedLineIds={searchForm.railwayLineIds}
-                  onLineChange={(ids) => handleInputChange('railwayLineIds', ids)}
-                  selectedStationIds={searchForm.stationIds}
-                  onStationChange={(ids) => handleInputChange('stationIds', ids)}
-                  maxWalkingMinutes={searchForm.maxWalkingMinutes}
-                  onMaxWalkingMinutesChange={(val) => handleInputChange('maxWalkingMinutes', val)}
-                />
-              </Box>
-            )}
 
             {/* 登録元セクション */}
             <Box>

@@ -62,6 +62,8 @@ export default function LeftPanel({
   popularFacilities = [],
   // 路線・駅データ
   railwayData = [],
+  railwayLoading = false,
+  railwayError = null,
 }) {
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [expanded, setExpanded] = useState({
@@ -357,6 +359,8 @@ export default function LeftPanel({
                     facilitiesMaster={facilitiesMaster}
                     facilitiesCategories={facilitiesCategories}
                     popularFacilities={popularFacilities}
+                    // 路線・駅データ
+                    railwayData={railwayData}
                   />
                 </Box>
               )}
@@ -491,6 +495,8 @@ export default function LeftPanel({
         isLoading={isLoading}
         stores={stores}
         railwayData={railwayData}
+        railwayLoading={railwayLoading}
+        railwayError={railwayError}
       />
     </>
   );

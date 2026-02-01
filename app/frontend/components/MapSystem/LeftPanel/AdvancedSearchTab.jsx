@@ -87,6 +87,8 @@ export default function AdvancedSearchTab({
   facilitiesMaster = {},
   facilitiesCategories = {},
   popularFacilities = [],
+  // 路線・駅データ
+  railwayData = [],
 }) {
   // 設備選択ダイアログの状態
   const [facilityDialogOpen, setFacilityDialogOpen] = useState(false);
@@ -207,8 +209,30 @@ export default function AdvancedSearchTab({
     } else if (searchConditions.hasVacancy === 'false') {
       chips.push({ key: 'hasVacancy', label: '満室' });
     }
+    // 路線・駅・徒歩条件
+    const allLines = railwayData.flatMap(company => company.lines || []);
+    if (searchConditions.railwayLineIds?.length > 0) {
+      const lineNames = searchConditions.railwayLineIds.map(id => {
+        const line = allLines.find(l => l.id === id);
+        return line ? line.name : id;
+      });
+      chips.push({ key: 'railwayLines', label: `路線: ${lineNames.join(', ')}` });
+    }
+    if (searchConditions.stationIds?.length > 0) {
+      const stationNames = searchConditions.stationIds.map(id => {
+        for (const line of allLines) {
+          const station = line.stations?.find(s => s.id === id);
+          if (station) return station.name;
+        }
+        return id;
+      });
+      chips.push({ key: 'stations', label: `駅: ${stationNames.join(', ')}` });
+    }
+    if (searchConditions.maxWalkingMinutes) {
+      chips.push({ key: 'maxWalkingMinutes', label: `徒歩${searchConditions.maxWalkingMinutes}分以内` });
+    }
     return chips;
-  }, [searchConditions]);
+  }, [searchConditions, railwayData]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
