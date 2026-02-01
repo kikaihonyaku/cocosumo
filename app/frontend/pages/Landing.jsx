@@ -287,37 +287,37 @@ function DemoSlideshow() {
 // カルーセル用スライドデータ
 const slides = [
   {
-    icon: Icons.Mail,
+    screenshot: "/screenshots/carousel-01-inquiry.png",
     title: "反響自動取込",
     description: "SUUMOなどポータルサイトからの反響メールを自動でパース。顧客の名前・連絡先・問い合わせ内容を自動登録し、対応漏れを防ぎます。",
     gradient: "from-[#1e3a5f] to-[#2d5a8a]",
   },
   {
-    icon: Icons.Users,
+    screenshot: "/screenshots/carousel-02-customer.png",
     title: "顧客・案件管理",
     description: "反響から成約まで、顧客ごとの対応履歴を一元管理。商談ステータスの追跡、メール送信、チャット風の対応履歴表示で、チーム全体の営業状況を可視化します。",
     gradient: "from-[#2d5a8a] to-[#3b7abf]",
   },
   {
-    icon: Icons.Link,
+    screenshot: "/screenshots/carousel-03-customer-page.png",
     title: "顧客マイページ",
     description: "お客様専用の物件紹介ページを発行。VRツアーやバーチャルステージングを組み込んだ提案ページで、閲覧状況もトラッキングできます。",
     gradient: "from-[#1e3a5f] to-[#0f2640]",
   },
   {
-    icon: Icons.VR,
+    screenshot: "/screenshots/carousel-04-vr-staging.png",
     title: "VRツアー＆バーチャルステージング",
     description: "360度パノラマのVRルームツアーと、AIによるバーチャルステージングで、遠隔地のお客様にもリアルな物件体験を提供。空室でも家具付きイメージを自動生成します。",
     gradient: "from-[#8b6914] to-[#c9a227]",
   },
   {
-    icon: Icons.AI,
+    screenshot: "/screenshots/carousel-05-ai-content.png",
     title: "AI画像編集＆コンテンツ作成",
     description: "物件写真のAI編集、複数テンプレートの公開ページ作成、QRコード生成まで。魅力的な物件コンテンツをワンストップで制作できます。",
     gradient: "from-[#2d5a8a] to-[#1e3a5f]",
   },
   {
-    icon: Icons.Map,
+    screenshot: "/screenshots/carousel-06-gis-map.png",
     title: "GISマップ物件管理",
     description: "Googleマップ連携のGISシステムで物件を地図上に一元管理。学区・駅・公園などのレイヤー表示や、エリア検索で物件探しを効率化します。",
     gradient: "from-[#0f2640] to-[#1e3a5f]",
@@ -368,18 +368,23 @@ function FeatureCarousel() {
               <div className={`bg-gradient-to-br ${slide.gradient} p-8 md:p-12`}>
                 <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
                   {/* 左: テキスト */}
-                  <div className="flex-1 text-white text-center md:text-left">
+                  <div className="w-full md:w-[40%] text-white text-center md:text-left">
                     <span className="inline-block text-[#c9a227] text-sm font-medium tracking-wider uppercase mb-3">
                       Feature {index + 1}/{slides.length}
                     </span>
                     <h3 className="text-2xl md:text-3xl font-bold mb-4">{slide.title}</h3>
                     <p className="text-white/80 text-lg leading-relaxed">{slide.description}</p>
                   </div>
-                  {/* 右: アイコン */}
-                  <div className="flex-shrink-0">
-                    <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
-                      <div className="text-white/90 scale-[2.5] md:scale-[3]">
-                        <slide.icon />
+                  {/* 右: スクリーンショット */}
+                  <div className="flex-shrink-0 w-full md:w-[55%]">
+                    <div className="rounded-lg overflow-hidden shadow-2xl border border-white/20">
+                      <div className="aspect-video bg-gray-900">
+                        <img
+                          src={slide.screenshot}
+                          alt={slide.title}
+                          className="w-full h-full object-cover object-top"
+                          loading={index === 0 ? "eager" : "lazy"}
+                        />
                       </div>
                     </div>
                   </div>
