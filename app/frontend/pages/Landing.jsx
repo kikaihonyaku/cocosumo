@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import useEmblaCarousel from "embla-carousel-react";
+import Autoplay from "embla-carousel-autoplay";
 
 // SVGアイコンコンポーネント
 const Icons = {
@@ -191,6 +193,226 @@ const features = [
   },
 ];
 
+// デモスライドショー用データ
+const demoScreenshots = [
+  { src: "/screenshots/01-home.png", label: "ダッシュボード" },
+  { src: "/screenshots/02-map.png", label: "GISマップシステム" },
+  { src: "/screenshots/04-building-detail.png", label: "建物詳細" },
+  { src: "/screenshots/03-building-detail2.png", label: "物件管理" },
+  { src: "/screenshots/05-room-detail.png", label: "部屋詳細" },
+];
+
+// デモスライドショーコンポーネント（ヒーローセクション用）
+function DemoSlideshow() {
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
+    Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true }),
+  ]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on("select", onSelect);
+    return () => emblaApi.off("select", onSelect);
+  }, [emblaApi, onSelect]);
+
+  return (
+    <div className="bg-gradient-to-br from-[#1e3a5f] to-[#2d5a8a] rounded-2xl p-1">
+      <div className="bg-gray-900 rounded-xl overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-3 bg-gray-800">
+          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+          <span className="ml-4 text-sm text-gray-400">
+            {demoScreenshots[selectedIndex]?.label}
+          </span>
+        </div>
+        <div className="overflow-hidden" ref={emblaRef}>
+          <div className="flex">
+            {demoScreenshots.map((shot, index) => (
+              <div key={index} className="flex-[0_0_100%] min-w-0">
+                <div className="aspect-video bg-gray-900">
+                  <img
+                    src={shot.src}
+                    alt={shot.label}
+                    className="w-full h-full object-cover object-top"
+                    loading={index === 0 ? "eager" : "lazy"}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* ドットインジケーター */}
+        <div className="flex justify-center gap-1.5 py-2 bg-gray-800">
+          {demoScreenshots.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => emblaApi?.scrollTo(index)}
+              className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                index === selectedIndex
+                  ? "bg-[#c9a227] w-4"
+                  : "bg-gray-600 hover:bg-gray-500"
+              }`}
+              aria-label={`スライド ${index + 1}`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// カルーセル用スライドデータ
+const slides = [
+  {
+    icon: Icons.Building,
+    title: "物件管理",
+    description: "建物・部屋情報をGoogleマップ連携のGISシステムで一元管理。位置情報と共に効率的に物件を管理できます。",
+    gradient: "from-[#1e3a5f] to-[#2d5a8a]",
+  },
+  {
+    icon: Icons.AI,
+    title: "AI画像生成",
+    description: "Gemini AIを活用し、室内写真から「家具なし」「家具あり」の画像を自動生成。Before/After表示で効果的な訴求が可能です。",
+    gradient: "from-[#2d5a8a] to-[#3b7abf]",
+  },
+  {
+    icon: Icons.VR,
+    title: "VRルームツアー",
+    description: "360度パノラマビューでVRルームツアーを簡単に作成・編集。遠隔地の顧客にもリアルな物件体験を提供できます。",
+    gradient: "from-[#1e3a5f] to-[#0f2640]",
+  },
+  {
+    icon: Icons.Link,
+    title: "簡単埋め込み",
+    description: "作成したコンテンツはiframeで簡単に外部サイトへ埋め込み可能。自社ホームページへシームレスに統合できます。",
+    gradient: "from-[#8b6914] to-[#c9a227]",
+  },
+  {
+    icon: Icons.Users,
+    title: "マルチテナント対応",
+    description: "会社ごとに独立した環境を提供。チームメンバー間で物件情報を共有し、効率的に業務を進められます。",
+    gradient: "from-[#2d5a8a] to-[#1e3a5f]",
+  },
+  {
+    icon: Icons.Settings,
+    title: "管理者機能",
+    description: "ユーザーアカウントの発行・管理を管理者画面から簡単に実行。権限管理も柔軟に設定できます。",
+    gradient: "from-[#0f2640] to-[#1e3a5f]",
+  },
+];
+
+// 機能紹介カルーセルコンポーネント
+function FeatureCarousel() {
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
+    Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: true }),
+  ]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const scrollTo = useCallback(
+    (index) => emblaApi && emblaApi.scrollTo(index),
+    [emblaApi]
+  );
+
+  const scrollPrev = useCallback(
+    () => emblaApi && emblaApi.scrollPrev(),
+    [emblaApi]
+  );
+
+  const scrollNext = useCallback(
+    () => emblaApi && emblaApi.scrollNext(),
+    [emblaApi]
+  );
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on("select", onSelect);
+    return () => emblaApi.off("select", onSelect);
+  }, [emblaApi, onSelect]);
+
+  return (
+    <div className="max-w-5xl mx-auto relative">
+      {/* カルーセル本体 */}
+      <div className="overflow-hidden rounded-2xl shadow-xl" ref={emblaRef}>
+        <div className="flex">
+          {slides.map((slide, index) => (
+            <div key={index} className="flex-[0_0_100%] min-w-0">
+              <div className={`bg-gradient-to-br ${slide.gradient} p-8 md:p-12`}>
+                <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+                  {/* 左: テキスト */}
+                  <div className="flex-1 text-white text-center md:text-left">
+                    <span className="inline-block text-[#c9a227] text-sm font-medium tracking-wider uppercase mb-3">
+                      Feature {index + 1}/{slides.length}
+                    </span>
+                    <h3 className="text-2xl md:text-3xl font-bold mb-4">{slide.title}</h3>
+                    <p className="text-white/80 text-lg leading-relaxed">{slide.description}</p>
+                  </div>
+                  {/* 右: アイコン */}
+                  <div className="flex-shrink-0">
+                    <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                      <div className="text-white/90 scale-[2.5] md:scale-[3]">
+                        <slide.icon />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 左右矢印 */}
+      <button
+        onClick={scrollPrev}
+        className="absolute left-2 md:-left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center text-[#1e3a5f] hover:bg-[#c9a227] hover:text-white transition-colors z-10"
+        aria-label="前のスライド"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+      <button
+        onClick={scrollNext}
+        className="absolute right-2 md:-right-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center text-[#1e3a5f] hover:bg-[#c9a227] hover:text-white transition-colors z-10"
+        aria-label="次のスライド"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+
+      {/* ドットインジケーター */}
+      <div className="flex justify-center gap-2 mt-6">
+        {slides.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => scrollTo(index)}
+            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+              index === selectedIndex
+                ? "bg-[#c9a227] w-8"
+                : "bg-gray-300 hover:bg-gray-400"
+            }`}
+            aria-label={`スライド ${index + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // FAQデータ
 const faqs = [
   {
@@ -290,23 +512,7 @@ export default function Landing() {
               </div>
             </div>
             <div className="relative">
-              <div className="bg-gradient-to-br from-[#1e3a5f] to-[#2d5a8a] rounded-2xl p-1">
-                <div className="bg-gray-900 rounded-xl overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-3 bg-gray-800">
-                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  </div>
-                  <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
-                        <Icons.Play />
-                      </div>
-                      <p className="text-white/60 text-sm">デモ画面</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <DemoSlideshow />
               {/* 装飾 */}
               <div className="absolute -top-4 -right-4 w-24 h-24 bg-[#c9a227]/20 rounded-full blur-2xl"></div>
               <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-[#1e3a5f]/20 rounded-full blur-2xl"></div>
@@ -368,7 +574,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* デモセクション */}
+      {/* デモセクション（機能紹介カルーセル） */}
       <section id="demo" className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -379,27 +585,7 @@ export default function Landing() {
               直感的な操作で、誰でも簡単に使いこなせます
             </p>
           </div>
-          <div className="max-w-5xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-              <div className="flex items-center gap-2 px-6 py-4 bg-gray-100 border-b">
-                <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                <span className="ml-4 text-sm text-gray-500">CoCoスモ - 物件管理システム</span>
-              </div>
-              <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-[#1e3a5f]/10 flex items-center justify-center">
-                    <svg className="w-12 h-12 text-[#1e3a5f]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <p className="text-gray-500">スクリーンショットまたはデモ動画</p>
-                  <p className="text-sm text-gray-400 mt-2">準備中</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <FeatureCarousel />
         </div>
       </section>
 
