@@ -17,8 +17,17 @@ module TenantResolver
 
   def extract_subdomain
     # lvh.me: tenant1.lvh.me -> tenant1
-    # production: tenant1.example.com -> tenant1
-    request.subdomain.presence
+    # production: tenant1.cocosumo.space -> tenant1
+    # sslip.io: tenant1.192.168.0.14.sslip.io -> tenant1
+    host = request.host
+    if host.end_with?('.sslip.io')
+      # sslip.io: remove IP and sslip.io part, take first segment
+      parts = host.delete_suffix('.sslip.io').split('.')
+      # tenant1.192.168.0.14 -> parts = ["tenant1", "192", "168", "0", "14"]
+      parts.first if parts.size > 4
+    else
+      request.subdomain.presence
+    end
   end
 
   def reserved_subdomain?(subdomain)
