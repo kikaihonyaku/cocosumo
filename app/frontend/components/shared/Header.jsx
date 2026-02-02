@@ -47,7 +47,8 @@ import {
   Settings as SettingsIcon,
   Map as MapIcon,
   Apartment as ApartmentIcon,
-  MeetingRoom as MeetingRoomIcon
+  MeetingRoom as MeetingRoomIcon,
+  Description as DescriptionIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { useThemeMode } from "../../contexts/ThemeContext";
@@ -239,6 +240,7 @@ export default function Header() {
       { to: "/admin/stores", label: "店舗管理", icon: <StoreIcon fontSize="small" />, minRole: 'admin' },
       { to: "/admin/suumo-import", label: "SUUMOインポート", icon: <CloudDownloadIcon fontSize="small" />, minRole: 'admin' },
       { to: "/admin/layers", label: "レイヤー管理", icon: <LayersIcon fontSize="small" />, minRole: 'admin' },
+      { to: "/admin/email-templates", label: "メールテンプレート", icon: <DescriptionIcon fontSize="small" />, minRole: 'admin' },
       { to: "/super-admin/tenants", label: "テナント管理", icon: <BusinessIcon fontSize="small" />, minRole: 'super_admin' },
     ];
 

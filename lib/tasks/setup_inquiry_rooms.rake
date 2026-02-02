@@ -37,6 +37,26 @@ namespace :tenant do
     puts "Done!"
   end
 
+  desc "Set up default email templates for all active tenants (skips if already exist)"
+  task setup_email_templates: :environment do
+    Tenant.where(status: :active).find_each do |tenant|
+      puts "Processing tenant: #{tenant.name} (#{tenant.subdomain})"
+
+      if tenant.email_templates.kept.any?
+        puts "  -> Already has templates (#{tenant.email_templates.kept.count}件), skipping"
+        next
+      end
+
+      Tenant::DEFAULT_EMAIL_TEMPLATES.each do |template_attrs|
+        tenant.email_templates.create!(template_attrs)
+      end
+
+      puts "  -> Created #{Tenant::DEFAULT_EMAIL_TEMPLATES.size} templates"
+    end
+
+    puts "Done!"
+  end
+
   desc "Show inquiry email addresses for all active stores"
   task list_inquiry_emails: :environment do
     puts "Inquiry Email Addresses (per store):"

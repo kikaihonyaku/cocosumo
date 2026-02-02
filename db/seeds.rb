@@ -139,12 +139,15 @@ vr_tour = VrTour.create!(
 
 puts "✓ VRツアー作成完了: #{VrTour.count}件"
 
+puts "✓ メールテンプレート作成完了: #{EmailTemplate.count}件"
+
 puts "\n=== シードデータ作成完了 ==="
 puts "テナント: #{Tenant.count}件"
 puts "ユーザー: #{User.count}人"
 puts "建物: #{Building.count}件"
 puts "部屋: #{Room.count}件"
 puts "VRツアー: #{VrTour.count}件"
+puts "メールテンプレート: #{EmailTemplate.count}件"
 puts "\nログイン情報:"
 puts "スーパー管理者 - Email: superadmin@example.com / Password: password123"
 puts "管理者 - Email: admin@example.com / Password: password123"
