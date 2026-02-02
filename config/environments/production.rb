@@ -102,7 +102,7 @@ Rails.application.configure do
   config.hosts << "localhost"
   config.hosts << "0.0.0.0"
   config.hosts << "192.168.0.14"
-  config.hosts << /.*\.192\.168\.0\.14\.sslip\.io\z/  # LAN サブドメインアクセス用
+  config.hosts << ".192.168.0.14.sslip.io"  # LAN サブドメインアクセス用
 
   # Cloud Run のホストを許可
   config.hosts << /.*\.run\.app\z/
