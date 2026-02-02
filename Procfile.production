@@ -1,0 +1,2 @@
+web: RAILS_ENV=production bin/rails server -p 3000
+jobs: RAILS_ENV=production bin/rails solid_queue:start
