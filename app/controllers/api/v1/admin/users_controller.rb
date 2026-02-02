@@ -12,7 +12,7 @@ class Api::V1::Admin::UsersController < ApplicationController
     @users = @users.where('name ILIKE ? OR email ILIKE ?', "%#{params[:search]}%", "%#{params[:search]}%") if params[:search].present?
 
     render json: @users.as_json(
-      only: [:id, :name, :email, :role, :created_at, :auth_provider, :phone, :position, :employee_code, :active, :last_login_at, :locked_at],
+      only: [:id, :name, :email, :role, :created_at, :auth_provider, :phone, :position, :employee_code, :active, :last_login_at, :locked_at, :store_id],
       include: { store: { only: [:id, :name] } }
     )
   end
