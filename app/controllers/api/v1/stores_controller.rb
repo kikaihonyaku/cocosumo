@@ -69,17 +69,20 @@ class Api::V1::StoresController < ApplicationController
   end
 
   def store_params
-    params.require(:store).permit(:name, :address, :latitude, :longitude)
+    params.require(:store).permit(:name, :code, :address, :latitude, :longitude)
   end
 
   def store_json(store)
     {
       id: store.id,
       name: store.name,
+      code: store.code,
       address: store.address,
       latitude: store.latitude,
       longitude: store.longitude,
       buildings_count: store.buildings.kept.count,
+      inquiry_email_address: store.inquiry_email_address,
+      portal_inquiry_email_addresses: store.portal_inquiry_email_addresses,
       created_at: store.created_at,
       updated_at: store.updated_at
     }

@@ -67,6 +67,11 @@ ja:
           attributes:
             name:
               blank: "を入力してください"
+            code:
+              blank: "を入力してください"
+              taken: "はすでに使用されています"
+              too_long: "は%{count}文字以内で入力してください"
+              invalid: "は半角英数字のみ使用できます"
             email:
               invalid: "は正しいメールアドレスの形式で入力してください"
         customer:
@@ -183,6 +188,7 @@ ja:
         building: "物件"
       store:
         name: "店舗名"
+        code: "店舗コード"
         email: "メールアドレス"
         phone: "電話番号"
         address: "住所"

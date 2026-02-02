@@ -5,6 +5,10 @@ class Store < ApplicationRecord
 
   validates :name, presence: true
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
+  validates :code, presence: true,
+                   uniqueness: { scope: :tenant_id, case_sensitive: false },
+                   length: { maximum: 6 },
+                   format: { with: /\A[a-zA-Z0-9]+\z/, message: "は半角英数字のみ使用できます" }
 
   # Geocoding - Set location from address
   geocoded_by :address do |obj, results|
@@ -41,12 +45,12 @@ class Store < ApplicationRecord
 
   # メール問い合わせ用のメールアドレスを返す
   def inquiry_email_address
-    "#{tenant.subdomain}-s#{id}-inquiry@inbound.cocosumo.space"
+    "#{tenant.subdomain}-#{code.downcase}-inquiry@inbound.cocosumo.space"
   end
 
   # ポータル別メール問い合わせ用のメールアドレスを返す
   def portal_inquiry_email_address(portal)
-    "#{tenant.subdomain}-s#{id}-inquiry-#{portal}@inbound.cocosumo.space"
+    "#{tenant.subdomain}-#{code.downcase}-inquiry-#{portal}@inbound.cocosumo.space"
   end
 
   # 全ポータルの問い合わせ用メールアドレスを返す

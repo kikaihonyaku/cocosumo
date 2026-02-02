@@ -65,10 +65,17 @@ class PropertyInquiryMailbox < ApplicationMailbox
       return
     end
 
-    # 新形式: {subdomain}-s{store_id}-inquiry@ / 旧形式: {subdomain}-inquiry@
-    match = recipient.match(/^(.+?)(?:-s(\d+))?-inquiry@/i)
-    subdomain = match&.[](1)
-    store_id = match&.[](2)&.to_i
+    # {subdomain}-{store_code}-inquiry@
+    match = recipient.match(/^(.+?)-([a-zA-Z0-9]{1,6})-inquiry@/i)
+    if match
+      subdomain = match[1]
+      store_code = match[2]
+    else
+      # フォールバック: {subdomain}-inquiry@ (店舗コードなし)
+      match = recipient.match(/^(.+?)-inquiry@/i)
+      subdomain = match&.[](1)
+      store_code = nil
+    end
 
     unless subdomain
       Rails.logger.warn "[PropertyInquiryMailbox] Invalid address format: #{recipient}"
@@ -83,10 +90,10 @@ class PropertyInquiryMailbox < ApplicationMailbox
       return
     end
 
-    # store_idが指定されている場合はそのstoreを取得、なければテナントの最初の店舗にフォールバック
-    if store_id.present? && store_id > 0
-      @store = @tenant.stores.find_by(id: store_id)
-      Rails.logger.warn "[PropertyInquiryMailbox] Store not found: #{store_id}" unless @store
+    # 店舗コードが指定されている場合はそのstoreを取得、なければテナントの最初の店舗にフォールバック
+    if store_code.present?
+      @store = @tenant.stores.find_by("LOWER(code) = ?", store_code.downcase)
+      Rails.logger.warn "[PropertyInquiryMailbox] Store not found for code: #{store_code}" unless @store
     end
     @store ||= @tenant.stores.first
   end

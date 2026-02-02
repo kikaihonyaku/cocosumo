@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_01_100000) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_03_100000) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -821,7 +821,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_01_100000) do
     t.decimal "longitude", precision: 10, scale: 7
     t.st_point "location", geographic: true
     t.string "email"
+    t.string "code", limit: 6, null: false
     t.index ["location"], name: "index_stores_on_location", using: :gist
+    t.index ["tenant_id", "code"], name: "index_stores_on_tenant_id_and_code", unique: true
     t.index ["tenant_id"], name: "index_stores_on_tenant_id"
   end
 

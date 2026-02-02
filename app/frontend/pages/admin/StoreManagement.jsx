@@ -27,6 +27,7 @@ import {
   Store as StoreIcon,
   LocationOn as LocationOnIcon,
   CheckCircle as CheckCircleIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 
 export default function StoreManagement() {
@@ -40,11 +41,13 @@ export default function StoreManagement() {
 
   const [formData, setFormData] = useState({
     name: '',
+    code: '',
     address: '',
     latitude: '',
     longitude: '',
   });
   const [geocoding, setGeocoding] = useState(false);
+  const [codeChangeWarningOpen, setCodeChangeWarningOpen] = useState(false);
 
   // 店舗一覧を取得
   const fetchStores = async () => {
@@ -82,6 +85,7 @@ export default function StoreManagement() {
   const resetForm = () => {
     setFormData({
       name: '',
+      code: '',
       address: '',
       latitude: '',
       longitude: '',
@@ -130,6 +134,10 @@ export default function StoreManagement() {
       showSnackbar('店舗名を入力してください', 'error');
       return;
     }
+    if (!formData.code.trim()) {
+      showSnackbar('店舗コードを入力してください', 'error');
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -162,6 +170,7 @@ export default function StoreManagement() {
     setSelectedStore(store);
     setFormData({
       name: store.name,
+      code: store.code || '',
       address: store.address || '',
       latitude: store.latitude || '',
       longitude: store.longitude || '',
@@ -169,12 +178,27 @@ export default function StoreManagement() {
     setEditDialogOpen(true);
   };
 
-  // 店舗情報更新
-  const handleUpdate = async () => {
+  // 店舗コード変更時の警告チェック
+  const handleUpdateClick = () => {
     if (!formData.name.trim()) {
       showSnackbar('店舗名を入力してください', 'error');
       return;
     }
+    if (!formData.code.trim()) {
+      showSnackbar('店舗コードを入力してください', 'error');
+      return;
+    }
+    // 店舗コードが変更された場合は警告ダイアログを表示
+    if (selectedStore && formData.code !== selectedStore.code) {
+      setCodeChangeWarningOpen(true);
+      return;
+    }
+    handleUpdate();
+  };
+
+  // 店舗情報更新
+  const handleUpdate = async () => {
+    setCodeChangeWarningOpen(false);
 
     try {
       setSubmitting(true);
@@ -231,6 +255,8 @@ export default function StoreManagement() {
             <TableHead>
               <TableRow>
                 <TableCell>店舗名</TableCell>
+                <TableCell>店舗コード</TableCell>
+                <TableCell>問い合わせメール</TableCell>
                 <TableCell>住所</TableCell>
                 <TableCell align="center">座標</TableCell>
                 <TableCell align="center">紐付き建物数</TableCell>
@@ -240,7 +266,7 @@ export default function StoreManagement() {
             <TableBody>
               {stores.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 8, color: 'text.secondary' }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 8, color: 'text.secondary' }}>
                     店舗がありません。新規作成ボタンから店舗を作成してください。
                   </TableCell>
                 </TableRow>
@@ -250,6 +276,16 @@ export default function StoreManagement() {
                     <TableCell>
                       <Typography variant="body1" fontWeight="medium">
                         {store.name}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                        {store.code}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                        {store.inquiry_email_address}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -310,6 +346,15 @@ export default function StoreManagement() {
               required
               autoFocus
             />
+            <TextField
+              label="店舗コード"
+              value={formData.code}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6) })}
+              fullWidth
+              required
+              helperText="半角英数字、最大6文字（問い合わせメールアドレスに使用されます）"
+              inputProps={{ maxLength: 6 }}
+            />
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
               <TextField
                 label="住所"
@@ -358,7 +403,7 @@ export default function StoreManagement() {
           <Button
             onClick={handleCreate}
             variant="contained"
-            disabled={submitting || !formData.name.trim()}
+            disabled={submitting || !formData.name.trim() || !formData.code.trim()}
             startIcon={submitting && <CircularProgress size={20} />}
           >
             {submitting ? '作成中...' : '作成'}
@@ -383,6 +428,15 @@ export default function StoreManagement() {
               fullWidth
               required
               autoFocus
+            />
+            <TextField
+              label="店舗コード"
+              value={formData.code}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6) })}
+              fullWidth
+              required
+              helperText="半角英数字、最大6文字（変更するとメールアドレスが変わります）"
+              inputProps={{ maxLength: 6 }}
             />
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
               <TextField
@@ -430,12 +484,41 @@ export default function StoreManagement() {
             キャンセル
           </Button>
           <Button
-            onClick={handleUpdate}
+            onClick={handleUpdateClick}
             variant="contained"
-            disabled={submitting || !formData.name.trim()}
+            disabled={submitting || !formData.name.trim() || !formData.code.trim()}
             startIcon={submitting && <CircularProgress size={20} />}
           >
             {submitting ? '更新中...' : '更新'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 店舗コード変更警告ダイアログ */}
+      <Dialog
+        open={codeChangeWarningOpen}
+        onClose={() => setCodeChangeWarningOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <WarningIcon color="warning" />
+          店舗コード変更の確認
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            店舗コードを変更すると、問い合わせ受信用のメールアドレスが変更されます。
+          </Typography>
+          <Typography variant="body2" color="error">
+            ポータルサイト等に設定済みのメールアドレスも更新する必要があります。
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCodeChangeWarningOpen(false)}>
+            キャンセル
+          </Button>
+          <Button onClick={handleUpdate} variant="contained" color="warning">
+            変更する
           </Button>
         </DialogActions>
       </Dialog>
