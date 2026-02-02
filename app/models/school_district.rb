@@ -105,7 +105,7 @@ class SchoolDistrict < ApplicationRecord
 
   def geometry_or_geom_present
     if geometry.blank? && geom.blank?
-      errors.add(:base, "geometry or geom must be present")
+      errors.add(:base, "ジオメトリデータが必要です")
     end
   end
 end

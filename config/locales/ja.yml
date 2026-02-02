@@ -1,5 +1,260 @@
 ja:
   activerecord:
+    errors:
+      messages:
+        required: "を入力してください"
+        blank: "を入力してください"
+        present: "は入力しないでください"
+        taken: "はすでに使用されています"
+        invalid: "は不正な値です"
+        too_short: "は%{count}文字以上で入力してください"
+        too_long: "は%{count}文字以内で入力してください"
+        wrong_length: "は%{count}文字で入力してください"
+        not_a_number: "は数値で入力してください"
+        not_an_integer: "は整数で入力してください"
+        greater_than: "は%{count}より大きい値にしてください"
+        greater_than_or_equal_to: "は%{count}以上の値にしてください"
+        less_than: "は%{count}より小さい値にしてください"
+        less_than_or_equal_to: "は%{count}以下の値にしてください"
+        equal_to: "は%{count}にしてください"
+        other_than: "は%{count}以外の値にしてください"
+        odd: "は奇数にしてください"
+        even: "は偶数にしてください"
+        inclusion: "は一覧にありません"
+        exclusion: "は予約されています"
+        confirmation: "が一致しません"
+        accepted: "を受諾してください"
+        empty: "を入力してください"
+        record_invalid: "バリデーションに失敗しました: %{errors}"
+        restrict_dependent_destroy:
+          has_one: "%{record}が存在しているので削除できません"
+          has_many: "%{record}が存在しているので削除できません"
+      models:
+        user:
+          attributes:
+            store:
+              required: "を選択してください"
+              blank: "を選択してください"
+            name:
+              blank: "を入力してください"
+            email:
+              blank: "を入力してください"
+              taken: "はすでに使用されています"
+            password:
+              too_short: "は%{count}文字以上で入力してください"
+        building:
+          attributes:
+            name:
+              blank: "を入力してください"
+            address:
+              blank: "を入力してください"
+            building_type:
+              blank: "を選択してください"
+        room:
+          attributes:
+            room_number:
+              blank: "を入力してください"
+            floor:
+              blank: "を入力してください"
+              not_an_integer: "は整数で入力してください"
+            area:
+              not_a_number: "は数値で入力してください"
+              greater_than: "は%{count}より大きい値にしてください"
+            rent:
+              not_a_number: "は数値で入力してください"
+              greater_than_or_equal_to: "は%{count}以上の値にしてください"
+        store:
+          attributes:
+            name:
+              blank: "を入力してください"
+            email:
+              invalid: "は正しいメールアドレスの形式で入力してください"
+        customer:
+          attributes:
+            name:
+              blank: "を入力してください"
+            email:
+              taken: "はすでに使用されています"
+            line_user_id:
+              taken: "はすでに使用されています"
+        owner:
+          attributes:
+            name:
+              blank: "を入力してください"
+            email:
+              invalid: "は正しいメールアドレスの形式で入力してください"
+        vr_tour:
+          attributes:
+            title:
+              blank: "を入力してください"
+            public_id:
+              blank: "を入力してください"
+              taken: "はすでに使用されています"
+        vr_scene:
+          attributes:
+            title:
+              blank: "を入力してください"
+        property_publication:
+          attributes:
+            publication_id:
+              blank: "を入力してください"
+              taken: "はすでに使用されています"
+            title:
+              blank: "を入力してください"
+            status:
+              blank: "を選択してください"
+        email_template:
+          attributes:
+            name:
+              blank: "を入力してください"
+            subject:
+              blank: "を入力してください"
+            body:
+              blank: "を入力してください"
+        map_layer:
+          attributes:
+            name:
+              blank: "を入力してください"
+            layer_key:
+              blank: "を入力してください"
+              taken: "はすでに使用されています"
+            layer_type:
+              blank: "を選択してください"
+            color:
+              blank: "を選択してください"
+            opacity:
+              blank: "を入力してください"
+              not_a_number: "は数値で入力してください"
+              greater_than_or_equal_to: "は%{count}以上の値にしてください"
+              less_than_or_equal_to: "は%{count}以下の値にしてください"
+        building_route:
+          attributes:
+            name:
+              blank: "を入力してください"
+            route_type:
+              blank: "を選択してください"
+              inclusion: "は有効な種別を選択してください"
+            travel_mode:
+              inclusion: "は有効な移動手段を選択してください"
+        property_inquiry:
+          attributes:
+            name:
+              blank: "を入力してください"
+            email:
+              invalid: "は正しいメールアドレスの形式で入力してください"
+        customer_access:
+          attributes:
+            customer_name:
+              blank: "を入力してください"
+            customer_email:
+              blank: "を入力してください"
+              invalid: "は正しいメールアドレスの形式で入力してください"
+            password:
+              too_short: "は%{count}文字以上で入力してください"
+        virtual_staging:
+          attributes:
+            title:
+              blank: "を入力してください"
+    attributes:
+      user:
+        name: "名前"
+        email: "メールアドレス"
+        password: "パスワード"
+        phone: "電話番号"
+        store: "所属店舗"
+        role: "権限"
+        position: "役職"
+        employee_code: "社員番号"
+        active: "有効"
+      tenant:
+        name: "テナント名"
+        subdomain: "サブドメイン"
+      building:
+        name: "物件名"
+        address: "住所"
+        building_type: "物件種別"
+        tenant: "テナント"
+        store: "店舗"
+      room:
+        room_number: "部屋番号"
+        floor: "階数"
+        area: "面積"
+        rent: "賃料"
+        building: "物件"
+      store:
+        name: "店舗名"
+        email: "メールアドレス"
+        phone: "電話番号"
+        address: "住所"
+        tenant: "テナント"
+      customer:
+        name: "顧客名"
+        email: "メールアドレス"
+        phone: "電話番号"
+        line_user_id: "LINE ID"
+        tenant: "テナント"
+      owner:
+        name: "オーナー名"
+        email: "メールアドレス"
+        phone: "電話番号"
+        building: "物件"
+        tenant: "テナント"
+      vr_tour:
+        title: "タイトル"
+        public_id: "公開ID"
+        room: "部屋"
+      vr_scene:
+        title: "タイトル"
+        display_order: "表示順"
+        vr_tour: "VRツアー"
+        room_photo: "部屋写真"
+        virtual_staging: "バーチャルステージング"
+      property_publication:
+        publication_id: "公開ID"
+        title: "タイトル"
+        status: "ステータス"
+        room: "部屋"
+      email_template:
+        name: "テンプレート名"
+        subject: "件名"
+        body: "本文"
+        tenant: "テナント"
+      map_layer:
+        name: "レイヤー名"
+        layer_key: "レイヤーキー"
+        layer_type: "レイヤー種別"
+        color: "色"
+        opacity: "透過度"
+      building_route:
+        name: "ルート名"
+        route_type: "ルート種別"
+        travel_mode: "移動手段"
+        building: "物件"
+        tenant: "テナント"
+      property_inquiry:
+        name: "お名前"
+        email: "メールアドレス"
+        phone: "電話番号"
+      customer_access:
+        customer_name: "お名前"
+        customer_email: "メールアドレス"
+        password: "パスワード"
+        access_token: "アクセストークン"
+        property_publication: "物件公開情報"
+      virtual_staging:
+        title: "タイトル"
+        before_photo_id: "変換前写真"
+        after_photo_id: "変換後写真"
+        public_id: "公開ID"
+        room: "部屋"
+      building_photo:
+        photo_type: "写真種別"
+        display_order: "表示順"
+        building: "物件"
+      room_photo:
+        photo_type: "写真種別"
+        display_order: "表示順"
+        room: "部屋"
     enums:
       property_inquiry:
         media_type:
@@ -24,3 +279,5 @@ ja:
           pending: "未対応"
           in_progress: "対応中"
           completed: "完了"
+  errors:
+    format: "%{attribute}%{message}"

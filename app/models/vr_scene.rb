@@ -47,7 +47,7 @@ class VrScene < ApplicationRecord
 
   def must_have_photo_or_virtual_staging
     if room_photo_id.blank? && virtual_staging_id.blank?
-      errors.add(:base, 'Must have either a room photo or virtual staging')
+      errors.add(:base, '部屋写真またはバーチャルステージングを指定してください')
     end
   end
 end
