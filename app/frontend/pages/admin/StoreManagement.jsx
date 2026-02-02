@@ -42,6 +42,7 @@ export default function StoreManagement() {
   const [formData, setFormData] = useState({
     name: '',
     code: '',
+    email: '',
     address: '',
     latitude: '',
     longitude: '',
@@ -86,6 +87,7 @@ export default function StoreManagement() {
     setFormData({
       name: '',
       code: '',
+      email: '',
       address: '',
       latitude: '',
       longitude: '',
@@ -171,6 +173,7 @@ export default function StoreManagement() {
     setFormData({
       name: store.name,
       code: store.code || '',
+      email: store.email || '',
       address: store.address || '',
       latitude: store.latitude || '',
       longitude: store.longitude || '',
@@ -256,7 +259,7 @@ export default function StoreManagement() {
               <TableRow>
                 <TableCell>店舗名</TableCell>
                 <TableCell>店舗コード</TableCell>
-                <TableCell>問い合わせメール</TableCell>
+                <TableCell>メールアドレス</TableCell>
                 <TableCell>住所</TableCell>
                 <TableCell align="center">座標</TableCell>
                 <TableCell align="center">紐付き建物数</TableCell>
@@ -284,8 +287,17 @@ export default function StoreManagement() {
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-                        {store.inquiry_email_address}
+                      {store.email ? (
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                          {store.email}
+                        </Typography>
+                      ) : (
+                        <Typography variant="caption" color="error">
+                          未設定
+                        </Typography>
+                      )}
+                      <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace', display: 'block' }}>
+                        問い合わせ受信: {store.inquiry_email_address}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -354,6 +366,14 @@ export default function StoreManagement() {
               required
               helperText="半角英数字、最大6文字（問い合わせメールアドレスに使用されます）"
               inputProps={{ maxLength: 6 }}
+            />
+            <TextField
+              label="メールアドレス（送信元）"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              fullWidth
+              type="email"
+              helperText="顧客へのメール送信時に送信元として使用されます"
             />
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
               <TextField
@@ -437,6 +457,14 @@ export default function StoreManagement() {
               required
               helperText="半角英数字、最大6文字（変更するとメールアドレスが変わります）"
               inputProps={{ maxLength: 6 }}
+            />
+            <TextField
+              label="メールアドレス（送信元）"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              fullWidth
+              type="email"
+              helperText="顧客へのメール送信時に送信元として使用されます"
             />
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
               <TextField

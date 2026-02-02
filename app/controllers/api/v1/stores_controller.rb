@@ -69,7 +69,7 @@ class Api::V1::StoresController < ApplicationController
   end
 
   def store_params
-    params.require(:store).permit(:name, :code, :address, :latitude, :longitude)
+    params.require(:store).permit(:name, :code, :email, :address, :latitude, :longitude)
   end
 
   def store_json(store)
@@ -77,6 +77,7 @@ class Api::V1::StoresController < ApplicationController
       id: store.id,
       name: store.name,
       code: store.code,
+      email: store.email,
       address: store.address,
       latitude: store.latitude,
       longitude: store.longitude,
