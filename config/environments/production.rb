@@ -101,6 +101,7 @@ Rails.application.configure do
   config.hosts << ".cocosumo.space"     # サブドメイン方式のテナント識別用
   config.hosts << "localhost"
   config.hosts << "0.0.0.0"
+  config.hosts << "192.168.0.14"
 
   # Cloud Run のホストを許可
   config.hosts << /.*\.run\.app\z/
