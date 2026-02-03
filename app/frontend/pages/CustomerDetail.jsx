@@ -49,6 +49,7 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import ActivityDialog from '../components/Customer/ActivityDialog';
+import ActivityDetailDialog from '../components/Customer/ActivityDetailDialog';
 import StatusChangeDialog from '../components/Customer/StatusChangeDialog';
 import CreateInquiryDialog from '../components/Customer/CreateInquiryDialog';
 import EditInquiryDialog from '../components/Customer/EditInquiryDialog';
@@ -154,6 +155,7 @@ export default function CustomerDetail() {
   const [editingInquiry, setEditingInquiry] = useState(null);
   const [editingPropertyInquiry, setEditingPropertyInquiry] = useState(null);
   const [editingActivity, setEditingActivity] = useState(null);
+  const [viewingActivity, setViewingActivity] = useState(null);
   const [addPropertyDialogOpen, setAddPropertyDialogOpen] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 
@@ -616,6 +618,7 @@ export default function CustomerDetail() {
               setEditingActivity(null);
               setActivityDialogOpen(true);
             }}
+            onViewActivity={(activity) => setViewingActivity(activity)}
           />
         ) : (
           <ActivityTimeline
@@ -626,6 +629,7 @@ export default function CustomerDetail() {
               setEditingActivity(null);
               setActivityDialogOpen(true);
             }}
+            onViewActivity={(activity) => setViewingActivity(activity)}
           />
         )}
       </Box>
@@ -1167,6 +1171,13 @@ export default function CustomerDetail() {
           </Paper>
         </Box>
       )}
+
+      {/* Activity Detail Dialog (read-only) */}
+      <ActivityDetailDialog
+        open={!!viewingActivity}
+        onClose={() => setViewingActivity(null)}
+        activity={viewingActivity}
+      />
 
       {/* Activity Dialog */}
       <ActivityDialog

@@ -20,7 +20,8 @@ export default function ActivityTimeline({
   activities,
   selectedInquiryId,
   selectedPropertyInquiryId,
-  onAddActivity
+  onAddActivity,
+  onViewActivity
 }) {
   const filteredActivities = filterActivities(activities, selectedInquiryId, selectedPropertyInquiryId);
 
@@ -48,12 +49,16 @@ export default function ActivityTimeline({
       {filteredActivities.map((activity, index) => (
         <ListItem
           key={activity.id}
+          onClick={() => onViewActivity?.(activity)}
           sx={{
             px: 0,
             py: 1.5,
             borderBottom: index < filteredActivities.length - 1 ? '1px solid' : 'none',
             borderColor: 'divider',
-            alignItems: 'flex-start'
+            alignItems: 'flex-start',
+            cursor: 'pointer',
+            '&:hover': { bgcolor: 'action.hover' },
+            borderRadius: 1
           }}
         >
           <ListItemIcon sx={{ minWidth: 44, mt: 0.5 }}>

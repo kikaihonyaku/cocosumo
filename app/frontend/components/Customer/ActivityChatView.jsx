@@ -12,7 +12,8 @@ export default function ActivityChatView({
   activities,
   selectedInquiryId,
   selectedPropertyInquiryId,
-  onAddActivity
+  onAddActivity,
+  onViewActivity
 }) {
   const scrollRef = useRef(null);
 
@@ -50,7 +51,11 @@ export default function ActivityChatView({
         overflowY: 'auto'
       }}
     >
-      {chatActivities.map((activity) => {
+      {chatActivities.map((activity, index) => {
+        const currentDate = activity.formatted_date || activity.formatted_created_at?.split(' ')[0];
+        const prevActivity = index > 0 ? chatActivities[index - 1] : null;
+        const prevDate = prevActivity ? (prevActivity.formatted_date || prevActivity.formatted_created_at?.split(' ')[0]) : null;
+        const showDateSeparator = currentDate !== prevDate;
         const direction = activity.direction;
         const isOutbound = direction === 'outbound';
         const isInbound = direction === 'inbound';
@@ -86,16 +91,33 @@ export default function ActivityChatView({
         const timestampColor = isOutbound ? 'rgba(255,255,255,0.7)' : 'text.secondary';
 
         return (
+          <React.Fragment key={activity.id}>
+            {showDateSeparator && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, my: 0.5 }}>
+                <Box sx={{ flex: 1, borderBottom: '1px solid', borderColor: 'divider' }} />
+                <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem', flexShrink: 0 }}>
+                  {currentDate}
+                </Typography>
+                <Box sx={{ flex: 1, borderBottom: '1px solid', borderColor: 'divider' }} />
+              </Box>
+            )}
           <Box
-            key={activity.id}
-            sx={{ display: 'flex', justifyContent }}
+            sx={{ display: 'flex', justifyContent, alignItems: 'flex-end', gap: 0.5 }}
           >
+            {isOutbound && (
+              <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.65rem', mb: 0.5, flexShrink: 0 }}>
+                {activity.formatted_created_at?.split(' ').slice(1).join(' ')}
+              </Typography>
+            )}
             <Box
+              onClick={() => onViewActivity?.(activity)}
               sx={{
                 ...bubbleSx,
                 px: 2,
                 py: 1,
                 position: 'relative',
+                cursor: 'pointer',
+                '&:hover': { opacity: 0.85 },
               }}
             >
               {/* Type icon + label */}
@@ -122,20 +144,23 @@ export default function ActivityChatView({
                 </Typography>
               )}
 
-              {/* Timestamp + user */}
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                <Typography variant="caption" sx={{ color: timestampColor, fontSize: '0.7rem' }}>
-                  {activity.formatted_date || activity.formatted_created_at}
-                </Typography>
-                {activity.user && (
-                  <Typography variant="caption" sx={{ color: timestampColor, fontSize: '0.7rem' }}>
+              {/* User name */}
+              {activity.user && (
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: timestampColor, fontSize: '0.65rem' }}>
                     {activity.user.name}
                   </Typography>
-                )}
-              </Box>
+                </Box>
+              )}
 
             </Box>
+            {!isOutbound && (
+              <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.65rem', mb: 0.5, flexShrink: 0 }}>
+                {activity.formatted_created_at?.split(' ').slice(1).join(' ')}
+              </Typography>
+            )}
           </Box>
+          </React.Fragment>
         );
       })}
     </Box>
