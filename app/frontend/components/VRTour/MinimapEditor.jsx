@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { getZoomFactor } from "../../utils/zoomUtils";
 import {
   Box,
   Typography,
@@ -256,8 +257,9 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
   const handleMouseDown = (e) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const zoom = getZoomFactor();
+    const x = (e.clientX - rect.left) / zoom;
+    const y = (e.clientY - rect.top) / zoom;
 
     // クリックされた位置にあるシーンを検索
     for (const scene of scenes) {
@@ -282,8 +284,9 @@ export default function MinimapEditor({ vrTour, scenes, onUpdateScene, onUploadM
 
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    const zoom = getZoomFactor();
+    const mouseX = (e.clientX - rect.left) / zoom;
+    const mouseY = (e.clientY - rect.top) / zoom;
 
     // オフセットを考慮してマーカーの新しい位置を計算
     const newX = mouseX - dragOffset.x;

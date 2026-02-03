@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { getZoomFactor } from '../utils/zoomUtils';
 
 /**
  * Hook for scroll-reveal animations using Intersection Observer
@@ -169,7 +170,7 @@ export function useSmoothScroll() {
       '(prefers-reduced-motion: reduce)'
     ).matches;
 
-    const top = element.getBoundingClientRect().top + window.scrollY - offset;
+    const top = element.getBoundingClientRect().top / getZoomFactor() + window.scrollY - offset;
 
     window.scrollTo({
       top,

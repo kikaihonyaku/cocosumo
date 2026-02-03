@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getZoomFactor } from '../utils/zoomUtils';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ThemeProvider,
@@ -337,7 +338,8 @@ export default function PhotoEditor() {
     const rect = canvas.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
+    const zoom = getZoomFactor();
+    return { x: (clientX - rect.left) / zoom, y: (clientY - rect.top) / zoom };
   };
 
   const handleCropMouseDown = (e) => {

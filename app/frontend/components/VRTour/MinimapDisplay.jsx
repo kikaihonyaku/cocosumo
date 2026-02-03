@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Box, Paper, Typography } from "@mui/material";
+import { getZoomFactor } from "../../utils/zoomUtils";
 
 export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle = 0, onSceneClick }) {
   const canvasRef = useRef(null);
@@ -156,8 +157,9 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle
 
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const zoom = getZoomFactor();
+    const x = (e.clientX - rect.left) / zoom;
+    const y = (e.clientY - rect.top) / zoom;
 
     // スケール計算
     const scaleX = DISPLAY_WIDTH / EDITOR_WIDTH;
@@ -190,16 +192,18 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle
       setIsDragging(true);
       const container = containerRef.current;
       const rect = container.getBoundingClientRect();
+      const zoom = getZoomFactor();
       setDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
+        x: (e.clientX - rect.left) / zoom,
+        y: (e.clientY - rect.top) / zoom
       });
     } else if (e.target === canvasRef.current) {
       // キャンバス上のマウスダウン位置を記録
       const rect = canvasRef.current.getBoundingClientRect();
+      const zoom = getZoomFactor();
       setMouseDownPos({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
+        x: (e.clientX - rect.left) / zoom,
+        y: (e.clientY - rect.top) / zoom
       });
     }
   };
@@ -209,13 +213,14 @@ export default function MinimapDisplay({ vrTour, scenes, currentScene, viewAngle
 
     const parentRect = containerRef.current.parentElement.getBoundingClientRect();
     const containerRect = containerRef.current.getBoundingClientRect();
+    const zoom = getZoomFactor();
 
-    let newX = e.clientX - parentRect.left - dragOffset.x;
-    let newY = e.clientY - parentRect.top - dragOffset.y;
+    let newX = (e.clientX - parentRect.left) / zoom - dragOffset.x;
+    let newY = (e.clientY - parentRect.top) / zoom - dragOffset.y;
 
     // 画面内に収まるように制限
-    newX = Math.max(0, Math.min(newX, parentRect.width - containerRect.width));
-    newY = Math.max(0, Math.min(newY, parentRect.height - containerRect.height));
+    newX = Math.max(0, Math.min(newX, (parentRect.width - containerRect.width) / zoom));
+    newY = Math.max(0, Math.min(newY, (parentRect.height - containerRect.height) / zoom));
 
     setPosition({ x: newX, y: newY });
   };

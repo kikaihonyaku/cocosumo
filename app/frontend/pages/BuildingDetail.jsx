@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getZoomFactor } from "../utils/zoomUtils";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   ThemeProvider,
@@ -394,10 +395,11 @@ export default function BuildingDetail() {
     const handleMouseMove = (e) => {
       const containerRect = document.querySelector('.desktop-layout-container')?.getBoundingClientRect();
       if (!containerRect) return;
+      const zoom = getZoomFactor();
 
       if (isResizingLeft) {
         // 左ペインのリサイズ：左端からマウス位置までの距離を計算
-        const newWidth = e.clientX - containerRect.left - 8; // 8pxはpadding/gap分
+        const newWidth = (e.clientX - containerRect.left) / zoom - 8; // 8pxはpadding/gap分
         // 最小幅200px、最大幅500px
         const clampedWidth = Math.max(200, Math.min(500, newWidth));
         setLeftPaneWidth(clampedWidth);
@@ -405,7 +407,7 @@ export default function BuildingDetail() {
 
       if (isResizingRight) {
         // 右ペインのリサイズ：右端からマウス位置までの距離を計算
-        const newWidth = containerRect.right - e.clientX - 8; // 8pxはpadding/gap分
+        const newWidth = (containerRect.right - e.clientX) / zoom - 8; // 8pxはpadding/gap分
         // 最小幅300px、最大幅800px
         const clampedWidth = Math.max(300, Math.min(800, newWidth));
         setRightPaneWidth(clampedWidth);

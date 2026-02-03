@@ -4,6 +4,7 @@ import { MarkersPlugin } from "@photo-sphere-viewer/markers-plugin";
 import "@photo-sphere-viewer/core/index.css";
 import "@photo-sphere-viewer/markers-plugin/index.css";
 import { Box, CircularProgress, Alert, Typography } from "@mui/material";
+import { getZoomFactor } from "../../utils/zoomUtils";
 
 // マーカーのHTMLを生成（editableモードではdata-marker-id属性を追加）
 const generateMarkerHtml = (marker, editable = false) => {
@@ -210,8 +211,9 @@ export default function ComparisonPanoramaViewer({
               ? beforeContainerRef
               : afterContainerRef;
             const rect = containerRef.current.getBoundingClientRect();
-            const viewerX = e.clientX - rect.left;
-            const viewerY = e.clientY - rect.top;
+            const zoom = getZoomFactor();
+            const viewerX = (e.clientX - rect.left) / zoom;
+            const viewerY = (e.clientY - rect.top) / zoom;
 
             const sphericalCoords = activeViewerRef.current.dataHelper.viewerCoordsToSphericalCoords({
               x: viewerX,

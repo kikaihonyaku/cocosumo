@@ -6,6 +6,7 @@ import { GyroscopePlugin } from "@photo-sphere-viewer/gyroscope-plugin";
 import "@photo-sphere-viewer/core/index.css";
 import "@photo-sphere-viewer/markers-plugin/index.css";
 import { Box, CircularProgress, Alert } from "@mui/material";
+import { getZoomFactor } from "../../utils/zoomUtils";
 
 // マーカーのHTMLを生成（editableモードではdata-marker-id属性を追加）
 const generateMarkerHtml = (marker, editable = false) => {
@@ -241,8 +242,9 @@ const PanoramaViewer = forwardRef(function PanoramaViewer({
           try {
             // containerRefを使用（viewerRef.current.containerはページ全体のサイズになる場合がある）
             const rect = containerRef.current.getBoundingClientRect();
-            const viewerX = e.clientX - rect.left;
-            const viewerY = e.clientY - rect.top;
+            const zoom = getZoomFactor();
+            const viewerX = (e.clientX - rect.left) / zoom;
+            const viewerY = (e.clientY - rect.top) / zoom;
 
             const sphericalCoords = viewerRef.current.dataHelper.viewerCoordsToSphericalCoords({
               x: viewerX,

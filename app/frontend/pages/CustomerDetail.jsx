@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { getZoomFactor } from '../utils/zoomUtils';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
@@ -198,15 +199,16 @@ export default function CustomerDetail() {
     const handleMouseMove = (e) => {
       const containerRect = document.querySelector('.customer-layout-container')?.getBoundingClientRect();
       if (!containerRect) return;
+      const zoom = getZoomFactor();
 
       if (isResizingLeft) {
-        const newWidth = e.clientX - containerRect.left - 8;
+        const newWidth = (e.clientX - containerRect.left) / zoom - 8;
         const clampedWidth = Math.max(220, Math.min(450, newWidth));
         setLeftPaneWidth(clampedWidth);
       }
 
       if (isResizingRight) {
-        const newWidth = containerRect.right - e.clientX - 8;
+        const newWidth = (containerRect.right - e.clientX) / zoom - 8;
         const clampedWidth = Math.max(300, Math.min(550, newWidth));
         setRightPaneWidth(clampedWidth);
       }

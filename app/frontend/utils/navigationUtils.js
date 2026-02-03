@@ -2,6 +2,7 @@
  * Navigation Utilities
  * Helper functions for navigation and URL management
  */
+import { getZoomFactor } from './zoomUtils';
 
 /**
  * Build URL with query parameters
@@ -217,7 +218,7 @@ export function scrollToElement(elementId, options = {}) {
 
   if (element) {
     if (offset) {
-      const y = element.getBoundingClientRect().top + window.pageYOffset + offset;
+      const y = element.getBoundingClientRect().top / getZoomFactor() + window.pageYOffset + offset;
       window.scrollTo({ top: y, behavior });
     } else {
       element.scrollIntoView({ behavior, block, inline });

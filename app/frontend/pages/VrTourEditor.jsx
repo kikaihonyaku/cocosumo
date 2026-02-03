@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { getZoomFactor } from "../utils/zoomUtils";
 import {
   Box,
   Typography,
@@ -121,15 +122,16 @@ export default function VrTourEditor() {
     const handleMouseMove = (e) => {
       const containerRect = document.querySelector('.vr-editor-layout')?.getBoundingClientRect();
       if (!containerRect) return;
+      const zoom = getZoomFactor();
 
       if (isResizingLeft) {
-        const newWidth = e.clientX - containerRect.left - 8;
+        const newWidth = (e.clientX - containerRect.left) / zoom - 8;
         const clampedWidth = Math.max(200, Math.min(500, newWidth));
         setLeftPaneWidth(clampedWidth);
       }
 
       if (isResizingRight) {
-        const newWidth = containerRect.right - e.clientX - 8;
+        const newWidth = (containerRect.right - e.clientX) / zoom - 8;
         const clampedWidth = Math.max(250, Math.min(500, newWidth));
         setRightPaneWidth(clampedWidth);
       }
