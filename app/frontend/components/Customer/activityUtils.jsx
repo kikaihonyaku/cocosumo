@@ -54,11 +54,12 @@ export const ACTIVITY_TYPE_LABELS = {
   phone_call: '電話',
   visit: '来店',
   viewing: '内見',
-  note: 'メモ'
+  note: 'メモ',
+  inquiry: '問い合わせ'
 };
 
 // Chat-visible activity types
-export const CHAT_ACTIVITY_TYPES = ['line_message', 'email', 'phone_call', 'visit', 'viewing', 'note'];
+export const CHAT_ACTIVITY_TYPES = ['line_message', 'email', 'phone_call', 'visit', 'viewing', 'note', 'inquiry'];
 
 // Filter activities by selected inquiry/property inquiry
 export const filterActivities = (activities, selectedInquiryId, selectedPropertyInquiryId) => {
