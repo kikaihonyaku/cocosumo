@@ -7,15 +7,12 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Chip,
-  IconButton,
-  Tooltip
+  Chip
 } from '@mui/material';
 import {
   Add as AddIcon,
   Note as NoteIcon,
-  Home as HomeIcon,
-  Edit as EditIcon
+  Home as HomeIcon
 } from '@mui/icons-material';
 import { getActivityIcon, getActivityDotColor, filterActivities } from './activityUtils';
 
@@ -23,8 +20,7 @@ export default function ActivityTimeline({
   activities,
   selectedInquiryId,
   selectedPropertyInquiryId,
-  onAddActivity,
-  onEditActivity
+  onAddActivity
 }) {
   const filteredActivities = filterActivities(activities, selectedInquiryId, selectedPropertyInquiryId);
 
@@ -139,15 +135,6 @@ export default function ActivityTimeline({
               </Box>
             }
           />
-          <Tooltip title="編集">
-            <IconButton
-              size="small"
-              sx={{ ml: 1, alignSelf: 'flex-start', mt: 0.5 }}
-              onClick={() => onEditActivity(activity)}
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
         </ListItem>
       ))}
     </List>

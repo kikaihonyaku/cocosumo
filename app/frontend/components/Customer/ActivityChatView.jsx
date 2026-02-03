@@ -1,13 +1,10 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   Box,
-  Typography,
-  IconButton,
-  Tooltip
+  Typography
 } from '@mui/material';
 import {
-  Chat as ChatIcon,
-  Edit as EditIcon
+  Chat as ChatIcon
 } from '@mui/icons-material';
 import { getActivityIcon, filterActivities, CHAT_ACTIVITY_TYPES } from './activityUtils';
 
@@ -15,11 +12,9 @@ export default function ActivityChatView({
   activities,
   selectedInquiryId,
   selectedPropertyInquiryId,
-  onAddActivity,
-  onEditActivity
+  onAddActivity
 }) {
   const scrollRef = useRef(null);
-  const [hoveredId, setHoveredId] = useState(null);
 
   const filtered = filterActivities(activities, selectedInquiryId, selectedPropertyInquiryId);
   const chatActivities = filtered
@@ -94,8 +89,6 @@ export default function ActivityChatView({
           <Box
             key={activity.id}
             sx={{ display: 'flex', justifyContent }}
-            onMouseEnter={() => setHoveredId(activity.id)}
-            onMouseLeave={() => setHoveredId(null)}
           >
             <Box
               sx={{
@@ -141,28 +134,6 @@ export default function ActivityChatView({
                 )}
               </Box>
 
-              {/* Edit button on hover */}
-              {hoveredId === activity.id && (
-                <Tooltip title="編集">
-                  <IconButton
-                    size="small"
-                    onClick={() => onEditActivity(activity)}
-                    sx={{
-                      position: 'absolute',
-                      top: 4,
-                      right: isOutbound ? undefined : 4,
-                      left: isOutbound ? -36 : undefined,
-                      bgcolor: 'background.paper',
-                      boxShadow: 1,
-                      '&:hover': { bgcolor: 'grey.100' },
-                      width: 28,
-                      height: 28,
-                    }}
-                  >
-                    <EditIcon sx={{ fontSize: 14 }} />
-                  </IconButton>
-                </Tooltip>
-              )}
             </Box>
           </Box>
         );

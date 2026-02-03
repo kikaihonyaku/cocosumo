@@ -616,10 +616,6 @@ export default function CustomerDetail() {
               setEditingActivity(null);
               setActivityDialogOpen(true);
             }}
-            onEditActivity={(activity) => {
-              setEditingActivity(activity);
-              setActivityDialogOpen(true);
-            }}
           />
         ) : (
           <ActivityTimeline
@@ -628,10 +624,6 @@ export default function CustomerDetail() {
             selectedPropertyInquiryId={selectedPropertyInquiryId}
             onAddActivity={() => {
               setEditingActivity(null);
-              setActivityDialogOpen(true);
-            }}
-            onEditActivity={(activity) => {
-              setEditingActivity(activity);
               setActivityDialogOpen(true);
             }}
           />
