@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_03_100000) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_03_205437) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -626,23 +626,23 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_03_100000) do
     t.integer "floor"
     t.string "room_type"
     t.decimal "area"
-    t.decimal "rent"
+    t.integer "rent"
     t.integer "status"
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.decimal "management_fee"
-    t.decimal "deposit"
-    t.decimal "key_money"
+    t.integer "management_fee"
+    t.integer "deposit"
+    t.integer "key_money"
     t.string "tenant_name"
     t.string "tenant_phone"
     t.date "contract_start_date"
     t.date "contract_end_date"
     t.text "notes"
     t.string "direction"
-    t.decimal "parking_fee"
+    t.integer "parking_fee"
     t.date "available_date"
-    t.decimal "renewal_fee"
+    t.integer "renewal_fee"
     t.boolean "guarantor_required", default: true
     t.boolean "pets_allowed", default: false
     t.boolean "two_person_allowed", default: false
