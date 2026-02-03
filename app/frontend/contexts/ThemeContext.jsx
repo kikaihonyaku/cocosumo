@@ -262,13 +262,23 @@ export function ThemeContextProvider({ children, disableMuiProvider = false }) {
     // Apply zoom to body
     document.body.style.zoom = `${zoomLevel}%`;
 
-    // Set CSS custom property for viewport height correction
+    // Set CSS custom properties for viewport height correction and zoom compensation
     const correction = 100 / zoomLevel;
+    const zoomFactor = zoomLevel / 100;
     document.documentElement.style.setProperty('--vh-correction', correction.toString());
+    document.documentElement.style.setProperty('--body-zoom', zoomFactor.toString());
+    document.documentElement.style.setProperty('--body-zoom-inverse', (1 / zoomFactor).toString());
+
+    // Notify components (e.g. MUI Tabs indicator) to recalculate layout
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
 
     return () => {
       document.body.style.zoom = '';
       document.documentElement.style.removeProperty('--vh-correction');
+      document.documentElement.style.removeProperty('--body-zoom');
+      document.documentElement.style.removeProperty('--body-zoom-inverse');
     };
   }, [zoomLevel]);
 

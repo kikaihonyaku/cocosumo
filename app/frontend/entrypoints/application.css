@@ -2,6 +2,21 @@
 
 @source "../**/*.{js,jsx,ts,tsx}";
 
+/* ====================================
+   CSS zoom補正: MUI Tabsインジケーター
+   body に CSS zoom を適用すると getBoundingClientRect() がビューポート座標を返すが、
+   MUI がその値を CSS left/width に設定すると再度 zoom が適用されて二重スケーリングが起きる。
+   scroller に逆 zoom をかけてインジケーターの座標系を補正し、
+   flexContainer に再 zoom をかけてタブの見た目を維持する。
+   ==================================== */
+.MuiTabs-scroller {
+  zoom: var(--body-zoom-inverse, 1);
+}
+
+.MuiTabs-scroller > .MuiTabs-flexContainer {
+  zoom: var(--body-zoom, 1);
+}
+
 /* VRツアー ホットスポット（シーンリンク）スタイル */
 
 /* 共通アニメーション */
