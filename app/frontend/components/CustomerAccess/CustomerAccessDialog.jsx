@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DateField from '../shared/DateField';
 import {
   Dialog,
   DialogTitle,
@@ -207,20 +208,16 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, inq
             placeholder="090-1234-5678"
           />
 
-          <TextField
+          <DateField
             label="有効期限"
-            type="date"
             value={formData.expires_at ? formData.expires_at.toISOString().split('T')[0] : ''}
-            onChange={(e) => {
-              const date = e.target.value ? new Date(e.target.value + 'T23:59:59') : null;
+            onChange={(val) => {
+              const date = val ? new Date(val + 'T23:59:59') : null;
               setFormData(prev => ({ ...prev, expires_at: date }));
             }}
             fullWidth
             helperText="指定日の23:59まで有効です"
-            InputLabelProps={{ shrink: true }}
-            inputProps={{
-              min: new Date().toISOString().split('T')[0]
-            }}
+            minDate={new Date().toISOString().split('T')[0]}
           />
 
           <Box>

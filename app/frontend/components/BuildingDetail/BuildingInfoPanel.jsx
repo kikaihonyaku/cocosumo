@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DateField from '../shared/DateField';
 import {
   Box,
   Typography,
@@ -440,17 +441,13 @@ export default function BuildingInfoPanel({
             建築情報
           </Typography>
           <Stack spacing={2}>
-            <TextField
+            <DateField
               label="築年月日"
-              type="date"
               value={formData.built_date || ''}
-              onChange={(e) => {
-                setFormData(prev => ({ ...prev, built_date: e.target.value }));
+              onChange={(val) => {
+                setFormData(prev => ({ ...prev, built_date: val }));
                 setHasUnsavedChanges(true);
               }}
-              variant="outlined"
-              size="small"
-              InputLabelProps={{ shrink: true }}
             />
 
             <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2 }}>

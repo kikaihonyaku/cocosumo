@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import DateField from '../shared/DateField';
 import {
   Box,
   Typography,
@@ -699,14 +700,11 @@ export default function RoomsPanel({
               </Grid>
 
               <Grid item xs={12} sm={4}>
-                <TextField
+                <DateField
                   fullWidth
                   label="入居可能日"
-                  type="date"
-                  value={formData.available_date}
-                  onChange={handleChange('available_date')}
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
+                  value={formData.available_date || ''}
+                  onChange={(val) => setFormData(prev => ({ ...prev, available_date: val }))}
                 />
               </Grid>
             </Grid>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DateField from '../shared/DateField';
 import {
   Box,
   Typography,
@@ -358,13 +359,11 @@ export default function BulkItemEditor({ item, onSave }) {
           />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          <TextField
+          <DateField
             label="入居可能日"
-            type="date"
             value={roomData.available_date || ''}
-            onChange={handleRoomChange('available_date')}
+            onChange={(val) => { setRoomData(prev => ({ ...prev, available_date: val })); setModified(true); }}
             fullWidth
-            slotProps={{ inputLabel: { shrink: true } }}
           />
         </Grid>
 

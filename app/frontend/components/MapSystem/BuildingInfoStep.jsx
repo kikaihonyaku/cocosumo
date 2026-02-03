@@ -1,4 +1,5 @@
 import React from "react";
+import DateField from '../shared/DateField';
 import {
   Box,
   Typography,
@@ -155,15 +156,11 @@ export default function BuildingInfoStep({
         </Grid>
 
         <Grid item xs={12} sm={4}>
-          <TextField
+          <DateField
             fullWidth
             label="築年月"
-            name="built_date"
-            type="date"
-            value={data.built_date}
-            onChange={handleChange}
-            size="small"
-            InputLabelProps={{ shrink: true }}
+            value={data.built_date || ''}
+            onChange={(val) => onChange(prev => ({ ...prev, built_date: val }))}
           />
         </Grid>
       </Grid>

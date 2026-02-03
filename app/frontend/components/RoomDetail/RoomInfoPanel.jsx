@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DateField from '../shared/DateField';
 import {
   Box,
   Typography,
@@ -504,17 +505,11 @@ export default function RoomInfoPanel({
               />
             </Box>
 
-            <TextField
+            <DateField
               fullWidth
               label="入居可能日"
-              type="date"
               value={formData.available_date || ''}
-              onChange={handleChange('available_date')}
-              variant="outlined"
-              size="small"
-              InputLabelProps={{
-                shrink: true,
-              }}
+              onChange={(val) => { setFormData(prev => ({ ...prev, available_date: val })); setHasUnsavedChanges(true); }}
             />
           </Stack>
         </Box>
@@ -697,29 +692,17 @@ export default function RoomInfoPanel({
               size="small"
               placeholder="03-1234-5678"
             />
-            <TextField
+            <DateField
               fullWidth
               label="契約開始日"
-              type="date"
               value={formData.contract_start_date || ''}
-              onChange={handleChange('contract_start_date')}
-              variant="outlined"
-              size="small"
-              InputLabelProps={{
-                shrink: true,
-              }}
+              onChange={(val) => { setFormData(prev => ({ ...prev, contract_start_date: val })); setHasUnsavedChanges(true); }}
             />
-            <TextField
+            <DateField
               fullWidth
               label="契約終了日"
-              type="date"
               value={formData.contract_end_date || ''}
-              onChange={handleChange('contract_end_date')}
-              variant="outlined"
-              size="small"
-              InputLabelProps={{
-                shrink: true,
-              }}
+              onChange={(val) => { setFormData(prev => ({ ...prev, contract_end_date: val })); setHasUnsavedChanges(true); }}
             />
           </Stack>
         </Box>

@@ -2,6 +2,8 @@ import React from "react";
 import { Routes, Route, Outlet, useLocation, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import { CssBaseline, useMediaQuery, Box, CircularProgress } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import muiTheme from "./theme/muiTheme";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { TenantProvider } from "./contexts/TenantContext";
@@ -143,6 +145,7 @@ export default function App() {
   return (
     <ThemeProvider theme={muiTheme}>
       <CssBaseline />
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
       <ThemeContextProvider disableMuiProvider>
         <AuthProvider>
           <TenantProvider>
@@ -213,6 +216,7 @@ export default function App() {
           </TenantProvider>
         </AuthProvider>
       </ThemeContextProvider>
+      </LocalizationProvider>
     </ThemeProvider>
   );
 }

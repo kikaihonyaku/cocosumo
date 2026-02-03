@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import DateField from '../components/shared/DateField';
 import {
   Container,
   Typography,
@@ -270,15 +271,12 @@ export default function BuildingForm() {
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <TextField
+              <DateField
                 fullWidth
                 label="築年月日"
-                name="built_date"
-                type="date"
                 value={formData.built_date || ""}
-                onChange={handleChange}
+                onChange={(val) => setFormData(prev => ({ ...prev, built_date: val }))}
                 disabled={submitting}
-                InputLabelProps={{ shrink: true }}
               />
             </Grid>
 

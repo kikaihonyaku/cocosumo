@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import DateField from '../shared/DateField';
 import {
   Box,
   Typography,
@@ -252,15 +253,11 @@ export default function RoomInfoStep({
         </Grid>
 
         <Grid item xs={6} sm={4}>
-          <TextField
+          <DateField
             fullWidth
             label="入居可能日"
-            name="available_date"
-            type="date"
-            value={data.available_date}
-            onChange={handleChange}
-            size="small"
-            InputLabelProps={{ shrink: true }}
+            value={data.available_date || ''}
+            onChange={(val) => onChange(prev => ({ ...prev, available_date: val }))}
           />
         </Grid>
       </Grid>

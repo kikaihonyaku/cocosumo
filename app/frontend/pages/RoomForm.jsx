@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import DateField from '../components/shared/DateField';
 import {
   Container,
   Typography,
@@ -389,15 +390,12 @@ export default function RoomForm() {
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <TextField
+              <DateField
                 fullWidth
                 label="入居可能日"
-                name="available_date"
-                type="date"
-                value={formData.available_date}
-                onChange={handleChange}
+                value={formData.available_date || ''}
+                onChange={(val) => setFormData(prev => ({ ...prev, available_date: val }))}
                 disabled={submitting}
-                InputLabelProps={{ shrink: true }}
               />
             </Grid>
 

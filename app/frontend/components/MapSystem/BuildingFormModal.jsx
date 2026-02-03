@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import DateField from '../shared/DateField';
 import {
   Dialog,
   DialogTitle,
@@ -490,16 +491,12 @@ export default function BuildingFormModal({
           </Typography>
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid item xs={12} sm={4}>
-              <TextField
+              <DateField
                 fullWidth
                 label="築年月日"
-                name="built_date"
-                type="date"
-                value={formData.built_date}
-                onChange={handleChange}
+                value={formData.built_date || ''}
+                onChange={(val) => setFormData(prev => ({ ...prev, built_date: val }))}
                 disabled={submitting}
-                size="small"
-                InputLabelProps={{ shrink: true }}
               />
             </Grid>
 
