@@ -14,7 +14,7 @@ import {
   Paper,
   Chip,
   FormControlLabel,
-  Switch,
+  Checkbox,
   Alert,
   RadioGroup,
   Radio,
@@ -371,27 +371,30 @@ export default function BulkItemEditor({ item, onSave }) {
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <FormControlLabel
               control={
-                <Switch
+                <Checkbox
                   checked={roomData.pets_allowed || false}
                   onChange={handleRoomChange('pets_allowed')}
+                  name="pets_allowed"
                 />
               }
               label="ペット可"
             />
             <FormControlLabel
               control={
-                <Switch
+                <Checkbox
                   checked={roomData.guarantor_required !== false}
                   onChange={handleRoomChange('guarantor_required')}
+                  name="guarantor_required"
                 />
               }
               label="保証人必要"
             />
             <FormControlLabel
               control={
-                <Switch
+                <Checkbox
                   checked={roomData.two_person_allowed || false}
                   onChange={handleRoomChange('two_person_allowed')}
+                  name="two_person_allowed"
                 />
               }
               label="二人入居可"
