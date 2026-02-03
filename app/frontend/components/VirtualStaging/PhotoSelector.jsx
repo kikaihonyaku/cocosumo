@@ -2,15 +2,8 @@ import React, { useState } from 'react';
 import {
   Box,
   Typography,
-  Grid,
-  Card,
-  CardMedia,
-  CardContent,
   Chip,
   Alert,
-  Popper,
-  Fade,
-  Paper,
 } from '@mui/material';
 
 // カテゴリ定義
@@ -26,21 +19,8 @@ const PHOTO_CATEGORIES = {
 
 const PhotoSelector = ({ photos, selectedPhotoId, onPhotoSelect, label }) => {
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [hoveredPhoto, setHoveredPhoto] = useState(null);
-  const [anchorEl, setAnchorEl] = useState(null);
-
   const getPhotoDisplayName = (photo) => {
     return photo.caption || `画像 ${photo.id}`;
-  };
-
-  const handleMouseEnter = (event, photo) => {
-    setAnchorEl(event.currentTarget);
-    setHoveredPhoto(photo);
-  };
-
-  const handleMouseLeave = () => {
-    setAnchorEl(null);
-    setHoveredPhoto(null);
   };
 
   const filteredPhotos = photos.filter((photo) =>
@@ -80,43 +60,59 @@ const PhotoSelector = ({ photos, selectedPhotoId, onPhotoSelect, label }) => {
             ))}
           </Box>
 
-          {/* 写真グリッド */}
-          <Box sx={{ maxHeight: 300, overflowY: 'auto' }}>
-            <Grid container spacing={1.5}>
-              {filteredPhotos.map((photo) => (
-                <Grid item xs={4} sm={3} md={2} key={photo.id}>
-                  <Card
-                    sx={{
-                      cursor: 'pointer',
-                      border: selectedPhotoId === photo.id ? 2 : 1,
-                      borderColor: selectedPhotoId === photo.id ? 'primary.main' : 'divider',
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        boxShadow: 3,
-                        transform: 'translateY(-2px)',
-                      },
-                    }}
-                    onClick={() => onPhotoSelect(photo.id)}
-                    onMouseEnter={(e) => handleMouseEnter(e, photo)}
-                    onMouseLeave={handleMouseLeave}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="80"
-                      image={photo.photo_url}
-                      alt={getPhotoDisplayName(photo)}
-                      sx={{ objectFit: 'cover' }}
-                    />
-                    <CardContent sx={{ p: 0.75 }}>
-                      <Typography variant="caption" noWrap sx={{ display: 'block', fontSize: '0.7rem' }}>
-                        {getPhotoDisplayName(photo)}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+          {/* 写真グリッド - サムネイル表示で一覧性を高める */}
+          <Box sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 1,
+            maxHeight: 350,
+            overflowY: 'auto',
+            p: 1,
+            bgcolor: 'grey.50',
+            borderRadius: 1,
+          }}>
+            {filteredPhotos.map((photo) => (
+              <Box
+                key={photo.id}
+                onClick={() => onPhotoSelect(photo.id)}
+                sx={{
+                  width: 72,
+                  height: 72,
+                  flexShrink: 0,
+                  cursor: 'pointer',
+                  borderRadius: 1,
+                  overflow: 'hidden',
+                  border: selectedPhotoId === photo.id ? '3px solid' : '2px solid',
+                  borderColor: selectedPhotoId === photo.id ? 'primary.main' : 'transparent',
+                  boxShadow: selectedPhotoId === photo.id ? 3 : 1,
+                  transition: 'all 0.15s',
+                  '&:hover': {
+                    borderColor: selectedPhotoId === photo.id ? 'primary.main' : 'grey.400',
+                    transform: 'scale(1.05)',
+                  },
+                }}
+              >
+                <img
+                  src={photo.photo_url}
+                  alt={getPhotoDisplayName(photo)}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+              </Box>
+            ))}
           </Box>
+
+          {/* 選択中の写真情報 */}
+          {selectedPhotoId && (
+            <Box sx={{ mt: 1, p: 1, bgcolor: 'primary.50', borderRadius: 1, border: '1px solid', borderColor: 'primary.200' }}>
+              <Typography variant="body2" color="primary.main">
+                選択中: {photos.find(p => p.id === selectedPhotoId)?.caption || `画像 ${selectedPhotoId}`}
+              </Typography>
+            </Box>
+          )}
 
           {filteredPhotos.length === 0 && (
             <Alert severity="info" sx={{ mt: 2 }}>
@@ -126,71 +122,6 @@ const PhotoSelector = ({ photos, selectedPhotoId, onPhotoSelect, label }) => {
         </>
       )}
 
-      {/* ホバープレビュー */}
-      <Popper
-        open={Boolean(anchorEl)}
-        anchorEl={anchorEl}
-        placement="right-start"
-        transition
-        sx={{ zIndex: 1500 }}
-        modifiers={[
-          {
-            name: 'offset',
-            options: {
-              offset: [0, 8],
-            },
-          },
-          {
-            name: 'preventOverflow',
-            options: {
-              boundary: 'viewport',
-              padding: 8,
-            },
-          },
-        ]}
-      >
-        {({ TransitionProps }) => (
-          <Fade {...TransitionProps} timeout={200}>
-            <Paper
-              elevation={8}
-              sx={{
-                p: 1,
-                maxWidth: 320,
-                bgcolor: 'background.paper',
-                border: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              {hoveredPhoto && (
-                <>
-                  <Box
-                    component="img"
-                    src={hoveredPhoto.photo_url}
-                    alt={getPhotoDisplayName(hoveredPhoto)}
-                    sx={{
-                      width: '100%',
-                      maxHeight: 200,
-                      objectFit: 'contain',
-                      borderRadius: 1,
-                      mb: 1,
-                    }}
-                  />
-                  <Typography variant="subtitle2" fontWeight="600">
-                    {getPhotoDisplayName(hoveredPhoto)}
-                  </Typography>
-                  {hoveredPhoto.photo_type && (
-                    <Chip
-                      label={PHOTO_CATEGORIES[hoveredPhoto.photo_type] || hoveredPhoto.photo_type}
-                      size="small"
-                      sx={{ mt: 0.5 }}
-                    />
-                  )}
-                </>
-              )}
-            </Paper>
-          </Fade>
-        )}
-      </Popper>
     </Box>
   );
 };
