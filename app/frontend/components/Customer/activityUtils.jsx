@@ -10,7 +10,13 @@ import {
   Note as NoteIcon,
   Visibility as VisibilityIcon,
   CallMade as CallMadeIcon,
-  CallReceived as CallReceivedIcon
+  CallReceived as CallReceivedIcon,
+  AutoAwesome as AutoAwesomeIcon,
+  SmartToy as SmartToyIcon,
+  Directions as DirectionsIcon,
+  Block as BlockIcon,
+  Update as UpdateIcon,
+  Reply as ReplyIcon
 } from '@mui/icons-material';
 
 // Activity type icons
@@ -25,7 +31,14 @@ export const getActivityIcon = (activityType, direction) => {
     inquiry: <QuestionAnswerIcon />,
     access_issued: <KeyIcon />,
     status_change: <FlagIcon />,
-    assigned_user_change: <PersonIcon />
+    assigned_user_change: <PersonIcon />,
+    portal_viewed: <VisibilityIcon />,
+    ai_simulation: <AutoAwesomeIcon />,
+    ai_grounding: <SmartToyIcon />,
+    customer_route_created: <DirectionsIcon />,
+    access_revoked: <BlockIcon />,
+    access_extended: <UpdateIcon />,
+    inquiry_replied: <ReplyIcon />
   };
   return iconMap[activityType] || <NoteIcon />;
 };
@@ -42,7 +55,14 @@ export const getActivityDotColor = (activityType) => {
     inquiry: 'warning',
     access_issued: 'info',
     status_change: 'primary',
-    assigned_user_change: 'secondary'
+    assigned_user_change: 'secondary',
+    portal_viewed: 'warning',
+    ai_simulation: 'secondary',
+    ai_grounding: 'secondary',
+    customer_route_created: 'info',
+    access_revoked: 'error',
+    access_extended: 'success',
+    inquiry_replied: 'primary'
   };
   return colorMap[activityType] || 'grey';
 };

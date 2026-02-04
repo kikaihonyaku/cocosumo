@@ -90,6 +90,23 @@ class Api::V1::CustomerAccessesController < ApplicationController
     @customer_access.expires_at ||= 14.days.from_now
 
     if @customer_access.save
+      # 対応履歴に「アクセス発行」を自動記録
+      if @customer_access.customer_id.present? && @customer_access.inquiry_id.present?
+        property_title = @property_publication.title.presence || @property_publication.room&.room_number
+        CustomerActivity.create(
+          customer_id: @customer_access.customer_id,
+          inquiry_id: @customer_access.inquiry_id,
+          user: current_user,
+          activity_type: :access_issued,
+          direction: :outbound,
+          subject: "顧客マイページを発行",
+          content: "#{@customer_access.customer_name}（#{@customer_access.customer_email}）に物件「#{property_title}」のマイページを発行",
+          customer_access: @customer_access,
+          property_publication: @property_publication,
+          property_inquiry_id: @customer_access.property_inquiry_id
+        )
+      end
+
       # メール通知送信（オプション）
       if params[:send_notification] == true || params[:send_notification] == "true"
         CustomerAccessMailer.notify_customer(@customer_access, params[:raw_password]).deliver_later
@@ -132,6 +149,24 @@ class Api::V1::CustomerAccessesController < ApplicationController
   # POST /api/v1/customer_accesses/:id/revoke
   def revoke
     @customer_access.revoke!
+
+    # 対応履歴に「アクセス取り消し」を自動記録
+    if @customer_access.customer_id.present? && @customer_access.inquiry_id.present?
+      property_title = @customer_access.property_publication&.title
+      CustomerActivity.create(
+        customer_id: @customer_access.customer_id,
+        inquiry_id: @customer_access.inquiry_id,
+        user: current_user,
+        activity_type: :access_revoked,
+        direction: :outbound,
+        subject: "マイページアクセスを取り消し",
+        content: "#{@customer_access.customer_name}の物件「#{property_title}」へのアクセス権を取り消し",
+        customer_access: @customer_access,
+        property_publication: @customer_access.property_publication,
+        property_inquiry_id: @customer_access.property_inquiry_id
+      )
+    end
+
     render json: {
       success: true,
       message: '顧客アクセス権を取り消しました',
@@ -144,6 +179,22 @@ class Api::V1::CustomerAccessesController < ApplicationController
     new_expiry = params[:expires_at] ? Time.parse(params[:expires_at]) : 14.days.from_now
 
     if @customer_access.extend_expiry!(new_expiry)
+      # 対応履歴に「有効期限延長」を自動記録
+      if @customer_access.customer_id.present? && @customer_access.inquiry_id.present?
+        CustomerActivity.create(
+          customer_id: @customer_access.customer_id,
+          inquiry_id: @customer_access.inquiry_id,
+          user: current_user,
+          activity_type: :access_extended,
+          direction: :outbound,
+          subject: "マイページの有効期限を延長",
+          content: "#{@customer_access.customer_name}のアクセス有効期限を#{new_expiry.strftime('%Y年%m月%d日')}まで延長",
+          customer_access: @customer_access,
+          property_publication: @customer_access.property_publication,
+          property_inquiry_id: @customer_access.property_inquiry_id
+        )
+      end
+
       render json: {
         success: true,
         message: "有効期限を#{new_expiry.strftime('%Y年%m月%d日')}まで延長しました",
@@ -428,6 +479,36 @@ class Api::V1::CustomerAccessesController < ApplicationController
         ip_address: request.remote_ip,
         user_agent: request.user_agent
       )
+
+      # 対応履歴に「マイページ閲覧」を自動記録（同日の重複防止）
+      if @customer_access.customer_id.present? && @customer_access.inquiry_id.present?
+        already_recorded = CustomerActivity.where(
+          customer_id: @customer_access.customer_id,
+          customer_access_id: @customer_access.id,
+          activity_type: :portal_viewed
+        ).where("created_at >= ?", Time.current.beginning_of_day).exists?
+
+        unless already_recorded
+          device_label = case params[:device_type]
+                         when "mobile" then "モバイル"
+                         when "tablet" then "タブレット"
+                         when "desktop" then "デスクトップ"
+                         else "不明"
+                         end
+
+          CustomerActivity.create(
+            customer_id: @customer_access.customer_id,
+            inquiry_id: @customer_access.inquiry_id,
+            activity_type: :portal_viewed,
+            direction: :inbound,
+            subject: "マイページを閲覧",
+            content: "デバイス: #{device_label}",
+            customer_access: @customer_access,
+            property_publication: @customer_access.property_publication,
+            property_inquiry_id: @customer_access.property_inquiry_id
+          )
+        end
+      end
     end
 
     render json: { success: true, view_count: @customer_access.view_count }
@@ -557,6 +638,22 @@ class Api::V1::CustomerAccessesController < ApplicationController
     if route.save
       # selected_indexがない場合は経路計算を実行
       route.calculate_route! unless route.calculated?
+
+      # 対応履歴に「経路作成」を自動記録
+      if @customer_access.customer_id.present? && @customer_access.inquiry_id.present?
+        destination = route.destination_name.presence || route.destination_address
+        CustomerActivity.create(
+          customer_id: @customer_access.customer_id,
+          inquiry_id: @customer_access.inquiry_id,
+          activity_type: :customer_route_created,
+          direction: :inbound,
+          subject: "経路を作成",
+          content: "#{destination}への#{route.travel_mode == 'walking' ? '徒歩' : route.travel_mode}経路を作成",
+          customer_access: @customer_access,
+          property_publication: @customer_access.property_publication,
+          property_inquiry_id: @customer_access.property_inquiry_id
+        )
+      end
 
       render json: {
         success: true,

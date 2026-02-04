@@ -18,7 +18,14 @@ class CustomerActivity < ApplicationRecord
     access_issued: 6,         # アクセス発行（自動記録）
     status_change: 7,         # ステータス変更（自動記録）
     line_message: 8,          # LINEメッセージ
-    assigned_user_change: 9   # 担当者変更（自動記録）
+    assigned_user_change: 9,  # 担当者変更（自動記録）
+    portal_viewed: 10,         # マイページ閲覧（自動記録）
+    ai_simulation: 11,         # AIシミュレーション利用（自動記録）
+    ai_grounding: 12,          # AI Q&A利用（自動記録）
+    customer_route_created: 13, # 顧客経路作成（自動記録）
+    access_revoked: 14,        # アクセス取り消し（自動記録）
+    access_extended: 15,       # 有効期限延長（自動記録）
+    inquiry_replied: 16        # 問い合わせ返信（自動記録）
   }, prefix: true
 
   enum :direction, {
@@ -32,7 +39,7 @@ class CustomerActivity < ApplicationRecord
 
   # Scopes
   scope :recent, -> { order(created_at: :desc) }
-  scope :manual, -> { where.not(activity_type: [ :inquiry, :access_issued, :status_change, :assigned_user_change ]) }
+  scope :manual, -> { where.not(activity_type: [ :inquiry, :access_issued, :status_change, :assigned_user_change, :portal_viewed, :ai_simulation, :ai_grounding, :customer_route_created, :access_revoked, :access_extended, :inquiry_replied ]) }
 
   # Callbacks
   after_create :update_customer_last_contacted
@@ -59,7 +66,14 @@ class CustomerActivity < ApplicationRecord
       "access_issued" => "アクセス発行",
       "status_change" => "ステータス変更",
       "line_message" => "LINE",
-      "assigned_user_change" => "担当者変更"
+      "assigned_user_change" => "担当者変更",
+      "portal_viewed" => "マイページ閲覧",
+      "ai_simulation" => "AIシミュレーション",
+      "ai_grounding" => "AI Q&A",
+      "customer_route_created" => "経路作成",
+      "access_revoked" => "アクセス取り消し",
+      "access_extended" => "有効期限延長",
+      "inquiry_replied" => "問い合わせ返信"
     }[activity_type] || activity_type
   end
 
@@ -84,7 +98,14 @@ class CustomerActivity < ApplicationRecord
       "access_issued" => "Key",
       "status_change" => "Flag",
       "line_message" => "Chat",
-      "assigned_user_change" => "Person"
+      "assigned_user_change" => "Person",
+      "portal_viewed" => "Visibility",
+      "ai_simulation" => "AutoAwesome",
+      "ai_grounding" => "SmartToy",
+      "customer_route_created" => "Directions",
+      "access_revoked" => "Block",
+      "access_extended" => "Update",
+      "inquiry_replied" => "Reply"
     }[activity_type] || "Info"
   end
 

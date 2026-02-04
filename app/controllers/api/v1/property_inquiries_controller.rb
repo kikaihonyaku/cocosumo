@@ -340,6 +340,21 @@ class Api::V1::PropertyInquiriesController < ApplicationController
       reply_message: body
     )
 
+    # 対応履歴に「問い合わせ返信」を自動記録
+    if @inquiry.customer_id.present? && @inquiry.inquiry_id.present?
+      CustomerActivity.create(
+        customer_id: @inquiry.customer_id,
+        inquiry_id: @inquiry.inquiry_id,
+        user: current_user,
+        activity_type: :inquiry_replied,
+        direction: :outbound,
+        subject: "問い合わせに返信",
+        content: "件名: #{subject}",
+        property_inquiry_id: @inquiry.id,
+        property_publication: @inquiry.property_publication
+      )
+    end
+
     render json: {
       success: true,
       message: "返信メールを送信しました",

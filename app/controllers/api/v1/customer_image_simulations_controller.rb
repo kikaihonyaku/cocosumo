@@ -111,6 +111,29 @@ class Api::V1::CustomerImageSimulationsController < ApplicationController
           result_image_base64: watermarked_image
         )
 
+        # 対応履歴に「AIシミュレーション利用」を自動記録（同日の重複防止）
+        if @customer_access.customer_id.present? && @customer_access.inquiry_id.present?
+          already_recorded = CustomerActivity.where(
+            customer_id: @customer_access.customer_id,
+            customer_access_id: @customer_access.id,
+            activity_type: :ai_simulation
+          ).where("created_at >= ?", Time.current.beginning_of_day).exists?
+
+          unless already_recorded
+            CustomerActivity.create(
+              customer_id: @customer_access.customer_id,
+              inquiry_id: @customer_access.inquiry_id,
+              activity_type: :ai_simulation,
+              direction: :inbound,
+              subject: "AIシミュレーションを利用",
+              content: "プロンプト: #{params[:prompt].truncate(100)}",
+              customer_access: @customer_access,
+              property_publication: @property_publication,
+              property_inquiry_id: @customer_access.property_inquiry_id
+            )
+          end
+        end
+
         render json: {
           success: true,
           simulation: simulation.as_json(
