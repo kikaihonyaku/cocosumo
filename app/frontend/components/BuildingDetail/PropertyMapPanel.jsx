@@ -173,6 +173,7 @@ export default function PropertyMapPanel({
   // 顧客向け表示オプション
   hideHeader = false, // ヘッダーを非表示
   chatRightOffset = 0, // チャット入力欄の右オフセット（ペグマン対応）
+  accessToken = null, // カスタマーアクセストークン
 }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -2245,6 +2246,7 @@ export default function PropertyMapPanel({
       {mapLoaded && !streetViewVisible && (
         <MapChatWidget
           property={property}
+          accessToken={accessToken}
           onPlaceClick={onPlaceClick}
           onWidgetTokenChange={onWidgetTokenChange}
           onAddressesFound={handleAddressesFound}

@@ -720,6 +720,7 @@ export default function CustomerPropertyView() {
                   isMobile={isMobile}
                   hideHeader={true}
                   chatRightOffset={50}
+                  accessToken={accessToken}
                 />
               </Box>
 

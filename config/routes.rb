@@ -348,6 +348,9 @@ Rails.application.routes.draw do
       get 'customer/:access_token/image_simulations', to: 'customer_image_simulations#index'
       post 'customer/:access_token/image_simulations', to: 'customer_image_simulations#create'
 
+      # 顧客向けGrounding API（認証不要・トークン認証）
+      post 'customer/:access_token/grounding', to: 'customer_groundings#create'
+
       # 顧客専用経路
       get 'customer/:access_token/routes', to: 'customer_accesses#customer_routes'
       post 'customer/:access_token/routes/preview', to: 'customer_accesses#preview_customer_route'

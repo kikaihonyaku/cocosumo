@@ -20,7 +20,7 @@ import {
   Maximize as MaximizeIcon,
 } from '@mui/icons-material';
 
-export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenChange, onAddressesFound, rightOffset = 0 }) {
+export default function MapChatWidget({ property, accessToken, onPlaceClick, onWidgetTokenChange, onAddressesFound, rightOffset = 0 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
@@ -64,7 +64,10 @@ export default function MapChatWidget({ property, onPlaceClick, onWidgetTokenCha
       // 住所書式の指示を追加したクエリ
       const enhancedQuery = `${queryText}\n\n※施設や場所の住所を記載する際は、必ず「〒xxx-xxxx 〇〇県〇〇市...」の形式で郵便番号を含めて記載してください。`;
 
-      const response = await fetch(`/api/v1/buildings/${property.id}/grounding`, {
+      const groundingUrl = accessToken
+        ? `/api/v1/customer/${accessToken}/grounding`
+        : `/api/v1/buildings/${property.id}/grounding`;
+      const response = await fetch(groundingUrl, {
         method: 'POST',
         credentials: 'include',
         headers: {
