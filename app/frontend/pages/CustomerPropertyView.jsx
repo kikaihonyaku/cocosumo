@@ -308,8 +308,8 @@ export default function CustomerPropertyView() {
         <Paper
           elevation={8}
           sx={{
-            p: { xs: 4, sm: 5 },
-            maxWidth: 420,
+            p: { xs: 3, sm: 5 },
+            maxWidth: { xs: '100%', sm: 420 },
             width: '100%',
             textAlign: 'center',
             borderRadius: 4
@@ -518,7 +518,7 @@ export default function CustomerPropertyView() {
       {/* メインコンテンツ */}
       <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 } }}>
         {/* タイトルセクション */}
-        <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, mb: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+        <Paper elevation={0} sx={{ p: { xs: 2, sm: 3, md: 4 }, mb: { xs: 2, sm: 3 }, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
           <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: 2 }}>
             <Box sx={{ flex: 1 }}>
               <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold', mb: 1, fontSize: { xs: '1.75rem', md: '2.25rem' } }}>
@@ -580,12 +580,12 @@ export default function CustomerPropertyView() {
         <Box sx={{
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
-          gap: 3,
-          mb: 3,
+          gap: { xs: 2, sm: 3 },
+          mb: { xs: 2, sm: 3 },
         }}>
           {/* 写真ギャラリー */}
           {property_publication_photos && property_publication_photos.length > 0 && (
-            <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, flex: isMobile ? 'none' : '1 1 60%', minWidth: 0, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Paper elevation={0} sx={{ p: { xs: 2, sm: 3, md: 4 }, flex: isMobile ? 'none' : '1 1 60%', minWidth: 0, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
               <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: '1.35rem' }}>
                 <ImageIcon color="primary" />
                 写真
@@ -595,7 +595,7 @@ export default function CustomerPropertyView() {
           )}
 
           {/* 物件詳細 */}
-          <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, flex: isMobile ? 'none' : '1 1 40%', minWidth: 0, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+          <Paper elevation={0} sx={{ p: { xs: 2, sm: 3, md: 4 }, flex: isMobile ? 'none' : '1 1 40%', minWidth: 0, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
             <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ fontSize: '1.35rem' }}>
               物件詳細
             </Typography>
@@ -617,70 +617,70 @@ export default function CustomerPropertyView() {
 
             <Table size="small">
               <TableBody>
-                {visibleFields.rent !== false && room?.rent && (
+                {visibleFields.rent !== false && room?.rent != null && (
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold', width: '40%' }}>賃料</TableCell>
-                    <TableCell>{room.rent.toLocaleString()}円</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', width: { xs: '35%', sm: '40%' }, fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>賃料</TableCell>
+                    <TableCell sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>{room.rent.toLocaleString()}円</TableCell>
                   </TableRow>
                 )}
-                {visibleFields.management_fee !== false && room?.management_fee && (
+                {visibleFields.management_fee !== false && room?.management_fee != null && (
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>管理費</TableCell>
-                    <TableCell>{room.management_fee.toLocaleString()}円</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>管理費</TableCell>
+                    <TableCell sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>{room.management_fee.toLocaleString()}円</TableCell>
                   </TableRow>
                 )}
-                {visibleFields.deposit !== false && room?.deposit && (
+                {visibleFields.deposit !== false && room?.deposit != null && (
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>敷金</TableCell>
-                    <TableCell>{room.deposit.toLocaleString()}円</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>敷金</TableCell>
+                    <TableCell sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>{room.deposit.toLocaleString()}円</TableCell>
                   </TableRow>
                 )}
-                {visibleFields.key_money !== false && room?.key_money && (
+                {visibleFields.key_money !== false && room?.key_money != null && (
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>礼金</TableCell>
-                    <TableCell>{room.key_money.toLocaleString()}円</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>礼金</TableCell>
+                    <TableCell sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>{room.key_money.toLocaleString()}円</TableCell>
                   </TableRow>
                 )}
                 {visibleFields.room_type !== false && room?.room_type && (
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>間取り</TableCell>
-                    <TableCell>{getRoomTypeLabel(room.room_type)}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>間取り</TableCell>
+                    <TableCell sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>{getRoomTypeLabel(room.room_type)}</TableCell>
                   </TableRow>
                 )}
-                {visibleFields.area !== false && room?.area && (
+                {visibleFields.area !== false && room?.area != null && (
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>専有面積</TableCell>
-                    <TableCell>{room.area}m²</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>専有面積</TableCell>
+                    <TableCell sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>{room.area}m²</TableCell>
                   </TableRow>
                 )}
-                {visibleFields.floor !== false && room?.floor && (
+                {visibleFields.floor !== false && room?.floor != null && (
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>階数</TableCell>
-                    <TableCell>{room.floor}階</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>階数</TableCell>
+                    <TableCell sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>{room.floor}階</TableCell>
                   </TableRow>
                 )}
                 {visibleFields.building_type !== false && building?.building_type && (
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>建物種別</TableCell>
-                    <TableCell>{getBuildingTypeLabel(building.building_type)}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>建物種別</TableCell>
+                    <TableCell sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>{getBuildingTypeLabel(building.building_type)}</TableCell>
                   </TableRow>
                 )}
                 {visibleFields.structure !== false && building?.structure && (
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>構造</TableCell>
-                    <TableCell>{building.structure}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>構造</TableCell>
+                    <TableCell sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>{building.structure}</TableCell>
                   </TableRow>
                 )}
                 {visibleFields.built_year !== false && building?.built_year && (
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>築年</TableCell>
-                    <TableCell>{building.built_year}年</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>築年</TableCell>
+                    <TableCell sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>{building.built_year}年</TableCell>
                   </TableRow>
                 )}
                 {visibleFields.facilities !== false && room?.facilities && (
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>設備</TableCell>
-                    <TableCell>{room.facilities}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>設備</TableCell>
+                    <TableCell sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 }, wordBreak: 'break-word' }}>{room.facilities}</TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -690,7 +690,7 @@ export default function CustomerPropertyView() {
 
         {/* 地図・周辺情報・アクセス */}
         {building?.latitude && building?.longitude && (
-          <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, mb: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+          <Paper elevation={0} sx={{ p: { xs: 2, sm: 3, md: 4 }, mb: { xs: 2, sm: 3 }, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
             <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: '1.35rem' }}>
               <MapIcon color="primary" />
               地図・周辺情報
@@ -706,7 +706,7 @@ export default function CustomerPropertyView() {
               {/* 地図エリア */}
               <Box sx={{
                 flex: isMobile ? 'none' : '1 1 0',
-                height: isMobile ? 500 : '100%',
+                height: isMobile ? 350 : '100%',
                 minWidth: 0,
               }}>
                 <PropertyMapPanel
@@ -792,7 +792,7 @@ export default function CustomerPropertyView() {
                           onClick={() => handleRouteSelect(route)}
                           sx={{ p: 0 }}
                         >
-                          <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                          <CardContent sx={{ py: 1.5, px: { xs: 1.5, sm: 2 }, '&:last-child': { pb: 1.5 } }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                               {getTravelModeIcon(route.travel_mode)}
                               <Typography variant="subtitle2" fontWeight="bold" sx={{ flex: 1 }}>
@@ -876,30 +876,30 @@ export default function CustomerPropertyView() {
               border: '1px solid',
               borderColor: 'rgba(25, 118, 210, 0.12)',
             }}>
-              <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2, flexWrap: 'wrap' }}>
-                <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-                  <Typography variant="subtitle2" color="primary.dark" gutterBottom fontWeight="bold" sx={{ fontSize: '0.95rem' }}>
+              <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: { xs: 1, md: 2 }, flexWrap: 'wrap' }}>
+                <Box sx={{ flex: { xs: '0 0 auto', md: '1 1 300px' }, minWidth: 0 }}>
+                  <Typography variant="subtitle2" color="primary.dark" gutterBottom fontWeight="bold" sx={{ fontSize: { xs: '0.85rem', md: '0.95rem' }, mb: { xs: 0.25, md: 0.5 } }}>
                     周辺施設を表示する
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem', lineHeight: 1.6 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', md: '0.9rem' }, lineHeight: 1.6 }}>
                     地図左上の「地図オプション」から、周辺のコンビニ・病院・スーパー・学校・公園などを地図上に表示できます。
                     各施設をクリックすると詳細情報が確認できます。
                   </Typography>
                 </Box>
-                <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-                  <Typography variant="subtitle2" color="primary.dark" gutterBottom fontWeight="bold" sx={{ fontSize: '0.95rem' }}>
+                <Box sx={{ flex: { xs: '0 0 auto', md: '1 1 300px' }, minWidth: 0 }}>
+                  <Typography variant="subtitle2" color="primary.dark" gutterBottom fontWeight="bold" sx={{ fontSize: { xs: '0.85rem', md: '0.95rem' }, mb: { xs: 0.25, md: 0.5 } }}>
                     周辺情報について質問する
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem', lineHeight: 1.6 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', md: '0.9rem' }, lineHeight: 1.6 }}>
                     地図下のチャット欄から、周辺施設について質問できます。
                     「近くにコンビニはありますか？」「最寄りの小学校までの距離は？」などお気軽にお聞きください。
                   </Typography>
                 </Box>
-                <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-                  <Typography variant="subtitle2" color="primary.dark" gutterBottom fontWeight="bold" sx={{ fontSize: '0.95rem' }}>
+                <Box sx={{ flex: { xs: '0 0 auto', md: '1 1 300px' }, minWidth: 0 }}>
+                  <Typography variant="subtitle2" color="primary.dark" gutterBottom fontWeight="bold" sx={{ fontSize: { xs: '0.85rem', md: '0.95rem' }, mb: { xs: 0.25, md: 0.5 } }}>
                     経路を追加する
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem', lineHeight: 1.6 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', md: '0.9rem' }, lineHeight: 1.6 }}>
                     よく行く場所（職場、学校など）への経路を最大4件まで追加できます。
                     「追加」ボタンから目的地を設定すると、ルートと所要時間が表示されます。
                   </Typography>
@@ -912,7 +912,7 @@ export default function CustomerPropertyView() {
         {/* VRツアー・バーチャルステージング */}
         {((property_publication_vr_tours && property_publication_vr_tours.length > 0) ||
           (property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0)) && (
-          <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, mb: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+          <Paper elevation={0} sx={{ p: { xs: 2, sm: 3, md: 4 }, mb: { xs: 2, sm: 3 }, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
               <Box sx={{
                 width: 44,
@@ -1195,7 +1195,7 @@ export default function CustomerPropertyView() {
 
         {/* お問い合わせ・QRコード */}
         <Paper elevation={0} sx={{
-          p: { xs: 3, md: 4 },
+          p: { xs: 2, sm: 3, md: 4 },
           borderRadius: 3,
           border: '1px solid',
           borderColor: 'divider',
@@ -1270,7 +1270,7 @@ export default function CustomerPropertyView() {
       <Box sx={{
         bgcolor: 'grey.900',
         color: 'grey.300',
-        py: 4,
+        py: { xs: 3, md: 4 },
         mt: 0
       }}>
         <Container maxWidth="lg">

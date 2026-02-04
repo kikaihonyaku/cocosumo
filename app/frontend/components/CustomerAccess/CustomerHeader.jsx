@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, AppBar, Toolbar, Chip } from '@mui/material';
+import { Box, Typography, AppBar, Toolbar, Chip, useMediaQuery, useTheme } from '@mui/material';
 import {
   Person as PersonIcon,
   Schedule as ScheduleIcon,
@@ -14,6 +14,8 @@ export default function CustomerHeader({
   propertyTitle,
   tenantName
 }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const getExpiryColor = () => {
     if (daysUntilExpiry === null || daysUntilExpiry === undefined) return 'default';
     if (daysUntilExpiry <= 3) return 'error';
@@ -26,27 +28,32 @@ export default function CustomerHeader({
   const hasSubtitle = tenantName && propertyTitle;
 
   return (
-    <AppBar position="static" sx={{ bgcolor: 'primary.main' }}>
-      <Toolbar sx={{ justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+    <AppBar position="static" sx={{ bgcolor: 'primary.main', borderRadius: '12px 12px 0 0' }}>
+      <Toolbar sx={{
+        justifyContent: 'space-between',
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: isMobile ? 'flex-start' : 'center',
+        gap: { xs: 1, sm: 2 },
+        py: isMobile ? 1 : 0,
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
           <HomeIcon />
-          <Box>
-            <Typography variant="h6" component="h1" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
-              {displayTitle}
-            </Typography>
+          <Typography variant="h6" component="h1" sx={{ fontWeight: 600, lineHeight: 1.2, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+            {displayTitle}
             {hasSubtitle && (
-              <Typography variant="caption" sx={{ opacity: 0.85, display: 'block' }}>
+              <Typography component="span" sx={{ opacity: 0.85, fontSize: '0.8em', ml: 1 }}>
                 {tenantName}
               </Typography>
             )}
-          </Box>
+          </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexWrap: 'wrap' }}>
           {customerName && (
             <Chip
               icon={<PersonIcon />}
               label={`${customerName} 様 限定公開`}
+              size={isMobile ? 'small' : 'medium'}
               sx={{
                 bgcolor: 'rgba(255,255,255,0.2)',
                 color: 'white',

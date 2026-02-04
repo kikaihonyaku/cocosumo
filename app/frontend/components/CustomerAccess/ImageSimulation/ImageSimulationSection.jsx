@@ -40,7 +40,9 @@ export default function ImageSimulationSection({
   const [quota, setQuota] = useState({ remaining: 10, daily_limit: 10, used_today: 0 });
   const [quotaLoading, setQuotaLoading] = useState(true);
 
-  const steps = ['画像を選択', 'シミュレーション内容を選択', '結果を確認'];
+  const steps = isMobile
+    ? ['画像選択', '内容選択', '結果確認']
+    : ['画像を選択', 'シミュレーション内容を選択', '結果を確認'];
 
   // 残り回数を取得
   const fetchQuota = useCallback(async () => {
@@ -186,8 +188,8 @@ export default function ImageSimulationSection({
     <Paper
       elevation={0}
       sx={{
-        p: { xs: 3, md: 4 },
-        mb: 3,
+        p: { xs: 2, sm: 3, md: 4 },
+        mb: { xs: 2, sm: 3 },
         borderRadius: 3,
         border: '1px solid',
         borderColor: 'divider',
@@ -221,7 +223,7 @@ export default function ImageSimulationSection({
               AIイメージシミュレーション
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              AIで物件画像の様々なシチュエーションを体験
+              AIで物件画像の様々なシチュエーションを体験（例：家具配置、季節変更、夜景、リフォーム後イメージなど）
             </Typography>
           </Box>
         </Box>
@@ -260,8 +262,8 @@ export default function ImageSimulationSection({
           {/* ステッパー */}
           <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
             {steps.map((label, index) => (
-              <Step key={label} completed={index < activeStep}>
-                <StepLabel>{label}</StepLabel>
+              <Step key={index} completed={index < activeStep}>
+                <StepLabel sx={isMobile ? { '& .MuiStepLabel-label': { fontSize: '0.75rem' } } : undefined}>{label}</StepLabel>
               </Step>
             ))}
           </Stepper>

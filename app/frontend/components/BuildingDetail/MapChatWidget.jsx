@@ -548,7 +548,7 @@ export default function MapChatWidget({ property, accessToken, onPlaceClick, onW
             <TextField
               fullWidth
               size="small"
-              placeholder="周辺について質問してください..."
+              placeholder="周辺について質問..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -564,6 +564,9 @@ export default function MapChatWidget({ property, accessToken, onPlaceClick, onW
               sx={{
                 '& .MuiOutlinedInput-root': {
                   bgcolor: 'grey.50',
+                },
+                '& .MuiOutlinedInput-input::placeholder': {
+                  whiteSpace: 'nowrap',
                 }
               }}
             />

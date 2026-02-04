@@ -86,14 +86,14 @@ export default function ImageSimulationPhotoSelector({
       {tabValue === 0 && (
         <Grid container spacing={1.5}>
           {roomPhotos.length === 0 ? (
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
                 室内写真がありません
               </Typography>
             </Grid>
           ) : (
             roomPhotos.map((photo) => (
-              <Grid item xs={6} sm={4} md={3} key={`room-${photo.id}`}>
+              <Grid size={{ xs: 6, sm: 4, md: 3 }} key={`room-${photo.id}`}>
                 <Card
                   variant="outlined"
                   sx={{
@@ -161,14 +161,14 @@ export default function ImageSimulationPhotoSelector({
       {tabValue === 1 && (
         <Grid container spacing={1.5}>
           {buildingPhotos.length === 0 ? (
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
                 外観写真がありません
               </Typography>
             </Grid>
           ) : (
             buildingPhotos.map((photo) => (
-              <Grid item xs={6} sm={4} md={3} key={`building-${photo.id}`}>
+              <Grid size={{ xs: 6, sm: 4, md: 3 }} key={`building-${photo.id}`}>
                 <Card
                   variant="outlined"
                   sx={{
