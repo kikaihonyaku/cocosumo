@@ -96,11 +96,24 @@ export default function CustomerAccessDetailDialog({
 
   const handleCopyUrl = async () => {
     if (!access) return;
+    const url = access.public_url;
     try {
-      await navigator.clipboard.writeText(access.public_url);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
       alert('URLをコピーしました');
     } catch (err) {
       console.error('Failed to copy URL:', err);
+      prompt('URLをコピーしてください:', url);
     }
   };
 

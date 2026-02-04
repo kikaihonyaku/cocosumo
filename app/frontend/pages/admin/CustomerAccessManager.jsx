@@ -116,10 +116,27 @@ export default function CustomerAccessManager() {
     handleMenuClose();
   };
 
-  const handleCopyUrl = (access) => {
-    const url = `${window.location.origin}/customer/${access.access_token}`;
-    navigator.clipboard.writeText(url);
+  const handleCopyUrl = async (access) => {
+    const url = access.public_url || `${window.location.origin}/customer/${access.access_token}`;
     handleMenuClose();
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      alert('URLをコピーしました');
+    } catch (err) {
+      console.error('Failed to copy URL:', err);
+      prompt('URLをコピーしてください:', url);
+    }
   };
 
   const handleOpenCustomerPage = (access) => {
