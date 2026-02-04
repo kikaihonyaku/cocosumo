@@ -738,6 +738,17 @@ class Api::V1::CustomerAccessesController < ApplicationController
       )
     end
 
+    # 保存済みAIシミュレーションを追加
+    if @customer_access
+      saved_simulations = CustomerImageSimulation
+        .where(customer_access_id: @customer_access.id, saved: true, status: :success)
+        .order(created_at: :desc)
+      result['saved_image_simulations'] = saved_simulations.as_json(
+        only: [:id, :title, :source_photo_url, :prompt, :created_at],
+        methods: [:result_image_data_url]
+      )
+    end
+
     result
   end
 

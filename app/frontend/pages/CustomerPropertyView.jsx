@@ -50,7 +50,8 @@ import {
   Delete as DeleteIcon,
   Person as PersonIcon,
   Close as CloseIcon,
-  Email as EmailIcon
+  Email as EmailIcon,
+  AutoFixHigh as AutoFixHighIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import CustomerHeader from '../components/CustomerAccess/CustomerHeader';
@@ -59,6 +60,7 @@ import PropertyMapPanel from '../components/BuildingDetail/PropertyMapPanel';
 import CustomerRouteDialog from '../components/CustomerAccess/CustomerRouteDialog';
 import InquiryForm from '../components/PropertyPublication/InquiryForm';
 import { ImageSimulationSection } from '../components/CustomerAccess/ImageSimulation';
+import SavedSimulationViewerDialog from '../components/CustomerAccess/SavedSimulationViewerDialog';
 import { getRoomTypeLabel } from '../utils/formatters';
 
 export default function CustomerPropertyView() {
@@ -89,6 +91,10 @@ export default function CustomerPropertyView() {
   // お問い合わせダイアログ
   const [inquiryDialogOpen, setInquiryDialogOpen] = useState(false);
 
+  // 保存済みAIシミュレーション
+  const [savedSimulations, setSavedSimulations] = useState([]);
+  const [viewerSimulation, setViewerSimulation] = useState(null);
+
   const loadData = useCallback(async (withPassword = null) => {
     try {
       setLoading(true);
@@ -107,6 +113,11 @@ export default function CustomerPropertyView() {
       // 顧客経路を設定
       if (response.data.customer_routes) {
         setCustomerRoutes(response.data.customer_routes);
+      }
+
+      // 保存済みAIシミュレーションを設定
+      if (response.data.saved_image_simulations) {
+        setSavedSimulations(response.data.saved_image_simulations);
       }
 
       // トラッキング
@@ -236,6 +247,23 @@ export default function CustomerPropertyView() {
       alert('経路の削除に失敗しました');
     } finally {
       setDeletingRouteId(null);
+    }
+  };
+
+  // AIシミュレーション保存コールバック
+  const handleSimulationSaved = (simulation) => {
+    setSavedSimulations(prev => [simulation, ...prev]);
+  };
+
+  // 保存済みシミュレーション削除
+  const handleDeleteSavedSimulation = async (simulationId) => {
+    try {
+      await axios.delete(`/api/v1/customer/${accessToken}/image_simulations/${simulationId}/save`);
+      setSavedSimulations(prev => prev.filter(s => s.id !== simulationId));
+      setViewerSimulation(null);
+    } catch (err) {
+      console.error('Failed to delete saved simulation:', err);
+      alert('削除に失敗しました');
     }
   };
 
@@ -909,9 +937,10 @@ export default function CustomerPropertyView() {
           </Paper>
         )}
 
-        {/* VRツアー・バーチャルステージング */}
+        {/* VRツアー・バーチャルステージング・保存済みAIシミュレーション */}
         {((property_publication_vr_tours && property_publication_vr_tours.length > 0) ||
-          (property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0)) && (
+          (property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0) ||
+          savedSimulations.length > 0) && (
           <Paper elevation={0} sx={{ p: { xs: 2, sm: 3, md: 4 }, mb: { xs: 2, sm: 3 }, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
               <Box sx={{
@@ -1179,6 +1208,144 @@ export default function CustomerPropertyView() {
                   </Card>
                 </Grid>
               ))}
+
+              {/* 保存済みAIシミュレーション */}
+              {savedSimulations.map((sim) => (
+                <Grid item xs={12} sm={6} md={6} lg={4} key={`sim-${sim.id}`}>
+                  <Card
+                    elevation={2}
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      borderRadius: 3,
+                      overflow: 'hidden',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: 6,
+                      },
+                    }}
+                  >
+                    <CardActionArea
+                      onClick={() => setViewerSimulation(sim)}
+                      sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
+                    >
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          paddingTop: '66.67%',
+                          bgcolor: 'grey.200',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {sim.result_image_data_url ? (
+                          <Box
+                            component="img"
+                            src={sim.result_image_data_url}
+                            alt={sim.title}
+                            sx={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                            }}
+                          />
+                        ) : (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: 'linear-gradient(135deg, #fce4ec 0%, #e8eaf6 100%)',
+                            }}
+                          >
+                            <AutoFixHighIcon sx={{ fontSize: 64, color: 'secondary.main', opacity: 0.5 }} />
+                          </Box>
+                        )}
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: '50%',
+                            background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)',
+                          }}
+                        />
+                        <Chip
+                          icon={<AutoFixHighIcon sx={{ fontSize: 16 }} />}
+                          label="AIシミュレーション"
+                          size="small"
+                          sx={{
+                            position: 'absolute',
+                            top: 12,
+                            left: 12,
+                            bgcolor: '#7c4dff',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem',
+                            height: 28,
+                            '& .MuiChip-icon': { color: 'white' },
+                          }}
+                        />
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('この保存済みシミュレーションを削除しますか？')) {
+                              handleDeleteSavedSimulation(sim.id);
+                            }
+                          }}
+                          sx={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            bgcolor: 'rgba(0,0,0,0.5)',
+                            color: 'white',
+                            '&:hover': { bgcolor: 'rgba(211,47,47,0.8)' },
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: 56,
+                            height: 56,
+                            borderRadius: '50%',
+                            bgcolor: 'rgba(255,255,255,0.9)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: 3,
+                          }}
+                        >
+                          <OpenInNewIcon sx={{ fontSize: 28, color: '#7c4dff' }} />
+                        </Box>
+                      </Box>
+                      <CardContent sx={{ py: 2, px: 2.5 }}>
+                        <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 0.5 }} noWrap>
+                          {sim.title || 'AIシミュレーション'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          タップしてBefore/Afterを比較
+                        </Typography>
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
+                </Grid>
+              ))}
             </Grid>
           </Paper>
         )}
@@ -1190,6 +1357,7 @@ export default function CustomerPropertyView() {
             photos={property_publication_photos}
             buildingPhotos={data.room?.building?.building_photos || []}
             isMobile={isMobile}
+            onSimulationSaved={handleSimulationSaved}
           />
         )}
 
@@ -1289,6 +1457,15 @@ export default function CustomerPropertyView() {
         accessToken={accessToken}
         buildingLocation={building ? { lat: building.latitude, lng: building.longitude } : null}
         onCreated={handleRouteCreated}
+      />
+
+      {/* 保存済みシミュレーション表示ダイアログ */}
+      <SavedSimulationViewerDialog
+        open={!!viewerSimulation}
+        onClose={() => setViewerSimulation(null)}
+        simulation={viewerSimulation}
+        onDelete={handleDeleteSavedSimulation}
+        isMobile={isMobile}
       />
 
       {/* お問い合わせダイアログ */}

@@ -144,6 +144,67 @@ class Api::V1::CustomerImageSimulationsController < ApplicationController
     end
   end
 
+  # POST /api/v1/customer/:access_token/image_simulations/:id/save
+  # シミュレーション結果を保存
+  def save
+    simulation = CustomerImageSimulation
+                   .where(property_publication_id: @property_publication.id)
+                   .where(session_id: generate_session_id)
+                   .find_by(id: params[:id])
+
+    unless simulation
+      return render json: { error: 'シミュレーションが見つかりません' }, status: :not_found
+    end
+
+    unless simulation.success? && simulation.result_image_base64.present?
+      return render json: { error: '保存可能な結果がありません' }, status: :unprocessable_entity
+    end
+
+    unless CustomerImageSimulation.can_save?(@customer_access.id)
+      return render json: {
+        error: "保存上限（#{CustomerImageSimulation::MAX_SAVED_PER_ACCESS}件）に達しています",
+        max_saved: CustomerImageSimulation::MAX_SAVED_PER_ACCESS
+      }, status: :unprocessable_entity
+    end
+
+    # 元画像のURLを解決
+    source_url = resolve_source_photo_url(simulation)
+
+    # タイトルを自動生成（プロンプトから）
+    title = simulation.prompt.truncate(50)
+
+    simulation.update!(
+      saved: true,
+      customer_access_id: @customer_access.id,
+      title: title,
+      source_photo_url: source_url
+    )
+
+    render json: {
+      success: true,
+      simulation: simulation.as_json(
+        only: [:id, :title, :source_photo_url, :prompt, :status, :created_at],
+        methods: [:result_image_data_url]
+      )
+    }
+  end
+
+  # DELETE /api/v1/customer/:access_token/image_simulations/:id/save
+  # 保存済みシミュレーションを解除
+  def unsave
+    simulation = CustomerImageSimulation
+                   .where(customer_access_id: @customer_access.id, saved: true)
+                   .find_by(id: params[:id])
+
+    unless simulation
+      return render json: { error: '保存済みシミュレーションが見つかりません' }, status: :not_found
+    end
+
+    simulation.update!(saved: false, customer_access_id: nil)
+
+    render json: { success: true }
+  end
+
   private
 
   def set_customer_access
@@ -503,5 +564,17 @@ class Api::V1::CustomerImageSimulationsController < ApplicationController
     end
 
     '不明なエラーが発生しました'
+  end
+
+  # 保存時に元画像URLを解決
+  def resolve_source_photo_url(simulation)
+    case simulation.source_photo_type
+    when 'room_photo'
+      RoomPhoto.find_by(id: simulation.source_photo_id)&.photo_url
+    when 'building_photo'
+      BuildingPhoto.find_by(id: simulation.source_photo_id)&.photo_url
+    else
+      nil
+    end
   end
 end

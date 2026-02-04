@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_03_205437) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_04_212054) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -308,6 +308,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_03_205437) do
     t.string "ip_address"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "customer_access_id"
+    t.boolean "saved", default: false, null: false
+    t.string "title"
+    t.text "source_photo_url"
+    t.index ["customer_access_id", "saved"], name: "idx_cis_customer_access_saved", where: "(saved = true)"
+    t.index ["customer_access_id"], name: "index_customer_image_simulations_on_customer_access_id"
     t.index ["property_publication_id", "simulation_date"], name: "idx_cis_publication_date"
     t.index ["property_publication_id"], name: "index_customer_image_simulations_on_property_publication_id"
     t.index ["session_id"], name: "index_customer_image_simulations_on_session_id"
@@ -1024,6 +1030,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_03_205437) do
   add_foreign_key "customer_activities", "property_inquiries"
   add_foreign_key "customer_activities", "property_publications"
   add_foreign_key "customer_activities", "users"
+  add_foreign_key "customer_image_simulations", "customer_accesses"
   add_foreign_key "customer_image_simulations", "property_publications"
   add_foreign_key "customer_routes", "customer_accesses"
   add_foreign_key "customers", "tenants"

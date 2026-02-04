@@ -347,6 +347,8 @@ Rails.application.routes.draw do
       get 'customer/:access_token/image_simulations/quota', to: 'customer_image_simulations#quota'
       get 'customer/:access_token/image_simulations', to: 'customer_image_simulations#index'
       post 'customer/:access_token/image_simulations', to: 'customer_image_simulations#create'
+      post 'customer/:access_token/image_simulations/:id/save', to: 'customer_image_simulations#save'
+      delete 'customer/:access_token/image_simulations/:id/save', to: 'customer_image_simulations#unsave'
 
       # 顧客向けGrounding API（認証不要・トークン認証）
       post 'customer/:access_token/grounding', to: 'customer_groundings#create'

@@ -14,6 +14,8 @@ import {
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import SaveIcon from '@mui/icons-material/Save';
+import CheckIcon from '@mui/icons-material/Check';
 import axios from 'axios';
 
 import SimulationQuotaIndicator from './SimulationQuotaIndicator';
@@ -25,7 +27,8 @@ export default function ImageSimulationSection({
   accessToken,
   photos = [],
   buildingPhotos = [],
-  isMobile
+  isMobile,
+  onSimulationSaved
 }) {
   const [expanded, setExpanded] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
@@ -39,6 +42,8 @@ export default function ImageSimulationSection({
   const [result, setResult] = useState(null);
   const [quota, setQuota] = useState({ remaining: 10, daily_limit: 10, used_today: 0 });
   const [quotaLoading, setQuotaLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const steps = isMobile
     ? ['画像選択', '内容選択', '結果確認']
@@ -109,9 +114,11 @@ export default function ImageSimulationSection({
 
       if (response.data.success) {
         setResult({
+          simulationId: response.data.simulation.id,
           imageUrl: response.data.simulation.result_image_data_url,
           prompt: selectedPrompt.label
         });
+        setSaved(false);
         setQuota(prev => ({
           ...prev,
           remaining: response.data.remaining,
@@ -180,6 +187,27 @@ export default function ImageSimulationSection({
     setCustomPrompt('');
     setResult(null);
     setError(null);
+  };
+
+  // 保存ハンドラー
+  const handleSave = async () => {
+    if (!result?.simulationId) return;
+    setSaving(true);
+    try {
+      const response = await axios.post(
+        `/api/v1/customer/${accessToken}/image_simulations/${result.simulationId}/save`
+      );
+      if (response.data.success) {
+        setSaved(true);
+        onSimulationSaved?.(response.data.simulation);
+      }
+    } catch (err) {
+      console.error('Failed to save simulation:', err);
+      const msg = err.response?.data?.error || '保存に失敗しました';
+      alert(msg);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const canSimulate = selectedPhoto && selectedPrompt && quota.remaining > 0 && !loading;
@@ -363,6 +391,15 @@ export default function ImageSimulationSection({
                 <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                   {result && (
                     <>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        onClick={handleSave}
+                        disabled={saving || saved}
+                        startIcon={saved ? <CheckIcon /> : <SaveIcon />}
+                      >
+                        {saved ? '保存済み' : saving ? '保存中...' : 'バーチャルコンテンツに保存'}
+                      </Button>
                       <Button
                         variant="contained"
                         color="secondary"

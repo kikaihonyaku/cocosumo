@@ -8,6 +8,7 @@ class CustomerAccess < ApplicationRecord
   belongs_to :property_inquiry, optional: true
   belongs_to :inquiry, optional: true
   has_many :customer_routes, dependent: :destroy
+  has_many :saved_image_simulations, -> { where(saved: true) }, class_name: 'CustomerImageSimulation'
 
   # Delegations
   delegate :room, to: :property_publication
