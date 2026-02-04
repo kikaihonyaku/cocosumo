@@ -4,7 +4,7 @@ class Api::V1::CustomerAccessesController < ApplicationController
                                          :customer_routes, :preview_customer_route, :create_customer_route,
                                          :destroy_customer_route, :recalculate_customer_route,
                                          :customer_route_streetview_points]
-  before_action :set_property_publication, only: [:create]
+  before_action :set_property_publication, only: [:create, :check_existing]
   before_action :set_customer_access, only: [:show, :update, :destroy, :revoke, :extend_expiry, :set_password, :remove_password]
 
   # GET /api/v1/customer_accesses
@@ -80,6 +80,40 @@ class Api::V1::CustomerAccessesController < ApplicationController
         }
       }
     )
+  end
+
+  # GET /api/v1/property_publications/:property_publication_id/customer_accesses/check_existing
+  # 同一メールアドレスで有効期限内のアクセスが存在するかチェック
+  def check_existing
+    email = params[:email]&.strip&.downcase
+    return render json: { existing_accesses: [] } if email.blank?
+
+    # 同一テナント内で同一メールアドレスの有効なアクセスを検索
+    tenant_publication_ids = PropertyPublication.kept.joins(room: :building)
+                                                .where(buildings: { tenant_id: current_user.tenant_id })
+                                                .pluck(:id)
+
+    existing = CustomerAccess.where(property_publication_id: tenant_publication_ids)
+                             .where("LOWER(customer_email) = ?", email)
+                             .where(status: :active)
+                             .where("expires_at IS NULL OR expires_at > ?", Time.current)
+                             .includes(property_publication: { room: :building })
+
+    render json: {
+      existing_accesses: existing.map { |access|
+        pub = access.property_publication
+        {
+          id: access.id,
+          customer_name: access.customer_name,
+          property_title: pub&.title,
+          building_name: pub&.room&.building&.name,
+          room_number: pub&.room&.room_number,
+          expires_at: access.formatted_expires_at,
+          days_until_expiry: access.days_until_expiry,
+          same_publication: access.property_publication_id == @property_publication.id
+        }
+      }
+    }
   end
 
   # POST /api/v1/property_publications/:property_publication_id/customer_accesses

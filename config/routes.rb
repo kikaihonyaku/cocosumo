@@ -306,7 +306,11 @@ Rails.application.routes.draw do
 
       # 顧客マイページ管理（物件公開ページ単位）
       resources :property_publications, only: [] do
-        resources :customer_accesses, only: [:index, :create]
+        resources :customer_accesses, only: [:index, :create] do
+          collection do
+            get :check_existing
+          end
+        end
       end
 
       # 顧客アクセス分析API（認証必要）

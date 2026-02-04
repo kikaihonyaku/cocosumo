@@ -41,6 +41,7 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, inq
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
+  const [existingAccesses, setExistingAccesses] = useState([]);
 
   // 問い合わせから作成する場合、データを事前入力
   useEffect(() => {
@@ -52,6 +53,10 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, inq
         customer_phone: inquiry.phone || '',
         notes: inquiry.id ? `問い合わせID: ${inquiry.id} からの発行` : ''
       }));
+      // 問い合わせのメールアドレスで既存アクセスをチェック
+      if (inquiry.email) {
+        checkExistingAccesses(inquiry.email);
+      }
     }
   }, [inquiry, open]);
 
@@ -59,6 +64,23 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, inq
     const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
     setFormData(prev => ({ ...prev, [field]: value }));
     setValidationErrors(prev => ({ ...prev, [field]: null }));
+  };
+
+  // メールアドレスで既存の有効なアクセスをチェック
+  const checkExistingAccesses = async (email) => {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setExistingAccesses([]);
+      return;
+    }
+    try {
+      const response = await axios.get(
+        `/api/v1/property_publications/${publicationId}/customer_accesses/check_existing`,
+        { params: { email: email.trim() } }
+      );
+      setExistingAccesses(response.data.existing_accesses || []);
+    } catch {
+      setExistingAccesses([]);
+    }
   };
 
   const validate = () => {
@@ -145,6 +167,7 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, inq
     setShowPassword(false);
     setError(null);
     setValidationErrors({});
+    setExistingAccesses([]);
     onClose();
   };
 
@@ -193,12 +216,28 @@ export default function CustomerAccessDialog({ open, onClose, publicationId, inq
             type="email"
             value={formData.customer_email}
             onChange={handleChange('customer_email')}
+            onBlur={(e) => checkExistingAccesses(e.target.value)}
             error={!!validationErrors.customer_email}
             helperText={validationErrors.customer_email}
             required
             fullWidth
             placeholder="example@email.com"
           />
+
+          {existingAccesses.length > 0 && (
+            <Alert severity="warning" sx={{ py: 0.5 }}>
+              <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
+                このメールアドレスには有効期限内の顧客ページが既に発行されています
+              </Typography>
+              {existingAccesses.map((access) => (
+                <Typography key={access.id} variant="caption" display="block" sx={{ ml: 1 }}>
+                  {'・'}{access.property_title || `${access.building_name} ${access.room_number}`}
+                  {access.same_publication ? '（この物件）' : ''}
+                  {access.expires_at ? ` — 期限: ${access.expires_at}` : ''}
+                </Typography>
+              ))}
+            </Alert>
+          )}
 
           <TextField
             label="電話番号（任意）"
