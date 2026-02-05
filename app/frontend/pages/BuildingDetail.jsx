@@ -520,9 +520,11 @@ export default function BuildingDetail() {
               <Typography variant="h6" component="h1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
                 {property.name}
               </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.85rem' }}>
-                {property.address}
-              </Typography>
+              {!isMobile && (
+                <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.85rem' }}>
+                  {property.address}
+                </Typography>
+              )}
             </Box>
             <Button
               color="inherit"
