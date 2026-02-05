@@ -967,7 +967,7 @@ export default function CustomerPropertyView() {
             <Grid container spacing={3}>
               {/* VRツアー */}
               {property_publication_vr_tours?.map((item) => (
-                <Grid item xs={12} sm={6} md={6} lg={4} key={`vr-${item.vr_tour?.id}`}>
+                <Grid item xs={12} sm={6} md={6} lg={6} key={`vr-${item.vr_tour?.id}`}>
                   <Card
                     elevation={2}
                     sx={{
@@ -984,7 +984,7 @@ export default function CustomerPropertyView() {
                     }}
                   >
                     <CardActionArea
-                      href={`/vr/${item.vr_tour?.public_id}`}
+                      href={`/vr/${item.vr_tour?.public_id}${isMobile ? '?closable=true' : ''}`}
                       target="_blank"
                       sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
                     >
@@ -1089,7 +1089,7 @@ export default function CustomerPropertyView() {
 
               {/* バーチャルステージング */}
               {property_publication_virtual_stagings?.map((item) => (
-                <Grid item xs={12} sm={6} md={6} lg={4} key={`staging-${item.virtual_staging?.id}`}>
+                <Grid item xs={12} sm={6} md={6} lg={6} key={`staging-${item.virtual_staging?.id}`}>
                   <Card
                     elevation={2}
                     sx={{
@@ -1106,7 +1106,7 @@ export default function CustomerPropertyView() {
                     }}
                   >
                     <CardActionArea
-                      href={`/virtual-staging/${item.virtual_staging?.public_id}`}
+                      href={`/virtual-staging/${item.virtual_staging?.public_id}${isMobile ? '?closable=true' : ''}`}
                       target="_blank"
                       sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
                     >
@@ -1211,7 +1211,7 @@ export default function CustomerPropertyView() {
 
               {/* 保存済みAIシミュレーション */}
               {savedSimulations.map((sim) => (
-                <Grid item xs={12} sm={6} md={6} lg={4} key={`sim-${sim.id}`}>
+                <Grid item xs={12} sm={6} md={6} lg={6} key={`sim-${sim.id}`}>
                   <Card
                     elevation={2}
                     sx={{

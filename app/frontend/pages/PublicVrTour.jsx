@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import {
   Box,
   Typography,
   CircularProgress,
   Alert,
   AppBar,
-  Toolbar
+  Toolbar,
+  IconButton,
+  Tooltip
 } from "@mui/material";
+import { Close as CloseIcon } from "@mui/icons-material";
 import VrTourViewerContent from "../components/VRTour/VrTourViewerContent";
 
 export default function PublicVrTour() {
   const { publicId } = useParams();
+  const [searchParams] = useSearchParams();
+  const isClosable = searchParams.get('closable') === 'true';
 
   const [vrTour, setVrTour] = useState(null);
   const [scenes, setScenes] = useState([]);
@@ -79,6 +84,11 @@ export default function PublicVrTour() {
   // 現在のページのURLを取得
   const publicUrl = window.location.href;
 
+  // 閉じるボタンのハンドラー
+  const handleClose = () => {
+    window.close();
+  };
+
   return (
     <Box sx={{ height: 'calc(100vh * var(--vh-correction, 1))', position: 'relative', bgcolor: '#000' }}>
       <VrTourViewerContent
@@ -87,6 +97,27 @@ export default function PublicVrTour() {
         isPreview={false}
         publicUrl={publicUrl}
       />
+      {/* 閉じるボタン（closable=trueの場合のみ表示） */}
+      {isClosable && (
+        <Tooltip title="閉じる">
+          <IconButton
+            onClick={handleClose}
+            sx={{
+              position: 'absolute',
+              top: 16,
+              left: 16,
+              zIndex: 1000,
+              bgcolor: 'rgba(0, 0, 0, 0.6)',
+              color: 'white',
+              '&:hover': {
+                bgcolor: 'rgba(0, 0, 0, 0.8)',
+              },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </Tooltip>
+      )}
     </Box>
   );
 }

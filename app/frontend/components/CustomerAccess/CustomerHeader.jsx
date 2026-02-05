@@ -40,7 +40,7 @@ export default function CustomerHeader({
           <HomeIcon />
           <Typography variant="h6" component="h1" sx={{ fontWeight: 600, lineHeight: 1.2, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
             {displayTitle}
-            {hasSubtitle && (
+            {hasSubtitle && !isMobile && (
               <Typography component="span" sx={{ opacity: 0.85, fontSize: '0.8em', ml: 1 }}>
                 {tenantName}
               </Typography>

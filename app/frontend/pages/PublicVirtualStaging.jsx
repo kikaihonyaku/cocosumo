@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Box, Typography, CircularProgress, Paper, Alert, Chip, Stack } from '@mui/material';
-import { LocationOn as LocationIcon } from '@mui/icons-material';
+import { Box, Typography, CircularProgress, Paper, Alert, Chip, Stack, IconButton, Tooltip } from '@mui/material';
+import { LocationOn as LocationIcon, Close as CloseIcon } from '@mui/icons-material';
 import BeforeAfterViewer from '../components/VirtualStaging/BeforeAfterViewer';
 import SharePanel from '../components/VirtualStaging/SharePanel';
 
@@ -9,6 +9,7 @@ const PublicVirtualStaging = () => {
   const { publicId } = useParams();
   const [searchParams] = useSearchParams();
   const isEmbedded = searchParams.get('embed') === 'true';
+  const isClosable = searchParams.get('closable') === 'true';
   const [loading, setLoading] = useState(true);
   const [virtualStaging, setVirtualStaging] = useState(null);
   const [error, setError] = useState(null);
@@ -252,6 +253,28 @@ const PublicVirtualStaging = () => {
             </Box>
           </Box>
         </Paper>
+      )}
+
+      {/* 閉じるボタン（左上）- closable=trueの場合のみ表示 */}
+      {isClosable && !isEmbedded && (
+        <Tooltip title="閉じる">
+          <IconButton
+            onClick={() => window.close()}
+            sx={{
+              position: 'absolute',
+              top: 20,
+              left: 20,
+              zIndex: 10,
+              bgcolor: 'rgba(0, 0, 0, 0.6)',
+              color: 'white',
+              '&:hover': {
+                bgcolor: 'rgba(0, 0, 0, 0.8)',
+              },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </Tooltip>
       )}
 
       {/* 共有ボタン（右上）- 埋め込み時は非表示 */}
