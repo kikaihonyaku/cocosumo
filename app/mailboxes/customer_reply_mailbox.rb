@@ -116,6 +116,7 @@ class CustomerReplyMailbox < ApplicationMailbox
   def sanitized_body
     body = mail.text_part&.decoded || mail.decoded || ''
     body = ActionController::Base.helpers.strip_tags(body)
+    body = CGI.unescapeHTML(body)  # HTMLエンティティをデコード（&gt; → >）
     body.truncate(MAX_MESSAGE_LENGTH)
   end
 end
