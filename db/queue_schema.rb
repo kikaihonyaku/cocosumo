@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_04_212054) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_07_100001) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -500,6 +500,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_04_212054) do
     t.index ["assigned_user_id"], name: "index_property_inquiries_on_assigned_user_id"
     t.index ["channel"], name: "index_property_inquiries_on_channel"
     t.index ["created_at"], name: "index_property_inquiries_on_created_at"
+    t.index ["customer_id", "deal_status"], name: "index_property_inquiries_on_customer_deal_status"
     t.index ["customer_id"], name: "index_property_inquiries_on_customer_id"
     t.index ["deal_status"], name: "index_property_inquiries_on_deal_status"
     t.index ["inquiry_id"], name: "index_property_inquiries_on_inquiry_id"
@@ -571,13 +572,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_04_212054) do
     t.integer "avg_session_duration"
     t.string "primary_color"
     t.string "accent_color"
-    t.string "access_password"
     t.datetime "expires_at"
     t.jsonb "device_stats", default: {}
     t.jsonb "referrer_stats", default: {}
     t.jsonb "hourly_stats", default: {}
     t.bigint "created_by_id"
     t.bigint "updated_by_id"
+    t.string "access_password_digest"
     t.index ["created_by_id"], name: "index_property_publications_on_created_by_id"
     t.index ["discarded_at"], name: "index_property_publications_on_discarded_at"
     t.index ["publication_id"], name: "index_property_publications_on_publication_id", unique: true

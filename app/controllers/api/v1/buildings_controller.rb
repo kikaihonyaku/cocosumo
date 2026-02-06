@@ -42,12 +42,13 @@ class Api::V1::BuildingsController < ApplicationController
       @buildings = @buildings.within_polygon(params[:polygon])
     end
 
-    # 空室有無のフィルタ
+    # 空室有無のフィルタ（SQLサブクエリで効率化）
     if params[:has_vacancy].present?
+      vacant_subquery = Room.where("rooms.building_id = buildings.id").where(status: :vacant).select("1")
       if params[:has_vacancy] == 'true'
-        @buildings = @buildings.select { |b| b.rooms.where(status: :vacant).count > 0 }
+        @buildings = @buildings.where("EXISTS (#{vacant_subquery.to_sql})")
       elsif params[:has_vacancy] == 'false'
-        @buildings = @buildings.select { |b| b.rooms.where(status: :vacant).count == 0 }
+        @buildings = @buildings.where("NOT EXISTS (#{vacant_subquery.to_sql})")
       end
     end
 
@@ -243,8 +244,7 @@ class Api::V1::BuildingsController < ApplicationController
       Rails.logger.error("Grounding API error: #{e.message}")
       Rails.logger.error(e.backtrace.join("\n"))
       render json: {
-        error: 'AI応答の取得に失敗しました。しばらく時間をおいて再度お試しください。',
-        details: e.message
+        error: 'AI応答の取得に失敗しました。しばらく時間をおいて再度お試しください。'
       }, status: :internal_server_error
     end
   end
@@ -272,6 +272,11 @@ class Api::V1::BuildingsController < ApplicationController
 
     unless params[:file].content_type == 'application/pdf'
       return render json: { error: 'PDFファイルのみアップロード可能です' }, status: :unprocessable_entity
+    end
+
+    # ファイルサイズ制限（20MB）
+    if params[:file].size > 20.megabytes
+      return render json: { error: 'ファイルサイズが大きすぎます（上限20MB）' }, status: :unprocessable_entity
     end
 
     begin
@@ -452,16 +457,13 @@ class Api::V1::BuildingsController < ApplicationController
     rescue JSON::ParserError => e
       Rails.logger.error("Floorplan analysis JSON parse error: #{e.message}")
       render json: {
-        error: '解析結果のパースに失敗しました',
-        details: e.message,
-        raw_response: response_text
+        error: '解析結果のパースに失敗しました。再度お試しください。'
       }, status: :unprocessable_entity
     rescue StandardError => e
       Rails.logger.error("Floorplan analysis error: #{e.message}")
       Rails.logger.error(e.backtrace.first(5).join("\n"))
       render json: {
-        error: '募集図面の解析に失敗しました',
-        details: e.message
+        error: '募集図面の解析に失敗しました'
       }, status: :internal_server_error
     end
   end

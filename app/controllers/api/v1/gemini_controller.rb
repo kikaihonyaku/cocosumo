@@ -52,15 +52,13 @@ class Api::V1::GeminiController < ApplicationController
       render json: {
         success: true,
         response: response_text,
-        message: 'Gemini APIからのレスポンスを取得しました',
-        debug_result: result # デバッグ用
+        message: 'Gemini APIからのレスポンスを取得しました'
       }
 
     rescue StandardError => e
       Rails.logger.error("Gemini API error: #{e.message}")
       render json: {
-        error: 'Gemini APIの呼び出しに失敗しました',
-        details: e.message
+        error: 'Gemini APIの呼び出しに失敗しました'
       }, status: :internal_server_error
     end
   end
@@ -147,8 +145,7 @@ class Api::V1::GeminiController < ApplicationController
     rescue StandardError => e
       Rails.logger.error("Gemini Alt Text generation error: #{e.message}")
       render json: {
-        error: 'ALTテキストの生成に失敗しました',
-        details: e.message
+        error: 'ALTテキストの生成に失敗しました'
       }, status: :internal_server_error
     end
   end

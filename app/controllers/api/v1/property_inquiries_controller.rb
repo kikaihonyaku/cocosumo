@@ -93,12 +93,22 @@ class Api::V1::PropertyInquiriesController < ApplicationController
                                .includes(:property_publication)
                                .order(created_at: :desc)
 
-    # Date range filter
+    # Date range filter (with validation)
     if params[:start_date].present?
-      inquiries = inquiries.where("created_at >= ?", Date.parse(params[:start_date]).beginning_of_day)
+      begin
+        start_date = Date.parse(params[:start_date])
+        inquiries = inquiries.where("created_at >= ?", start_date.beginning_of_day)
+      rescue Date::Error
+        return render json: { error: "開始日の形式が不正です" }, status: :bad_request
+      end
     end
     if params[:end_date].present?
-      inquiries = inquiries.where("created_at <= ?", Date.parse(params[:end_date]).end_of_day)
+      begin
+        end_date = Date.parse(params[:end_date])
+        inquiries = inquiries.where("created_at <= ?", end_date.end_of_day)
+      rescue Date::Error
+        return render json: { error: "終了日の形式が不正です" }, status: :bad_request
+      end
     end
 
     require "csv"

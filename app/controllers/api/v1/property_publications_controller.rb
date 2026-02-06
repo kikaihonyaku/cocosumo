@@ -264,8 +264,11 @@ class Api::V1::PropertyPublicationsController < ApplicationController
         render json: { errors: @property_publication.errors.full_messages }, status: :unprocessable_entity
       end
     end
-  rescue => e
+  rescue ActiveRecord::RecordInvalid => e
     render json: { errors: [e.message] }, status: :unprocessable_entity
+  rescue => e
+    Rails.logger.error("PropertyPublication create error: #{e.class} - #{e.message}")
+    render json: { errors: ["物件公開ページの作成に失敗しました"] }, status: :unprocessable_entity
   end
 
   # PATCH/PUT /api/v1/rooms/:room_id/property_publications/:id
@@ -332,8 +335,11 @@ class Api::V1::PropertyPublicationsController < ApplicationController
         render json: { errors: @property_publication.errors.full_messages }, status: :unprocessable_entity
       end
     end
-  rescue => e
+  rescue ActiveRecord::RecordInvalid => e
     render json: { errors: [e.message] }, status: :unprocessable_entity
+  rescue => e
+    Rails.logger.error("PropertyPublication update error: #{e.class} - #{e.message}")
+    render json: { errors: ["物件公開ページの更新に失敗しました"] }, status: :unprocessable_entity
   end
 
   # DELETE /api/v1/rooms/:room_id/property_publications/:id
@@ -565,7 +571,8 @@ class Api::V1::PropertyPublicationsController < ApplicationController
       render json: { error: '不明なアクションです' }, status: :bad_request
     end
   rescue => e
-    render json: { errors: [e.message] }, status: :unprocessable_entity
+    Rails.logger.error("PropertyPublication bulk_action error: #{e.class} - #{e.message}")
+    render json: { errors: ["一括操作に失敗しました"] }, status: :unprocessable_entity
   end
 
   private

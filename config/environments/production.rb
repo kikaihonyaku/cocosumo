@@ -28,12 +28,10 @@ Rails.application.configure do
   config.active_storage.service = :cloudflare_r2
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  # ローカルテスト時は DISABLE_SSL=true で無効化可能
-  config.assume_ssl = ENV['DISABLE_SSL'] != 'true'
+  config.assume_ssl = true
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  # ローカルテスト時は DISABLE_SSL=true で無効化可能
-  config.force_ssl = ENV['DISABLE_SSL'] != 'true'
+  config.force_ssl = true
 
   # Skip http-to-https redirect for the default health check endpoint.
   # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
@@ -98,13 +96,11 @@ Rails.application.configure do
 
   # Cloudflare Tunnel 経由でアクセスするホストを許可
   config.hosts << "cocosumo.space"
-  config.hosts << "www.cocosumo.space"  # www も使うなら追加
+  config.hosts << "www.cocosumo.space"
   config.hosts << ".cocosumo.space"     # サブドメイン方式のテナント識別用
-  config.hosts << "localhost"
-  config.hosts << "0.0.0.0"
-  config.hosts << "192.168.0.14"
-  config.hosts << ".192.168.0.14.sslip.io"  # LAN サブドメインアクセス用
 
-  # Cloud Run のホストを許可
-  config.hosts << /.*\.run\.app\z/
+  # Cloud Run のホストを許可（環境変数で指定されている場合のみ）
+  if ENV["CLOUD_RUN_HOST"].present?
+    config.hosts << ENV["CLOUD_RUN_HOST"]
+  end
 end

@@ -6,7 +6,7 @@ class Api::V1::RoomPhotosController < ApplicationController
 
   # GET /api/v1/rooms/:room_id/room_photos
   def index
-    @room_photos = @room.room_photos.with_attached_photo
+    @room_photos = @room.room_photos.ordered.with_attached_photo
     render json: @room_photos.as_json(
       methods: [:photo_url],
       only: [:id, :photo_type, :caption, :alt_text, :display_order, :created_at, :updated_at]
@@ -67,7 +67,7 @@ class Api::V1::RoomPhotosController < ApplicationController
   def destroy
     if @room_photo.destroy
       # 残りの写真の順序を詰める
-      @room.room_photos.unscoped.where('display_order > ?', @room_photo.display_order).each do |photo|
+      @room.room_photos.where('display_order > ?', @room_photo.display_order).each do |photo|
         photo.update(display_order: photo.display_order - 1)
       end
 
@@ -180,7 +180,7 @@ class Api::V1::RoomPhotosController < ApplicationController
   end
 
   def set_room_photo
-    @room_photo = @room.room_photos.unscoped.find(params[:id])
+    @room_photo = @room.room_photos.find(params[:id])
   end
 
   def room_photo_params

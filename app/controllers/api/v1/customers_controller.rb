@@ -5,9 +5,7 @@ class Api::V1::CustomersController < ApplicationController
 
   # GET /api/v1/customers
   def index
-    @customers = current_user.tenant.customers
-                             .includes(:property_inquiries, :customer_accesses, :inquiries)
-                             .recent
+    @customers = current_user.tenant.customers.recent
 
     # 検索フィルタ
     if params[:query].present?
@@ -44,7 +42,10 @@ class Api::V1::CustomersController < ApplicationController
     offset = (page - 1) * per_page
 
     total_count = @customers.count
-    @customers = @customers.limit(per_page).offset(offset)
+    @customers = @customers
+                   .includes(property_inquiries: :assigned_user)
+                   .includes(:customer_accesses)
+                   .limit(per_page).offset(offset)
 
     render json: {
       customers: @customers.map { |c| customer_summary_json(c) },
@@ -59,6 +60,9 @@ class Api::V1::CustomersController < ApplicationController
 
   # GET /api/v1/customers/:id
   def show
+    @customer = current_user.tenant.customers
+                  .includes(property_inquiries: [:assigned_user, :property_publication], customer_accesses: [], inquiries: [])
+                  .find(@customer.id)
     render json: customer_detail_json(@customer)
   end
 
@@ -232,7 +236,9 @@ class Api::V1::CustomersController < ApplicationController
   end
 
   def customer_summary_json(customer)
-    latest_pi = customer.property_inquiries.order(created_at: :desc).first
+    # プリロード済みの関連データを使用（N+1回避）
+    pis = customer.property_inquiries.sort_by(&:created_at).reverse
+    latest_pi = pis.first
     {
       id: customer.id,
       name: customer.name,
@@ -247,9 +253,9 @@ class Api::V1::CustomersController < ApplicationController
         id: latest_pi.assigned_user.id,
         name: latest_pi.assigned_user.name
       } : nil,
-      inquiry_count: customer.property_inquiries.size,
+      inquiry_count: pis.size,
       access_count: customer.customer_accesses.size,
-      last_inquiry_at: customer.last_inquiry_at&.strftime("%Y/%m/%d %H:%M"),
+      last_inquiry_at: pis.first&.created_at&.strftime("%Y/%m/%d %H:%M"),
       last_contacted_at: customer.last_contacted_at&.strftime("%Y/%m/%d %H:%M"),
       created_at: customer.created_at.strftime("%Y/%m/%d"),
       has_line: customer.line_user_id.present?
@@ -257,7 +263,12 @@ class Api::V1::CustomersController < ApplicationController
   end
 
   def customer_detail_json(customer)
-    latest_pi = customer.property_inquiries.order(created_at: :desc).first
+    # プリロード済みの関連データを使用（N+1回避）
+    pis = customer.property_inquiries.sort_by(&:created_at).reverse
+    latest_pi = pis.first
+    inquiries_sorted = customer.inquiries.sort_by(&:created_at).reverse
+    # プリロード済みのproperty_publicationからタイトルを取得（N+1回避）
+    property_titles = pis.filter_map { |pi| pi.property_publication&.title }.uniq
     {
       id: customer.id,
       name: customer.name,
@@ -275,19 +286,19 @@ class Api::V1::CustomersController < ApplicationController
         id: latest_pi.assigned_user.id,
         name: latest_pi.assigned_user.name
       } : nil,
-      latest_inquiry_id: customer.inquiries.order(created_at: :desc).first&.id,
+      latest_inquiry_id: inquiries_sorted.first&.id,
       expected_move_date: customer.expected_move_date&.strftime("%Y/%m/%d"),
       budget_min: customer.budget_min,
       budget_max: customer.budget_max,
       preferred_areas: customer.preferred_areas,
       requirements: customer.requirements,
       lost_reason: latest_pi&.lost_reason,
-      inquiry_count: customer.property_inquiries.count,
-      access_count: customer.customer_accesses.count,
-      last_inquiry_at: customer.last_inquiry_at&.strftime("%Y/%m/%d %H:%M"),
+      inquiry_count: pis.size,
+      access_count: customer.customer_accesses.size,
+      last_inquiry_at: pis.first&.created_at&.strftime("%Y/%m/%d %H:%M"),
       last_contacted_at: customer.last_contacted_at&.strftime("%Y/%m/%d %H:%M"),
       created_at: customer.created_at.strftime("%Y/%m/%d %H:%M"),
-      inquired_properties: customer.inquired_property_titles
+      inquired_properties: property_titles
     }
   end
 

@@ -19,7 +19,7 @@ class CustomerAccess < ApplicationRecord
   validates :access_token, presence: true, uniqueness: true
   validates :customer_name, presence: true
   validates :customer_email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :password, length: { minimum: 6 }, allow_nil: true
+  validates :password, length: { minimum: 8 }, allow_nil: true
 
   # Callbacks
   before_validation :generate_access_token, on: :create

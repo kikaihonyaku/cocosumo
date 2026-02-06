@@ -17,7 +17,7 @@ import {
 } from '@mui/icons-material';
 
 // Progressive image component with blur-up loading
-function ProgressiveImage({ src, alt, style, sx, onClick, onLoad: externalOnLoad }) {
+const ProgressiveImage = React.memo(function ProgressiveImage({ src, alt, style, sx, onClick, onLoad: externalOnLoad }) {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
 
@@ -79,7 +79,7 @@ function ProgressiveImage({ src, alt, style, sx, onClick, onLoad: externalOnLoad
       />
     </Box>
   );
-}
+});
 
 export default function PhotoGallery({ photos = [], publicationId, onPhotoView }) {
   const [currentIndex, setCurrentIndex] = useState(0);

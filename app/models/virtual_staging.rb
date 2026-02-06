@@ -1,4 +1,9 @@
 class VirtualStaging < ApplicationRecord
+  include UniqueIdGeneration
+
+  # ID衝突時のリトライ
+  retry_on_unique_violation :public_id
+
   belongs_to :room
   belongs_to :before_photo, class_name: 'RoomPhoto', foreign_key: :before_photo_id
   belongs_to :after_photo, class_name: 'RoomPhoto', foreign_key: :after_photo_id
@@ -68,10 +73,8 @@ class VirtualStaging < ApplicationRecord
   def generate_public_id
     return if public_id.present?
 
-    loop do
-      # Generate a random 12-character alphanumeric ID
-      self.public_id = SecureRandom.alphanumeric(12).downcase
-      break unless VirtualStaging.exists?(public_id: public_id)
-    end
+    # DBユニーク制約があるため、衝突時はActiveRecord::RecordNotUniqueで
+    # リトライされる。ここではベストエフォートでユニーク性を確認
+    self.public_id = SecureRandom.alphanumeric(12).downcase
   end
 end

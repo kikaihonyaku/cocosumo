@@ -20,8 +20,8 @@ class RoomPhoto < ApplicationRecord
     other: 'other'
   }, prefix: true
 
-  # Default scope
-  default_scope -> { order(display_order: :asc) }
+  # 表示順序スコープ（default_scopeは集約クエリやJOINで問題を起こすため明示的スコープを使用）
+  scope :ordered, -> { order(display_order: :asc) }
 
   # Methods
 

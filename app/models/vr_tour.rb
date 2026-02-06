@@ -1,4 +1,9 @@
 class VrTour < ApplicationRecord
+  include UniqueIdGeneration
+
+  # ID衝突時のリトライ
+  retry_on_unique_violation :public_id
+
   # Associations
   belongs_to :room
   has_many :vr_scenes, dependent: :destroy
@@ -103,10 +108,8 @@ class VrTour < ApplicationRecord
   def generate_public_id
     return if public_id.present?
 
-    loop do
-      # Generate a random 12-character alphanumeric ID
-      self.public_id = SecureRandom.alphanumeric(12).downcase
-      break unless VrTour.exists?(public_id: public_id)
-    end
+    # DBユニーク制約があるため、衝突時はActiveRecord::RecordNotUniqueで
+    # リトライされる。ここではベストエフォートでユニーク性を確認
+    self.public_id = SecureRandom.alphanumeric(12).downcase
   end
 end

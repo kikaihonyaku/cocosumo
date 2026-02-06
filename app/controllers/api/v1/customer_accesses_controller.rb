@@ -249,8 +249,8 @@ class Api::V1::CustomerAccessesController < ApplicationController
       return render json: { error: 'パスワードを入力してください' }, status: :unprocessable_entity
     end
 
-    if password.length < 6
-      return render json: { error: 'パスワードは6文字以上で入力してください' }, status: :unprocessable_entity
+    if password.length < 8
+      return render json: { error: 'パスワードは8文字以上で入力してください' }, status: :unprocessable_entity
     end
 
     @customer_access.password = password

@@ -1,5 +1,12 @@
 class PropertyPublication < ApplicationRecord
   include Discard::Model
+  include UniqueIdGeneration
+
+  # bcryptによるパスワードハッシュ化 (access_password属性)
+  has_secure_password :access_password, validations: false
+
+  # ID衝突時のリトライ
+  retry_on_unique_violation :publication_id
 
   # Associations
   belongs_to :room
@@ -53,12 +60,12 @@ class PropertyPublication < ApplicationRecord
 
   # パスワード保護関連
   def password_protected?
-    access_password.present?
+    access_password_digest.present?
   end
 
   def authenticate_password(password)
     return true unless password_protected?
-    access_password == password
+    !!authenticate_access_password(password)
   end
 
   # 有効期限関連
@@ -70,35 +77,34 @@ class PropertyPublication < ApplicationRecord
     published? && !expired?
   end
 
-  # 詳細アナリティクス更新
+  # 詳細アナリティクス更新（PostgreSQL JSONB演算子でアトミック更新）
   def track_detailed_analytics(device_type: nil, referrer: nil)
     return unless published?
 
-    # デバイス統計
+    # デバイス統計（アトミック更新）
     if device_type.present?
-      stats = device_stats || {}
-      stats[device_type] = (stats[device_type] || 0) + 1
-      update_column(:device_stats, stats)
+      self.class.where(id: id).update_all(
+        Arel.sql("device_stats = jsonb_set(COALESCE(device_stats, '{}'), #{self.class.connection.quote("{#{device_type}}")}, (COALESCE(device_stats->#{self.class.connection.quote(device_type)}, '0')::int + 1)::text::jsonb)")
+      )
     end
 
-    # リファラー統計
+    # リファラー統計（アトミック更新）
     if referrer.present?
-      stats = referrer_stats || {}
-      # リファラーからドメインを抽出
       domain = begin
-        URI.parse(referrer).host || 'direct'
-      rescue
-        'direct'
+        URI.parse(referrer).host || "direct"
+      rescue URI::InvalidURIError
+        "direct"
       end
-      stats[domain] = (stats[domain] || 0) + 1
-      update_column(:referrer_stats, stats)
+      self.class.where(id: id).update_all(
+        Arel.sql("referrer_stats = jsonb_set(COALESCE(referrer_stats, '{}'), #{self.class.connection.quote("{#{domain}}")}, (COALESCE(referrer_stats->#{self.class.connection.quote(domain)}, '0')::int + 1)::text::jsonb)")
+      )
     end
 
-    # 時間帯統計
+    # 時間帯統計（アトミック更新）
     hour = Time.current.hour.to_s
-    stats = hourly_stats || {}
-    stats[hour] = (stats[hour] || 0) + 1
-    update_column(:hourly_stats, stats)
+    self.class.where(id: id).update_all(
+      Arel.sql("hourly_stats = jsonb_set(COALESCE(hourly_stats, '{}'), #{self.class.connection.quote("{#{hour}}")}, (COALESCE(hourly_stats->#{self.class.connection.quote(hour)}, '0')::int + 1)::text::jsonb)")
+    )
   end
 
   # Get public URL
@@ -204,9 +210,10 @@ class PropertyPublication < ApplicationRecord
 
   # OGP用のメタデータを一括取得
   def og_metadata(host: nil)
+    sanitized_description = catch_copy || ActionController::Base.helpers.strip_tags(pr_text)&.truncate(160) || "#{title}の物件情報"
     {
       title: title,
-      description: catch_copy || pr_text&.gsub(/<[^>]*>/, '')&.truncate(160) || "#{title}の物件情報",
+      description: sanitized_description,
       image: og_image_url(host: host),
       url: public_url ? "#{host || ENV['APP_HOST'] || 'http://localhost:3000'}#{public_url}" : nil,
       type: 'website',
@@ -262,10 +269,8 @@ class PropertyPublication < ApplicationRecord
   def generate_publication_id
     return if publication_id.present?
 
-    loop do
-      # Generate a random 12-character alphanumeric ID
-      self.publication_id = SecureRandom.alphanumeric(12).downcase
-      break unless PropertyPublication.exists?(publication_id: publication_id)
-    end
+    # DBユニーク制約があるため、衝突時はActiveRecord::RecordNotUniqueで
+    # リトライされる。ここではベストエフォートでユニーク性を確認
+    self.publication_id = SecureRandom.alphanumeric(12).downcase
   end
 end

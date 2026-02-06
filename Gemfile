@@ -116,3 +116,5 @@ gem "httparty"
 
 # ZIP file handling
 gem "rubyzip", "~> 2.3"
+
+gem "rack-attack", "~> 6.8"

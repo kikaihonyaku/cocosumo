@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import ErrorBoundary from "../components/ErrorBoundary";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Container,
@@ -18,6 +19,7 @@ import {
   Divider,
   Paper,
   Alert,
+  Button,
   Skeleton
 } from "@mui/material";
 import {
@@ -634,7 +636,15 @@ export default function Home() {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert
+          severity="error"
+          sx={{ mb: 3 }}
+          action={
+            <Button color="inherit" size="small" onClick={fetchDashboard}>
+              再試行
+            </Button>
+          }
+        >
           {error}
         </Alert>
       )}
@@ -686,7 +696,9 @@ export default function Home() {
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
               問い合わせトレンド（過去30日）
             </Typography>
-            <InquiryTrendChart data={dashboardData?.inquiry_trend} loading={loading} />
+            <ErrorBoundary level="section">
+              <InquiryTrendChart data={dashboardData?.inquiry_trend} loading={loading} />
+            </ErrorBoundary>
           </Paper>
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
@@ -694,7 +706,9 @@ export default function Home() {
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
               商談ステータス分布
             </Typography>
-            <DealStatusChart data={dashboardData?.deal_status_distribution} loading={loading} />
+            <ErrorBoundary level="section">
+              <DealStatusChart data={dashboardData?.deal_status_distribution} loading={loading} />
+            </ErrorBoundary>
           </Paper>
         </Grid>
       </Grid>
@@ -706,7 +720,9 @@ export default function Home() {
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
               媒体別問い合わせ（今月）
             </Typography>
-            <MediaBreakdownChart data={dashboardData?.media_breakdown} loading={loading} />
+            <ErrorBoundary level="section">
+              <MediaBreakdownChart data={dashboardData?.media_breakdown} loading={loading} />
+            </ErrorBoundary>
           </Paper>
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>

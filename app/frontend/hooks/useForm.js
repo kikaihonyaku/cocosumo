@@ -31,9 +31,14 @@ export function useForm(options = {}) {
   // Refs for tracking
   const initialValuesRef = useRef(initialValues);
 
-  // Check if form is dirty
+  // Check if form is dirty (shallow comparison for better performance)
   const isDirty = useMemo(() => {
-    return JSON.stringify(values) !== JSON.stringify(initialValuesRef.current);
+    const initial = initialValuesRef.current;
+    const keys = new Set([...Object.keys(values), ...Object.keys(initial)]);
+    for (const key of keys) {
+      if (values[key] !== initial[key]) return true;
+    }
+    return false;
   }, [values]);
 
   // Check if form is valid
