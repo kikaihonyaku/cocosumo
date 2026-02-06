@@ -3,73 +3,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
-
-// SVGアイコンコンポーネント
-const Icons = {
-  Building: () => (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-    </svg>
-  ),
-  AI: () => (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-    </svg>
-  ),
-  VR: () => (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-    </svg>
-  ),
-  Link: () => (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-    </svg>
-  ),
-  Users: () => (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  ),
-  Settings: () => (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  ),
-  Mail: () => (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-    </svg>
-  ),
-  Map: () => (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  ),
-  Chart: () => (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-    </svg>
-  ),
-  Check: () => (
-    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-    </svg>
-  ),
-  ChevronDown: () => (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-    </svg>
-  ),
-  Play: () => (
-    <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M8 5v14l11-7z" />
-    </svg>
-  ),
-};
+import Icons from "../components/landing/LandingIcons";
 
 // FAQアイテムコンポーネント
 function FAQItem({ question, answer }) {
@@ -179,33 +113,73 @@ function BlogSection() {
 const features = [
   {
     icon: Icons.Mail,
+    slug: "auto-inquiry-import",
     title: "反響自動取込",
     description: "SUUMOなどポータルサイトからの反響メールを自動でパース。顧客の名前・連絡先・問い合わせ内容を自動登録し、対応漏れを防ぎます。"
   },
   {
     icon: Icons.Users,
+    slug: "customer-management",
     title: "顧客・案件管理",
     description: "反響から成約まで、顧客ごとの対応履歴を一元管理。商談ステータスの追跡、メール送信、チャット風の対応履歴表示で、チーム全体の営業状況を可視化します。"
   },
   {
     icon: Icons.Link,
+    slug: "customer-mypage",
     title: "顧客マイページ",
     description: "お客様専用の物件紹介ページを発行。VRツアーやバーチャルステージングを組み込んだ提案ページで、閲覧状況もトラッキングできます。"
   },
   {
     icon: Icons.VR,
+    slug: "vr-tours",
     title: "VRツアー＆バーチャルステージング",
     description: "360度パノラマのVRルームツアーと、AIによるバーチャルステージングで、遠隔地のお客様にもリアルな物件体験を提供。空室でも家具付きイメージを自動生成します。"
   },
   {
     icon: Icons.AI,
+    slug: "ai-content",
     title: "AI画像編集＆コンテンツ作成",
     description: "物件写真のAI編集、複数テンプレートの公開ページ作成、QRコード生成まで。魅力的な物件コンテンツをワンストップで制作できます。"
   },
   {
     icon: Icons.Map,
+    slug: "gis-map",
     title: "GISマップ物件管理",
     description: "Googleマップ連携のGISシステムで物件を地図上に一元管理。学区・駅・公園などのレイヤー表示や、エリア検索で物件探しを効率化します。"
+  },
+];
+
+// 追加機能データ
+const extraFeatures = [
+  {
+    icon: Icons.Presentation,
+    slug: "sales-presentation",
+    title: "営業プレゼンテーション",
+    description: "ステップ形式の営業提案ツールで、物件の魅力を効果的にプレゼン。顧客ごとにカスタマイズした提案ページを簡単に作成できます。"
+  },
+  {
+    icon: Icons.Upload,
+    slug: "bulk-import",
+    title: "間取り図AI解析・一括取込",
+    description: "PDF間取り図をAIが自動解析。物件情報を一括登録し、手入力の手間を大幅に削減します。"
+  },
+  {
+    icon: Icons.Integration,
+    slug: "suumo-integration",
+    title: "SUUMO連携インポート",
+    description: "SUUMOの物件データを自動取込。既存の掲載情報をそのままCoCoスモに反映し、二重入力を解消します。"
+  },
+  {
+    icon: Icons.Chart,
+    slug: "analytics",
+    title: "アナリティクス・レポート",
+    description: "閲覧分析・反響トレンド・パイプラインを可視化。データに基づいた営業戦略の立案を支援します。"
+  },
+  {
+    icon: Icons.ChatAI,
+    slug: "ai-location-qa",
+    title: "AIロケーションQ&A",
+    description: "AI×Googleマップで周辺情報をインタラクティブに質問。学校・病院・スーパーなど、お客様の知りたい情報を即座に回答します。"
   },
 ];
 
@@ -280,36 +254,42 @@ function DemoSlideshow() {
 const slides = [
   {
     screenshot: "/screenshots/carousel-01-inquiry.png",
+    slug: "auto-inquiry-import",
     title: "反響自動取込",
     description: "SUUMOなどポータルサイトからの反響メールを自動でパース。顧客の名前・連絡先・問い合わせ内容を自動登録し、対応漏れを防ぎます。",
     gradient: "from-[#1e3a5f] to-[#2d5a8a]",
   },
   {
     screenshot: "/screenshots/carousel-02-customer.png",
+    slug: "customer-management",
     title: "顧客・案件管理",
     description: "反響から成約まで、顧客ごとの対応履歴を一元管理。商談ステータスの追跡、メール送信、チャット風の対応履歴表示で、チーム全体の営業状況を可視化します。",
     gradient: "from-[#2d5a8a] to-[#3b7abf]",
   },
   {
     screenshot: "/screenshots/carousel-03-customer-page.png",
+    slug: "customer-mypage",
     title: "顧客マイページ",
     description: "お客様専用の物件紹介ページを発行。VRツアーやバーチャルステージングを組み込んだ提案ページで、閲覧状況もトラッキングできます。",
     gradient: "from-[#1e3a5f] to-[#0f2640]",
   },
   {
     screenshot: "/screenshots/carousel-04-vr-staging.png",
+    slug: "vr-tours",
     title: "VRツアー＆バーチャルステージング",
     description: "360度パノラマのVRルームツアーと、AIによるバーチャルステージングで、遠隔地のお客様にもリアルな物件体験を提供。空室でも家具付きイメージを自動生成します。",
     gradient: "from-[#8b6914] to-[#c9a227]",
   },
   {
     screenshot: "/screenshots/carousel-05-ai-content.png",
+    slug: "ai-content",
     title: "AI画像編集＆コンテンツ作成",
     description: "物件写真のAI編集、複数テンプレートの公開ページ作成、QRコード生成まで。魅力的な物件コンテンツをワンストップで制作できます。",
     gradient: "from-[#2d5a8a] to-[#1e3a5f]",
   },
   {
     screenshot: "/screenshots/carousel-06-gis-map.png",
+    slug: "gis-map",
     title: "GISマップ物件管理",
     description: "Googleマップ連携のGISシステムで物件を地図上に一元管理。学区・駅・公園などのレイヤー表示や、エリア検索で物件探しを効率化します。",
     gradient: "from-[#0f2640] to-[#1e3a5f]",
@@ -365,7 +345,14 @@ function FeatureCarousel() {
                       Feature {index + 1}/{slides.length}
                     </span>
                     <h3 className="text-2xl md:text-3xl font-bold mb-4">{slide.title}</h3>
-                    <p className="text-white/80 text-lg leading-relaxed">{slide.description}</p>
+                    <p className="text-white/80 text-lg leading-relaxed mb-6">{slide.description}</p>
+                    <Link
+                      to={`/features/${slide.slug}`}
+                      className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-5 py-2.5 rounded-lg font-medium transition-colors text-sm backdrop-blur-sm"
+                    >
+                      詳しく見る
+                      <span>&rarr;</span>
+                    </Link>
                   </div>
                   {/* 右: スクリーンショット */}
                   <div className="flex-shrink-0 w-full md:w-[55%]">
@@ -612,16 +599,52 @@ export default function Landing() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {features.map((feature, index) => (
-              <div
+              <Link
                 key={index}
+                to={`/features/${feature.slug}`}
                 className="group p-8 rounded-xl border border-gray-200 hover:border-[#c9a227] hover:shadow-lg transition-all duration-300"
               >
                 <div className="w-14 h-14 rounded-lg bg-[#1e3a5f]/10 text-[#1e3a5f] flex items-center justify-center mb-5 group-hover:bg-[#c9a227] group-hover:text-white transition-all">
                   <feature.icon />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{feature.description}</p>
-              </div>
+                <p className="text-gray-600 leading-relaxed mb-4">{feature.description}</p>
+                <span className="text-[#1e3a5f] font-medium group-hover:text-[#c9a227] transition-colors">
+                  詳しく見る &rarr;
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* さらに充実の機能セクション */}
+      <section className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-[#1e3a5f] mb-4">
+              さらに充実の機能
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              業務のあらゆるシーンをカバーする多彩な機能をご用意しています
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {extraFeatures.map((feature, index) => (
+              <Link
+                key={index}
+                to={`/features/${feature.slug}`}
+                className="group p-8 rounded-xl border border-gray-200 bg-white hover:border-[#c9a227] hover:shadow-lg transition-all duration-300"
+              >
+                <div className="w-14 h-14 rounded-lg bg-[#1e3a5f]/10 text-[#1e3a5f] flex items-center justify-center mb-5 group-hover:bg-[#c9a227] group-hover:text-white transition-all">
+                  <feature.icon />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
+                <p className="text-gray-600 leading-relaxed mb-4">{feature.description}</p>
+                <span className="text-[#1e3a5f] font-medium group-hover:text-[#c9a227] transition-colors">
+                  詳しく見る &rarr;
+                </span>
+              </Link>
             ))}
           </div>
         </div>

@@ -52,6 +52,7 @@ import CustomerList from "./pages/CustomerList";
 import CustomerDetail from "./pages/CustomerDetail";
 import BulkImport from "./pages/BulkImport";
 import RoomList from "./pages/RoomList";
+import FeatureDetailPage from "./pages/features/FeatureDetailPage";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -152,6 +153,7 @@ export default function App() {
           <Routes>
           {/* 公開ページ */}
           <Route path="/" element={<Landing />} />
+          <Route path="/features/:featureSlug" element={<FeatureDetailPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/vr/:publicId" element={<PublicVrTour />} />
           <Route path="/virtual-staging/:publicId" element={<PublicVirtualStaging />} />
