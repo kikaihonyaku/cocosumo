@@ -38,6 +38,7 @@ export default function FloorplanRegistrationModal({
   const [activeStep, setActiveStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const mapPickingRef = React.useRef(false);
 
   // PDF file state
   const [pdfFile, setPdfFile] = useState(null);
@@ -113,9 +114,10 @@ export default function FloorplanRegistrationModal({
     }
   }, [initialLocation]);
 
-  // Reset when modal closes
+  // Reset when modal closes (but not when closing for map pick)
   useEffect(() => {
     if (!isOpen) {
+      if (mapPickingRef.current) return;
       setActiveStep(0);
       setPdfFile(null);
       setAnalyzed(false);
@@ -155,6 +157,8 @@ export default function FloorplanRegistrationModal({
       setFacilityCodes([]);
       setNormalizedFacilities([]);
       setUnmatchedFacilities([]);
+    } else {
+      mapPickingRef.current = false;
     }
   }, [isOpen]);
 
@@ -499,6 +503,7 @@ export default function FloorplanRegistrationModal({
               onChange={setBuildingData}
               disabled={!!selectedBuilding}
               onStartMapPick={() => {
+                mapPickingRef.current = true;
                 onClose();
                 onStartMapPick && onStartMapPick();
               }}
