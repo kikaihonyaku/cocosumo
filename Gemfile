@@ -120,4 +120,4 @@ gem "rubyzip", "~> 2.3"
 gem "rack-attack", "~> 6.8"
 
 # LINE Messaging API
-gem "line-bot-api", "~> 2.0"
+gem "line-bot-api", "~> 1.0"
