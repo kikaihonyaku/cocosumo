@@ -19,8 +19,11 @@ class Api::V1::VirtualStagingsController < ApplicationController
         methods: [:before_photo_url, :after_photo_url, :thumbnail_url]
       )
     else
-      # 全バーチャルステージング一覧
-      @virtual_stagings = VirtualStaging.includes(:before_photo, :after_photo, room: :building).order(updated_at: :desc)
+      # 全バーチャルステージング一覧（テナントスコープ）
+      @virtual_stagings = VirtualStaging.joins(room: :building)
+                                         .where(buildings: { tenant_id: current_user.tenant_id })
+                                         .includes(:before_photo, :after_photo, room: :building)
+                                         .order(updated_at: :desc)
       render json: @virtual_stagings.as_json(
         include: {
           room: {
@@ -182,11 +185,15 @@ class Api::V1::VirtualStagingsController < ApplicationController
   private
 
   def set_room
-    @room = Room.find(params[:room_id])
+    @room = Room.joins(:building)
+                .where(buildings: { tenant_id: current_user.tenant_id })
+                .find(params[:room_id])
   end
 
   def set_virtual_staging
-    @virtual_staging = VirtualStaging.find(params[:id])
+    @virtual_staging = VirtualStaging.joins(room: :building)
+                                      .where(buildings: { tenant_id: current_user.tenant_id })
+                                      .find(params[:id])
   end
 
   def virtual_staging_params

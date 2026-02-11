@@ -532,7 +532,10 @@ class Api::V1::PropertyPublicationsController < ApplicationController
     return render json: { error: 'IDが指定されていません' }, status: :bad_request if ids.blank?
     return render json: { error: 'アクションが指定されていません' }, status: :bad_request if action.blank?
 
-    publications = PropertyPublication.kept.where(id: ids)
+    publications = PropertyPublication.kept
+                                      .joins(room: :building)
+                                      .where(buildings: { tenant_id: current_user.tenant_id })
+                                      .where(id: ids)
 
     case action
     when 'publish'
@@ -578,11 +581,16 @@ class Api::V1::PropertyPublicationsController < ApplicationController
   private
 
   def set_room
-    @room = Room.find(params[:room_id])
+    @room = Room.joins(:building)
+                .where(buildings: { tenant_id: current_user.tenant_id })
+                .find(params[:room_id])
   end
 
   def set_property_publication
-    @property_publication = PropertyPublication.kept.find(params[:id])
+    @property_publication = PropertyPublication.kept
+                                               .joins(room: :building)
+                                               .where(buildings: { tenant_id: current_user.tenant_id })
+                                               .find(params[:id])
   end
 
   def property_publication_params

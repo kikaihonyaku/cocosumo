@@ -22,8 +22,11 @@ class Api::V1::VrToursController < ApplicationController
         methods: [:thumbnail_url, :scenes_count]
       )
     else
-      # 全VRツアー一覧
-      @vr_tours = VrTour.includes(:vr_scenes, room: :building).order(updated_at: :desc)
+      # 全VRツアー一覧（テナントスコープ）
+      @vr_tours = VrTour.joins(room: :building)
+                        .where(buildings: { tenant_id: current_user.tenant_id })
+                        .includes(:vr_scenes, room: :building)
+                        .order(updated_at: :desc)
       render json: @vr_tours.as_json(include: {
         vr_scenes: {
           only: [:id]
@@ -183,7 +186,9 @@ class Api::V1::VrToursController < ApplicationController
       return
     end
 
-    tours = VrTour.where(id: vr_tour_ids)
+    tours = VrTour.joins(room: :building)
+                  .where(buildings: { tenant_id: current_user.tenant_id })
+                  .where(id: vr_tour_ids)
 
     case action
     when 'publish'
@@ -205,11 +210,15 @@ class Api::V1::VrToursController < ApplicationController
   private
 
   def set_room
-    @room = Room.find(params[:room_id])
+    @room = Room.joins(:building)
+                .where(buildings: { tenant_id: current_user.tenant_id })
+                .find(params[:room_id])
   end
 
   def set_vr_tour
-    @vr_tour = VrTour.find(params[:id])
+    @vr_tour = VrTour.joins(room: :building)
+                      .where(buildings: { tenant_id: current_user.tenant_id })
+                      .find(params[:id])
   end
 
   def vr_tour_params
