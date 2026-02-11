@@ -655,7 +655,7 @@ function PropertyPublicationEditor() {
                       control={<Radio />}
                       label={
                         <Box>
-                          <Typography variant="body1" fontWeight="bold">テンプレート0（旧SUUMO風）</Typography>
+                          <Typography variant="body1" fontWeight="bold">テンプレート0（標準）</Typography>
                           <Typography variant="caption" color="text.secondary">
                             シンプルなブルー系デザイン
                           </Typography>
@@ -684,7 +684,7 @@ function PropertyPublicationEditor() {
                       control={<Radio />}
                       label={
                         <Box>
-                          <Typography variant="body1" fontWeight="bold">テンプレート1（新SUUMO風）</Typography>
+                          <Typography variant="body1" fontWeight="bold">テンプレート1（SUUMO風）</Typography>
                           <Typography variant="caption" color="text.secondary">
                             サンプル: SUUMO風デザイン
                           </Typography>
