@@ -85,7 +85,7 @@ const VirtualStagingViewer = () => {
             mb: 2,
           }}
         >
-          <IconButton onClick={() => navigate(`/room/${roomId}`)}>
+          <IconButton onClick={() => navigate(-1)}>
             <ArrowBackIcon />
           </IconButton>
           <Box sx={{ flexGrow: 1 }}>
