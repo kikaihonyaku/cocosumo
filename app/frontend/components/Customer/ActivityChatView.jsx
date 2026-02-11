@@ -137,6 +137,30 @@ export default function ActivityChatView({
                 </Typography>
               )}
 
+              {/* LINE image message */}
+              {activity.metadata?.line_message_type === 'image' && activity.metadata?.image_url && (
+                <Box sx={{ mt: 0.5, mb: 0.5 }}>
+                  <img
+                    src={activity.metadata.image_url}
+                    alt="LINE画像"
+                    style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8 }}
+                  />
+                </Box>
+              )}
+
+              {/* LINE property card indicator */}
+              {activity.metadata?.line_message_type === 'property_card' && (
+                <Box sx={{
+                  mt: 0.5, mb: 0.5, p: 1,
+                  bgcolor: isOutbound ? 'rgba(255,255,255,0.15)' : 'grey.200',
+                  borderRadius: 1, display: 'flex', alignItems: 'center', gap: 0.5
+                }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                    物件カード（Flex Message）
+                  </Typography>
+                </Box>
+              )}
+
               {/* Content */}
               {activity.content && (
                 activity.content_format === 'html' ? (

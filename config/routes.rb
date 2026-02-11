@@ -337,12 +337,22 @@ Rails.application.routes.draw do
           get :accesses
           post :create_inquiry
           post :send_email
+          post :send_line_message
         end
         resources :activities, controller: 'customer_activities', only: [:index, :create, :update, :destroy]
         resources :email_drafts, only: [:index, :create, :update, :destroy]
       end
 
       resources :email_templates, only: [:index, :create, :update, :destroy]
+      resources :line_templates, only: [:index, :create, :update, :destroy]
+
+      # LINE設定管理
+      resource :line_config, only: [:show, :update] do
+        post :test
+      end
+
+      # LINE Webhook（認証不要）
+      post 'line/webhook/:tenant_subdomain', to: 'line_webhook#receive'
 
       # 顧客向け公開API（認証不要）
       get 'customer/:access_token', to: 'customer_accesses#show_public'

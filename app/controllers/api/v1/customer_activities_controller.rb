@@ -110,6 +110,7 @@ class Api::V1::CustomerActivitiesController < ApplicationController
         id: activity.property_publication.id,
         title: activity.property_publication.title
       } : nil,
+      metadata: activity.metadata.presence,
       created_at: activity.created_at,
       formatted_created_at: activity.formatted_created_at,
       formatted_date: activity.formatted_date

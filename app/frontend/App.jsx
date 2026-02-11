@@ -47,6 +47,8 @@ import SalesPresentation from "./pages/SalesPresentation";
 import TenantManagement from "./pages/super_admin/TenantManagement";
 import UserManagement from "./pages/admin/UserManagement";
 import EmailTemplateManagement from "./pages/admin/EmailTemplateManagement";
+import LineTemplateManagement from "./pages/admin/LineTemplateManagement";
+import LineConfigManagement from "./pages/admin/LineConfigManagement";
 import ProfileSettings from "./pages/ProfileSettings";
 import CustomerList from "./pages/CustomerList";
 import CustomerDetail from "./pages/CustomerDetail";
@@ -217,6 +219,8 @@ export default function App() {
             {/* 管理者用ルート */}
             <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
             <Route path="/admin/email-templates" element={<AdminRoute><EmailTemplateManagement /></AdminRoute>} />
+            <Route path="/admin/line-templates" element={<AdminRoute><LineTemplateManagement /></AdminRoute>} />
+            <Route path="/admin/line-config" element={<AdminRoute><LineConfigManagement /></AdminRoute>} />
           </Route>
           </Routes>
           </TenantProvider>

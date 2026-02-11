@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_11_010109) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_11_100002) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -286,6 +286,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_11_010109) do
     t.datetime "updated_at", null: false
     t.bigint "inquiry_id", null: false
     t.string "content_format", default: "text", null: false
+    t.jsonb "metadata", default: {}
     t.index ["activity_type"], name: "index_customer_activities_on_activity_type"
     t.index ["customer_access_id"], name: "index_customer_activities_on_customer_access_id"
     t.index ["customer_id", "created_at"], name: "index_customer_activities_on_customer_id_and_created_at"
@@ -438,6 +439,36 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_11_010109) do
     t.index ["customer_id"], name: "index_inquiries_on_customer_id"
     t.index ["status"], name: "index_inquiries_on_status"
     t.index ["tenant_id"], name: "index_inquiries_on_tenant_id"
+  end
+
+  create_table "line_configs", force: :cascade do |t|
+    t.bigint "tenant_id", null: false
+    t.string "channel_id"
+    t.string "channel_secret"
+    t.string "channel_token"
+    t.boolean "webhook_verified", default: false, null: false
+    t.text "greeting_message"
+    t.string "rich_menu_id"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tenant_id"], name: "index_line_configs_on_tenant_id", unique: true
+  end
+
+  create_table "line_templates", force: :cascade do |t|
+    t.bigint "tenant_id", null: false
+    t.string "name", null: false
+    t.integer "message_type", default: 0, null: false
+    t.text "content", null: false
+    t.string "image_url"
+    t.string "flex_alt_text"
+    t.integer "position"
+    t.datetime "discarded_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["discarded_at"], name: "index_line_templates_on_discarded_at"
+    t.index ["tenant_id", "discarded_at"], name: "index_line_templates_on_tenant_id_and_discarded_at"
+    t.index ["tenant_id"], name: "index_line_templates_on_tenant_id"
   end
 
   create_table "map_layers", force: :cascade do |t|
@@ -1076,6 +1107,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_11_010109) do
   add_foreign_key "inquiries", "customers"
   add_foreign_key "inquiries", "tenants"
   add_foreign_key "inquiries", "users", column: "assigned_user_id"
+  add_foreign_key "line_configs", "tenants"
+  add_foreign_key "line_templates", "tenants"
   add_foreign_key "map_layers", "tenants", on_delete: :cascade
   add_foreign_key "owners", "buildings"
   add_foreign_key "owners", "tenants"

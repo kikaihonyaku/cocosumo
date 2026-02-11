@@ -1,7 +1,7 @@
 class Api::V1::CustomersController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
-  before_action :set_customer, only: [ :show, :update, :destroy, :inquiries, :accesses, :create_inquiry, :send_email ]
+  before_action :set_customer, only: [ :show, :update, :destroy, :inquiries, :accesses, :create_inquiry, :send_email, :send_line_message ]
 
   # GET /api/v1/customers
   def index
@@ -250,6 +250,78 @@ class Api::V1::CustomersController < ApplicationController
     end
 
     render json: { success: true, message: "メールを送信しました" }
+  end
+
+  # POST /api/v1/customers/:id/send_line_message
+  # 顧客詳細画面からLINEメッセージを送信し、対応履歴に記録
+  def send_line_message
+    message_type = params[:message_type].to_s.presence || "text"
+    content = params[:content].to_s.strip
+    inquiry_id = params[:inquiry_id]
+
+    if content.blank? && message_type != "property_card"
+      return render json: { errors: [ "メッセージ内容は必須です" ] }, status: :unprocessable_entity
+    end
+
+    if @customer.line_user_id.blank?
+      return render json: { errors: [ "この顧客にはLINEが連携されていません" ] }, status: :unprocessable_entity
+    end
+
+    inquiry = @customer.inquiries.find_by(id: inquiry_id)
+    unless inquiry
+      return render json: { errors: [ "案件が見つかりませんでした" ] }, status: :unprocessable_entity
+    end
+
+    begin
+      service = LineMessageService.new(current_user.tenant)
+    rescue LineMessageService::NotConfiguredError
+      return render json: { errors: [ "LINE設定が完了していません。管理者に連絡してください。" ] }, status: :unprocessable_entity
+    end
+
+    metadata = { line_message_type: message_type }
+
+    case message_type
+    when "text"
+      service.push_text(@customer.line_user_id, content)
+    when "image"
+      image_url = params[:image_url].to_s.strip
+      if image_url.blank?
+        return render json: { errors: [ "画像URLは必須です" ] }, status: :unprocessable_entity
+      end
+      service.push_image(@customer.line_user_id, image_url)
+      metadata[:image_url] = image_url
+    when "flex"
+      flex_contents = JSON.parse(content)
+      alt_text = params[:alt_text].to_s.presence || "メッセージ"
+      service.push_flex(@customer.line_user_id, alt_text, flex_contents)
+      metadata[:flex_contents] = flex_contents
+    when "property_card"
+      room_id = params[:room_id]
+      room = Room.find(room_id)
+      unless room.building&.tenant_id == current_user.tenant_id
+        return render json: { errors: [ "この物件へのアクセス権限がありません" ] }, status: :forbidden
+      end
+      service.push_property_card(@customer.line_user_id, room)
+      content = "物件カード: #{room.building&.name} #{room.room_number}"
+      metadata[:room_id] = room.id
+    end
+
+    @customer.add_activity!(
+      activity_type: :line_message,
+      direction: :outbound,
+      inquiry: inquiry,
+      user: current_user,
+      content: content,
+      metadata: metadata
+    )
+
+    render json: { success: true, message: "LINEメッセージを送信しました" }
+  rescue JSON::ParserError
+    render json: { errors: [ "Flex MessageのJSONが不正です" ] }, status: :unprocessable_entity
+  rescue ActiveRecord::RecordNotFound
+    render json: { errors: [ "物件が見つかりませんでした" ] }, status: :not_found
+  rescue LineMessageService::DeliveryError => e
+    render json: { errors: [ e.message ] }, status: :unprocessable_entity
   end
 
   private

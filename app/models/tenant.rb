@@ -9,6 +9,8 @@ class Tenant < ApplicationRecord
   has_many :admin_audit_logs
   has_many :bulk_import_histories
   has_many :email_templates, dependent: :destroy
+  has_one :line_config, dependent: :destroy
+  has_many :line_templates, dependent: :destroy
   belongs_to :created_by, class_name: "User", optional: true
 
   # Enums

@@ -60,6 +60,7 @@ import AddPropertyDialog from '../components/Customer/AddPropertyDialog';
 import ActivityTimeline from '../components/Customer/ActivityTimeline';
 import ActivityChatView from '../components/Customer/ActivityChatView';
 import EmailComposeDialog from '../components/Customer/EmailComposeDialog';
+import LineComposeDialog from '../components/Customer/LineComposeDialog';
 
 // Customer status mapping
 const getStatusInfo = (status) => {
@@ -160,6 +161,7 @@ export default function CustomerDetail() {
   const [viewingActivity, setViewingActivity] = useState(null);
   const [addPropertyDialogOpen, setAddPropertyDialogOpen] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [lineDialogOpen, setLineDialogOpen] = useState(false);
 
   // Case (inquiry) selector state
   const [selectedInquiryId, setSelectedInquiryId] = useState(null);
@@ -961,6 +963,13 @@ export default function CustomerDetail() {
                   <EditNoteIcon fontSize="small" color="primary" />
                 </IconButton>
               </Tooltip>
+              {customer.line_user_id && (
+                <Tooltip title="LINE送信">
+                  <IconButton size="small" onClick={() => setLineDialogOpen(true)}>
+                    <ChatIcon fontSize="small" sx={{ color: '#06C755' }} />
+                  </IconButton>
+                </Tooltip>
+              )}
               {customer.phone && (
                 <Tooltip title={customer.phone}>
                   <IconButton size="small" component="a" href={`tel:${customer.phone}`}>
@@ -990,6 +999,17 @@ export default function CustomerDetail() {
               >
                 リッチメール
               </Button>
+              {customer.line_user_id && (
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<ChatIcon />}
+                  onClick={() => setLineDialogOpen(true)}
+                  sx={{ bgcolor: '#06C755', '&:hover': { bgcolor: '#05b04c' } }}
+                >
+                  LINE
+                </Button>
+              )}
               {customer.phone && (
                 <Tooltip title={customer.phone}>
                   <Chip
@@ -1271,6 +1291,19 @@ export default function CustomerDetail() {
       <EmailComposeDialog
         open={emailDialogOpen}
         onClose={() => setEmailDialogOpen(false)}
+        customer={customer}
+        inquiries={inquiries}
+        selectedInquiryId={selectedInquiryId}
+        onSent={() => {
+          loadActivities();
+          loadCustomer();
+        }}
+      />
+
+      {/* LINE Compose Dialog */}
+      <LineComposeDialog
+        open={lineDialogOpen}
+        onClose={() => setLineDialogOpen(false)}
         customer={customer}
         inquiries={inquiries}
         selectedInquiryId={selectedInquiryId}
