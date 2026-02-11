@@ -240,7 +240,6 @@ class Api::V1::PresentationAccessesController < ApplicationController
     publication = presentation_access.property_publication
     room = publication.room
     building = room.building
-    host = "#{request.protocol}#{request.host_with_port}"
 
     {
       access_token: presentation_access.access_token,

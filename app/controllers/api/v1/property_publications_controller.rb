@@ -79,7 +79,7 @@ class Api::V1::PropertyPublicationsController < ApplicationController
           }
         }
       },
-      methods: [:thumbnail_url, :public_url, :visible_fields_with_defaults]
+      methods: [:thumbnail_url, :public_url, :visible_fields_with_defaults, :qr_code_data_url]
     )
   end
 
@@ -126,9 +126,6 @@ class Api::V1::PropertyPublicationsController < ApplicationController
 
     # 公開中か、またはプレビューモードでログイン済みの場合のみ表示
     if @property_publication.published? || (is_preview && current_user)
-      # Get host from request
-      host = "#{request.protocol}#{request.host_with_port}"
-
       result = @property_publication.as_json(
         include: {
           property_publication_photos: {
@@ -166,15 +163,13 @@ class Api::V1::PropertyPublicationsController < ApplicationController
             }
           }
         },
-        methods: [:visible_fields_with_defaults, :public_url]
+        methods: [:visible_fields_with_defaults, :public_url, :qr_code_data_url]
       )
 
-      # Add QR code with host information
-      result['qr_code_data_url'] = @property_publication.qr_code_data_url(host: host)
       # Add expiration info
       result['expires_at'] = @property_publication.expires_at
       # Add OGP metadata for social sharing
-      result['og_metadata'] = @property_publication.og_metadata(host: host)
+      result['og_metadata'] = @property_publication.og_metadata
 
       # HTTPキャッシュヘッダーを設定（プレビューモード以外）
       unless is_preview

@@ -461,9 +461,7 @@ class Api::V1::CustomerAccessesController < ApplicationController
     end
 
     # レスポンスデータ生成
-    host = "#{request.protocol}#{request.host_with_port}"
-
-    result = build_property_data(@property_publication, host)
+    result = build_property_data(@property_publication)
 
     # 顧客アクセス情報を追加
     result['customer_access'] = {
@@ -808,7 +806,7 @@ class Api::V1::CustomerAccessesController < ApplicationController
     )
   end
 
-  def build_property_data(property_publication, host)
+  def build_property_data(property_publication)
     result = property_publication.as_json(
       include: {
         property_publication_photos: {
@@ -853,11 +851,10 @@ class Api::V1::CustomerAccessesController < ApplicationController
           }
         }
       },
-      methods: [:visible_fields_with_defaults, :public_url]
+      methods: [:visible_fields_with_defaults, :public_url, :qr_code_data_url]
     )
 
-    result['qr_code_data_url'] = property_publication.qr_code_data_url(host: host)
-    result['og_metadata'] = property_publication.og_metadata(host: host)
+    result['og_metadata'] = property_publication.og_metadata
 
     # 経路情報を追加
     building = property_publication.room.building

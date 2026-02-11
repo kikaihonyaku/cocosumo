@@ -131,12 +131,12 @@ class PropertyPublication < ApplicationRecord
   end
 
   # Get QR code data URL
-  def qr_code_data_url(host: nil)
+  def qr_code_data_url
     return nil unless published?
     require 'rqrcode'
 
-    # Build full URL for QR code
-    base_url = host || ENV['APP_HOST'] || 'http://localhost:3000'
+    # Build full URL for QR code (public_urlと同じ方法でベースURLを取得)
+    base_url = Thread.current[:request_base_url] || tenant_base_url
     full_url = "#{base_url}/property/#{publication_id}"
 
     qr = RQRCode::QRCode.new(full_url)
@@ -188,13 +188,11 @@ class PropertyPublication < ApplicationRecord
 
   # Get OGP image URL for social sharing
   # Returns the first photo URL or a default OGP image
-  def og_image_url(host: nil)
+  def og_image_url
     return nil unless published?
 
     first_photo = property_publication_photos.first&.room_photo
     return nil unless first_photo&.photo&.attached?
-
-    base_url = host || ENV['APP_HOST'] || 'http://localhost:3000'
 
     # 画像URLを取得
     photo_url = first_photo.photo_url
@@ -204,18 +202,19 @@ class PropertyPublication < ApplicationRecord
     if photo_url.start_with?('http')
       photo_url
     else
+      base_url = Thread.current[:request_base_url] || tenant_base_url
       "#{base_url}#{photo_url}"
     end
   end
 
   # OGP用のメタデータを一括取得
-  def og_metadata(host: nil)
+  def og_metadata
     sanitized_description = catch_copy || ActionController::Base.helpers.strip_tags(pr_text)&.truncate(160) || "#{title}の物件情報"
     {
       title: title,
       description: sanitized_description,
-      image: og_image_url(host: host),
-      url: public_url ? "#{host || ENV['APP_HOST'] || 'http://localhost:3000'}#{public_url}" : nil,
+      image: og_image_url,
+      url: public_url,
       type: 'website',
       site_name: 'CoCoスモ',
       locale: 'ja_JP'
