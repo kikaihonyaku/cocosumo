@@ -210,7 +210,7 @@ export default function PropertyPublicationsManager() {
 
   const handleView = () => {
     if (selectedPublication) {
-      navigate(`/property/${selectedPublication.publication_id}?preview=true`);
+      window.open(`/property/${selectedPublication.publication_id}?preview=true`, '_blank');
     }
     handleActionMenuClose();
   };
