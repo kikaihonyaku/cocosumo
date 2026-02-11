@@ -182,7 +182,16 @@ export default function useEmailComposer({ customerId, inquiryId: initialInquiry
   // Template apply
   const applyTemplate = useCallback((template) => {
     setSubject(template.subject || '');
-    setBody(template.body || '');
+    if (template.body_format === 'html') {
+      setBody(template.body || '');
+    } else {
+      // テキスト形式の場合、改行をHTML段落に変換
+      const html = (template.body || '')
+        .split('\n')
+        .map(line => `<p>${line || '<br>'}</p>`)
+        .join('');
+      setBody(html);
+    }
   }, []);
 
   // Attachments

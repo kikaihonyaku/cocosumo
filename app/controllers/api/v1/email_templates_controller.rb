@@ -44,7 +44,7 @@ class Api::V1::EmailTemplatesController < ApplicationController
   end
 
   def template_params
-    params.require(:email_template).permit(:name, :subject, :body, :position)
+    params.require(:email_template).permit(:name, :subject, :body, :position, :body_format)
   end
 
   def template_json(template)
@@ -53,6 +53,7 @@ class Api::V1::EmailTemplatesController < ApplicationController
       name: template.name,
       subject: template.subject,
       body: template.body,
+      body_format: template.body_format,
       position: template.position
     }
   end

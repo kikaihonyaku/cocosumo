@@ -28,6 +28,7 @@ import {
   Description as DescriptionIcon,
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
+import RichTextEditor from '../../components/shared/RichTextEditor';
 
 export default function EmailTemplateManagement() {
   const [templates, setTemplates] = useState([]);
@@ -132,7 +133,7 @@ export default function EmailTemplateManagement() {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email_template: formData }),
+        body: JSON.stringify({ email_template: { ...formData, body_format: 'html' } }),
       });
 
       if (response.ok) {
@@ -154,10 +155,14 @@ export default function EmailTemplateManagement() {
 
   const handleEdit = (template) => {
     setSelectedTemplate(template);
+    // テキスト形式の場合、改行をHTMLに変換してエディタで表示
+    const bodyHtml = template.body_format === 'html'
+      ? template.body
+      : (template.body || '').split('\n').map(line => `<p>${line || '<br>'}</p>`).join('');
     setFormData({
       name: template.name,
       subject: template.subject,
-      body: template.body,
+      body: bodyHtml,
       position: template.position || 0,
     });
     setEditDialogOpen(true);
@@ -183,7 +188,7 @@ export default function EmailTemplateManagement() {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email_template: formData }),
+        body: JSON.stringify({ email_template: { ...formData, body_format: 'html' } }),
       });
 
       if (response.ok) {
@@ -251,14 +256,12 @@ export default function EmailTemplateManagement() {
         fullWidth
         required
       />
-      <TextField
-        label="本文"
+      <RichTextEditor
+        label="本文 *"
         value={formData.body}
-        onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-        fullWidth
-        required
-        multiline
-        rows={8}
+        onChange={(val) => setFormData({ ...formData, body: val })}
+        placeholder="メールテンプレートの本文を入力してください..."
+        minHeight={200}
       />
       <TextField
         label="並び順"
@@ -327,7 +330,12 @@ export default function EmailTemplateManagement() {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 300 }} noWrap>
-                        {template.body?.length > 50 ? `${template.body.substring(0, 50)}...` : template.body}
+                        {(() => {
+                          const text = template.body_format === 'html'
+                            ? template.body?.replace(/<[^>]*>/g, '') || ''
+                            : template.body || '';
+                          return text.length > 50 ? `${text.substring(0, 50)}...` : text;
+                        })()}
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
@@ -371,7 +379,7 @@ export default function EmailTemplateManagement() {
       <Dialog
         open={createDialogOpen}
         onClose={() => !submitting && setCreateDialogOpen(false)}
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>新規メールテンプレート作成</DialogTitle>
@@ -397,7 +405,7 @@ export default function EmailTemplateManagement() {
       <Dialog
         open={editDialogOpen}
         onClose={() => !submitting && setEditDialogOpen(false)}
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>メールテンプレートの編集</DialogTitle>
@@ -452,7 +460,7 @@ export default function EmailTemplateManagement() {
       <Dialog
         open={previewDialogOpen}
         onClose={() => setPreviewDialogOpen(false)}
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>
@@ -475,9 +483,24 @@ export default function EmailTemplateManagement() {
               <Box>
                 <Typography variant="caption" color="text.secondary">本文</Typography>
                 <Paper variant="outlined" sx={{ p: 2, mt: 0.5, bgcolor: 'grey.50' }}>
-                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', lineHeight: 1.8 }}>
-                    {replacePlaceholders(previewTemplate.body)}
-                  </Typography>
+                  {previewTemplate.body_format === 'html' ? (
+                    <Box
+                      sx={{
+                        fontSize: '0.875rem', lineHeight: 1.8,
+                        '& p': { margin: '0 0 0.5em 0' },
+                        '& h2': { fontSize: '1.25rem', fontWeight: 600, margin: '1em 0 0.5em 0' },
+                        '& h3': { fontSize: '1.1rem', fontWeight: 600, margin: '1em 0 0.5em 0' },
+                        '& ul, & ol': { paddingLeft: '1.5em', margin: '0.5em 0' },
+                        '& blockquote': { borderLeft: '3px solid #ccc', paddingLeft: '1em', margin: '0.5em 0', fontStyle: 'italic' },
+                        '& a': { color: 'primary.main', textDecoration: 'underline' },
+                      }}
+                      dangerouslySetInnerHTML={{ __html: replacePlaceholders(previewTemplate.body) }}
+                    />
+                  ) : (
+                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', lineHeight: 1.8 }}>
+                      {replacePlaceholders(previewTemplate.body)}
+                    </Typography>
+                  )}
                 </Paper>
               </Box>
               <Box>

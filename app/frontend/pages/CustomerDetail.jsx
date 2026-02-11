@@ -971,20 +971,6 @@ export default function CustomerDetail() {
             </>
           ) : (
             <>
-              {customer.email && (
-                <Tooltip title={customer.email}>
-                  <Chip
-                    size="small"
-                    icon={<EmailIcon />}
-                    label={customer.email}
-                    component="a"
-                    href={`mailto:${customer.email}`}
-                    clickable
-                    variant="outlined"
-                    sx={{ height: 24, maxWidth: 200, fontSize: '0.75rem' }}
-                  />
-                </Tooltip>
-              )}
               <Button
                 size="small"
                 variant="outlined"
@@ -1036,6 +1022,20 @@ export default function CustomerDetail() {
           <Box sx={{ flex: 1 }} />
           {!isMobile && (
             <>
+              {customer.email && (
+                <Tooltip title={customer.email}>
+                  <Chip
+                    size="small"
+                    icon={<EmailIcon />}
+                    label={customer.email}
+                    component="a"
+                    href={`mailto:${customer.email}`}
+                    clickable
+                    variant="outlined"
+                    sx={{ height: 22, maxWidth: 200, fontSize: '0.7rem' }}
+                  />
+                </Tooltip>
+              )}
               <Chip
                 size="small"
                 icon={<QuestionAnswerIcon />}
