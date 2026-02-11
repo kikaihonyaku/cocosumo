@@ -8,11 +8,12 @@ import {
   Person as PersonIcon, Email as EmailIcon, Phone as PhoneIcon,
   Work as WorkIcon, Badge as BadgeIcon, Store as StoreIcon,
   Lock as LockIcon, Schedule as ScheduleIcon, Save as SaveIcon,
-  ZoomIn as ZoomInIcon
+  ZoomIn as ZoomInIcon, EditNote as EditNoteIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useThemeMode, ZOOM_LEVELS } from '../contexts/ThemeContext';
 import ChangePasswordDialog from '../components/shared/ChangePasswordDialog';
+import RichTextEditor from '../components/shared/RichTextEditor';
 
 export default function ProfileSettings() {
   const { user: authUser, checkAuthStatus } = useAuth();
@@ -27,6 +28,8 @@ export default function ProfileSettings() {
     name: '',
     phone: '',
   });
+  const [emailSignature, setEmailSignature] = useState('');
+  const [signatureSaving, setSignatureSaving] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -42,6 +45,7 @@ export default function ProfileSettings() {
         name: data.user.name || '',
         phone: data.user.phone || '',
       });
+      setEmailSignature(data.user.email_signature || '');
     } catch (error) {
       showSnackbar('プロフィールの取得に失敗しました', 'error');
     } finally {
@@ -77,6 +81,27 @@ export default function ProfileSettings() {
       showSnackbar('エラーが発生しました', 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveSignature = async () => {
+    setSignatureSaving(true);
+    try {
+      const response = await fetch('/api/v1/auth/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email_signature: emailSignature }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        showSnackbar('署名を保存しました');
+      } else {
+        showSnackbar(data.error || '保存に失敗しました', 'error');
+      }
+    } catch (error) {
+      showSnackbar('エラーが発生しました', 'error');
+    } finally {
+      setSignatureSaving(false);
     }
   };
 
@@ -220,6 +245,33 @@ export default function ProfileSettings() {
             </Box>
           </Paper>
         )}
+
+        {/* メール署名セクション */}
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            <EditNoteIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+            メール署名
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            リッチメール作成時に自動挿入される署名を設定できます。
+          </Typography>
+          <RichTextEditor
+            value={emailSignature}
+            onChange={setEmailSignature}
+            placeholder="署名を入力してください（例: 会社名 / 担当者名 / 電話番号）"
+            minHeight={120}
+          />
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Button
+              variant="contained"
+              startIcon={signatureSaving ? <CircularProgress size={20} /> : <SaveIcon />}
+              onClick={handleSaveSignature}
+              disabled={signatureSaving}
+            >
+              {signatureSaving ? '保存中...' : '署名を保存'}
+            </Button>
+          </Box>
+        </Paper>
 
         {/* 表示設定セクション */}
         <Paper sx={{ p: 3 }}>

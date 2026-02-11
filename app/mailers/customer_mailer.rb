@@ -1,14 +1,26 @@
 class CustomerMailer < ApplicationMailer
   # 顧客へのメール送信
-  def send_to_customer(customer, sender_user, subject, body, inquiry)
+  def send_to_customer(customer, sender_user, subject, body, inquiry, body_format: "text", attachment_ids: nil)
     @customer = customer
     @body = body
+    @body_format = body_format
     @sender = sender_user
 
     tenant = customer.tenant
     store = sender_user.store
     from_address = store&.email.presence || default_from
     reply_to_address = "#{tenant.subdomain}-reply-#{customer.id}-#{inquiry.id}-#{store&.id || 0}@inbound.cocosumo.space"
+
+    # Active Storageから添付ファイルを読み込み
+    if attachment_ids.present?
+      EmailAttachment.where(id: attachment_ids).find_each do |email_attachment|
+        next unless email_attachment.file.attached?
+        attachments[email_attachment.filename] = {
+          mime_type: email_attachment.content_type,
+          content: email_attachment.file.download
+        }
+      end
+    end
 
     mail(
       to: customer.email,

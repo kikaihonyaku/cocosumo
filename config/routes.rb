@@ -301,6 +301,7 @@ Rails.application.routes.draw do
         member do
           post :change_status
           post :add_property
+          get :photos
         end
       end
 
@@ -338,6 +339,7 @@ Rails.application.routes.draw do
           post :send_email
         end
         resources :activities, controller: 'customer_activities', only: [:index, :create, :update, :destroy]
+        resources :email_drafts, only: [:index, :create, :update, :destroy]
       end
 
       resources :email_templates, only: [:index, :create, :update, :destroy]

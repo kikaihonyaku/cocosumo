@@ -139,9 +139,24 @@ export default function ActivityChatView({
 
               {/* Content */}
               {activity.content && (
-                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
-                  {activity.content}
-                </Typography>
+                activity.content_format === 'html' ? (
+                  <Box
+                    sx={{
+                      '& p': { m: 0, mb: 0.5 },
+                      '& p:last-child': { mb: 0 },
+                      '& ul, & ol': { m: 0, pl: 2.5 },
+                      '& blockquote': { m: 0, pl: 1.5, borderLeft: '3px solid', borderColor: 'divider', opacity: 0.85 },
+                      '& a': { color: 'inherit', textDecoration: 'underline' },
+                      fontSize: '0.875rem',
+                      lineHeight: 1.5,
+                    }}
+                    dangerouslySetInnerHTML={{ __html: activity.content }}
+                  />
+                ) : (
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                    {activity.content}
+                  </Typography>
+                )
               )}
 
               {/* User name */}

@@ -53,6 +53,7 @@ import CustomerDetail from "./pages/CustomerDetail";
 import BulkImport from "./pages/BulkImport";
 import RoomList from "./pages/RoomList";
 import FeatureDetailPage from "./pages/features/FeatureDetailPage";
+import EmailComposer from "./pages/EmailComposer";
 
 // 認証が必要なルートを保護するコンポーネント
 function ProtectedRoute({ children }) {
@@ -168,6 +169,9 @@ export default function App() {
           {/* ブログページ */}
           <Route path="/blog" element={<BlogList />} />
           <Route path="/blog/:publicId" element={<BlogDetail />} />
+
+          {/* リッチメール作成画面（ヘッダーなし・フルスクリーン） */}
+          <Route path="/email/compose" element={<ProtectedRoute><EmailComposer /></ProtectedRoute>} />
 
           {/* 認証が必要なページ */}
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>

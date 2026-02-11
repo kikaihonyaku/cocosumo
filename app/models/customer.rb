@@ -6,6 +6,7 @@ class Customer < ApplicationRecord
   has_many :customer_accesses, dependent: :nullify
   has_many :customer_activities, dependent: :destroy
   has_many :inquired_publications, through: :property_inquiries, source: :property_publication
+  has_many :email_drafts, dependent: :destroy
 
   # Enums
   enum :status, { active: 0, archived: 1 }, default: :active

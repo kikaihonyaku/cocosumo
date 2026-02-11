@@ -124,7 +124,9 @@ export default function ActivityTimeline({
                       mb: 0.5
                     }}
                   >
-                    {activity.content}
+                    {activity.content_format === 'html'
+                      ? activity.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ')
+                      : activity.content}
                   </Typography>
                 )}
                 <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>

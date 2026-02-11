@@ -151,7 +151,7 @@ class Api::V1::AuthController < ApplicationController
   def profile
     render json: {
       user: current_user.as_json(
-        only: [:id, :name, :email, :phone, :position, :employee_code, :auth_provider, :last_login_at, :password_changed_at, :created_at],
+        only: [:id, :name, :email, :phone, :position, :employee_code, :auth_provider, :last_login_at, :password_changed_at, :created_at, :email_signature],
         include: { store: { only: [:id, :name] } }
       )
     }
@@ -159,14 +159,14 @@ class Api::V1::AuthController < ApplicationController
 
   # PATCH /api/v1/auth/profile - プロフィール更新
   def update_profile
-    permitted = [:name, :phone]
+    permitted = [:name, :phone, :email_signature]
 
     if current_user.update(params.permit(*permitted))
       render json: {
         success: true,
         message: 'プロフィールを更新しました',
         user: current_user.as_json(
-          only: [:id, :name, :email, :phone, :position, :employee_code, :auth_provider],
+          only: [:id, :name, :email, :phone, :position, :employee_code, :auth_provider, :email_signature],
           include: { store: { only: [:id, :name] } }
         )
       }

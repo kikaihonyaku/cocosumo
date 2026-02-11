@@ -86,6 +86,7 @@ class Api::V1::CustomerActivitiesController < ApplicationController
       icon_name: activity.icon_name,
       subject: activity.subject,
       content: activity.content,
+      content_format: activity.content_format,
       inquiry_id: activity.inquiry_id,
       property_inquiry_id: activity.property_inquiry_id,
       user: activity.user ? {

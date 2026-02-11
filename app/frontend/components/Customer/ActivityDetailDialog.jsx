@@ -56,12 +56,28 @@ export default function ActivityDetailDialog({ open, onClose, activity }) {
 
       <DialogContent sx={{ pt: 2 }}>
         {activity.content ? (
-          <Typography
-            variant="body2"
-            sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, mb: 2 }}
-          >
-            {activity.content}
-          </Typography>
+          activity.content_format === 'html' ? (
+            <Box
+              sx={{
+                '& p': { m: 0, mb: 1 },
+                '& p:last-child': { mb: 0 },
+                '& ul, & ol': { m: 0, pl: 2.5 },
+                '& blockquote': { m: 0, pl: 1.5, borderLeft: '3px solid', borderColor: 'divider', color: 'text.secondary' },
+                '& a': { color: 'primary.main' },
+                fontSize: '0.875rem',
+                lineHeight: 1.7,
+                mb: 2,
+              }}
+              dangerouslySetInnerHTML={{ __html: activity.content }}
+            />
+          ) : (
+            <Typography
+              variant="body2"
+              sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, mb: 2 }}
+            >
+              {activity.content}
+            </Typography>
+          )
         ) : (
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             詳細内容なし

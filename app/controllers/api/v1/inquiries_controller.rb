@@ -1,7 +1,7 @@
 class Api::V1::InquiriesController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
-  before_action :set_inquiry, only: [ :show, :update, :change_status, :add_property ]
+  before_action :set_inquiry, only: [ :show, :update, :change_status, :add_property, :photos ]
 
   # GET /api/v1/inquiries
   def index
@@ -137,6 +137,47 @@ class Api::V1::InquiriesController < ApplicationController
     render json: { errors: [ e.message ] }, status: :unprocessable_entity
   end
 
+  # GET /api/v1/inquiries/:id/photos
+  # 案件に紐づく全物件の建物写真・部屋写真を返却
+  def photos
+    property_inquiries = @inquiry.property_inquiries
+                                  .includes(room: [:room_photos, { building: :building_photos }])
+
+    groups = property_inquiries.map do |pi|
+      room = pi.room
+      building = room&.building
+
+      building_photos = (building&.building_photos || []).filter_map do |bp|
+        next unless bp.photo.attached?
+        { id: bp.id, url: bp.photo_url, photo_type: bp.photo_type, caption: bp.caption }
+      end
+
+      room_photos = (room&.room_photos&.ordered || []).filter_map do |rp|
+        next unless rp.photo.attached?
+        { id: rp.id, url: rp.photo_url, photo_type: rp.photo_type, caption: rp.caption }
+      end
+
+      publication = pi.property_publication
+      publication_url = publication ? "/property/#{publication.publication_id}" : nil
+
+      {
+        property_inquiry_id: pi.id,
+        property_title: pi.property_title,
+        building_name: building&.name,
+        room_number: room&.room_number,
+        room_type: room&.room_type,
+        area: room&.area&.to_f,
+        rent: room&.rent,
+        publication_url: publication_url,
+        publication_id: publication&.publication_id,
+        building_photos: building_photos,
+        room_photos: room_photos
+      }
+    end
+
+    render json: groups
+  end
+
   private
 
   def require_login
@@ -223,6 +264,7 @@ class Api::V1::InquiriesController < ApplicationController
           icon_name: a.icon_name,
           subject: a.subject,
           content: a.content,
+          content_format: a.content_format,
           user: a.user ? { id: a.user.id, name: a.user.name } : nil,
           created_at: a.created_at,
           formatted_created_at: a.formatted_created_at

@@ -46,7 +46,8 @@ import {
   Warning as WarningIcon,
   ViewList as ViewListIcon,
   ChatBubbleOutline as ChatBubbleOutlineIcon,
-  Send as SendIcon
+  Send as SendIcon,
+  EditNote as EditNoteIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import ActivityDialog from '../components/Customer/ActivityDialog';
@@ -598,6 +599,18 @@ export default function CustomerDetail() {
           </Button>
           <Button
             size="small"
+            variant="contained"
+            startIcon={<EditNoteIcon />}
+            onClick={() => {
+              const url = `/email/compose?customerId=${id}${selectedInquiryId ? `&inquiryId=${selectedInquiryId}` : ''}`;
+              window.open(url, '_blank');
+            }}
+            sx={{ display: { xs: 'none', md: 'inline-flex' } }}
+          >
+            リッチメール
+          </Button>
+          <Button
+            size="small"
             variant="outlined"
             startIcon={<AddIcon />}
             onClick={() => {
@@ -952,9 +965,20 @@ export default function CustomerDetail() {
                   </IconButton>
                 </Tooltip>
               )}
-              <Tooltip title="メール送信">
+              <Tooltip title="簡易メール送信">
                 <IconButton size="small" onClick={() => setEmailDialogOpen(true)}>
                   <SendIcon fontSize="small" color="primary" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="リッチメール作成">
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    const url = `/email/compose?customerId=${id}${selectedInquiryId ? `&inquiryId=${selectedInquiryId}` : ''}`;
+                    window.open(url, '_blank');
+                  }}
+                >
+                  <EditNoteIcon fontSize="small" color="primary" />
                 </IconButton>
               </Tooltip>
               {customer.phone && (

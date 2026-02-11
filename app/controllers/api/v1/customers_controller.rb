@@ -186,6 +186,7 @@ class Api::V1::CustomersController < ApplicationController
   def send_email
     subject = params[:subject].to_s.strip
     body = params[:body].to_s.strip
+    body_format = params[:body_format].to_s.presence || "text"
     inquiry_id = params[:inquiry_id]
 
     if subject.blank? || body.blank?
@@ -205,16 +206,48 @@ class Api::V1::CustomersController < ApplicationController
       return render json: { errors: [ "案件が見つかりませんでした" ] }, status: :unprocessable_entity
     end
 
-    CustomerMailer.send_to_customer(@customer, current_user, subject, body, inquiry).deliver_later
+    # HTML本文のサニタイズ
+    sanitized_body = body
+    if body_format == "html"
+      sanitized_body = sanitize_email_html(body)
+    end
 
-    @customer.add_activity!(
+    activity = @customer.add_activity!(
       activity_type: :email,
       direction: :outbound,
       inquiry: inquiry,
       user: current_user,
       subject: subject,
-      content: body
+      content: sanitized_body,
+      content_format: body_format
     )
+
+    # 添付ファイルをアクティビティに紐付け（メール送信前に保存）
+    attachment_ids = []
+    if params[:attachments].present?
+      Array(params[:attachments]).each do |attachment|
+        next unless attachment.is_a?(ActionDispatch::Http::UploadedFile)
+        email_attachment = activity.email_attachments.build(
+          filename: attachment.original_filename,
+          content_type: attachment.content_type,
+          byte_size: attachment.size
+        )
+        email_attachment.file.attach(attachment)
+        email_attachment.save!
+        attachment_ids << email_attachment.id
+      end
+    end
+
+    CustomerMailer.send_to_customer(
+      @customer, current_user, subject, sanitized_body, inquiry,
+      body_format: body_format,
+      attachment_ids: attachment_ids.presence
+    ).deliver_later
+
+    # 送信成功時に下書きを削除
+    if params[:draft_id].present?
+      @customer.email_drafts.where(user: current_user, id: params[:draft_id]).destroy_all
+    end
 
     render json: { success: true, message: "メールを送信しました" }
   end
@@ -367,6 +400,14 @@ class Api::V1::CustomersController < ApplicationController
       },
       from_inquiry: access.property_inquiry_id.present?
     }
+  end
+
+  def sanitize_email_html(html)
+    ActionController::Base.helpers.sanitize(
+      html,
+      tags: %w[p strong em u h2 h3 ul ol li blockquote a img br div span hr table tr td th tbody thead],
+      attributes: %w[href src alt style target rel width height]
+    )
   end
 
   def require_login

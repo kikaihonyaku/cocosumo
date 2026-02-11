@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_07_100001) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_09_100003) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -285,6 +285,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_07_100001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "inquiry_id", null: false
+    t.string "content_format", default: "text", null: false
     t.index ["activity_type"], name: "index_customer_activities_on_activity_type"
     t.index ["customer_access_id"], name: "index_customer_activities_on_customer_access_id"
     t.index ["customer_id", "created_at"], name: "index_customer_activities_on_customer_id_and_created_at"
@@ -359,6 +360,34 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_07_100001) do
     t.index ["tenant_id", "email"], name: "index_customers_on_tenant_id_and_email", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
     t.index ["tenant_id", "line_user_id"], name: "index_customers_on_tenant_id_and_line_user_id", unique: true, where: "(line_user_id IS NOT NULL)"
     t.index ["tenant_id"], name: "index_customers_on_tenant_id"
+  end
+
+  create_table "email_attachments", force: :cascade do |t|
+    t.bigint "customer_activity_id", null: false
+    t.string "filename", null: false
+    t.string "content_type"
+    t.integer "byte_size"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_activity_id"], name: "index_email_attachments_on_customer_activity_id"
+  end
+
+  create_table "email_drafts", force: :cascade do |t|
+    t.bigint "tenant_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "customer_id", null: false
+    t.bigint "inquiry_id"
+    t.string "subject"
+    t.text "body"
+    t.string "body_format", default: "html", null: false
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id"], name: "index_email_drafts_on_customer_id"
+    t.index ["inquiry_id"], name: "index_email_drafts_on_inquiry_id"
+    t.index ["tenant_id"], name: "index_email_drafts_on_tenant_id"
+    t.index ["user_id", "customer_id"], name: "index_email_drafts_on_user_customer"
+    t.index ["user_id"], name: "index_email_drafts_on_user_id"
   end
 
   create_table "email_templates", force: :cascade do |t|
@@ -923,6 +952,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_07_100001) do
     t.datetime "password_changed_at"
     t.integer "failed_login_count", default: 0, null: false
     t.datetime "locked_at"
+    t.text "email_signature"
     t.index ["active"], name: "index_users_on_active"
     t.index ["employee_code"], name: "index_users_on_employee_code"
     t.index ["store_id"], name: "index_users_on_store_id"
@@ -1035,6 +1065,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_07_100001) do
   add_foreign_key "customer_image_simulations", "property_publications"
   add_foreign_key "customer_routes", "customer_accesses"
   add_foreign_key "customers", "tenants"
+  add_foreign_key "email_attachments", "customer_activities"
+  add_foreign_key "email_drafts", "customers"
+  add_foreign_key "email_drafts", "inquiries"
+  add_foreign_key "email_drafts", "tenants"
+  add_foreign_key "email_drafts", "users"
   add_foreign_key "email_templates", "tenants"
   add_foreign_key "facility_synonyms", "facilities"
   add_foreign_key "inquiries", "customers"
