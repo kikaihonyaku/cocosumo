@@ -592,26 +592,6 @@ export default function CustomerDetail() {
           <Button
             size="small"
             variant="outlined"
-            startIcon={<SendIcon />}
-            onClick={() => setEmailDialogOpen(true)}
-          >
-            メール
-          </Button>
-          <Button
-            size="small"
-            variant="contained"
-            startIcon={<EditNoteIcon />}
-            onClick={() => {
-              const url = `/email/compose?customerId=${id}${selectedInquiryId ? `&inquiryId=${selectedInquiryId}` : ''}`;
-              window.open(url, '_blank');
-            }}
-            sx={{ display: { xs: 'none', md: 'inline-flex' } }}
-          >
-            リッチメール
-          </Button>
-          <Button
-            size="small"
-            variant="outlined"
             startIcon={<AddIcon />}
             onClick={() => {
               setEditingActivity(null);
@@ -1005,18 +985,25 @@ export default function CustomerDetail() {
                   />
                 </Tooltip>
               )}
-              <Tooltip title="メール送信">
-                <Chip
-                  size="small"
-                  icon={<SendIcon />}
-                  label="メール送信"
-                  clickable
-                  color="primary"
-                  variant="outlined"
-                  onClick={() => setEmailDialogOpen(true)}
-                  sx={{ height: 24, fontSize: '0.75rem' }}
-                />
-              </Tooltip>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<SendIcon />}
+                onClick={() => setEmailDialogOpen(true)}
+              >
+                メール
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<EditNoteIcon />}
+                onClick={() => {
+                  const url = `/email/compose?customerId=${id}${selectedInquiryId ? `&inquiryId=${selectedInquiryId}` : ''}`;
+                  window.open(url, '_blank');
+                }}
+              >
+                リッチメール
+              </Button>
               {customer.phone && (
                 <Tooltip title={customer.phone}>
                   <Chip
