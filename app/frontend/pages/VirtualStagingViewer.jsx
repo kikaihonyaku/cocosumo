@@ -99,7 +99,7 @@ const VirtualStagingViewer = () => {
           <Button
             variant="contained"
             startIcon={<EditIcon />}
-            onClick={() => navigate(`/room/${roomId}/virtual-staging/${id}/edit`)}
+            onClick={() => window.open(`/room/${roomId}/virtual-staging/${id}/edit`, '_blank')}
           >
             編集
           </Button>
