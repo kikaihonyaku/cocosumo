@@ -61,6 +61,7 @@ import ActivityTimeline from '../components/Customer/ActivityTimeline';
 import ActivityChatView from '../components/Customer/ActivityChatView';
 import EmailComposeDialog from '../components/Customer/EmailComposeDialog';
 import LineComposeDialog from '../components/Customer/LineComposeDialog';
+import EditCustomerDialog from '../components/Customer/EditCustomerDialog';
 
 // Customer status mapping
 const getStatusInfo = (status) => {
@@ -162,6 +163,7 @@ export default function CustomerDetail() {
   const [addPropertyDialogOpen, setAddPropertyDialogOpen] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [lineDialogOpen, setLineDialogOpen] = useState(false);
+  const [editCustomerDialogOpen, setEditCustomerDialogOpen] = useState(false);
 
   // Case (inquiry) selector state
   const [selectedInquiryId, setSelectedInquiryId] = useState(null);
@@ -934,6 +936,11 @@ export default function CustomerDetail() {
               variant="outlined"
               sx={{ height: 22 }}
             />
+            <Tooltip title="顧客情報を編集">
+              <IconButton size="small" onClick={() => setEditCustomerDialogOpen(true)} sx={{ ml: 0.5 }}>
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </Box>
 
           <Box sx={{ flex: 1 }} />
@@ -1010,20 +1017,6 @@ export default function CustomerDetail() {
                   LINE
                 </Button>
               )}
-              {customer.phone && (
-                <Tooltip title={customer.phone}>
-                  <Chip
-                    size="small"
-                    icon={<PhoneIcon />}
-                    label={customer.phone}
-                    component="a"
-                    href={`tel:${customer.phone}`}
-                    clickable
-                    variant="outlined"
-                    sx={{ height: 24, fontSize: '0.75rem' }}
-                  />
-                </Tooltip>
-              )}
             </>
           )}
         </Box>
@@ -1056,20 +1049,20 @@ export default function CustomerDetail() {
                   />
                 </Tooltip>
               )}
-              <Chip
-                size="small"
-                icon={<QuestionAnswerIcon />}
-                label={`問い合わせ ${customer.inquiry_count || 0}件`}
-                variant="outlined"
-                sx={{ height: 22, fontSize: '0.7rem' }}
-              />
-              <Chip
-                size="small"
-                icon={<KeyIcon />}
-                label={`顧客マイページ ${customer.access_count || 0}件`}
-                variant="outlined"
-                sx={{ height: 22, fontSize: '0.7rem' }}
-              />
+              {customer.phone && (
+                <Tooltip title={customer.phone}>
+                  <Chip
+                    size="small"
+                    icon={<PhoneIcon />}
+                    label={customer.phone}
+                    component="a"
+                    href={`tel:${customer.phone}`}
+                    clickable
+                    variant="outlined"
+                    sx={{ height: 22, fontSize: '0.7rem' }}
+                  />
+                </Tooltip>
+              )}
             </>
           )}
         </Box>
@@ -1298,6 +1291,14 @@ export default function CustomerDetail() {
           loadActivities();
           loadCustomer();
         }}
+      />
+
+      {/* Edit Customer Dialog */}
+      <EditCustomerDialog
+        open={editCustomerDialogOpen}
+        onClose={() => setEditCustomerDialogOpen(false)}
+        customer={customer}
+        onUpdated={loadCustomer}
       />
 
       {/* LINE Compose Dialog */}

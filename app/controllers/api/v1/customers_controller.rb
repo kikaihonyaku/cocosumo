@@ -68,7 +68,9 @@ class Api::V1::CustomersController < ApplicationController
 
   # PATCH /api/v1/customers/:id
   def update
+    changed_fields = detect_changes
     if @customer.update(customer_params)
+      record_info_change_activity(changed_fields) if changed_fields.present?
       render json: {
         success: true,
         message: "顧客情報を更新しました",
@@ -479,6 +481,34 @@ class Api::V1::CustomersController < ApplicationController
       html,
       tags: %w[p strong em u h2 h3 ul ol li blockquote a img br div span hr table tr td th tbody thead],
       attributes: %w[href src alt style target rel width height]
+    )
+  end
+
+  def detect_changes
+    fields = { name: "顧客名", email: "メールアドレス", phone: "電話番号" }
+    changes = []
+    fields.each do |attr, label|
+      next unless customer_params.key?(attr)
+      old_value = @customer.send(attr)
+      new_value = customer_params[attr]
+      if old_value.to_s != new_value.to_s
+        changes << "#{label}: #{old_value.presence || '(未設定)'} → #{new_value.presence || '(未設定)'}"
+      end
+    end
+    changes
+  end
+
+  def record_info_change_activity(changes)
+    inquiry = @customer.inquiries.order(created_at: :desc).first
+    return unless inquiry
+
+    @customer.add_activity!(
+      activity_type: :note,
+      direction: :internal,
+      inquiry: inquiry,
+      user: current_user,
+      subject: "顧客情報を更新",
+      content: changes.join("\n")
     )
   end
 
