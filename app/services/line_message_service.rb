@@ -48,8 +48,8 @@ class LineMessageService
   end
 
   # 物件カード Flex Message 送信
-  def push_property_card(line_user_id, room)
-    flex_contents = FlexMessageBuilder.build_property_card(room)
+  def push_property_card(line_user_id, room, activity_id: nil)
+    flex_contents = FlexMessageBuilder.build_property_card(room, activity_id: activity_id)
     alt_text = "#{room.building&.name} #{room.room_number} の物件情報"
     push_flex(line_user_id, alt_text, flex_contents)
   end

@@ -7,6 +7,7 @@ class CustomerActivity < ApplicationRecord
   belongs_to :customer_access, optional: true
   belongs_to :property_publication, optional: true
   has_many :email_attachments, dependent: :destroy
+  has_many :message_trackings, dependent: :destroy
 
   # Enums
   enum :activity_type, {

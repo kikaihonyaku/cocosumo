@@ -17,6 +17,7 @@ import {
   ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
 import { getActivityIcon, getActivityDotColor, filterActivities } from './activityUtils';
+import TrackingStatusChips from './TrackingStatusChips';
 
 export default function ActivityTimeline({
   activities,
@@ -135,7 +136,7 @@ export default function ActivityTimeline({
                         : activity.content}
                     </Typography>
                   )}
-                  <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                  <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
                     <Typography variant="caption" color="text.secondary">
                       {activity.formatted_date || activity.formatted_created_at}
                     </Typography>
@@ -145,6 +146,13 @@ export default function ActivityTimeline({
                       </Typography>
                     )}
                   </Box>
+                  {activity.direction === 'outbound' && activity.metadata && (
+                    <TrackingStatusChips
+                      metadata={activity.metadata}
+                      activityType={activity.activity_type}
+                      variant="timeline"
+                    />
+                  )}
                 </Box>
               }
             />

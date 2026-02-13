@@ -34,12 +34,22 @@ class PropertyInquiryMailer < ApplicationMailer
   end
 
   # 顧客への返信メール
-  def reply_to_customer(property_inquiry, subject, body, store: nil)
+  def reply_to_customer(property_inquiry, subject, body, store: nil, activity_id: nil)
     @inquiry = property_inquiry
     @body = body
     @publication = property_inquiry.property_publication
     @room = @publication.room
     @building = @room.building
+
+    # SendGrid Event Webhook 用のトラッキングヘッダー
+    if activity_id.present?
+      headers["X-SMTPAPI"] = {
+        unique_args: {
+          activity_id: activity_id,
+          tenant_id: @building.tenant_id
+        }
+      }.to_json
+    end
 
     # 返信元アドレス: 店舗メール → テナントユーザーメール → デフォルト
     reply_from = store&.email.presence || @building.tenant&.user&.email

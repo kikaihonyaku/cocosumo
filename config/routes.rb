@@ -371,6 +371,12 @@ Rails.application.routes.draw do
       # LINE Webhook（認証不要）
       post 'line/webhook/:tenant_subdomain', to: 'line_webhook#receive'
 
+      # SendGrid Event Webhook（認証不要）
+      post 'sendgrid/webhook', to: 'sendgrid_webhook#receive'
+
+      # トラッキングリダイレクト（認証不要）
+      get 't/:token', to: 'tracking#redirect', as: :tracking_redirect
+
       # 顧客向け公開API（認証不要）
       get 'customer/:access_token', to: 'customer_accesses#show_public'
       post 'customer/:access_token/verify_access', to: 'customer_accesses#verify_access'

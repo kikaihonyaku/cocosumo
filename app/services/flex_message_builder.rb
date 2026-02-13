@@ -1,7 +1,7 @@
 class FlexMessageBuilder
   class << self
     # 物件カード（単体）
-    def build_property_card(room)
+    def build_property_card(room, activity_id: nil)
       building = room.building
       photo_url = room_photo_url(room)
 
@@ -19,7 +19,7 @@ class FlexMessageBuilder
           layout: "vertical",
           contents: body_contents(room, building)
         },
-        footer: footer_contents(room)
+        footer: footer_contents(room, activity_id: activity_id)
       }.compact
     end
 
@@ -124,13 +124,22 @@ class FlexMessageBuilder
       contents
     end
 
-    def footer_contents(room)
+    def footer_contents(room, activity_id: nil)
       # 物件公開ページがある場合のみフッター表示
       publication = room.property_publications.kept.published.first
       return nil unless publication
 
       base_url = Thread.current[:request_base_url] || Rails.application.config.x.default_base_url.presence || "https://cocosumo.jp"
       url = "#{base_url}/property/#{publication.publication_id}"
+
+      # トラッキング URL に差し替え（activity_id がある場合のみ）
+      if activity_id
+        tracking = MessageTracking.create!(
+          customer_activity_id: activity_id,
+          destination_url: url
+        )
+        url = "#{base_url}/api/v1/t/#{tracking.token}"
+      end
 
       {
         type: "box",

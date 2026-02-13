@@ -1,6 +1,6 @@
 class CustomerMailer < ApplicationMailer
   # 顧客へのメール送信
-  def send_to_customer(customer, sender_user, subject, body, inquiry, body_format: "text", attachment_ids: nil)
+  def send_to_customer(customer, sender_user, subject, body, inquiry, body_format: "text", attachment_ids: nil, activity_id: nil)
     @customer = customer
     @body = body
     @body_format = body_format
@@ -10,6 +10,16 @@ class CustomerMailer < ApplicationMailer
     store = sender_user.store
     from_address = store&.email.presence || default_from
     reply_to_address = "#{tenant.subdomain}-reply-#{customer.id}-#{inquiry.id}-#{store&.id || 0}@inbound.cocosumo.space"
+
+    # SendGrid Event Webhook 用のトラッキングヘッダー
+    if activity_id.present?
+      headers["X-SMTPAPI"] = {
+        unique_args: {
+          activity_id: activity_id,
+          tenant_id: tenant.id
+        }
+      }.to_json
+    end
 
     # Active Storageから添付ファイルを読み込み
     if attachment_ids.present?

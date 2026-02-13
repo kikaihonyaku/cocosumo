@@ -340,9 +340,6 @@ class Api::V1::PropertyInquiriesController < ApplicationController
       return render json: { error: "件名と本文は必須です" }, status: :unprocessable_entity
     end
 
-    # メール送信
-    PropertyInquiryMailer.reply_to_customer(@inquiry, subject, body).deliver_later
-
     # ステータス更新
     @inquiry.update!(
       status: :replied,
@@ -351,8 +348,9 @@ class Api::V1::PropertyInquiriesController < ApplicationController
     )
 
     # 対応履歴に「問い合わせ返信」を自動記録
+    activity = nil
     if @inquiry.customer_id.present? && @inquiry.inquiry_id.present?
-      CustomerActivity.create(
+      activity = CustomerActivity.create(
         customer_id: @inquiry.customer_id,
         inquiry_id: @inquiry.inquiry_id,
         user: current_user,
@@ -364,6 +362,11 @@ class Api::V1::PropertyInquiriesController < ApplicationController
         property_publication: @inquiry.property_publication
       )
     end
+
+    # メール送信（activity_idをトラッキング用に渡す）
+    PropertyInquiryMailer.reply_to_customer(
+      @inquiry, subject, body, activity_id: activity&.id
+    ).deliver_later
 
     # 案件を既読にする
     if @inquiry.inquiry.present?

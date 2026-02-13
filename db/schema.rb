@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_14_100001) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_14_100002) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -522,6 +522,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_14_100001) do
     t.index ["layer_type"], name: "index_map_layers_on_layer_type"
     t.index ["tenant_id", "layer_key"], name: "index_map_layers_on_tenant_and_key", unique: true, where: "(tenant_id IS NOT NULL)"
     t.index ["tenant_id"], name: "index_map_layers_on_tenant_id"
+  end
+
+  create_table "message_trackings", force: :cascade do |t|
+    t.bigint "customer_activity_id", null: false
+    t.string "token", null: false
+    t.string "destination_url", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_activity_id"], name: "index_message_trackings_on_customer_activity_id"
+    t.index ["token"], name: "index_message_trackings_on_token", unique: true
   end
 
   create_table "owners", force: :cascade do |t|
@@ -1146,6 +1156,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_14_100001) do
   add_foreign_key "line_configs", "tenants"
   add_foreign_key "line_templates", "tenants"
   add_foreign_key "map_layers", "tenants", on_delete: :cascade
+  add_foreign_key "message_trackings", "customer_activities"
   add_foreign_key "owners", "buildings"
   add_foreign_key "owners", "tenants"
   add_foreign_key "presentation_accesses", "property_publications"

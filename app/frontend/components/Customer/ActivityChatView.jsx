@@ -10,6 +10,7 @@ import {
   ExpandLess as ExpandLessIcon
 } from '@mui/icons-material';
 import { getActivityIcon, filterActivities, CHAT_ACTIVITY_TYPES } from './activityUtils';
+import TrackingStatusChips from './TrackingStatusChips';
 
 export default function ActivityChatView({
   activities,
@@ -209,6 +210,16 @@ export default function ActivityChatView({
                     {activity.user.name}
                   </Typography>
                 </Box>
+              )}
+
+              {/* Tracking status */}
+              {isOutbound && activity.metadata && (
+                <TrackingStatusChips
+                  metadata={activity.metadata}
+                  activityType={activity.activity_type}
+                  variant="chat"
+                  isOutbound={isOutbound}
+                />
               )}
 
             </Box>

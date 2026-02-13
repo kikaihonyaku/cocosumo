@@ -243,7 +243,8 @@ class Api::V1::CustomersController < ApplicationController
     CustomerMailer.send_to_customer(
       @customer, current_user, subject, sanitized_body, inquiry,
       body_format: body_format,
-      attachment_ids: attachment_ids.presence
+      attachment_ids: attachment_ids.presence,
+      activity_id: activity.id
     ).deliver_later
 
     # 送信成功時に下書きを削除
@@ -282,6 +283,8 @@ class Api::V1::CustomersController < ApplicationController
 
     metadata = { line_message_type: message_type }
 
+    # property_card の場合、先に Activity を作成してトラッキング URL を生成
+    activity = nil
     case message_type
     when "text"
       service.push_text(@customer.line_user_id, content)
@@ -303,19 +306,32 @@ class Api::V1::CustomersController < ApplicationController
       unless room.building&.tenant_id == current_user.tenant_id
         return render json: { errors: [ "この物件へのアクセス権限がありません" ] }, status: :forbidden
       end
-      service.push_property_card(@customer.line_user_id, room)
+
+      # Activity を先に作成してトラッキング URL を生成
       content = "物件カード: #{room.building&.name} #{room.room_number}"
       metadata[:room_id] = room.id
+      activity = @customer.add_activity!(
+        activity_type: :line_message,
+        direction: :outbound,
+        inquiry: inquiry,
+        user: current_user,
+        content: content,
+        metadata: metadata
+      )
+
+      service.push_property_card(@customer.line_user_id, room, activity_id: activity.id)
     end
 
-    @customer.add_activity!(
-      activity_type: :line_message,
-      direction: :outbound,
-      inquiry: inquiry,
-      user: current_user,
-      content: content,
-      metadata: metadata
-    )
+    unless activity
+      activity = @customer.add_activity!(
+        activity_type: :line_message,
+        direction: :outbound,
+        inquiry: inquiry,
+        user: current_user,
+        content: content,
+        metadata: metadata
+      )
+    end
 
     # 案件を既読にする
     InquiryReadStatus.mark_as_read!(user: current_user, inquiry: inquiry)
