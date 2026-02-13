@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -18,7 +18,8 @@ import {
   Menu,
   MenuItem,
   ListItemIcon,
-  Collapse
+  Collapse,
+  Badge
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -49,12 +50,15 @@ import {
   Apartment as ApartmentIcon,
   MeetingRoom as MeetingRoomIcon,
   Description as DescriptionIcon,
-  Chat as ChatIcon
+  Chat as ChatIcon,
+  Notifications as NotificationsIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { useThemeMode } from "../../contexts/ThemeContext";
+import useUnreadNotifications from "../../hooks/useUnreadNotifications";
 import ChangePasswordDialog from "./ChangePasswordDialog";
 import TenantInfoDialog from "./TenantInfoDialog";
+import UnreadNotificationDropdown from "./UnreadNotificationDropdown";
 
 export default function Header() {
   const { user, tenant, store, logout } = useAuth();
@@ -75,6 +79,15 @@ export default function Header() {
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [tenantInfoOpen, setTenantInfoOpen] = useState(false);
+  const [notificationAnchor, setNotificationAnchor] = useState(null);
+
+  const {
+    unreadCount,
+    unreadInquiries,
+    loading: notificationsLoading,
+    fetchDetails,
+    markAllRead
+  } = useUnreadNotifications({ enabled: !!user });
 
   // Adjust menu positions when CSS zoom is applied
   // MUI Menu uses getBoundingClientRect which returns zoomed coordinates,
@@ -88,6 +101,7 @@ export default function Header() {
       { anchor: responseMenuAnchor, id: 'response-menu-popover' },
       { anchor: adminMenuAnchor, id: 'admin-menu-popover' },
       { anchor: propertyMenuAnchor, id: 'property-menu-popover' },
+      { anchor: notificationAnchor, id: 'notification-popover' },
     ];
 
     const activeMenu = menuConfigs.find(config => config.anchor);
@@ -108,7 +122,7 @@ export default function Header() {
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [userMenuAnchor, contentMenuAnchor, responseMenuAnchor, adminMenuAnchor, propertyMenuAnchor, zoomLevel]);
+  }, [userMenuAnchor, contentMenuAnchor, responseMenuAnchor, adminMenuAnchor, propertyMenuAnchor, notificationAnchor, zoomLevel]);
   
   const navStyle = ({ isActive }) => ({
     fontWeight: isActive ? "700" : "400",
@@ -204,6 +218,20 @@ export default function Header() {
     setTenantInfoOpen(false);
   };
 
+  const handleNotificationOpen = useCallback((event) => {
+    setNotificationAnchor(event.currentTarget);
+    fetchDetails();
+  }, [fetchDetails]);
+
+  const handleNotificationClose = useCallback(() => {
+    setNotificationAnchor(null);
+  }, []);
+
+  const handleMarkAllRead = useCallback(() => {
+    markAllRead();
+    setNotificationAnchor(null);
+  }, [markAllRead]);
+
   const handleLogoutFromMenu = async () => {
     handleUserMenuClose();
     await logout();
@@ -292,7 +320,14 @@ export default function Header() {
                   <img src="/cocosumo-logo_blue.png" alt="CoCoスモ" style={{ height: '28px', width: 'auto' }} />
                 </Link>
               </Box>
-              <Box sx={{ width: 48 }} /> {/* 右側のバランス調整用 */}
+              <IconButton
+                color="inherit"
+                onClick={handleNotificationOpen}
+              >
+                <Badge badgeContent={unreadCount} color="error" max={99}>
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
             </>
           ) : (
             // デスクトップ表示
@@ -515,6 +550,23 @@ export default function Header() {
 
               {user && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <IconButton
+                    color="inherit"
+                    onClick={handleNotificationOpen}
+                    sx={{
+                      '&:hover': {
+                        bgcolor: 'rgba(255, 255, 255, 0.1)'
+                      }
+                    }}
+                  >
+                    <Badge
+                      badgeContent={unreadCount}
+                      color="error"
+                      max={99}
+                    >
+                      <NotificationsIcon />
+                    </Badge>
+                  </IconButton>
                   <Button
                     onClick={handleUserMenuOpen}
                     sx={{
@@ -904,6 +956,16 @@ export default function Header() {
         onClose={handleTenantInfoClose}
         tenant={tenant}
         store={store}
+      />
+
+      {/* 未読通知ドロップダウン */}
+      <UnreadNotificationDropdown
+        anchorEl={notificationAnchor}
+        open={Boolean(notificationAnchor)}
+        onClose={handleNotificationClose}
+        inquiries={unreadInquiries}
+        loading={notificationsLoading}
+        onMarkAllRead={handleMarkAllRead}
       />
     </>
   );

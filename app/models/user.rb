@@ -2,6 +2,7 @@ class User < ApplicationRecord
   # Associations
   belongs_to :tenant
   belongs_to :store
+  has_many :inquiry_read_statuses, dependent: :delete_all
 
   # Secure password
   has_secure_password validations: false

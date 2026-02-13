@@ -365,6 +365,11 @@ class Api::V1::PropertyInquiriesController < ApplicationController
       )
     end
 
+    # 案件を既読にする
+    if @inquiry.inquiry.present?
+      InquiryReadStatus.mark_as_read!(user: current_user, inquiry: @inquiry.inquiry)
+    end
+
     render json: {
       success: true,
       message: "返信メールを送信しました",

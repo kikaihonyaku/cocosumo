@@ -296,6 +296,12 @@ Rails.application.routes.draw do
         end
       end
 
+      # 未読通知（認証必要）
+      get 'unread_notifications/count', to: 'unread_notifications#count'
+      get 'unread_notifications', to: 'unread_notifications#index'
+      post 'unread_notifications/mark_read', to: 'unread_notifications#mark_read'
+      post 'unread_notifications/mark_all_read', to: 'unread_notifications#mark_all_read'
+
       # 案件管理（認証必要）
       resources :inquiries, only: [:index, :show, :create, :update] do
         member do

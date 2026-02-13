@@ -38,6 +38,7 @@ class Api::V1::InquiriesController < ApplicationController
 
   # GET /api/v1/inquiries/:id
   def show
+    InquiryReadStatus.mark_as_read!(user: current_user, inquiry: @inquiry)
     render json: inquiry_detail_json(@inquiry)
   end
 

@@ -17,6 +17,12 @@ class Api::V1::CustomerActivitiesController < ApplicationController
 
     @activities = @activities.limit(limit).offset(offset)
 
+    # inquiry_id指定でアクティビティを閲覧した場合、その案件を既読にする
+    if params[:inquiry_id].present?
+      inquiry = @customer.inquiries.find_by(id: params[:inquiry_id])
+      InquiryReadStatus.mark_as_read!(user: current_user, inquiry: inquiry) if inquiry
+    end
+
     render json: {
       activities: @activities.map { |a| activity_json(a) },
       total_count: total_count,

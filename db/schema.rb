@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_14_100000) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_14_100001) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -458,6 +458,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_14_100000) do
     t.index ["customer_id"], name: "index_inquiries_on_customer_id"
     t.index ["status"], name: "index_inquiries_on_status"
     t.index ["tenant_id"], name: "index_inquiries_on_tenant_id"
+  end
+
+  create_table "inquiry_read_statuses", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "inquiry_id", null: false
+    t.datetime "last_read_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["inquiry_id"], name: "index_inquiry_read_statuses_on_inquiry_id"
+    t.index ["user_id", "inquiry_id"], name: "index_inquiry_read_statuses_on_user_id_and_inquiry_id", unique: true
+    t.index ["user_id"], name: "index_inquiry_read_statuses_on_user_id"
   end
 
   create_table "line_configs", force: :cascade do |t|
@@ -1130,6 +1141,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_14_100000) do
   add_foreign_key "inquiries", "customers"
   add_foreign_key "inquiries", "tenants"
   add_foreign_key "inquiries", "users", column: "assigned_user_id"
+  add_foreign_key "inquiry_read_statuses", "inquiries"
+  add_foreign_key "inquiry_read_statuses", "users"
   add_foreign_key "line_configs", "tenants"
   add_foreign_key "line_templates", "tenants"
   add_foreign_key "map_layers", "tenants", on_delete: :cascade

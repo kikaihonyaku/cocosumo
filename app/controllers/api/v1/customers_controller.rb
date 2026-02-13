@@ -317,6 +317,9 @@ class Api::V1::CustomersController < ApplicationController
       metadata: metadata
     )
 
+    # 案件を既読にする
+    InquiryReadStatus.mark_as_read!(user: current_user, inquiry: inquiry)
+
     render json: { success: true, message: "LINEメッセージを送信しました" }
   rescue JSON::ParserError
     render json: { errors: [ "Flex MessageのJSONが不正です" ] }, status: :unprocessable_entity

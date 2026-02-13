@@ -56,7 +56,8 @@ import {
   NavigateNext as NavigateNextIcon,
   FilterList as FilterListIcon,
   Clear as ClearIcon,
-  PersonAdd as PersonAddIcon
+  PersonAdd as PersonAddIcon,
+  FiberManualRecord as FiberManualRecordIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import CustomerAccessDialog from '../../components/CustomerAccess/CustomerAccessDialog';
@@ -121,13 +122,27 @@ export default function InquiryManager() {
   const [publicationSelectDialogOpen, setPublicationSelectDialogOpen] = useState(false);
   const [publicationSelectInquiry, setPublicationSelectInquiry] = useState(null);
 
+  // Unread inquiry IDs
+  const [unreadInquiryIds, setUnreadInquiryIds] = useState(new Set());
+
+  const loadUnreadIds = useCallback(async () => {
+    try {
+      const res = await axios.get('/api/v1/unread_notifications');
+      const ids = (res.data.inquiries || []).map((i) => i.id);
+      setUnreadInquiryIds(new Set(ids));
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const loadInquiries = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const [inquiriesRes, usersRes] = await Promise.all([
         axios.get('/api/v1/property_inquiries'),
-        axios.get('/api/v1/admin/users').catch(() => ({ data: [] }))
+        axios.get('/api/v1/admin/users').catch(() => ({ data: [] })),
+        loadUnreadIds()
       ]);
       setInquiries(inquiriesRes.data.inquiries || []);
       setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
@@ -141,7 +156,7 @@ export default function InquiryManager() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadUnreadIds]);
 
   useEffect(() => {
     loadInquiries();
@@ -560,14 +575,20 @@ export default function InquiryManager() {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {paginatedInquiries.map((inquiry) => {
                 const statusInfo = getStatusInfo(inquiry.status);
+                const isUnread = inquiry.inquiry_id && unreadInquiryIds.has(inquiry.inquiry_id);
                 return (
-                  <Card key={inquiry.id} variant="outlined">
+                  <Card key={inquiry.id} variant="outlined" sx={isUnread ? { borderLeft: '3px solid', borderLeftColor: 'primary.main' } : undefined}>
                     <CardActionArea onClick={() => handleOpenDetail(inquiry)}>
                       <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
-                          <Typography variant="body2" fontWeight="medium">
-                            {inquiry.name}
-                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            {isUnread && (
+                              <FiberManualRecordIcon sx={{ fontSize: 8, color: 'primary.main' }} />
+                            )}
+                            <Typography variant="body2" fontWeight={isUnread ? 'bold' : 'medium'}>
+                              {inquiry.name}
+                            </Typography>
+                          </Box>
                           <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap', ml: 1 }}>
                             {inquiry.formatted_created_at || formatDate(inquiry.created_at)}
                           </Typography>
@@ -650,18 +671,30 @@ export default function InquiryManager() {
                 ) : (
                   paginatedInquiries.map((inquiry) => {
                     const statusInfo = getStatusInfo(inquiry.status);
+                    const isUnread = inquiry.inquiry_id && unreadInquiryIds.has(inquiry.inquiry_id);
 
                     return (
                       <TableRow
                         key={inquiry.id}
                         hover
-                        sx={{ cursor: 'pointer' }}
+                        sx={{
+                          cursor: 'pointer',
+                          ...(isUnread && {
+                            bgcolor: 'action.hover',
+                            '& .MuiTypography-root': { fontWeight: 'bold' }
+                          })
+                        }}
                         onClick={() => handleOpenDetail(inquiry)}
                       >
                         <TableCell>
-                          <Typography variant="body2">
-                            {inquiry.formatted_created_at || formatDate(inquiry.created_at)}
-                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            {isUnread && (
+                              <FiberManualRecordIcon sx={{ fontSize: 8, color: 'primary.main' }} />
+                            )}
+                            <Typography variant="body2">
+                              {inquiry.formatted_created_at || formatDate(inquiry.created_at)}
+                            </Typography>
+                          </Box>
                         </TableCell>
                         <TableCell>
                           <Chip

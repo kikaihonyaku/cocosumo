@@ -10,6 +10,7 @@ class Inquiry < ApplicationRecord
   has_many :rooms, through: :property_inquiries
   has_many :customer_activities, dependent: :destroy
   has_many :customer_accesses, dependent: :nullify
+  has_many :inquiry_read_statuses, dependent: :delete_all
 
   # Callbacks
   after_update :record_status_change_activity, if: :saved_change_to_status?
