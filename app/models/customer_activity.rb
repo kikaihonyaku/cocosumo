@@ -26,7 +26,8 @@ class CustomerActivity < ApplicationRecord
     customer_route_created: 13, # 顧客経路作成（自動記録）
     access_revoked: 14,        # アクセス取り消し（自動記録）
     access_extended: 15,       # 有効期限延長（自動記録）
-    inquiry_replied: 16        # 問い合わせ返信（自動記録）
+    inquiry_replied: 16,       # 問い合わせ返信（自動記録）
+    customer_merged: 17         # 顧客統合（自動記録）
   }, prefix: true
 
   enum :direction, {
@@ -40,7 +41,7 @@ class CustomerActivity < ApplicationRecord
 
   # Scopes
   scope :recent, -> { order(created_at: :desc) }
-  scope :manual, -> { where.not(activity_type: [ :inquiry, :access_issued, :status_change, :assigned_user_change, :portal_viewed, :ai_simulation, :ai_grounding, :customer_route_created, :access_revoked, :access_extended, :inquiry_replied ]) }
+  scope :manual, -> { where.not(activity_type: [ :inquiry, :access_issued, :status_change, :assigned_user_change, :portal_viewed, :ai_simulation, :ai_grounding, :customer_route_created, :access_revoked, :access_extended, :inquiry_replied, :customer_merged ]) }
 
   # Callbacks
   after_create :update_customer_last_contacted
@@ -74,7 +75,8 @@ class CustomerActivity < ApplicationRecord
       "customer_route_created" => "経路作成",
       "access_revoked" => "アクセス取り消し",
       "access_extended" => "有効期限延長",
-      "inquiry_replied" => "問い合わせ返信"
+      "inquiry_replied" => "問い合わせ返信",
+      "customer_merged" => "顧客統合"
     }[activity_type] || activity_type
   end
 
@@ -106,7 +108,8 @@ class CustomerActivity < ApplicationRecord
       "customer_route_created" => "Directions",
       "access_revoked" => "Block",
       "access_extended" => "Update",
-      "inquiry_replied" => "Reply"
+      "inquiry_replied" => "Reply",
+      "customer_merged" => "MergeType"
     }[activity_type] || "Info"
   end
 

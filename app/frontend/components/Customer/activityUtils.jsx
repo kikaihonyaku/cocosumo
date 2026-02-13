@@ -16,7 +16,8 @@ import {
   Directions as DirectionsIcon,
   Block as BlockIcon,
   Update as UpdateIcon,
-  Reply as ReplyIcon
+  Reply as ReplyIcon,
+  MergeType as MergeTypeIcon
 } from '@mui/icons-material';
 
 // Activity type icons
@@ -38,7 +39,8 @@ export const getActivityIcon = (activityType, direction) => {
     customer_route_created: <DirectionsIcon />,
     access_revoked: <BlockIcon />,
     access_extended: <UpdateIcon />,
-    inquiry_replied: <ReplyIcon />
+    inquiry_replied: <ReplyIcon />,
+    customer_merged: <MergeTypeIcon />
   };
   return iconMap[activityType] || <NoteIcon />;
 };
@@ -62,7 +64,8 @@ export const getActivityDotColor = (activityType) => {
     customer_route_created: 'info',
     access_revoked: 'error',
     access_extended: 'success',
-    inquiry_replied: 'primary'
+    inquiry_replied: 'primary',
+    customer_merged: 'warning'
   };
   return colorMap[activityType] || 'grey';
 };

@@ -47,7 +47,8 @@ import {
   ViewList as ViewListIcon,
   ChatBubbleOutline as ChatBubbleOutlineIcon,
   Send as SendIcon,
-  EditNote as EditNoteIcon
+  EditNote as EditNoteIcon,
+  MergeType as MergeTypeIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import ActivityDialog from '../components/Customer/ActivityDialog';
@@ -62,6 +63,8 @@ import ActivityChatView from '../components/Customer/ActivityChatView';
 import EmailComposeDialog from '../components/Customer/EmailComposeDialog';
 import LineComposeDialog from '../components/Customer/LineComposeDialog';
 import EditCustomerDialog from '../components/Customer/EditCustomerDialog';
+import MergeCustomerDialog from '../components/Customer/MergeCustomerDialog';
+import DuplicateDetectionPanel from '../components/Customer/DuplicateDetectionPanel';
 
 // Customer status mapping
 const getStatusInfo = (status) => {
@@ -149,7 +152,11 @@ export default function CustomerDetail() {
   const [inquiries, setInquiries] = useState([]);
   const [accesses, setAccesses] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [hasMoreActivities, setHasMoreActivities] = useState(false);
+  const [activitiesTotalCount, setActivitiesTotalCount] = useState(0);
+  const [loadingMoreActivities, setLoadingMoreActivities] = useState(false);
   const [users, setUsers] = useState([]);
+  const [usersLoaded, setUsersLoaded] = useState(false);
 
   // Dialog states
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
@@ -164,6 +171,8 @@ export default function CustomerDetail() {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [lineDialogOpen, setLineDialogOpen] = useState(false);
   const [editCustomerDialogOpen, setEditCustomerDialogOpen] = useState(false);
+  const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
+  const [mergeSecondaryId, setMergeSecondaryId] = useState(null);
 
   // Case (inquiry) selector state
   const [selectedInquiryId, setSelectedInquiryId] = useState(null);
@@ -244,19 +253,21 @@ export default function CustomerDetail() {
       setLoading(true);
       setError(null);
 
-      const [customerRes, inquiriesRes, accessesRes, activitiesRes, usersRes] = await Promise.all([
+      const [customerRes, inquiriesRes, accessesRes, activitiesRes] = await Promise.all([
         axios.get(`/api/v1/customers/${id}`),
         axios.get(`/api/v1/customers/${id}/inquiries`),
         axios.get(`/api/v1/customers/${id}/accesses`),
-        axios.get(`/api/v1/customers/${id}/activities`),
-        axios.get('/api/v1/admin/users').catch(() => ({ data: [] }))
+        axios.get(`/api/v1/customers/${id}/activities`, { params: { limit: 30 } })
       ]);
 
       setCustomer(customerRes.data);
       setInquiries(Array.isArray(inquiriesRes.data) ? inquiriesRes.data : []);
       setAccesses(Array.isArray(accessesRes.data) ? accessesRes.data : []);
-      setActivities(Array.isArray(activitiesRes.data) ? activitiesRes.data : []);
-      setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
+
+      const activitiesData = activitiesRes.data;
+      setActivities(Array.isArray(activitiesData.activities) ? activitiesData.activities : []);
+      setActivitiesTotalCount(activitiesData.total_count || 0);
+      setHasMoreActivities(activitiesData.has_more || false);
     } catch (err) {
       console.error('Failed to load customer:', err);
       if (err.response?.status === 404) {
@@ -273,16 +284,55 @@ export default function CustomerDetail() {
 
   const loadActivities = useCallback(async () => {
     try {
-      const res = await axios.get(`/api/v1/customers/${id}/activities`);
-      setActivities(res.data);
+      const currentCount = Math.max(activities.length, 30);
+      const res = await axios.get(`/api/v1/customers/${id}/activities`, {
+        params: { limit: currentCount }
+      });
+      setActivities(res.data.activities || []);
+      setHasMoreActivities(res.data.has_more || false);
+      setActivitiesTotalCount(res.data.total_count || 0);
     } catch (err) {
       console.error('Failed to load activities:', err);
     }
-  }, [id]);
+  }, [id, activities.length]);
+
+  const loadMoreActivities = useCallback(async () => {
+    try {
+      setLoadingMoreActivities(true);
+      const res = await axios.get(`/api/v1/customers/${id}/activities`, {
+        params: { offset: activities.length, limit: 30 }
+      });
+      setActivities(prev => [...prev, ...(res.data.activities || [])]);
+      setHasMoreActivities(res.data.has_more || false);
+      setActivitiesTotalCount(res.data.total_count || 0);
+    } catch (err) {
+      console.error('Failed to load more activities:', err);
+    } finally {
+      setLoadingMoreActivities(false);
+    }
+  }, [id, activities.length]);
+
+  const loadUsers = useCallback(async () => {
+    if (usersLoaded) return;
+    try {
+      const res = await axios.get('/api/v1/admin/users');
+      setUsers(Array.isArray(res.data) ? res.data : []);
+      setUsersLoaded(true);
+    } catch (err) {
+      console.error('Failed to load users:', err);
+    }
+  }, [usersLoaded]);
 
   useEffect(() => {
     loadCustomer();
   }, [loadCustomer]);
+
+  // Lazy load users when a dialog that needs users is opened
+  useEffect(() => {
+    if (editingInquiry || editingPropertyInquiry || createInquiryDialogOpen || addPropertyDialogOpen) {
+      loadUsers();
+    }
+  }, [editingInquiry, editingPropertyInquiry, createInquiryDialogOpen, addPropertyDialogOpen, loadUsers]);
 
   const handleCopyUrl = (url) => {
     navigator.clipboard.writeText(url);
@@ -572,7 +622,7 @@ export default function CustomerDetail() {
           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
             対応履歴
           </Typography>
-          <Chip label={`${activities.length}件`} size="small" color="primary" variant="outlined" sx={{ height: 20, fontSize: '0.75rem' }} />
+          <Chip label={`${activitiesTotalCount}件`} size="small" color="primary" variant="outlined" sx={{ height: 20, fontSize: '0.75rem' }} />
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <ToggleButtonGroup
@@ -618,6 +668,9 @@ export default function CustomerDetail() {
               setActivityDialogOpen(true);
             }}
             onViewActivity={(activity) => setViewingActivity(activity)}
+            hasMore={hasMoreActivities}
+            onLoadMore={loadMoreActivities}
+            loadingMore={loadingMoreActivities}
           />
         ) : (
           <ActivityTimeline
@@ -629,6 +682,9 @@ export default function CustomerDetail() {
               setActivityDialogOpen(true);
             }}
             onViewActivity={(activity) => setViewingActivity(activity)}
+            hasMore={hasMoreActivities}
+            onLoadMore={loadMoreActivities}
+            loadingMore={loadingMoreActivities}
           />
         )}
       </Box>
@@ -941,6 +997,11 @@ export default function CustomerDetail() {
                 <EditIcon fontSize="small" />
               </IconButton>
             </Tooltip>
+            <Tooltip title="顧客を統合">
+              <IconButton size="small" onClick={() => { setMergeSecondaryId(null); setMergeDialogOpen(true); }}>
+                <MergeTypeIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </Box>
 
           <Box sx={{ flex: 1 }} />
@@ -1067,6 +1128,15 @@ export default function CustomerDetail() {
           )}
         </Box>
       </Paper>
+
+      {/* Duplicate Detection Banner */}
+      <DuplicateDetectionPanel
+        customerId={id}
+        onMergeClick={(secondaryId) => {
+          setMergeSecondaryId(secondaryId);
+          setMergeDialogOpen(true);
+        }}
+      />
 
       {/* Main Content */}
       {isMobile ? (
@@ -1310,6 +1380,17 @@ export default function CustomerDetail() {
         selectedInquiryId={selectedInquiryId}
         onSent={() => {
           loadActivities();
+          loadCustomer();
+        }}
+      />
+
+      {/* Merge Customer Dialog */}
+      <MergeCustomerDialog
+        open={mergeDialogOpen}
+        onClose={() => { setMergeDialogOpen(false); setMergeSecondaryId(null); }}
+        customer={customer}
+        suggestedSecondaryId={mergeSecondaryId}
+        onMerged={() => {
           loadCustomer();
         }}
       />

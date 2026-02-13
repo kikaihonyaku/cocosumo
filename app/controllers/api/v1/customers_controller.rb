@@ -1,7 +1,7 @@
 class Api::V1::CustomersController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
-  before_action :set_customer, only: [ :show, :update, :destroy, :inquiries, :accesses, :create_inquiry, :send_email, :send_line_message ]
+  before_action :set_customer, only: [ :show, :update, :destroy, :inquiries, :accesses, :create_inquiry, :send_email, :send_line_message, :merge_preview, :merge ]
 
   # GET /api/v1/customers
   def index
@@ -326,6 +326,91 @@ class Api::V1::CustomersController < ApplicationController
     render json: { errors: [ e.message ] }, status: :unprocessable_entity
   end
 
+  # GET /api/v1/customers/:id/merge_preview?secondary_id=X
+  def merge_preview
+    secondary = current_user.tenant.customers.find(params[:secondary_id])
+
+    fields = CustomerMergeService::MERGEABLE_FIELDS.map do |field|
+      primary_val = @customer.send(field)
+      secondary_val = secondary.send(field)
+      {
+        field: field,
+        label: field_label_for(field),
+        primary_value: format_field_value(field, primary_val),
+        secondary_value: format_field_value(field, secondary_val),
+        differs: primary_val != secondary_val,
+        auto_resolved: primary_val.present? && secondary_val.blank? ? "primary" :
+                       primary_val.blank? && secondary_val.present? ? "secondary" : nil
+      }
+    end
+
+    render json: {
+      primary: customer_summary_json_for_merge(@customer),
+      secondary: customer_summary_json_for_merge(secondary),
+      fields: fields,
+      related_counts: {
+        primary: related_counts_for(@customer),
+        secondary: related_counts_for(secondary)
+      }
+    }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "顧客が見つかりませんでした" }, status: :not_found
+  end
+
+  # POST /api/v1/customers/:id/merge
+  def merge
+    secondary = current_user.tenant.customers.find(params[:secondary_id])
+
+    merge_record = CustomerMergeService.new(
+      primary: @customer,
+      secondary: secondary,
+      field_resolutions: params[:field_resolutions]&.to_unsafe_h || {},
+      performed_by: current_user,
+      merge_reason: params[:merge_reason]
+    ).execute!
+
+    render json: {
+      success: true,
+      message: "#{secondary.name} を #{@customer.name} に統合しました",
+      merge_id: merge_record.id,
+      customer: customer_detail_json(@customer.reload)
+    }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "顧客が見つかりませんでした" }, status: :not_found
+  rescue CustomerMergeService::MergeError => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  # GET /api/v1/customers/find_duplicates
+  def find_duplicates
+    if params[:customer_id].present?
+      customer = current_user.tenant.customers.find(params[:customer_id])
+      results = CustomerDuplicateDetector.find_for(customer)
+      render json: {
+        duplicates: results.map { |r|
+          {
+            customer: customer_summary_json(r.customer),
+            confidence: r.confidence,
+            signals: r.signals
+          }
+        }
+      }
+    else
+      groups = CustomerDuplicateDetector.find_all(current_user.tenant)
+      render json: {
+        groups: groups.map { |g|
+          {
+            customers: g[:customers].map { |c| customer_summary_json(c) },
+            confidence: g[:confidence],
+            signals: g[:signals]
+          }
+        }
+      }
+    end
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "顧客が見つかりませんでした" }, status: :not_found
+  end
+
   private
 
   def set_customer
@@ -515,6 +600,57 @@ class Api::V1::CustomersController < ApplicationController
   def require_login
     unless current_user
       render json: { error: "認証が必要です" }, status: :unauthorized
+    end
+  end
+
+  def customer_summary_json_for_merge(customer)
+    {
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      line_user_id: customer.line_user_id.present?,
+      status: customer.status,
+      created_at: customer.created_at.strftime("%Y/%m/%d")
+    }
+  end
+
+  def related_counts_for(customer)
+    {
+      inquiries: customer.inquiries.count,
+      property_inquiries: customer.property_inquiries.count,
+      activities: customer.customer_activities.count,
+      accesses: customer.customer_accesses.count,
+      email_drafts: customer.email_drafts.count
+    }
+  end
+
+  def field_label_for(field)
+    {
+      "name" => "顧客名",
+      "email" => "メールアドレス",
+      "line_user_id" => "LINE ID",
+      "phone" => "電話番号",
+      "notes" => "メモ",
+      "status" => "ステータス",
+      "expected_move_date" => "引越し予定日",
+      "budget_min" => "予算（下限）",
+      "budget_max" => "予算（上限）",
+      "preferred_areas" => "希望エリア",
+      "requirements" => "要望"
+    }[field] || field
+  end
+
+  def format_field_value(field, value)
+    case field
+    when "status"
+      { "active" => "アクティブ", "archived" => "アーカイブ" }[value.to_s] || value
+    when "preferred_areas"
+      Array(value)
+    when "line_user_id"
+      value.present? ? "連携済み" : nil
+    else
+      value
     end
   end
 end

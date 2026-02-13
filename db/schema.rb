@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_11_100002) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_14_100000) do
   create_schema "topology"
 
   # These are extensions that must be enabled in order to support this database
@@ -319,6 +319,25 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_11_100002) do
     t.index ["property_publication_id", "simulation_date"], name: "idx_cis_publication_date"
     t.index ["property_publication_id"], name: "index_customer_image_simulations_on_property_publication_id"
     t.index ["session_id"], name: "index_customer_image_simulations_on_session_id"
+  end
+
+  create_table "customer_merges", force: :cascade do |t|
+    t.bigint "tenant_id", null: false
+    t.bigint "primary_customer_id", null: false
+    t.bigint "performed_by_id", null: false
+    t.bigint "undone_by_id"
+    t.jsonb "secondary_snapshot", default: {}, null: false
+    t.jsonb "primary_snapshot", default: {}, null: false
+    t.string "merge_reason"
+    t.integer "status", default: 0, null: false
+    t.datetime "undone_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["performed_by_id"], name: "index_customer_merges_on_performed_by_id"
+    t.index ["primary_customer_id"], name: "index_customer_merges_on_primary_customer_id"
+    t.index ["tenant_id", "created_at"], name: "index_customer_merges_on_tenant_id_and_created_at"
+    t.index ["tenant_id"], name: "index_customer_merges_on_tenant_id"
+    t.index ["undone_by_id"], name: "index_customer_merges_on_undone_by_id"
   end
 
   create_table "customer_routes", force: :cascade do |t|
@@ -1095,6 +1114,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_11_100002) do
   add_foreign_key "customer_activities", "users"
   add_foreign_key "customer_image_simulations", "customer_accesses"
   add_foreign_key "customer_image_simulations", "property_publications"
+  add_foreign_key "customer_merges", "customers", column: "primary_customer_id"
+  add_foreign_key "customer_merges", "tenants"
+  add_foreign_key "customer_merges", "users", column: "performed_by_id"
+  add_foreign_key "customer_merges", "users", column: "undone_by_id"
   add_foreign_key "customer_routes", "customer_accesses"
   add_foreign_key "customers", "tenants"
   add_foreign_key "email_attachments", "customer_activities"

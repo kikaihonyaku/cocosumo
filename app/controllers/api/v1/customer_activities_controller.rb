@@ -9,9 +9,19 @@ class Api::V1::CustomerActivitiesController < ApplicationController
     @activities = @customer.customer_activities
                            .includes(:user, :inquiry, :property_inquiry, :customer_access, :property_publication)
                            .recent
-                           .limit(100)
 
-    render json: @activities.map { |a| activity_json(a) }
+    total_count = @activities.count
+
+    limit = [ (params[:limit] || 30).to_i, 100 ].min
+    offset = (params[:offset] || 0).to_i
+
+    @activities = @activities.limit(limit).offset(offset)
+
+    render json: {
+      activities: @activities.map { |a| activity_json(a) },
+      total_count: total_count,
+      has_more: offset + limit < total_count
+    }
   end
 
   # POST /api/v1/customers/:customer_id/activities

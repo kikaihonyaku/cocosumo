@@ -41,9 +41,12 @@ import {
   Chat as ChatIcon,
   Flag as FlagIcon,
   PriorityHigh as PriorityHighIcon,
-  Warning as WarningIcon
+  Warning as WarningIcon,
+  People as PeopleIcon,
+  History as HistoryIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import MergeHistoryDialog from '../components/Customer/MergeHistoryDialog';
 
 // Status label mapping
 const getStatusInfo = (status) => {
@@ -101,6 +104,8 @@ export default function CustomerList() {
   const [activeOnly, setActiveOnly] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
+  const [duplicateCount, setDuplicateCount] = useState(0);
+  const [mergeHistoryOpen, setMergeHistoryOpen] = useState(false);
 
   const loadCustomers = useCallback(async () => {
     try {
@@ -134,6 +139,18 @@ export default function CustomerList() {
   useEffect(() => {
     loadCustomers();
   }, [loadCustomers]);
+
+  useEffect(() => {
+    const loadDuplicateCount = async () => {
+      try {
+        const res = await axios.get('/api/v1/customers/find_duplicates');
+        setDuplicateCount((res.data.groups || []).length);
+      } catch (err) {
+        // Silently ignore - not critical
+      }
+    };
+    loadDuplicateCount();
+  }, []);
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
@@ -192,20 +209,41 @@ export default function CustomerList() {
             variant="outlined"
           />
         </Box>
-        {isMobile ? (
-          <IconButton onClick={loadCustomers} disabled={loading} color="primary">
-            <RefreshIcon />
-          </IconButton>
-        ) : (
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={loadCustomers}
-            disabled={loading}
-          >
-            更新
-          </Button>
-        )}
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          {duplicateCount > 0 && !isMobile && (
+            <Chip
+              icon={<PeopleIcon />}
+              label={`重複候補 ${duplicateCount}件`}
+              color="warning"
+              variant="outlined"
+              sx={{ cursor: 'default' }}
+            />
+          )}
+          {!isMobile && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<HistoryIcon />}
+              onClick={() => setMergeHistoryOpen(true)}
+            >
+              統合履歴
+            </Button>
+          )}
+          {isMobile ? (
+            <IconButton onClick={loadCustomers} disabled={loading} color="primary">
+              <RefreshIcon />
+            </IconButton>
+          ) : (
+            <Button
+              variant="outlined"
+              startIcon={<RefreshIcon />}
+              onClick={loadCustomers}
+              disabled={loading}
+            >
+              更新
+            </Button>
+          )}
+        </Box>
       </Box>
 
       {error && (
@@ -524,6 +562,12 @@ export default function CustomerList() {
           />
         </TableContainer>
       )}
+      {/* Merge History Dialog */}
+      <MergeHistoryDialog
+        open={mergeHistoryOpen}
+        onClose={() => setMergeHistoryOpen(false)}
+        onUndone={loadCustomers}
+      />
     </Box>
   );
 }

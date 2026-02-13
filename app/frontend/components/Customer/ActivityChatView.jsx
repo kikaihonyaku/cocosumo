@@ -1,10 +1,13 @@
 import React, { useRef, useEffect } from 'react';
 import {
   Box,
-  Typography
+  Typography,
+  Button,
+  CircularProgress
 } from '@mui/material';
 import {
-  Chat as ChatIcon
+  Chat as ChatIcon,
+  ExpandLess as ExpandLessIcon
 } from '@mui/icons-material';
 import { getActivityIcon, filterActivities, CHAT_ACTIVITY_TYPES } from './activityUtils';
 
@@ -13,7 +16,10 @@ export default function ActivityChatView({
   selectedInquiryId,
   selectedPropertyInquiryId,
   onAddActivity,
-  onViewActivity
+  onViewActivity,
+  hasMore,
+  onLoadMore,
+  loadingMore
 }) {
   const scrollRef = useRef(null);
 
@@ -51,6 +57,19 @@ export default function ActivityChatView({
         overflowY: 'auto'
       }}
     >
+      {hasMore && !selectedInquiryId && !selectedPropertyInquiryId && (
+        <Box sx={{ textAlign: 'center', py: 1 }}>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={loadingMore ? <CircularProgress size={16} /> : <ExpandLessIcon />}
+            onClick={onLoadMore}
+            disabled={loadingMore}
+          >
+            {loadingMore ? '読み込み中...' : '過去の履歴を読み込む'}
+          </Button>
+        </Box>
+      )}
       {chatActivities.map((activity, index) => {
         const currentDate = activity.formatted_date || activity.formatted_created_at?.split(' ')[0];
         const prevActivity = index > 0 ? chatActivities[index - 1] : null;

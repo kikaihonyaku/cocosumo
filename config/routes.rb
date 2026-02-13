@@ -338,9 +338,20 @@ Rails.application.routes.draw do
           post :create_inquiry
           post :send_email
           post :send_line_message
+          get :merge_preview
+          post :merge
+        end
+        collection do
+          get :find_duplicates
         end
         resources :activities, controller: 'customer_activities', only: [:index, :create, :update, :destroy]
         resources :email_drafts, only: [:index, :create, :update, :destroy]
+      end
+
+      resources :customer_merges, only: [:index] do
+        member do
+          post :undo
+        end
       end
 
       resources :email_templates, only: [:index, :create, :update, :destroy]
