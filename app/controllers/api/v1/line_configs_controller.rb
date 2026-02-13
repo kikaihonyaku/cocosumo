@@ -58,7 +58,7 @@ class Api::V1::LineConfigsController < ApplicationController
   def config_params
     params.require(:line_config).permit(
       :channel_id, :channel_secret, :channel_token,
-      :greeting_message, :rich_menu_id, :active
+      :greeting_message, :rich_menu_id, :active, :friend_add_url
     )
   end
 
@@ -72,6 +72,7 @@ class Api::V1::LineConfigsController < ApplicationController
       greeting_message: config.greeting_message,
       rich_menu_id: config.rich_menu_id,
       active: config.active,
+      friend_add_url: config.friend_add_url,
       webhook_url: webhook_url(config.tenant)
     }
   end

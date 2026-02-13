@@ -30,6 +30,7 @@ export default function EmailComposeDialog({
   customer,
   inquiries = [],
   selectedInquiryId = null,
+  preSelectTemplateName = null,
   onSent
 }) {
   const [subject, setSubject] = useState('');
@@ -59,6 +60,14 @@ export default function EmailComposeDialog({
     try {
       const res = await axios.get('/api/v1/email_templates');
       setTemplates(res.data);
+      // preSelectTemplateNameが指定されている場合、自動選択
+      if (preSelectTemplateName) {
+        const target = res.data.find(t => t.name === preSelectTemplateName);
+        if (target) {
+          setSubject(target.subject);
+          setBody(target.body);
+        }
+      }
     } catch (e) {
       // テンプレート取得失敗は無視（送信自体に影響なし）
     }

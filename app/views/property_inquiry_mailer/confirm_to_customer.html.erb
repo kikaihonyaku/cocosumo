@@ -112,6 +112,20 @@
       しばらくお待ちいただきますようお願いいたします。
     </div>
 
+    <% if @line_friend_add_url.present? %>
+    <div style="background: #f0faf4; border: 1px solid #06C755; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+      <p style="margin: 0 0 10px 0; font-size: 15px; font-weight: bold; color: #333;">
+        LINEでもお気軽にご相談ください
+      </p>
+      <p style="margin: 0 0 15px 0; font-size: 13px; color: #666;">
+        LINEで友だち追加していただくと、物件情報の送付やチャットでのご相談がスムーズに行えます。
+      </p>
+      <a href="<%= @line_friend_add_url %>" style="display: inline-block; background: #06C755; color: white; padding: 12px 32px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 14px;">
+        LINEで友だち追加する
+      </a>
+    </div>
+    <% end %>
+
     <p>
       <a href="<%= @property_url %>" class="btn">物件情報を再度確認する</a>
     </p>

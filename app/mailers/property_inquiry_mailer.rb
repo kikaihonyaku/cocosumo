@@ -27,6 +27,13 @@ class PropertyInquiryMailer < ApplicationMailer
 
     @property_url = property_public_url(@publication)
 
+    # LINE友だち追加案内（LINE未連携の顧客のみ）
+    line_config = @building.tenant&.line_config
+    customer = property_inquiry.customer
+    if line_config&.line_guidance_available? && customer&.line_user_id.blank?
+      @line_friend_add_url = line_config.friend_add_url
+    end
+
     mail(
       to: @inquiry.email,
       subject: "[CoCoスモ] お問い合わせを受け付けました - #{@building.name}"

@@ -31,6 +31,14 @@ class Api::V1::CustomersController < ApplicationController
       @customers = @customers.joins(:property_inquiries).where(property_inquiries: { priority: params[:priority] }).distinct
     end
 
+    # LINE連携ステータスフィルタ
+    case params[:line_status]
+    when "no_line"
+      @customers = @customers.where(line_user_id: [ nil, "" ])
+    when "has_line"
+      @customers = @customers.where.not(line_user_id: [ nil, "" ])
+    end
+
     # アクティブな商談のみ
     if params[:active_only] == "true"
       @customers = @customers.joins(:property_inquiries).merge(PropertyInquiry.active_deals).distinct
@@ -240,8 +248,12 @@ class Api::V1::CustomersController < ApplicationController
       end
     end
 
+    # プレースホルダーを置換
+    resolved_subject = replace_template_placeholders(subject, @customer)
+    resolved_body = replace_template_placeholders(sanitized_body, @customer)
+
     CustomerMailer.send_to_customer(
-      @customer, current_user, subject, sanitized_body, inquiry,
+      @customer, current_user, resolved_subject, resolved_body, inquiry,
       body_format: body_format,
       attachment_ids: attachment_ids.presence,
       activity_id: activity.id
@@ -398,6 +410,49 @@ class Api::V1::CustomersController < ApplicationController
     render json: { error: "顧客が見つかりませんでした" }, status: :not_found
   rescue CustomerMergeService::MergeError => e
     render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  # POST /api/v1/customers/bulk_send_line_guidance
+  def bulk_send_line_guidance
+    line_config = current_user.tenant.line_config
+    unless line_config&.line_guidance_available?
+      return render json: { error: "LINE友だち追加URLが設定されていません。LINE設定画面から設定してください。" }, status: :unprocessable_entity
+    end
+
+    customer_ids = Array(params[:customer_ids]).map(&:to_i)
+    template_id = params[:template_id]
+
+    if customer_ids.blank?
+      return render json: { error: "送信対象の顧客を選択してください" }, status: :unprocessable_entity
+    end
+
+    template = current_user.tenant.email_templates.find_by(id: template_id)
+    unless template
+      return render json: { error: "メールテンプレートが見つかりませんでした" }, status: :unprocessable_entity
+    end
+
+    # 送信対象: 指定された顧客のうち、LINE未連携 + メールあり + 案件ありの顧客
+    target_customers = current_user.tenant.customers
+                          .where(id: customer_ids)
+                          .where.not(email: [ nil, "" ])
+                          .where(line_user_id: [ nil, "" ])
+                          .joins(:inquiries)
+                          .distinct
+
+    target_count = target_customers.count
+
+    if target_count == 0
+      return render json: { error: "送信対象の顧客がいません（LINE連携済み・メール未登録・案件なしの顧客は対象外です）" }, status: :unprocessable_entity
+    end
+
+    BulkLineGuidanceEmailJob.perform_later(
+      tenant_id: current_user.tenant_id,
+      customer_ids: target_customers.pluck(:id),
+      template_id: template.id,
+      sender_user_id: current_user.id
+    )
+
+    render json: { success: true, message: "#{target_count}件のLINE案内メールを送信キューに追加しました", target_count: target_count }
   end
 
   # GET /api/v1/customers/find_duplicates
@@ -614,6 +669,18 @@ class Api::V1::CustomersController < ApplicationController
       subject: "顧客情報を更新",
       content: changes.join("\n")
     )
+  end
+
+  def replace_template_placeholders(text, customer)
+    return text if text.blank?
+
+    tenant = current_user.tenant
+    line_config = tenant.line_config
+
+    text.gsub("{{LINE友だち追加URL}}", line_config&.friend_add_url.presence || "")
+        .gsub("{{お客様名}}", customer.name.presence || "")
+        .gsub("{{会社名}}", tenant.name.presence || "")
+        .gsub("{{担当者名}}", current_user.name.presence || "")
   end
 
   def require_login

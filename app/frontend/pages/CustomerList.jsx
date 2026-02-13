@@ -26,6 +26,7 @@ import {
   Card,
   CardContent,
   CardActionArea,
+  Checkbox,
   useMediaQuery,
   useTheme
 } from '@mui/material';
@@ -43,10 +44,12 @@ import {
   PriorityHigh as PriorityHighIcon,
   Warning as WarningIcon,
   People as PeopleIcon,
-  History as HistoryIcon
+  History as HistoryIcon,
+  Send as SendIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import MergeHistoryDialog from '../components/Customer/MergeHistoryDialog';
+import BulkLineGuidanceDialog from '../components/Customer/BulkLineGuidanceDialog';
 
 // Status label mapping
 const getStatusInfo = (status) => {
@@ -106,6 +109,9 @@ export default function CustomerList() {
   const [rowsPerPage, setRowsPerPage] = useState(50);
   const [duplicateCount, setDuplicateCount] = useState(0);
   const [mergeHistoryOpen, setMergeHistoryOpen] = useState(false);
+  const [lineStatusFilter, setLineStatusFilter] = useState('');
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkLineDialogOpen, setBulkLineDialogOpen] = useState(false);
 
   const loadCustomers = useCallback(async () => {
     try {
@@ -120,10 +126,12 @@ export default function CustomerList() {
       if (dealStatusFilter) params.append('deal_status', dealStatusFilter);
       if (priorityFilter) params.append('priority', priorityFilter);
       if (activeOnly) params.append('active_only', 'true');
+      if (lineStatusFilter) params.append('line_status', lineStatusFilter);
 
       const response = await axios.get(`/api/v1/customers?${params.toString()}`);
       setCustomers(response.data.customers);
       setPagination(response.data.pagination);
+      setSelectedIds([]);
     } catch (err) {
       console.error('Failed to load customers:', err);
       if (err.response?.status === 401) {
@@ -134,7 +142,7 @@ export default function CustomerList() {
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage, searchQuery, statusFilter, dealStatusFilter, priorityFilter, activeOnly]);
+  }, [page, rowsPerPage, searchQuery, statusFilter, dealStatusFilter, priorityFilter, activeOnly, lineStatusFilter]);
 
   useEffect(() => {
     loadCustomers();
@@ -170,6 +178,25 @@ export default function CustomerList() {
   const handlePriorityFilterChange = (e) => {
     setPriorityFilter(e.target.value);
     setPage(0);
+  };
+
+  const handleLineStatusFilterChange = (e) => {
+    setLineStatusFilter(e.target.value);
+    setPage(0);
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(customers.map(c => c.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
   };
 
   const handleChangePage = (event, newPage) => {
@@ -312,6 +339,18 @@ export default function CustomerList() {
               <MenuItem value="archived">アーカイブ</MenuItem>
             </Select>
           </FormControl>
+          <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 120, flex: isMobile ? 1 : undefined }}>
+            <InputLabel>LINE連携</InputLabel>
+            <Select
+              value={lineStatusFilter}
+              onChange={handleLineStatusFilterChange}
+              label="LINE連携"
+            >
+              <MenuItem value="">すべて</MenuItem>
+              <MenuItem value="no_line">LINE未連携</MenuItem>
+              <MenuItem value="has_line">LINE連携済み</MenuItem>
+            </Select>
+          </FormControl>
         </Box>
       </Paper>
 
@@ -417,9 +456,40 @@ export default function CustomerList() {
         </Box>
       ) : (
         <TableContainer component={Paper}>
+          {selectedIds.length > 0 && (
+            <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 2, bgcolor: 'primary.50', borderBottom: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                {selectedIds.length}件を選択中
+              </Typography>
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<SendIcon />}
+                onClick={() => setBulkLineDialogOpen(true)}
+                sx={{ bgcolor: '#06C755', '&:hover': { bgcolor: '#05b04c' } }}
+              >
+                LINE案内メール送信
+              </Button>
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => setSelectedIds([])}
+              >
+                選択解除
+              </Button>
+            </Box>
+          )}
           <Table>
             <TableHead>
               <TableRow sx={{ bgcolor: 'grey.100' }}>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    indeterminate={selectedIds.length > 0 && selectedIds.length < customers.length}
+                    checked={customers.length > 0 && selectedIds.length === customers.length}
+                    onChange={handleSelectAll}
+                    size="small"
+                  />
+                </TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>顧客名</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>商談ステータス</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>連絡先</TableCell>
@@ -432,7 +502,7 @@ export default function CustomerList() {
             <TableBody>
               {customers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                     <Typography color="text.secondary">
                       顧客が見つかりませんでした
                     </Typography>
@@ -447,9 +517,17 @@ export default function CustomerList() {
                     <TableRow
                       key={customer.id}
                       hover
+                      selected={selectedIds.includes(customer.id)}
                       sx={{ cursor: 'pointer' }}
                       onClick={() => handleViewCustomer(customer.id)}
                     >
+                      <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          size="small"
+                          checked={selectedIds.includes(customer.id)}
+                          onChange={() => handleSelectOne(customer.id)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
@@ -567,6 +645,16 @@ export default function CustomerList() {
         open={mergeHistoryOpen}
         onClose={() => setMergeHistoryOpen(false)}
         onUndone={loadCustomers}
+      />
+      {/* Bulk LINE Guidance Dialog */}
+      <BulkLineGuidanceDialog
+        open={bulkLineDialogOpen}
+        onClose={() => setBulkLineDialogOpen(false)}
+        selectedCustomerIds={selectedIds}
+        onSent={() => {
+          setSelectedIds([]);
+          loadCustomers();
+        }}
       />
     </Box>
   );

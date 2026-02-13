@@ -349,6 +349,7 @@ Rails.application.routes.draw do
         end
         collection do
           get :find_duplicates
+          post :bulk_send_line_guidance
         end
         resources :activities, controller: 'customer_activities', only: [:index, :create, :update, :destroy]
         resources :email_drafts, only: [:index, :create, :update, :destroy]

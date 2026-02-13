@@ -169,6 +169,7 @@ export default function CustomerDetail() {
   const [viewingActivity, setViewingActivity] = useState(null);
   const [addPropertyDialogOpen, setAddPropertyDialogOpen] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [lineGuidanceEmailOpen, setLineGuidanceEmailOpen] = useState(false);
   const [lineDialogOpen, setLineDialogOpen] = useState(false);
   const [editCustomerDialogOpen, setEditCustomerDialogOpen] = useState(false);
   const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
@@ -1031,10 +1032,16 @@ export default function CustomerDetail() {
                   <EditNoteIcon fontSize="small" color="primary" />
                 </IconButton>
               </Tooltip>
-              {customer.line_user_id && (
+              {customer.line_user_id ? (
                 <Tooltip title="LINE送信">
                   <IconButton size="small" onClick={() => setLineDialogOpen(true)}>
                     <ChatIcon fontSize="small" sx={{ color: '#06C755' }} />
+                  </IconButton>
+                </Tooltip>
+              ) : customer.email && (
+                <Tooltip title="LINE案内メール">
+                  <IconButton size="small" onClick={() => setLineGuidanceEmailOpen(true)}>
+                    <ChatIcon fontSize="small" sx={{ color: '#06C755', opacity: 0.7 }} />
                   </IconButton>
                 </Tooltip>
               )}
@@ -1067,7 +1074,7 @@ export default function CustomerDetail() {
               >
                 リッチメール
               </Button>
-              {customer.line_user_id && (
+              {customer.line_user_id ? (
                 <Button
                   size="small"
                   variant="contained"
@@ -1076,6 +1083,16 @@ export default function CustomerDetail() {
                   sx={{ bgcolor: '#06C755', '&:hover': { bgcolor: '#05b04c' } }}
                 >
                   LINE
+                </Button>
+              ) : customer.email && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<ChatIcon />}
+                  onClick={() => setLineGuidanceEmailOpen(true)}
+                  sx={{ borderColor: '#06C755', color: '#06C755', '&:hover': { borderColor: '#05b04c', bgcolor: 'rgba(6,199,85,0.04)' } }}
+                >
+                  LINE案内
                 </Button>
               )}
             </>
@@ -1357,6 +1374,20 @@ export default function CustomerDetail() {
         customer={customer}
         inquiries={inquiries}
         selectedInquiryId={selectedInquiryId}
+        onSent={() => {
+          loadActivities();
+          loadCustomer();
+        }}
+      />
+
+      {/* LINE Guidance Email Compose Dialog */}
+      <EmailComposeDialog
+        open={lineGuidanceEmailOpen}
+        onClose={() => setLineGuidanceEmailOpen(false)}
+        customer={customer}
+        inquiries={inquiries}
+        selectedInquiryId={selectedInquiryId}
+        preSelectTemplateName="LINE友だち追加のご案内"
         onSent={() => {
           loadActivities();
           loadCustomer();

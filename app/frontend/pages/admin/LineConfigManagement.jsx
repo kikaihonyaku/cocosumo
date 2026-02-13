@@ -37,6 +37,7 @@ export default function LineConfigManagement() {
     channel_id: '',
     channel_secret: '',
     channel_token: '',
+    friend_add_url: '',
     greeting_message: '',
     rich_menu_id: '',
     active: true,
@@ -58,6 +59,7 @@ export default function LineConfigManagement() {
             channel_id: '',
             channel_secret: '',
             channel_token: '',
+            friend_add_url: data.friend_add_url || '',
             greeting_message: data.greeting_message || '',
             rich_menu_id: data.rich_menu_id || '',
             active: data.active ?? true,
@@ -244,6 +246,24 @@ export default function LineConfigManagement() {
           </Box>
         </Paper>
       )}
+
+      {/* 友だち追加URL */}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          LINE友だち追加URL
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          顧客へのメールにLINE友だち追加リンクを掲載するためのURLです。LINE Official Account Managerから取得してください。
+        </Typography>
+        <TextField
+          label="友だち追加URL"
+          value={formData.friend_add_url}
+          onChange={(e) => setFormData({ ...formData, friend_add_url: e.target.value })}
+          fullWidth
+          placeholder="https://line.me/R/ti/p/@youraccountid"
+          helperText="LINE Official Account Manager → 友だち追加ガイド → URLから取得できます"
+        />
+      </Paper>
 
       {/* 挨拶メッセージ */}
       <Paper sx={{ p: 3, mb: 3 }}>

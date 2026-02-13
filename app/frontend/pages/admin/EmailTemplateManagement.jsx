@@ -55,6 +55,7 @@ export default function EmailTemplateManagement() {
     '{{会社名}}': 'サンプル不動産株式会社',
     '{{担当者名}}': '山田 太郎',
     '{{お客様名}}': '鈴木 花子',
+    '{{LINE友だち追加URL}}': 'https://line.me/R/ti/p/@example',
     '{{署名}}': '━━━━━━━━━━━━━━━━━━\nサンプル不動産株式会社\n山田 太郎\nTEL: 03-1234-5678\nEmail: yamada@example.com\n━━━━━━━━━━━━━━━━━━',
   };
 
