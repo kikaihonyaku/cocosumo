@@ -21,6 +21,7 @@ class CustomerMergeService
       primary_snapshot = snapshot_customer(@primary)
       secondary_snapshot = build_secondary_snapshot
 
+      clear_secondary_unique_fields!
       apply_field_resolutions!
       move_related_records!
 
@@ -132,6 +133,16 @@ class CustomerMergeService
       email_draft_ids: @secondary.email_drafts.pluck(:id),
       field_resolutions: @field_resolutions
     }
+  end
+
+  # secondary のユニークフィールドをクリアして、primary への更新時に
+  # uniqueness バリデーション違反を防ぐ
+  def clear_secondary_unique_fields!
+    clear_attrs = {}
+    UNIQUE_FIELDS.each do |field|
+      clear_attrs[field] = nil if @secondary.send(field).present?
+    end
+    @secondary.update_columns(clear_attrs) if clear_attrs.present?
   end
 
   def apply_field_resolutions!

@@ -9,7 +9,7 @@ class UnreadInquiryService
 
   # 未読案件の件数（ポーリング用、軽量）
   def unread_count
-    unread_base_query.count
+    unread_base_query.count("inquiries.id")
   end
 
   # 未読の案件ID一覧
