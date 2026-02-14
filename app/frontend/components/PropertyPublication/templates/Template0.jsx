@@ -154,7 +154,7 @@ function Template0({ data, publicationId }) {
             {/* PR Text Section */}
             {pr_text && (
               <Paper sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ color: colors.primary, fontWeight: 'bold', borderBottom: `3px solid ${colors.primary}`, pb: 1, mb: 2 }}>
+                <Typography variant="h6" component="h2" gutterBottom sx={{ color: colors.primary, fontWeight: 'bold', borderBottom: `3px solid ${colors.primary}`, pb: 1, mb: 2 }}>
                   物件の特徴
                 </Typography>
                 <Box
@@ -288,6 +288,7 @@ function Template0({ data, publicationId }) {
                           <Box
                             component="iframe"
                             src={`/vr/${item.vr_tour.public_id}`}
+                            title="VRツアー"
                             sx={{
                               width: '100%',
                               height: 550,
@@ -317,6 +318,7 @@ function Template0({ data, publicationId }) {
                           <Box
                             component="iframe"
                             src={`/virtual-staging/${item.virtual_staging.public_id}?embed=true`}
+                            title="バーチャルステージング"
                             sx={{
                               width: '100%',
                               height: 550,

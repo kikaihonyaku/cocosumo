@@ -231,18 +231,21 @@ function DemoSlideshow() {
           </div>
         </div>
         {/* ドットインジケーター */}
-        <div className="flex justify-center gap-1.5 py-2">
+        <div className="flex justify-center py-2">
           {demoScreenshots.map((_, index) => (
             <button
               key={index}
               onClick={() => emblaApi?.scrollTo(index)}
-              className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                index === selectedIndex
-                  ? "bg-[#c9a227] w-4"
-                  : "bg-gray-600 hover:bg-gray-500"
-              }`}
+              className="flex items-center justify-center"
+              style={{ minWidth: 44, minHeight: 44 }}
               aria-label={`スライド ${index + 1}`}
-            />
+            >
+              <span className={`block rounded-full transition-all duration-300 ${
+                index === selectedIndex
+                  ? "bg-[#c9a227] w-4 h-1.5"
+                  : "bg-gray-600 hover:bg-gray-500 w-1.5 h-1.5"
+              }`} />
+            </button>
           ))}
         </div>
       </div>
@@ -395,18 +398,21 @@ function FeatureCarousel() {
       </button>
 
       {/* ドットインジケーター */}
-      <div className="flex justify-center gap-2 mt-6">
+      <div className="flex justify-center mt-6">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => scrollTo(index)}
-            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-              index === selectedIndex
-                ? "bg-[#c9a227] w-8"
-                : "bg-gray-300 hover:bg-gray-400"
-            }`}
+            className="flex items-center justify-center"
+            style={{ minWidth: 44, minHeight: 44 }}
             aria-label={`スライド ${index + 1}`}
-          />
+          >
+            <span className={`block rounded-full transition-all duration-300 ${
+              index === selectedIndex
+                ? "bg-[#c9a227] w-8 h-2.5"
+                : "bg-gray-300 hover:bg-gray-400 w-2.5 h-2.5"
+            }`} />
+          </button>
         ))}
       </div>
     </div>

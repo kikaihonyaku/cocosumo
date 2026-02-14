@@ -204,7 +204,7 @@ const PublicVirtualStaging = () => {
             maxWidth: '80%',
           }}
         >
-          <Typography variant="h5" fontWeight="600" noWrap>
+          <Typography variant="h5" component="h1" fontWeight="600" noWrap>
             {virtualStaging.title}
           </Typography>
           {virtualStaging.description && (
@@ -259,6 +259,7 @@ const PublicVirtualStaging = () => {
       {isClosable && !isEmbedded && (
         <Tooltip title="閉じる">
           <IconButton
+            aria-label="閉じる"
             onClick={() => window.close()}
             sx={{
               position: 'absolute',

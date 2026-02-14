@@ -15,6 +15,8 @@
 
     <%= yield :head %>
 
+    <link rel="preconnect" href="https://maps.googleapis.com">
+    <link rel="preconnect" href="https://maps.gstatic.com" crossorigin>
     <link rel="icon" href="/icon.png?v=<%= Time.now.to_i %>" type="image/png">
     <link rel="apple-touch-icon" href="/icon.png?v=<%= Time.now.to_i %>">
     <link rel="manifest" href="/manifest.json">

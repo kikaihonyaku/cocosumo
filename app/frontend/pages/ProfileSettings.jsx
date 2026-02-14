@@ -122,7 +122,7 @@ export default function ProfileSettings() {
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
         <PersonIcon fontSize="large" color="primary" />
-        <Typography variant="h4">プロフィール設定</Typography>
+        <Typography variant="h4" component="h1">プロフィール設定</Typography>
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -192,11 +192,12 @@ export default function ProfileSettings() {
 
         {/* 編集フォーム */}
         <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>基本情報の編集</Typography>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>基本情報の編集</Typography>
           <form onSubmit={handleSubmit}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField
                 label="名前"
+                autoComplete="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
@@ -204,6 +205,8 @@ export default function ProfileSettings() {
               />
               <TextField
                 label="電話番号"
+                type="tel"
+                autoComplete="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 fullWidth
@@ -227,7 +230,7 @@ export default function ProfileSettings() {
         {/* パスワード変更セクション */}
         {profile?.auth_provider !== 'google' && (
           <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>セキュリティ</Typography>
+            <Typography variant="h6" component="h2" sx={{ mb: 2 }}>セキュリティ</Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Box>
                 <Typography variant="body1">パスワード</Typography>
@@ -248,7 +251,7 @@ export default function ProfileSettings() {
 
         {/* メール署名セクション */}
         <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
             <EditNoteIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
             メール署名
           </Typography>
@@ -275,7 +278,7 @@ export default function ProfileSettings() {
 
         {/* 表示設定セクション */}
         <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
             <ZoomInIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
             表示設定
           </Typography>

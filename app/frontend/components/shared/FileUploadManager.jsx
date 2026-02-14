@@ -158,6 +158,7 @@ function FileItem({ item, onRemove }) {
         <IconButton
           edge="end"
           size="small"
+          aria-label="ファイルを削除"
           onClick={() => onRemove(item.id)}
           disabled={item.status === UPLOAD_STATUS.UPLOADING}
         >
@@ -189,7 +190,7 @@ function DropZone({ onFilesAdded, accept, disabled }) {
         border: '2px dashed',
         borderColor: isDragOver ? 'primary.main' : 'divider',
         bgcolor: isDragOver ? 'action.hover' : 'background.default',
-        transition: 'all 0.2s ease',
+        transition: 'border-color 0.2s ease, background-color 0.2s ease',
         '&:hover': {
           borderColor: disabled ? 'divider' : 'primary.main',
           bgcolor: disabled ? 'background.default' : 'action.hover'
@@ -400,6 +401,7 @@ export function FileInput({
           </Typography>
           <IconButton
             size="small"
+            aria-label="ファイルを削除"
             onClick={() => onChange?.(null)}
             disabled={disabled}
           >

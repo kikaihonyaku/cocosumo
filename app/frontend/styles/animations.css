@@ -144,7 +144,7 @@
 .reveal {
   opacity: 0;
   transform: translateY(20px);
-  transition: all 0.5s ease-out;
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
 }
 
 .reveal.visible {
@@ -327,7 +327,7 @@ html {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.form-field-animated:focus {
+.form-field-animated:focus-visible {
   box-shadow: 0 0 0 3px rgba(0, 104, 183, 0.1);
 }
 

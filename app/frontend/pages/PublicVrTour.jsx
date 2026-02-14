@@ -156,6 +156,7 @@ export default function PublicVrTour() {
       {isClosable && (
         <Tooltip title="閉じる">
           <IconButton
+            aria-label="閉じる"
             onClick={handleClose}
             sx={{
               position: 'absolute',

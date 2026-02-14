@@ -69,6 +69,7 @@ export default function BlogList() {
                         src={post.thumbnail_url}
                         alt={post.title}
                         className="w-full h-48 object-cover"
+                        loading="lazy"
                       />
                     ) : (
                       <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">

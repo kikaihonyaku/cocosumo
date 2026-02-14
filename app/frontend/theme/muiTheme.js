@@ -275,6 +275,7 @@ const muiTheme = createTheme({
           },
           '& .MuiDataGrid-cell': {
             borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
+            fontVariantNumeric: 'tabular-nums',
           },
           '& .MuiDataGrid-sortIcon': {
             color: '#0168B7',

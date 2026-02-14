@@ -85,7 +85,7 @@ function Template1({ data, publicationId }) {
           font-size: 28px;
           font-weight: bold;
           color: #333;
-          margin-bottom: 12px;
+          margin: 0 0 12px 0;
           line-height: 1.4;
         }
 
@@ -167,6 +167,7 @@ function Template1({ data, publicationId }) {
 
         .template1-suumo .suumo-section-header {
           background: #f7f7f7;
+          margin: 0;
           padding: 14px 20px;
           border-bottom: 2px solid var(--primary-color);
           font-size: 18px;
@@ -285,9 +286,9 @@ function Template1({ data, publicationId }) {
       <Container maxWidth="lg" sx={{ py: 3 }}>
         {/* タイトル・住所・賃料セクション */}
         <Paper className="suumo-title-section" elevation={0}>
-          <div className="suumo-property-name">
+          <h1 className="suumo-property-name">
             {title}
-          </div>
+          </h1>
 
           {visibleFields.address && building?.address && (
             <div className="suumo-address">
@@ -340,12 +341,12 @@ function Template1({ data, publicationId }) {
             {/* Image Gallery - SUUMO style */}
             {property_publication_photos && property_publication_photos.length > 0 && (
               <Box id="gallery" className="suumo-section">
-                <div className="suumo-section-header">
+                <h2 className="suumo-section-header">
                   写真
                   <span className="suumo-photo-count" style={{ marginLeft: '12px' }}>
                     {property_publication_photos.length}点
                   </span>
-                </div>
+                </h2>
                 <Box className="suumo-section-body">
                   <PhotoGallery photos={property_publication_photos} />
                 </Box>
@@ -355,7 +356,7 @@ function Template1({ data, publicationId }) {
             {/* PR Text Section */}
             {pr_text && (
               <Box className="suumo-section">
-                <div className="suumo-section-header">物件の特徴・おすすめポイント</div>
+                <h2 className="suumo-section-header">物件の特徴・おすすめポイント</h2>
                 <Box className="suumo-section-body">
                   <Box
                     sx={{
@@ -384,7 +385,7 @@ function Template1({ data, publicationId }) {
 
             {/* Property Details - SUUMO style table */}
             <Box id="property-info" className="suumo-section">
-              <div className="suumo-section-header">物件詳細</div>
+              <h2 className="suumo-section-header">物件詳細</h2>
               <Box className="suumo-section-body" sx={{ p: '0 !important' }}>
                 <table className="suumo-table">
                   <tbody>
@@ -463,7 +464,7 @@ function Template1({ data, publicationId }) {
             {((property_publication_vr_tours && property_publication_vr_tours.length > 0) ||
               (property_publication_virtual_stagings && property_publication_virtual_stagings.length > 0)) && (
               <Box id="vr-tour" className="suumo-section">
-                <div className="suumo-section-header">パノラマ写真・VR内覧</div>
+                <h2 className="suumo-section-header">パノラマ写真・VR内覧</h2>
                 <Box className="suumo-section-body">
                   {/* VR Tours */}
                   {property_publication_vr_tours && property_publication_vr_tours.length > 0 && (
@@ -481,6 +482,7 @@ function Template1({ data, publicationId }) {
                           <Box
                             component="iframe"
                             src={`/vr/${item.vr_tour.public_id}`}
+                            title="VRツアー"
                             sx={{
                               width: '100%',
                               height: 550,
@@ -510,6 +512,7 @@ function Template1({ data, publicationId }) {
                           <Box
                             component="iframe"
                             src={`/virtual-staging/${item.virtual_staging.public_id}?embed=true`}
+                            title="バーチャルステージング"
                             sx={{
                               width: '100%',
                               height: 550,

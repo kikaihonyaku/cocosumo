@@ -416,6 +416,7 @@ function Template3({ data, publicationId }) {
                           <Box
                             component="iframe"
                             src={`/vr/${item.vr_tour.public_id}`}
+                            title="VRツアー"
                             sx={{
                               width: '100%',
                               height: 550,
@@ -445,6 +446,7 @@ function Template3({ data, publicationId }) {
                           <Box
                             component="iframe"
                             src={`/virtual-staging/${item.virtual_staging.public_id}?embed=true`}
+                            title="バーチャルステージング"
                             sx={{
                               width: '100%',
                               height: 550,

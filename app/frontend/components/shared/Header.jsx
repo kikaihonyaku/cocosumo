@@ -322,6 +322,7 @@ export default function Header() {
               </Box>
               <IconButton
                 color="inherit"
+                aria-label="通知"
                 onClick={handleNotificationOpen}
               >
                 <Badge badgeContent={unreadCount} color="error" max={99}>
@@ -552,6 +553,7 @@ export default function Header() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <IconButton
                     color="inherit"
+                    aria-label="通知"
                     onClick={handleNotificationOpen}
                     sx={{
                       '&:hover': {
@@ -650,6 +652,7 @@ export default function Header() {
           </Typography>
           <IconButton
             color="inherit"
+            aria-label="メニューを閉じる"
             onClick={handleMobileMenuClose}
           >
             <CloseIcon />

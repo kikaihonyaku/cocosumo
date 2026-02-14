@@ -402,6 +402,8 @@ export default function InquiryForm({ publicationId, sourceType = 'public_page' 
       <TextField
         fullWidth
         label="お名前"
+        name="name"
+        autoComplete="name"
         value={formData.name}
         onChange={handleChange('name')}
         onFocus={handleFormStart}
@@ -421,7 +423,10 @@ export default function InquiryForm({ publicationId, sourceType = 'public_page' 
       <TextField
         fullWidth
         label="メールアドレス"
+        name="email"
         type="email"
+        autoComplete="email"
+        spellCheck={false}
         value={formData.email}
         onChange={handleChange('email')}
         onBlur={handleBlur('email')}
@@ -440,6 +445,9 @@ export default function InquiryForm({ publicationId, sourceType = 'public_page' 
       <TextField
         fullWidth
         label="電話番号（任意）"
+        name="phone"
+        type="tel"
+        autoComplete="tel"
         value={formData.phone}
         onChange={handleChange('phone')}
         onBlur={handleBlur('phone')}
@@ -458,6 +466,7 @@ export default function InquiryForm({ publicationId, sourceType = 'public_page' 
       <TextField
         fullWidth
         label="お問い合わせ内容"
+        name="message"
         value={formData.message}
         onChange={handleChange('message')}
         onBlur={handleBlur('message')}
@@ -485,7 +494,7 @@ export default function InquiryForm({ publicationId, sourceType = 'public_page' 
         type="submit"
         variant="contained"
         color="primary"
-        disabled={submitting || !isFormValid()}
+        disabled={submitting}
         startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
         sx={{
           mt: 2,

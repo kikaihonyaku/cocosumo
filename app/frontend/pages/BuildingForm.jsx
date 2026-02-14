@@ -197,6 +197,7 @@ export default function BuildingForm() {
                 fullWidth
                 label="物件名"
                 name="name"
+                autoComplete="off"
                 value={formData.name}
                 onChange={handleChange}
                 disabled={submitting}
@@ -209,6 +210,7 @@ export default function BuildingForm() {
                 fullWidth
                 label="住所"
                 name="address"
+                autoComplete="street-address"
                 value={formData.address}
                 onChange={handleChange}
                 disabled={submitting}

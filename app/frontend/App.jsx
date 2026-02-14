@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Routes, Route, Outlet, useLocation, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import { CssBaseline, useMediaQuery, Box, CircularProgress } from "@mui/material";
@@ -10,8 +10,21 @@ import { TenantProvider } from "./contexts/TenantContext";
 import { ThemeContextProvider } from "./contexts/ThemeContext";
 import Header from "./components/shared/Header";
 import ImpersonationBanner from "./components/shared/ImpersonationBanner";
-import Landing from "./pages/Landing";
-import Login from "./pages/Login";
+// 公開ページ（lazy load — 認証不要のためバンドル分離）
+const Landing = lazy(() => import("./pages/Landing"));
+const Login = lazy(() => import("./pages/Login"));
+const PublicVrTour = lazy(() => import("./pages/PublicVrTour"));
+const PublicVirtualStaging = lazy(() => import("./pages/PublicVirtualStaging"));
+const EmbedVirtualStaging = lazy(() => import("./pages/EmbedVirtualStaging"));
+const EmbedVrTour = lazy(() => import("./pages/EmbedVrTour"));
+const PublicPropertyDetail = lazy(() => import("./pages/PublicPropertyDetail"));
+const CustomerPropertyView = lazy(() => import("./pages/CustomerPropertyView"));
+const SalesPresentation = lazy(() => import("./pages/SalesPresentation"));
+const BlogList = lazy(() => import("./pages/BlogList"));
+const BlogDetail = lazy(() => import("./pages/BlogDetail"));
+const FeatureDetailPage = lazy(() => import("./pages/features/FeatureDetailPage"));
+
+// 認証済みページ（静的import — ログイン後に一括ロード）
 import Home from "./pages/Home";
 import MapSystem from "./pages/MapSystem";
 import Buildings from "./pages/Buildings";
@@ -21,29 +34,20 @@ import RoomDetail from "./pages/RoomDetail";
 import RoomForm from "./pages/RoomForm";
 import VrTourEditor from "./pages/VrTourEditor";
 import VrTourViewer from "./pages/VrTourViewer";
-import PublicVrTour from "./pages/PublicVrTour";
 import VrTours from "./pages/VrTours";
 import PhotoEditor from "./pages/PhotoEditor";
 import VirtualStagingEditor from "./pages/VirtualStagingEditor";
 import VirtualStagingViewer from "./pages/VirtualStagingViewer";
-import PublicVirtualStaging from "./pages/PublicVirtualStaging";
-import EmbedVirtualStaging from "./pages/EmbedVirtualStaging";
-import EmbedVrTour from "./pages/EmbedVrTour";
 import VirtualStagings from "./pages/VirtualStagings";
 import PropertyPublicationEditor from "./pages/PropertyPublicationEditor";
 import PropertyPublicationsManager from "./pages/PropertyPublicationsManager";
-import PublicPropertyDetail from "./pages/PublicPropertyDetail";
 import LayerManagement from "./pages/admin/LayerManagement";
 import SuumoImport from "./pages/admin/SuumoImport";
 import StoreManagement from "./pages/admin/StoreManagement";
-import BlogList from "./pages/BlogList";
-import BlogDetail from "./pages/BlogDetail";
 import InquiryAnalytics from "./pages/InquiryAnalytics";
-import CustomerPropertyView from "./pages/CustomerPropertyView";
 import CustomerAccessManager from "./pages/admin/CustomerAccessManager";
 import InquiryManager from "./pages/admin/InquiryManager";
 import CustomerAccessAnalytics from "./pages/CustomerAccessAnalytics";
-import SalesPresentation from "./pages/SalesPresentation";
 import TenantManagement from "./pages/super_admin/TenantManagement";
 import UserManagement from "./pages/admin/UserManagement";
 import EmailTemplateManagement from "./pages/admin/EmailTemplateManagement";
@@ -54,7 +58,6 @@ import CustomerList from "./pages/CustomerList";
 import CustomerDetail from "./pages/CustomerDetail";
 import BulkImport from "./pages/BulkImport";
 import RoomList from "./pages/RoomList";
-import FeatureDetailPage from "./pages/features/FeatureDetailPage";
 import EmailComposer from "./pages/EmailComposer";
 
 // 認証が必要なルートを保護するコンポーネント
@@ -153,6 +156,7 @@ export default function App() {
       <ThemeContextProvider disableMuiProvider>
         <AuthProvider>
           <TenantProvider>
+          <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>}>
           <Routes>
           {/* 公開ページ */}
           <Route path="/" element={<Landing />} />
@@ -223,6 +227,7 @@ export default function App() {
             <Route path="/admin/line-config" element={<AdminRoute><LineConfigManagement /></AdminRoute>} />
           </Route>
           </Routes>
+          </Suspense>
           </TenantProvider>
         </AuthProvider>
       </ThemeContextProvider>

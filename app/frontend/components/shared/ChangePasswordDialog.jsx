@@ -102,6 +102,7 @@ export default function ChangePasswordDialog({ open, onClose }) {
             <TextField
               label="現在のパスワード"
               type="password"
+              name="current-password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               fullWidth
@@ -111,6 +112,7 @@ export default function ChangePasswordDialog({ open, onClose }) {
             <TextField
               label="新しいパスワード"
               type="password"
+              name="new-password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               fullWidth
@@ -121,6 +123,7 @@ export default function ChangePasswordDialog({ open, onClose }) {
             <TextField
               label="新しいパスワード（確認）"
               type="password"
+              name="confirm-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               fullWidth

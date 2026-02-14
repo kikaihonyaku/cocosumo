@@ -241,6 +241,7 @@ export default function RoomForm() {
                 label="階数"
                 name="floor"
                 type="number"
+                autoComplete="off"
                 value={formData.floor}
                 onChange={handleChange}
                 disabled={submitting}
@@ -274,6 +275,7 @@ export default function RoomForm() {
                 label="面積（㎡）"
                 name="area"
                 type="number"
+                autoComplete="off"
                 inputProps={{ step: "0.01" }}
                 value={formData.area}
                 onChange={handleChange}
@@ -287,6 +289,7 @@ export default function RoomForm() {
                 label="賃料（円）"
                 name="rent"
                 type="number"
+                autoComplete="off"
                 value={formData.rent}
                 onChange={handleChange}
                 disabled={submitting}
@@ -299,6 +302,7 @@ export default function RoomForm() {
                 label="管理費（円）"
                 name="management_fee"
                 type="number"
+                autoComplete="off"
                 value={formData.management_fee}
                 onChange={handleChange}
                 disabled={submitting}
@@ -311,6 +315,7 @@ export default function RoomForm() {
                 label="敷金（円）"
                 name="deposit"
                 type="number"
+                autoComplete="off"
                 value={formData.deposit}
                 onChange={handleChange}
                 disabled={submitting}
@@ -323,6 +328,7 @@ export default function RoomForm() {
                 label="礼金（円）"
                 name="key_money"
                 type="number"
+                autoComplete="off"
                 value={formData.key_money}
                 onChange={handleChange}
                 disabled={submitting}

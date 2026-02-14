@@ -69,8 +69,10 @@ export default function Login() {
               fullWidth
               id="email"
               label="メールアドレス"
+              type="email"
               name="email"
               autoComplete="email"
+              spellCheck={false}
               autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
