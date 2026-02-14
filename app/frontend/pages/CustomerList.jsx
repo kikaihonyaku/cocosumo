@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -101,6 +101,7 @@ export default function CustomerList() {
     total_pages: 1
   });
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [dealStatusFilter, setDealStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
@@ -112,6 +113,15 @@ export default function CustomerList() {
   const [lineStatusFilter, setLineStatusFilter] = useState('');
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkLineDialogOpen, setBulkLineDialogOpen] = useState(false);
+  const searchInputRef = useRef(null);
+
+  // Debounce search query to avoid API calls on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const loadCustomers = useCallback(async () => {
     try {
@@ -121,7 +131,7 @@ export default function CustomerList() {
       const params = new URLSearchParams();
       params.append('page', page + 1);
       params.append('per_page', rowsPerPage);
-      if (searchQuery) params.append('query', searchQuery);
+      if (debouncedQuery) params.append('query', debouncedQuery);
       if (statusFilter) params.append('status', statusFilter);
       if (dealStatusFilter) params.append('deal_status', dealStatusFilter);
       if (priorityFilter) params.append('priority', priorityFilter);
@@ -142,7 +152,7 @@ export default function CustomerList() {
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage, searchQuery, statusFilter, dealStatusFilter, priorityFilter, activeOnly, lineStatusFilter]);
+  }, [page, rowsPerPage, debouncedQuery, statusFilter, dealStatusFilter, priorityFilter, activeOnly, lineStatusFilter]);
 
   useEffect(() => {
     loadCustomers();
@@ -162,8 +172,12 @@ export default function CustomerList() {
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
-    setPage(0);
   };
+
+  // Reset page when debounced query changes (not on every keystroke)
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedQuery]);
 
   const handleStatusFilterChange = (e) => {
     setStatusFilter(e.target.value);
@@ -212,16 +226,22 @@ export default function CustomerList() {
     navigate(`/customers/${customerId}`);
   };
 
-  if (loading && customers.length === 0) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
-    <Box sx={{ p: { xs: 1.5, md: 3 } }}>
+    <Box sx={{ p: { xs: 1.5, md: 3 }, position: 'relative' }}>
+      {loading && (
+        <Box sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          display: 'flex',
+          justifyContent: 'center',
+          pt: 2
+        }}>
+          <CircularProgress size={28} />
+        </Box>
+      )}
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 1.5, md: 3 } }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -287,6 +307,7 @@ export default function CustomerList() {
             placeholder="名前、メール、電話番号で検索..."
             value={searchQuery}
             onChange={handleSearch}
+            inputRef={searchInputRef}
             sx={{ minWidth: isMobile ? undefined : 300, width: isMobile ? '100%' : undefined }}
             InputProps={{
               startAdornment: (
