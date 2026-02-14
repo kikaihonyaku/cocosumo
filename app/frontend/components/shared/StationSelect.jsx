@@ -130,6 +130,8 @@ export default function StationSelect({ railwayData = [], value = [], onChange, 
                 disabled={disabled}
                 size="small"
                 sx={{ minWidth: 160, flex: 1 }}
+                slots={{ popper: ZoomCorrectedPopper }}
+                slotProps={{ paper: { sx: { zoom: 'var(--body-zoom, 1)' } } }}
               />
 
               {/* 駅選択 */}
@@ -143,6 +145,8 @@ export default function StationSelect({ railwayData = [], value = [], onChange, 
                 disabled={disabled || !selectedLineId}
                 size="small"
                 sx={{ minWidth: 120, flex: 1 }}
+                slots={{ popper: ZoomCorrectedPopper }}
+                slotProps={{ paper: { sx: { zoom: 'var(--body-zoom, 1)' } } }}
               />
 
               {/* 徒歩分数 */}
