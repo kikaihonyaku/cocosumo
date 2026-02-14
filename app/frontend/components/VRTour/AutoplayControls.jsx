@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import {
   Box,
   IconButton,
@@ -39,8 +39,9 @@ const AutoplayControls = ({
   rotateSpeed = 1, // 回転速度
   onRotateSpeedChange,
   sceneProgress = 0, // 現在のシーン進行度 (0-100)
+  settingsOpen = false,
+  onSettingsToggle,
 }) => {
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // 全体の進行度を計算
   const overallProgress = totalScenes > 0
@@ -135,7 +136,7 @@ const AutoplayControls = ({
 
         <Tooltip title="設定">
           <IconButton
-            onClick={() => setSettingsOpen(!settingsOpen)}
+            onClick={() => onSettingsToggle?.(!settingsOpen)}
             sx={{ color: settingsOpen ? 'primary.main' : 'white' }}
             size="small"
           >

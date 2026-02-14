@@ -15,6 +15,7 @@ import {
   Alert,
   Paper,
   Slide,
+  Fade,
   CardMedia
 } from "@mui/material";
 import {
@@ -33,6 +34,7 @@ import InfoHotspotPanel from "./InfoHotspotPanel";
 import GyroscopeButton from "./GyroscopeButton";
 import SceneTransition from "./SceneTransition";
 import HotspotPreview from "./HotspotPreview";
+import useControlsAutoHide from "../../hooks/useControlsAutoHide";
 
 export default function VrTourViewerContent({
   vrTour,
@@ -71,10 +73,23 @@ export default function VrTourViewerContent({
   const [rotateSpeed, setRotateSpeed] = useState(1);
   const [sceneProgress, setSceneProgress] = useState(0);
 
+  // オートプレイ設定パネルstate（AutoplayControlsからリフトアップ）
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   // refs
   const panoramaViewerRef = useRef(null);
   const autoplayTimerRef = useRef(null);
   const progressTimerRef = useRef(null);
+
+  // 自動再生バグ修正: stale closure回避用ref
+  const isAutoPlayingRef = useRef(isAutoPlaying);
+  isAutoPlayingRef.current = isAutoPlaying;
+  const autoRotateEnabledRef = useRef(autoRotateEnabled);
+  autoRotateEnabledRef.current = autoRotateEnabled;
+
+  // コントロール自動非表示
+  const preventHide = drawerOpen || footerOpen || infoHotspotOpen || settingsOpen;
+  const { controlsVisible, showControls, containerHandlers } = useControlsAutoHide({ preventHide });
 
   // シーンが変更されたら最初のシーンを設定
   useEffect(() => {
@@ -117,6 +132,8 @@ export default function VrTourViewerContent({
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
         return;
       }
+
+      showControls();
 
       switch (e.key) {
         case 'ArrowRight':
@@ -196,7 +213,7 @@ export default function VrTourViewerContent({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentSceneIndex, scenes, drawerOpen, footerOpen, containerId, changeSceneWithTransition]);
+  }, [currentSceneIndex, scenes, drawerOpen, footerOpen, containerId, changeSceneWithTransition, showControls]);
 
   // 次のシーンへ移動
   const goToNextScene = useCallback(() => {
@@ -312,6 +329,16 @@ export default function VrTourViewerContent({
     }
   }, []);
 
+  // ビューア準備完了時のコールバック（自動再生バグ修正）
+  const handleViewerReady = useCallback(() => {
+    if (isAutoPlayingRef.current && autoRotateEnabledRef.current && panoramaViewerRef.current) {
+      panoramaViewerRef.current.startAutoRotate();
+    }
+    if (panoramaViewerRef.current && rotateSpeed !== 1) {
+      panoramaViewerRef.current.setAutoRotateSpeed(rotateSpeed);
+    }
+  }, [rotateSpeed]);
+
   // ジャイロスコープの切り替え
   const handleGyroscopeChange = useCallback(async (enabled) => {
     if (panoramaViewerRef.current) {
@@ -397,90 +424,104 @@ export default function VrTourViewerContent({
   return (
     <>
       {/* ヘッダー */}
-      <AppBar
-        position="absolute"
-        elevation={3}
-        sx={{
-          bgcolor: 'rgba(0, 0, 0, 0.3)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderRadius: 0,
-          borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-          zIndex: 10,
-        }}
-      >
-        <Toolbar variant="dense" sx={{ minHeight: 48 }}>
-          {(onClose || roomId) && (
-            <IconButton
-              edge="start"
-              onClick={handleBackClick}
-              sx={{
-                mr: 2,
-                color: '#ffffff'
-              }}
-            >
-              {isPreview ? <CloseIcon /> : <ArrowBackIcon />}
-            </IconButton>
-          )}
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography
-              variant="h6"
-              sx={{
-                color: '#ffffff',
-                fontWeight: 600
-              }}
-            >
-              {vrTour.title}
-            </Typography>
-            {vrTour.description && (
-              <Typography
-                variant="caption"
+      <Fade in={controlsVisible} timeout={400}>
+        <AppBar
+          position="absolute"
+          elevation={3}
+          sx={{
+            bgcolor: 'rgba(0, 0, 0, 0.3)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderRadius: 0,
+            borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+            zIndex: 10,
+          }}
+        >
+          <Toolbar variant="dense" sx={{ minHeight: 48 }}>
+            {(onClose || roomId) && (
+              <IconButton
+                edge="start"
+                onClick={handleBackClick}
                 sx={{
+                  mr: 2,
+                  color: '#ffffff'
+                }}
+              >
+                {isPreview ? <CloseIcon /> : <ArrowBackIcon />}
+              </IconButton>
+            )}
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  color: '#ffffff',
+                  fontWeight: 600
+                }}
+              >
+                {vrTour.title}
+              </Typography>
+              {vrTour.description && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'rgba(255, 255, 255, 0.7)'
+                  }}
+                >
+                  {vrTour.description}
+                </Typography>
+              )}
+            </Box>
+            {isPreview && (
+              <Typography
+                variant="body2"
+                sx={{
+                  mr: 2,
                   color: 'rgba(255, 255, 255, 0.7)'
                 }}
               >
-                {vrTour.description}
+                プレビューモード
               </Typography>
             )}
-          </Box>
-          {isPreview && (
-            <Typography
-              variant="body2"
-              sx={{
-                mr: 2,
-                color: 'rgba(255, 255, 255, 0.7)'
-              }}
-            >
-              プレビューモード
-            </Typography>
-          )}
-          {/* ジャイロスコープボタン（モバイルでのみ表示） */}
-          <GyroscopeButton
-            gyroscopeEnabled={gyroscopeEnabled}
-            onGyroscopeChange={handleGyroscopeChange}
-          />
-          {publicUrl && !isPreview && (
-            <SharePanel
-              publicUrl={publicUrl}
-              title={vrTour.title || 'VRツアー'}
-              variant="icon"
+            {/* ジャイロスコープボタン（モバイルでのみ表示） */}
+            <GyroscopeButton
+              gyroscopeEnabled={gyroscopeEnabled}
+              onGyroscopeChange={handleGyroscopeChange}
             />
-          )}
-          {scenes.length > 0 && (
-            <IconButton
-              onClick={() => setDrawerOpen(true)}
-              sx={{
-                color: '#ffffff'
-              }}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
-        </Toolbar>
-      </AppBar>
+            {publicUrl && !isPreview && (
+              <SharePanel
+                publicUrl={publicUrl}
+                title={vrTour.title || 'VRツアー'}
+                variant="icon"
+              />
+            )}
+            {scenes.length > 0 && (
+              <IconButton
+                onClick={() => setDrawerOpen(true)}
+                sx={{
+                  color: '#ffffff'
+                }}
+              >
+                <MenuIcon />
+              </IconButton>
+            )}
+          </Toolbar>
+        </AppBar>
+      </Fade>
 
       {/* VRビューア */}
-      <Box sx={{ height: 'calc(100vh * var(--vh-correction, 1))', width: '100%', position: 'relative' }} id={containerId}>
+      <Box
+        sx={{
+          height: 'calc(100vh * var(--vh-correction, 1))',
+          width: '100%',
+          position: 'relative',
+          '& .psv-navbar': {
+            opacity: controlsVisible ? 1 : 0,
+            transition: 'opacity 400ms ease',
+          },
+        }}
+        id={containerId}
+        {...containerHandlers}
+      >
         {currentScene && (currentScene.photo_url || currentScene['virtual_staging_scene?']) ? (
           <>
             <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
@@ -507,6 +548,7 @@ export default function VrTourViewerContent({
                   onMarkerHover={handleMarkerHover}
                   onMarkerLeave={handleMarkerLeave}
                   onViewChange={handleViewChange}
+                  onViewerReady={handleViewerReady}
                   fullscreenContainerId={containerId}
                   autoRotateSpeed={rotateSpeed}
                 />
@@ -514,48 +556,60 @@ export default function VrTourViewerContent({
             </Box>
 
             {/* 現在のシーン情報 */}
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: 16,
-                left: 16,
-                bgcolor: 'rgba(0, 0, 0, 0.7)',
-                color: 'white',
-                px: 2,
-                py: 1,
-                borderRadius: 1,
-                zIndex: 10
-              }}
-            >
-              <Typography variant="body2">{currentScene.title}</Typography>
-            </Box>
+            <Fade in={controlsVisible} timeout={400}>
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 16,
+                  left: 16,
+                  bgcolor: 'rgba(0, 0, 0, 0.7)',
+                  color: 'white',
+                  px: 2,
+                  py: 1,
+                  borderRadius: 1,
+                  zIndex: 10
+                }}
+              >
+                <Typography variant="body2">{currentScene.title}</Typography>
+              </Box>
+            </Fade>
 
             {/* ミニマップ */}
-            <MinimapDisplay
-              vrTour={vrTour}
-              scenes={scenes}
-              currentScene={currentScene}
-              viewAngle={currentViewAngle}
-              onSceneClick={handleSceneSelect}
-            />
+            <Fade in={controlsVisible} timeout={400}>
+              <Box>
+                <MinimapDisplay
+                  vrTour={vrTour}
+                  scenes={scenes}
+                  currentScene={currentScene}
+                  viewAngle={currentViewAngle}
+                  onSceneClick={handleSceneSelect}
+                />
+              </Box>
+            </Fade>
 
             {/* オートプレイコントロール */}
             {scenes.length > 1 && (
-              <AutoplayControls
-                isPlaying={isAutoPlaying}
-                onPlayPause={() => setIsAutoPlaying(!isAutoPlaying)}
-                onNext={goToNextScene}
-                onPrev={goToPrevScene}
-                currentSceneIndex={currentSceneIndex}
-                totalScenes={scenes.length}
-                autoRotateEnabled={autoRotateEnabled}
-                onToggleAutoRotate={handleToggleAutoRotate}
-                sceneDuration={sceneDuration}
-                onSceneDurationChange={setSceneDuration}
-                rotateSpeed={rotateSpeed}
-                onRotateSpeedChange={handleRotateSpeedChange}
-                sceneProgress={sceneProgress}
-              />
+              <Fade in={controlsVisible} timeout={400}>
+                <Box>
+                  <AutoplayControls
+                    isPlaying={isAutoPlaying}
+                    onPlayPause={() => setIsAutoPlaying(!isAutoPlaying)}
+                    onNext={goToNextScene}
+                    onPrev={goToPrevScene}
+                    currentSceneIndex={currentSceneIndex}
+                    totalScenes={scenes.length}
+                    autoRotateEnabled={autoRotateEnabled}
+                    onToggleAutoRotate={handleToggleAutoRotate}
+                    sceneDuration={sceneDuration}
+                    onSceneDurationChange={setSceneDuration}
+                    rotateSpeed={rotateSpeed}
+                    onRotateSpeedChange={handleRotateSpeedChange}
+                    sceneProgress={sceneProgress}
+                    settingsOpen={settingsOpen}
+                    onSettingsToggle={setSettingsOpen}
+                  />
+                </Box>
+              </Fade>
             )}
           </>
         ) : scenes.length > 0 ? (
@@ -700,34 +754,36 @@ export default function VrTourViewerContent({
             </Slide>
 
             {/* 開閉ボタン */}
-            <Paper
-              sx={{
-                position: 'absolute',
-                bottom: footerOpen ? 140 : 0,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 110,
-                borderRadius: '8px 8px 0 0',
-                bgcolor: 'rgba(0, 0, 0, 0.7)',
-                backdropFilter: 'blur(10px)',
-                transition: 'bottom 0.3s ease',
-                pointerEvents: 'auto'
-              }}
-            >
-              <IconButton
-                onClick={() => setFooterOpen(!footerOpen)}
+            <Fade in={controlsVisible || footerOpen} timeout={400}>
+              <Paper
                 sx={{
-                  color: 'white',
-                  py: 0.5,
-                  px: 2
+                  position: 'absolute',
+                  bottom: footerOpen ? 140 : 0,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  zIndex: 110,
+                  borderRadius: '8px 8px 0 0',
+                  bgcolor: 'rgba(0, 0, 0, 0.7)',
+                  backdropFilter: 'blur(10px)',
+                  transition: 'bottom 0.3s ease',
+                  pointerEvents: 'auto'
                 }}
               >
-                {footerOpen ? <ExpandMoreIcon /> : <ExpandLessIcon />}
-                <Typography variant="caption" sx={{ ml: 1, color: 'white' }}>
-                  シーン ({scenes.length})
-                </Typography>
-              </IconButton>
-            </Paper>
+                <IconButton
+                  onClick={() => setFooterOpen(!footerOpen)}
+                  sx={{
+                    color: 'white',
+                    py: 0.5,
+                    px: 2
+                  }}
+                >
+                  {footerOpen ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+                  <Typography variant="caption" sx={{ ml: 1, color: 'white' }}>
+                    シーン ({scenes.length})
+                  </Typography>
+                </IconButton>
+              </Paper>
+            </Fade>
           </>
         )}
       </Box>
