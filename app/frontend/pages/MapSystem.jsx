@@ -211,15 +211,20 @@ export default function MapSystem() {
       const queryString = params.toString();
       const url = queryString ? `/api/v1/property_analysis?${queryString}` : '/api/v1/property_analysis';
 
+      console.time('[PERF] api-fetch');
       const response = await fetch(url, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
       });
+      console.timeEnd('[PERF] api-fetch');
 
       if (response.ok) {
+        console.time('[PERF] json-parse');
         const data = await response.json();
+        console.timeEnd('[PERF] json-parse');
+        console.log(`[PERF] payload: ${(JSON.stringify(data).length / 1024).toFixed(1)}KB, ${(data.properties || []).length} buildings`);
         // 全物件データをstateに保存（フィルタはフロントエンドで行う）
         setAllProperties(data.properties || []);
       } else if (response.status === 401) {

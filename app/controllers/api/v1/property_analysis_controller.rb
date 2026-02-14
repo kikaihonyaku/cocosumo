@@ -5,24 +5,40 @@ class Api::V1::PropertyAnalysisController < ApplicationController
   # GET /api/v1/property_analysis
   # 全物件データを返す（GISフィルタは適用しない - ピン表示用）
   def show
-    buildings = current_tenant.buildings.kept.includes(:building_photos, :building_stations, rooms: { room_facilities: :facility })
+    t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+    buildings = current_tenant.buildings.kept.includes(
+      building_photos: { photo_attachment: :blob },
+      building_stations: { station: :railway_line },
+      rooms: { room_facilities: :facility }
+    )
 
     # ベース検索条件のみ適用（GISは含まない）
     buildings = apply_base_filters(buildings)
+    buildings = buildings.to_a # クエリ実行を明示的にトリガー
+
+    t1 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    Rails.logger.info "[PERF] DB query: #{((t1 - t0) * 1000).round}ms, #{buildings.size} buildings"
 
     # 全部屋データを取得（フィルタはフロントエンドで行う）
     all_rooms = buildings.flat_map(&:rooms)
 
     # レスポンス用に物件データを整形（全部屋を含める）
     properties_json = buildings.map do |building|
-      building_data = building.as_json(methods: [:room_cnt, :free_cnt, :latitude, :longitude, :exterior_photo_count, :thumbnail_url])
+      building_data = building.as_json(
+        only: [:id, :name, :address, :building_type, :built_date],
+        methods: [:latitude, :longitude, :exterior_photo_count, :thumbnail_url]
+      )
+      # eager load済みデータからメモリ内で計算（N+1回避）
+      building_data['room_cnt'] = building.rooms.size
+      building_data['free_cnt'] = building.rooms.count { |r| r.status == 'vacant' }
       building_data['rooms'] = building.rooms.map do |room|
         room_data = room.as_json(only: [:id, :rent, :area, :room_type, :status, :floor, :room_number])
         room_data['facility_codes'] = room.room_facilities.map { |rf| rf.facility.code }
         room_data
       end
-      # 駅情報を追加
-      building_data['building_stations'] = building.building_stations.ordered.map do |bs|
+      # 駅情報を追加（eager load済みデータをメモリ内ソート、N+1回避）
+      building_data['building_stations'] = building.building_stations.sort_by { |bs| bs.display_order || 0 }.map do |bs|
         {
           station_id: bs.station_id,
           walking_minutes: bs.walking_minutes,
@@ -35,15 +51,27 @@ class Api::V1::PropertyAnalysisController < ApplicationController
       building_data
     end
 
+    t2 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    Rails.logger.info "[PERF] Serialization: #{((t2 - t1) * 1000).round}ms"
+
     # 集計は参考情報として返す（フロントエンドでも計算するが、初期表示用）
     aggregations = calculate_aggregations(all_rooms, buildings)
 
-    render json: {
+    t3 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    Rails.logger.info "[PERF] Aggregation: #{((t3 - t2) * 1000).round}ms, #{all_rooms.size} rooms"
+
+    response = {
       properties: properties_json,
       aggregations: aggregations,
-      total_buildings: buildings.count,
-      total_rooms: all_rooms.count
+      total_buildings: buildings.size,
+      total_rooms: all_rooms.size
     }
+
+    payload_size = response.to_json.bytesize
+    Rails.logger.info "[PERF] Payload size: #{(payload_size / 1024.0).round(1)}KB"
+    Rails.logger.info "[PERF] Total backend: #{((t3 - t0) * 1000).round}ms"
+
+    render json: response
   end
 
   # POST /api/v1/property_analysis/geo_filter

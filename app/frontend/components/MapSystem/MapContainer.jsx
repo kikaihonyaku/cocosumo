@@ -924,10 +924,13 @@ export default function MapContainer({
       // 既存のマーカーをクリア
       clearMarkers();
 
+      console.time('[PERF] marker-render');
       // 各物件にマーカーを配置
+      let markerCount = 0;
       properties.forEach(property => {
         // 座標が設定されている物件のみマーカーを表示
         if (property.latitude && property.longitude) {
+          markerCount++;
           const iconUrl = getPropertyIcon(property);
 
           const marker = addMarker(property.id, {
@@ -956,6 +959,8 @@ export default function MapContainer({
           });
         }
       });
+      console.timeEnd('[PERF] marker-render');
+      console.log(`[PERF] markers: ${markerCount} pins`);
 
       // 全ての物件と店舗が見えるように地図をフィット（GISフィルタがない場合のみ）
       // GISフィルタがある場合は、ユーザーが範囲を指定しているのでリサイズしない
