@@ -13,6 +13,7 @@ import {
   TextField,
   IconButton,
   Stack,
+  Popper,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -171,6 +172,17 @@ export default function StationSelect({ railwayData = [], value = [], onChange, 
   );
 }
 
+const ZoomCorrectedPopper = React.forwardRef(function ZoomCorrectedPopper({ style, ...props }, ref) {
+  const zoomFactor = parseFloat(document.body.style.zoom) / 100 || 1;
+  const correctedStyle = zoomFactor !== 1 ? {
+    ...style,
+    zoom: 1 / zoomFactor,
+    width: style?.width != null ? style.width * zoomFactor : style?.width,
+  } : style;
+
+  return <Popper ref={ref} style={correctedStyle} {...props} />;
+});
+
 /**
  * 路線・駅マルチセレクトコンポーネント（検索フィルタ用）
  *
@@ -245,7 +257,11 @@ export function StationFilter({
           })
         }
         renderInput={(params) => <TextField {...params} label="路線" size="small" />}
-        slotProps={{ popper: { sx: { zIndex: 1500 } } }}
+        slots={{ popper: ZoomCorrectedPopper }}
+        slotProps={{
+          popper: { sx: { zIndex: 1500 } },
+          paper: { sx: { zoom: 'var(--body-zoom, 1)' } },
+        }}
       />
 
       {/* 駅マルチセレクト */}
@@ -276,7 +292,11 @@ export function StationFilter({
           })
         }
         renderInput={(params) => <TextField {...params} label="駅" size="small" />}
-        slotProps={{ popper: { sx: { zIndex: 1500 } } }}
+        slots={{ popper: ZoomCorrectedPopper }}
+        slotProps={{
+          popper: { sx: { zIndex: 1500 } },
+          paper: { sx: { zoom: 'var(--body-zoom, 1)' } },
+        }}
       />
 
       {/* 最大徒歩分数 */}
