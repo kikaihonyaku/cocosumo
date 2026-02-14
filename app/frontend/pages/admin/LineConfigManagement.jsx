@@ -218,9 +218,9 @@ export default function LineConfigManagement() {
             ].map(({ label, value }) => (
               <Box key={label}>
                 <Typography variant="caption" color="text.secondary">{label}</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'grey.50', p: 1.5, borderRadius: 1 }}>
-                  <LockIcon fontSize="small" color="action" />
-                  <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'grey.50', p: 1.5, borderRadius: 1, overflow: 'hidden' }}>
+                  <LockIcon fontSize="small" color="action" sx={{ flexShrink: 0 }} />
+                  <Typography variant="body2" sx={{ fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {value || '未設定'}
                   </Typography>
                 </Box>
