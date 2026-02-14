@@ -460,6 +460,12 @@ class Api::V1::CustomersController < ApplicationController
     if params[:customer_id].present?
       customer = current_user.tenant.customers.find(params[:customer_id])
       results = CustomerDuplicateDetector.find_for(customer)
+
+      dismissed = current_user.tenant.customer_merge_dismissals
+                    .for_customer(customer.id)
+                    .includes(:customer1, :customer2, :dismissed_by)
+                    .map { |d| dismissed_json(d, customer.id) }
+
       render json: {
         duplicates: results.map { |r|
           {
@@ -467,7 +473,8 @@ class Api::V1::CustomersController < ApplicationController
             confidence: r.confidence,
             signals: r.signals
           }
-        }
+        },
+        dismissed: dismissed
       }
     else
       groups = CustomerDuplicateDetector.find_all(current_user.tenant)
@@ -483,6 +490,36 @@ class Api::V1::CustomersController < ApplicationController
     end
   rescue ActiveRecord::RecordNotFound
     render json: { error: "顧客が見つかりませんでした" }, status: :not_found
+  end
+
+  # POST /api/v1/customers/dismiss_merge
+  def dismiss_merge
+    dismissal = CustomerMergeDismissal.build_for_pair(
+      tenant: current_user.tenant,
+      id_a: params[:customer1_id],
+      id_b: params[:customer2_id],
+      dismissed_by: current_user,
+      reason: params[:reason]
+    )
+    dismissal.save!
+    render json: { success: true, message: "統合不要としてマークしました" }
+  rescue ActiveRecord::RecordNotUnique
+    render json: { success: true, message: "既に統合不要としてマークされています" }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "顧客が見つかりませんでした" }, status: :not_found
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
+  end
+
+  # DELETE /api/v1/customers/undismiss_merge
+  def undismiss_merge
+    small, large = [params[:customer1_id].to_i, params[:customer2_id].to_i].sort
+    dismissal = current_user.tenant.customer_merge_dismissals
+                  .find_by!(customer1_id: small, customer2_id: large)
+    dismissal.destroy!
+    render json: { success: true, message: "統合不要マークを取り消しました" }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "該当する除外レコードが見つかりませんでした" }, status: :not_found
   end
 
   private
@@ -725,6 +762,26 @@ class Api::V1::CustomersController < ApplicationController
       "preferred_areas" => "希望エリア",
       "requirements" => "要望"
     }[field] || field
+  end
+
+  def dismissed_json(dismissal, current_customer_id)
+    other = dismissal.customer1_id == current_customer_id ? dismissal.customer2 : dismissal.customer1
+    {
+      customer1_id: dismissal.customer1_id,
+      customer2_id: dismissal.customer2_id,
+      other_customer: {
+        id: other.id,
+        name: other.name,
+        email: other.email,
+        phone: other.phone
+      },
+      reason: dismissal.reason,
+      dismissed_by: {
+        id: dismissal.dismissed_by.id,
+        name: dismissal.dismissed_by.name
+      },
+      dismissed_at: dismissal.created_at.strftime("%Y/%m/%d %H:%M")
+    }
   end
 
   def format_field_value(field, value)

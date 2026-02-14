@@ -11,6 +11,7 @@ class Tenant < ApplicationRecord
   has_many :email_templates, dependent: :destroy
   has_one :line_config, dependent: :destroy
   has_many :line_templates, dependent: :destroy
+  has_many :customer_merge_dismissals, dependent: :destroy
   belongs_to :created_by, class_name: "User", optional: true
 
   # Enums

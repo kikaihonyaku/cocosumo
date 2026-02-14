@@ -17,6 +17,9 @@ class CustomerDuplicateDetector
 
   def initialize(tenant)
     @tenant = tenant
+    @dismissed_pairs = tenant.customer_merge_dismissals
+                             .pluck(:customer1_id, :customer2_id)
+                             .to_set
   end
 
   def find_duplicates_for(customer)
@@ -62,6 +65,9 @@ class CustomerDuplicateDetector
       end
     end
 
+    # Filter out dismissed pairs
+    candidates.reject! { |c| pair_dismissed?(customer.id, c.customer.id) }
+
     candidates.sort_by { |c| -c.confidence }
   end
 
@@ -78,13 +84,19 @@ class CustomerDuplicateDetector
       group_ids = members.map(&:id).sort
       next if group_ids.any? { |id| seen_ids.include?(id) }
 
+      # Filter out dismissed pairs within the group
+      undismissed_members = members.select do |member|
+        members.any? { |other| other.id != member.id && !pair_dismissed?(member.id, other.id) }
+      end
+      next if undismissed_members.size < 2
+
       seen_ids.merge(group_ids)
 
       # Check if names also match within the group
-      name_match = members.combination(2).any? { |a, b| names_match?(a.name, b.name) }
+      name_match = undismissed_members.combination(2).any? { |a, b| names_match?(a.name, b.name) }
 
       groups << {
-        customers: members,
+        customers: undismissed_members,
         confidence: name_match ? PHONE_AND_NAME_MATCH_CONFIDENCE : PHONE_MATCH_CONFIDENCE,
         signals: name_match ? ["電話番号一致", "名前一致"] : ["電話番号一致"]
       }
@@ -94,6 +106,11 @@ class CustomerDuplicateDetector
   end
 
   private
+
+  def pair_dismissed?(id_a, id_b)
+    small, large = [id_a, id_b].sort
+    @dismissed_pairs.include?([small, large])
+  end
 
   def normalize_phone(phone)
     return nil if phone.blank?

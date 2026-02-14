@@ -7,6 +7,10 @@ class Customer < ApplicationRecord
   has_many :customer_activities, dependent: :destroy
   has_many :inquired_publications, through: :property_inquiries, source: :property_publication
   has_many :email_drafts, dependent: :destroy
+  has_many :merge_dismissals_as_customer1, class_name: "CustomerMergeDismissal",
+           foreign_key: :customer1_id, dependent: :destroy
+  has_many :merge_dismissals_as_customer2, class_name: "CustomerMergeDismissal",
+           foreign_key: :customer2_id, dependent: :destroy
 
   # Enums
   enum :status, { active: 0, archived: 1 }, default: :active

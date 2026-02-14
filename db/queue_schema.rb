@@ -321,6 +321,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_14_100004) do
     t.index ["session_id"], name: "index_customer_image_simulations_on_session_id"
   end
 
+  create_table "customer_merge_dismissals", force: :cascade do |t|
+    t.bigint "tenant_id", null: false
+    t.bigint "customer1_id", null: false
+    t.bigint "customer2_id", null: false
+    t.bigint "dismissed_by_id", null: false
+    t.string "reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["dismissed_by_id"], name: "index_customer_merge_dismissals_on_dismissed_by_id"
+    t.index ["tenant_id", "customer1_id", "customer2_id"], name: "idx_merge_dismissals_tenant_pair", unique: true
+    t.index ["tenant_id"], name: "index_customer_merge_dismissals_on_tenant_id"
+  end
+
   create_table "customer_merges", force: :cascade do |t|
     t.bigint "tenant_id", null: false
     t.bigint "primary_customer_id", null: false
@@ -1136,6 +1149,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_14_100004) do
   add_foreign_key "customer_activities", "users"
   add_foreign_key "customer_image_simulations", "customer_accesses"
   add_foreign_key "customer_image_simulations", "property_publications"
+  add_foreign_key "customer_merge_dismissals", "customers", column: "customer1_id"
+  add_foreign_key "customer_merge_dismissals", "customers", column: "customer2_id"
+  add_foreign_key "customer_merge_dismissals", "tenants"
+  add_foreign_key "customer_merge_dismissals", "users", column: "dismissed_by_id"
   add_foreign_key "customer_merges", "customers", column: "primary_customer_id"
   add_foreign_key "customer_merges", "tenants"
   add_foreign_key "customer_merges", "users", column: "performed_by_id"
