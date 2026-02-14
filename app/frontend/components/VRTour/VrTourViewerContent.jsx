@@ -13,8 +13,6 @@ import {
   ListItemText,
   Divider,
   Alert,
-  Paper,
-  Slide,
   Fade,
   CardMedia
 } from "@mui/material";
@@ -22,11 +20,8 @@ import {
   ArrowBack as ArrowBackIcon,
   Close as CloseIcon,
   Menu as MenuIcon,
-  ExpandLess as ExpandLessIcon,
-  ExpandMore as ExpandMoreIcon
 } from "@mui/icons-material";
 import PanoramaViewer from "./PanoramaViewer";
-import ComparisonPanoramaViewer from "./ComparisonPanoramaViewer";
 import MinimapDisplay from "./MinimapDisplay";
 import AutoplayControls from "./AutoplayControls";
 import SharePanel from "../VirtualStaging/SharePanel";
@@ -35,6 +30,15 @@ import GyroscopeButton from "./GyroscopeButton";
 import SceneTransition from "./SceneTransition";
 import HotspotPreview from "./HotspotPreview";
 import useControlsAutoHide from "../../hooks/useControlsAutoHide";
+import useSwipeNavigation from "../../hooks/useSwipeNavigation";
+
+// ガラスモーフィズム共通スタイル
+const glassStyle = {
+  bgcolor: 'rgba(0, 0, 0, 0.4)',
+  backdropFilter: 'blur(16px)',
+  WebkitBackdropFilter: 'blur(16px)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+};
 
 export default function VrTourViewerContent({
   vrTour,
@@ -48,7 +52,9 @@ export default function VrTourViewerContent({
   const [currentScene, setCurrentScene] = useState(scenes.length > 0 ? scenes[0] : null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentViewAngle, setCurrentViewAngle] = useState(0);
-  const [footerOpen, setFooterOpen] = useState(false);
+
+  // ドットインジケーター / フィルムストリップ
+  const [filmstripOpen, setFilmstripOpen] = useState(false);
 
   // 情報ホットスポット関連state
   const [infoHotspotOpen, setInfoHotspotOpen] = useState(false);
@@ -69,12 +75,15 @@ export default function VrTourViewerContent({
   // オートプレイ関連state
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   const [autoRotateEnabled, setAutoRotateEnabled] = useState(true);
-  const [sceneDuration, setSceneDuration] = useState(10); // 秒
+  const [sceneDuration, setSceneDuration] = useState(10);
   const [rotateSpeed, setRotateSpeed] = useState(1);
   const [sceneProgress, setSceneProgress] = useState(0);
 
-  // オートプレイ設定パネルstate（AutoplayControlsからリフトアップ）
+  // オートプレイ設定パネルstate
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // バーチャルステージング Before/After state
+  const [showingBefore, setShowingBefore] = useState(false);
 
   // refs
   const panoramaViewerRef = useRef(null);
@@ -87,8 +96,12 @@ export default function VrTourViewerContent({
   const autoRotateEnabledRef = useRef(autoRotateEnabled);
   autoRotateEnabledRef.current = autoRotateEnabled;
 
+  // currentSceneのref（changePanorama内で最新値を参照）
+  const currentSceneRef = useRef(currentScene);
+  currentSceneRef.current = currentScene;
+
   // コントロール自動非表示
-  const preventHide = drawerOpen || footerOpen || infoHotspotOpen || settingsOpen;
+  const preventHide = drawerOpen || filmstripOpen || infoHotspotOpen || settingsOpen;
   const { controlsVisible, showControls, containerHandlers } = useControlsAutoHide({ preventHide });
 
   // シーンが変更されたら最初のシーンを設定
@@ -99,36 +112,75 @@ export default function VrTourViewerContent({
     }
   }, [scenes]);
 
-  // 現在のシーンのインデックスを取得（useEffectより前に定義）
+  // 現在のシーンのインデックスを取得
   const currentSceneIndex = scenes.findIndex(s => s.id === currentScene?.id);
 
-  // コンテナID（useEffectより前に定義）
+  // コンテナID
   const containerId = isPreview ? "vr-preview-container" : "vr-viewer-container";
 
-  // トランジション付きシーン変更（useEffectより前に定義）
+  // 現在のシーンがVSシーンかどうか
+  const isVsScene = currentScene?.['virtual_staging_scene?'] && currentScene?.before_photo_url && currentScene?.after_photo_url;
+
+  // VSシーンの現在表示中のURL
+  const currentImageUrl = isVsScene
+    ? (showingBefore ? currentScene.before_photo_url : currentScene.after_photo_url)
+    : currentScene?.photo_url;
+
+  // ネイティブクロスフェードでシーン変更
   const changeSceneWithTransition = useCallback((newScene) => {
-    if (!newScene || newScene.id === currentScene?.id) return;
+    if (!newScene || newScene.id === currentSceneRef.current?.id) return;
 
     setIsTransitioning(true);
     setNextSceneName(newScene.title || '');
 
-    // トランジション表示後にシーンを切り替え
-    setTimeout(() => {
-      setCurrentScene(newScene);
-      setCurrentViewAngle(newScene?.initial_view?.yaw || 0);
-    }, 300);
+    // Before/Afterのリセット
+    setShowingBefore(false);
 
-    // トランジション終了
+    const imageUrl = (newScene['virtual_staging_scene?'] && newScene.after_photo_url)
+      ? newScene.after_photo_url
+      : newScene.photo_url;
+
+    if (panoramaViewerRef.current && imageUrl) {
+      const initialView = newScene.initial_view || {};
+      panoramaViewerRef.current.changePanorama(imageUrl, {
+        speed: 1500,
+        effect: 'fade',
+        yaw: initialView.yaw,
+        pitch: initialView.pitch,
+      }).then(() => {
+        // マーカーはPanoramaViewer内のmarkers useEffectで更新される
+        // オートローテーション再開
+        if (isAutoPlayingRef.current && autoRotateEnabledRef.current && panoramaViewerRef.current) {
+          panoramaViewerRef.current.startAutoRotate();
+        }
+      });
+    }
+
+    setCurrentScene(newScene);
+    setCurrentViewAngle(newScene?.initial_view?.yaw || 0);
+
+    // トースト表示後にフェードアウト
     setTimeout(() => {
       setIsTransitioning(false);
       setNextSceneName('');
-    }, 800);
-  }, [currentScene?.id]);
+    }, 1200);
+  }, []);
+
+  // Before/Afterトグル
+  const toggleBeforeAfter = useCallback(() => {
+    if (!isVsScene || !panoramaViewerRef.current) return;
+    const newShowingBefore = !showingBefore;
+    const newUrl = newShowingBefore ? currentScene.before_photo_url : currentScene.after_photo_url;
+    panoramaViewerRef.current.changePanorama(newUrl, {
+      speed: 1500,
+      effect: 'fade',
+    });
+    setShowingBefore(newShowingBefore);
+  }, [isVsScene, showingBefore, currentScene]);
 
   // キーボードショートカット
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // 入力フィールドにフォーカスがある場合は無視
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
         return;
       }
@@ -139,7 +191,6 @@ export default function VrTourViewerContent({
         case 'ArrowRight':
         case 'n':
         case 'N':
-          // 次のシーン
           e.preventDefault();
           if (currentSceneIndex < scenes.length - 1) {
             changeSceneWithTransition(scenes[currentSceneIndex + 1]);
@@ -149,7 +200,6 @@ export default function VrTourViewerContent({
         case 'ArrowLeft':
         case 'p':
         case 'P':
-          // 前のシーン
           e.preventDefault();
           if (currentSceneIndex > 0) {
             changeSceneWithTransition(scenes[currentSceneIndex - 1]);
@@ -157,53 +207,50 @@ export default function VrTourViewerContent({
           break;
 
         case ' ':
-          // オートプレイの再生/一時停止
           e.preventDefault();
           setIsAutoPlaying(prev => !prev);
           break;
 
         case 'f':
         case 'F':
-          // フルスクリーン切り替え
           e.preventDefault();
-          const container = document.getElementById(containerId);
-          if (container) {
-            if (!document.fullscreenElement) {
-              container.requestFullscreen?.();
-            } else {
-              document.exitFullscreen?.();
+          {
+            const container = document.getElementById(containerId);
+            if (container) {
+              if (!document.fullscreenElement) {
+                container.requestFullscreen?.();
+              } else {
+                document.exitFullscreen?.();
+              }
             }
           }
           break;
 
+        case 'b':
+        case 'B':
+          // Before/Afterトグル
+          if (isVsScene) {
+            e.preventDefault();
+            toggleBeforeAfter();
+          }
+          break;
+
         case 'Escape':
-          // ドロワーを閉じる / フルスクリーン終了
           if (drawerOpen) {
             setDrawerOpen(false);
-          } else if (footerOpen) {
-            setFooterOpen(false);
+          } else if (filmstripOpen) {
+            setFilmstripOpen(false);
           }
           break;
 
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-          // 数字キーでシーン直接ジャンプ
-          const sceneNum = parseInt(e.key) - 1;
-          if (sceneNum < scenes.length) {
-            changeSceneWithTransition(scenes[sceneNum]);
+        case '1': case '2': case '3': case '4': case '5':
+        case '6': case '7': case '8': case '9':
+          {
+            const sceneNum = parseInt(e.key) - 1;
+            if (sceneNum < scenes.length) {
+              changeSceneWithTransition(scenes[sceneNum]);
+            }
           }
-          break;
-
-        case 'm':
-        case 'M':
-          // ミニマップの表示切り替え（将来の機能）
           break;
 
         default:
@@ -213,7 +260,7 @@ export default function VrTourViewerContent({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentSceneIndex, scenes, drawerOpen, footerOpen, containerId, changeSceneWithTransition, showControls]);
+  }, [currentSceneIndex, scenes, drawerOpen, filmstripOpen, containerId, changeSceneWithTransition, showControls, isVsScene, toggleBeforeAfter]);
 
   // 次のシーンへ移動
   const goToNextScene = useCallback(() => {
@@ -222,7 +269,6 @@ export default function VrTourViewerContent({
       changeSceneWithTransition(scenes[nextIndex]);
       setSceneProgress(0);
     } else {
-      // 最後のシーンの場合、オートプレイを停止
       setIsAutoPlaying(false);
     }
   }, [currentSceneIndex, scenes, changeSceneWithTransition]);
@@ -236,35 +282,37 @@ export default function VrTourViewerContent({
     }
   }, [currentSceneIndex, scenes, changeSceneWithTransition]);
 
+  // スワイプナビゲーション
+  useSwipeNavigation({
+    onSwipeLeft: goToNextScene,
+    onSwipeRight: goToPrevScene,
+    enabled: scenes.length > 1 && !gyroscopeEnabled,
+  });
+
   // オートプレイタイマー管理
   useEffect(() => {
     if (isAutoPlaying) {
-      // プログレスバー更新用タイマー（100msごとに更新）
       progressTimerRef.current = setInterval(() => {
         setSceneProgress(prev => {
-          const increment = (100 / sceneDuration) * 0.1; // 100ms分の進捗
+          const increment = (100 / sceneDuration) * 0.1;
           return Math.min(prev + increment, 100);
         });
       }, 100);
 
-      // シーン切り替え用タイマー
       autoplayTimerRef.current = setTimeout(() => {
         goToNextScene();
       }, sceneDuration * 1000);
 
-      // オートローテーション開始
       if (autoRotateEnabled && panoramaViewerRef.current) {
         panoramaViewerRef.current.startAutoRotate();
       }
     } else {
-      // タイマークリア
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
       }
       if (autoplayTimerRef.current) {
         clearTimeout(autoplayTimerRef.current);
       }
-      // オートローテーション停止
       if (panoramaViewerRef.current) {
         panoramaViewerRef.current.stopAutoRotate();
       }
@@ -283,7 +331,6 @@ export default function VrTourViewerContent({
   // シーンが変わったらプログレスリセット
   useEffect(() => {
     setSceneProgress(0);
-    // タイマーをリセット
     if (isAutoPlaying) {
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
@@ -292,7 +339,6 @@ export default function VrTourViewerContent({
         clearTimeout(autoplayTimerRef.current);
       }
 
-      // 新しいタイマーを開始
       progressTimerRef.current = setInterval(() => {
         setSceneProgress(prev => {
           const increment = (100 / sceneDuration) * 0.1;
@@ -329,7 +375,7 @@ export default function VrTourViewerContent({
     }
   }, []);
 
-  // ビューア準備完了時のコールバック（自動再生バグ修正）
+  // ビューア準備完了時のコールバック
   const handleViewerReady = useCallback(() => {
     if (isAutoPlayingRef.current && autoRotateEnabledRef.current && panoramaViewerRef.current) {
       panoramaViewerRef.current.startAutoRotate();
@@ -346,7 +392,6 @@ export default function VrTourViewerContent({
         const success = await panoramaViewerRef.current.startGyroscope();
         if (success) {
           setGyroscopeEnabled(true);
-          // ジャイロスコープ有効時はオートローテーションを停止
           if (isAutoPlaying) {
             setIsAutoPlaying(false);
           }
@@ -368,7 +413,6 @@ export default function VrTourViewerContent({
   // ホットスポットリーブハンドラー
   const handleMarkerLeave = useCallback(() => {
     setShowPreview(false);
-    // 少し遅延してからマーカー情報をクリア（フェードアウトのため）
     setTimeout(() => {
       setHoveredMarker(null);
     }, 200);
@@ -383,18 +427,14 @@ export default function VrTourViewerContent({
   }, [scenes]);
 
   const handleMarkerClick = (marker) => {
-    console.log('Marker clicked:', marker);
-    // クリック時はプレビューを非表示
     setShowPreview(false);
 
-    // 情報ホットスポットの場合、情報パネルを表示
     if (marker.data?.type === 'info') {
       setSelectedInfoHotspot(marker);
       setInfoHotspotOpen(true);
       return;
     }
 
-    // シーンリンクタイプの場合、対象シーンに移動
     if (marker.data?.type === 'scene_link' && marker.data?.target_scene_id) {
       const targetScene = scenes.find(s => s.id === parseInt(marker.data.target_scene_id));
       if (targetScene) {
@@ -407,6 +447,7 @@ export default function VrTourViewerContent({
   const handleSceneSelect = (scene) => {
     changeSceneWithTransition(scene);
     setDrawerOpen(false);
+    setFilmstripOpen(false);
   };
 
   const handleViewChange = (view) => {
@@ -421,19 +462,26 @@ export default function VrTourViewerContent({
     }
   };
 
+  // 初回表示用のimageUrl（key不使用、remountしない）
+  // useState初期化関数で一度だけ計算。以降のシーン変更はchangePanoramaで行うため
+  // このURLが変わるとPanoramaViewerのuseEffectがビューアを再作成してしまう
+  const [initialImageUrl] = useState(() => {
+    if (!currentScene) return null;
+    const isVs = currentScene['virtual_staging_scene?'] && currentScene.before_photo_url && currentScene.after_photo_url;
+    return isVs ? currentScene.after_photo_url : currentScene.photo_url;
+  });
+
   return (
     <>
       {/* ヘッダー */}
       <Fade in={controlsVisible} timeout={400}>
         <AppBar
           position="absolute"
-          elevation={3}
+          elevation={0}
           sx={{
-            bgcolor: 'rgba(0, 0, 0, 0.3)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
+            ...glassStyle,
             borderRadius: 0,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             zIndex: 10,
           }}
         >
@@ -442,10 +490,7 @@ export default function VrTourViewerContent({
               <IconButton
                 edge="start"
                 onClick={handleBackClick}
-                sx={{
-                  mr: 2,
-                  color: '#ffffff'
-                }}
+                sx={{ mr: 2, color: '#ffffff' }}
               >
                 {isPreview ? <CloseIcon /> : <ArrowBackIcon />}
               </IconButton>
@@ -453,19 +498,14 @@ export default function VrTourViewerContent({
             <Box sx={{ flexGrow: 1 }}>
               <Typography
                 variant="h6"
-                sx={{
-                  color: '#ffffff',
-                  fontWeight: 600
-                }}
+                sx={{ color: '#ffffff', fontWeight: 600, fontSize: '1rem' }}
               >
                 {vrTour.title}
               </Typography>
               {vrTour.description && (
                 <Typography
                   variant="caption"
-                  sx={{
-                    color: 'rgba(255, 255, 255, 0.7)'
-                  }}
+                  sx={{ color: 'rgba(255, 255, 255, 0.6)' }}
                 >
                   {vrTour.description}
                 </Typography>
@@ -474,15 +514,11 @@ export default function VrTourViewerContent({
             {isPreview && (
               <Typography
                 variant="body2"
-                sx={{
-                  mr: 2,
-                  color: 'rgba(255, 255, 255, 0.7)'
-                }}
+                sx={{ mr: 2, color: 'rgba(255, 255, 255, 0.6)' }}
               >
                 プレビューモード
               </Typography>
             )}
-            {/* ジャイロスコープボタン（モバイルでのみ表示） */}
             <GyroscopeButton
               gyroscopeEnabled={gyroscopeEnabled}
               onGyroscopeChange={handleGyroscopeChange}
@@ -497,9 +533,7 @@ export default function VrTourViewerContent({
             {scenes.length > 0 && (
               <IconButton
                 onClick={() => setDrawerOpen(true)}
-                sx={{
-                  color: '#ffffff'
-                }}
+                sx={{ color: '#ffffff' }}
               >
                 <MenuIcon />
               </IconButton>
@@ -507,6 +541,30 @@ export default function VrTourViewerContent({
           </Toolbar>
         </AppBar>
       </Fade>
+
+      {/* トッププログレスライン（オートプレイ中のみ） */}
+      {isAutoPlaying && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 3,
+            zIndex: 11,
+            bgcolor: 'rgba(255, 255, 255, 0.1)',
+          }}
+        >
+          <Box
+            sx={{
+              height: '100%',
+              bgcolor: 'rgba(255, 255, 255, 0.6)',
+              width: `${sceneProgress}%`,
+              transition: 'width 100ms linear',
+            }}
+          />
+        </Box>
+      )}
 
       {/* VRビューア */}
       <Box
@@ -522,57 +580,115 @@ export default function VrTourViewerContent({
         id={containerId}
         {...containerHandlers}
       >
-        {currentScene && (currentScene.photo_url || currentScene['virtual_staging_scene?']) ? (
+        {currentScene && (currentScene.photo_url || isVsScene) ? (
           <>
             <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
-              {currentScene['virtual_staging_scene?'] && currentScene.before_photo_url && currentScene.after_photo_url ? (
-                <ComparisonPanoramaViewer
-                  key={currentScene.id}
-                  beforeImageUrl={currentScene.before_photo_url}
-                  afterImageUrl={currentScene.after_photo_url}
-                  initialView={currentScene.initial_view || { yaw: 0, pitch: 0 }}
-                  fullscreenContainerId={containerId}
-                  markers={currentScene.hotspots || []}
-                  onMarkerClick={handleMarkerClick}
-                  editable={false}
-                />
-              ) : (
-                <PanoramaViewer
-                  ref={panoramaViewerRef}
-                  key={currentScene.id}
-                  imageUrl={currentScene.photo_url}
-                  initialView={currentScene.initial_view || { yaw: 0, pitch: 0 }}
-                  markers={currentScene.hotspots || []}
-                  editable={false}
-                  onMarkerClick={handleMarkerClick}
-                  onMarkerHover={handleMarkerHover}
-                  onMarkerLeave={handleMarkerLeave}
-                  onViewChange={handleViewChange}
-                  onViewerReady={handleViewerReady}
-                  fullscreenContainerId={containerId}
-                  autoRotateSpeed={rotateSpeed}
-                />
-              )}
+              <PanoramaViewer
+                ref={panoramaViewerRef}
+                imageUrl={initialImageUrl}
+                initialView={currentScene.initial_view || { yaw: 0, pitch: 0 }}
+                markers={currentScene.hotspots || []}
+                editable={false}
+                onMarkerClick={handleMarkerClick}
+                onMarkerHover={handleMarkerHover}
+                onMarkerLeave={handleMarkerLeave}
+                onViewChange={handleViewChange}
+                onViewerReady={handleViewerReady}
+                fullscreenContainerId={containerId}
+                autoRotateSpeed={rotateSpeed}
+              />
             </Box>
+
+            {/* ビネットオーバーレイ */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 2,
+                pointerEvents: 'none',
+                background: 'radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.25) 100%)',
+              }}
+            />
 
             {/* 現在のシーン情報 */}
             <Fade in={controlsVisible} timeout={400}>
               <Box
                 sx={{
                   position: 'absolute',
-                  bottom: 16,
+                  bottom: scenes.length > 1 ? 56 : 16,
                   left: 16,
-                  bgcolor: 'rgba(0, 0, 0, 0.7)',
-                  color: 'white',
+                  ...glassStyle,
                   px: 2,
-                  py: 1,
-                  borderRadius: 1,
-                  zIndex: 10
+                  py: 0.75,
+                  borderRadius: 1.5,
+                  zIndex: 10,
                 }}
               >
-                <Typography variant="body2">{currentScene.title}</Typography>
+                <Typography variant="body2" sx={{ color: 'white', fontWeight: 500, fontSize: '0.8rem' }}>
+                  {currentScene.title}
+                </Typography>
               </Box>
             </Fade>
+
+            {/* VS Before/After トグル */}
+            {isVsScene && (
+              <Fade in={controlsVisible} timeout={400}>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    bottom: scenes.length > 1 ? 56 : 16,
+                    right: 16,
+                    zIndex: 10,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      ...glassStyle,
+                      borderRadius: 3,
+                      overflow: 'hidden',
+                      p: 0.5,
+                    }}
+                  >
+                    <Box
+                      onClick={() => { if (!showingBefore) toggleBeforeAfter(); }}
+                      sx={{
+                        px: 2,
+                        py: 0.75,
+                        borderRadius: 2.5,
+                        cursor: 'pointer',
+                        bgcolor: showingBefore ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                        transition: 'all 0.2s ease',
+                        '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ color: 'white', fontWeight: showingBefore ? 600 : 400, fontSize: '0.75rem' }}>
+                        Before
+                      </Typography>
+                    </Box>
+                    <Box
+                      onClick={() => { if (showingBefore) toggleBeforeAfter(); }}
+                      sx={{
+                        px: 2,
+                        py: 0.75,
+                        borderRadius: 2.5,
+                        cursor: 'pointer',
+                        bgcolor: !showingBefore ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                        transition: 'all 0.2s ease',
+                        '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ color: 'white', fontWeight: !showingBefore ? 600 : 400, fontSize: '0.75rem' }}>
+                        After
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              </Fade>
+            )}
 
             {/* ミニマップ */}
             <Fade in={controlsVisible} timeout={400}>
@@ -604,7 +720,6 @@ export default function VrTourViewerContent({
                     onSceneDurationChange={setSceneDuration}
                     rotateSpeed={rotateSpeed}
                     onRotateSpeedChange={handleRotateSpeedChange}
-                    sceneProgress={sceneProgress}
                     settingsOpen={settingsOpen}
                     onSettingsToggle={setSettingsOpen}
                   />
@@ -640,47 +755,35 @@ export default function VrTourViewerContent({
           </Box>
         )}
 
-        {/* シーンサムネイルフッター */}
+        {/* ドットインジケーター + フィルムストリップ */}
         {scenes.length > 1 && (
           <>
-            {/* サムネイル一覧 */}
-            <Slide direction="up" in={footerOpen} mountOnEnter unmountOnExit>
-              <Paper
+            {/* フィルムストリップ（ドットの上に展開） */}
+            <Fade in={filmstripOpen && controlsVisible} timeout={300}>
+              <Box
                 sx={{
                   position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: 140,
-                  bgcolor: 'rgba(0, 0, 0, 0.9)',
-                  backdropFilter: 'blur(10px)',
+                  bottom: 44,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
                   zIndex: 100,
-                  display: 'flex',
-                  alignItems: 'center',
-                  px: 2
+                  ...glassStyle,
+                  borderRadius: 2,
+                  p: 1,
+                  maxWidth: 'calc(100vw - 32px)',
                 }}
               >
                 <Box
                   sx={{
                     display: 'flex',
-                    gap: 2,
+                    gap: 1,
                     overflowX: 'auto',
-                    width: '100%',
-                    py: 2,
-                    '&::-webkit-scrollbar': {
-                      height: 8
-                    },
-                    '&::-webkit-scrollbar-track': {
-                      bgcolor: 'rgba(255, 255, 255, 0.1)',
-                      borderRadius: 1
-                    },
+                    '&::-webkit-scrollbar': { height: 4 },
+                    '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
                     '&::-webkit-scrollbar-thumb': {
-                      bgcolor: 'rgba(255, 255, 255, 0.3)',
-                      borderRadius: 1,
-                      '&:hover': {
-                        bgcolor: 'rgba(255, 255, 255, 0.5)'
-                      }
-                    }
+                      bgcolor: 'rgba(255, 255, 255, 0.2)',
+                      borderRadius: 2,
+                    },
                   }}
                 >
                   {scenes.map((scene, index) => (
@@ -688,101 +791,97 @@ export default function VrTourViewerContent({
                       key={scene.id}
                       onClick={() => handleSceneSelect(scene)}
                       sx={{
-                        minWidth: 160,
+                        minWidth: 80,
                         cursor: 'pointer',
                         borderRadius: 1,
                         overflow: 'hidden',
-                        border: currentScene?.id === scene.id ? '3px solid #FF5722' : '3px solid transparent',
+                        border: currentScene?.id === scene.id
+                          ? '2px solid rgba(255, 255, 255, 0.8)'
+                          : '2px solid transparent',
                         transition: 'all 0.2s ease',
+                        opacity: currentScene?.id === scene.id ? 1 : 0.7,
                         '&:hover': {
+                          opacity: 1,
                           transform: 'scale(1.05)',
-                          boxShadow: 3
-                        }
+                        },
                       }}
                     >
-                      {scene.photo_url || scene.before_photo_url ? (
+                      {(scene.photo_url || scene.before_photo_url) ? (
                         <CardMedia
                           component="img"
                           image={scene.photo_url || scene.before_photo_url}
                           alt={scene.title}
-                          sx={{
-                            width: 160,
-                            height: 90,
-                            objectFit: 'cover'
-                          }}
+                          sx={{ width: 80, height: 48, objectFit: 'cover' }}
                         />
                       ) : (
                         <Box
                           sx={{
-                            width: 160,
-                            height: 90,
-                            bgcolor: 'grey.800',
+                            width: 80,
+                            height: 48,
+                            bgcolor: 'rgba(255, 255, 255, 0.1)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: 'grey.500'
                           }}
                         >
-                          <Typography variant="caption">No Image</Typography>
+                          <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.6rem' }}>
+                            No Image
+                          </Typography>
                         </Box>
                       )}
-                      <Box
-                        sx={{
-                          bgcolor: currentScene?.id === scene.id ? 'rgba(255, 87, 34, 0.9)' : 'rgba(0, 0, 0, 0.8)',
-                          px: 1,
-                          py: 0.5
-                        }}
-                      >
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: 'white',
-                            fontWeight: currentScene?.id === scene.id ? 600 : 400,
-                            display: 'block',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          {index + 1}. {scene.title}
-                        </Typography>
-                      </Box>
                     </Box>
                   ))}
                 </Box>
-              </Paper>
-            </Slide>
+              </Box>
+            </Fade>
 
-            {/* 開閉ボタン */}
-            <Fade in={controlsVisible || footerOpen} timeout={400}>
-              <Paper
+            {/* ドットインジケーター */}
+            <Fade in={controlsVisible} timeout={400}>
+              <Box
+                onClick={() => setFilmstripOpen(prev => !prev)}
                 sx={{
                   position: 'absolute',
-                  bottom: footerOpen ? 140 : 0,
+                  bottom: 12,
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  zIndex: 110,
-                  borderRadius: '8px 8px 0 0',
-                  bgcolor: 'rgba(0, 0, 0, 0.7)',
-                  backdropFilter: 'blur(10px)',
-                  transition: 'bottom 0.3s ease',
-                  pointerEvents: 'auto'
+                  zIndex: 100,
+                  ...glassStyle,
+                  borderRadius: 3,
+                  px: 1.5,
+                  py: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.75,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    bgcolor: 'rgba(0, 0, 0, 0.5)',
+                  },
                 }}
               >
-                <IconButton
-                  onClick={() => setFooterOpen(!footerOpen)}
-                  sx={{
-                    color: 'white',
-                    py: 0.5,
-                    px: 2
-                  }}
-                >
-                  {footerOpen ? <ExpandMoreIcon /> : <ExpandLessIcon />}
-                  <Typography variant="caption" sx={{ ml: 1, color: 'white' }}>
-                    シーン ({scenes.length})
-                  </Typography>
-                </IconButton>
-              </Paper>
+                {scenes.map((scene, index) => (
+                  <Box
+                    key={scene.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSceneSelect(scene);
+                    }}
+                    sx={{
+                      width: currentScene?.id === scene.id ? 20 : 8,
+                      height: 8,
+                      borderRadius: 4,
+                      bgcolor: currentScene?.id === scene.id
+                        ? 'rgba(255, 255, 255, 0.9)'
+                        : 'rgba(255, 255, 255, 0.4)',
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        bgcolor: 'rgba(255, 255, 255, 0.7)',
+                      },
+                    }}
+                  />
+                ))}
+              </Box>
             </Fade>
           </>
         )}
@@ -824,11 +923,10 @@ export default function VrTourViewerContent({
         hotspot={selectedInfoHotspot}
       />
 
-      {/* シーントランジション */}
+      {/* シーントランジション（トースト） */}
       <SceneTransition
         show={isTransitioning}
         sceneName={nextSceneName}
-        transitionType="fade"
       />
 
       {/* ホットスポットプレビュー */}

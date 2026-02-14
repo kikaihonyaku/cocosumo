@@ -5,9 +5,7 @@ import {
   Tooltip,
   Slider,
   Typography,
-  Paper,
   Collapse,
-  LinearProgress,
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,
@@ -19,11 +17,15 @@ import {
   ThreeSixty as RotateIcon,
 } from '@mui/icons-material';
 
+const glassStyle = {
+  bgcolor: 'rgba(0, 0, 0, 0.4)',
+  backdropFilter: 'blur(16px)',
+  WebkitBackdropFilter: 'blur(16px)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+};
+
 /**
- * オートプレイコントロールコンポーネント
- * - オートローテーション（360度自動回転）
- * - シーン自動切り替え
- * - 進行状況表示
+ * オートプレイコントロール - コンパクトピル型
  */
 const AutoplayControls = ({
   isPlaying,
@@ -34,122 +36,35 @@ const AutoplayControls = ({
   totalScenes,
   autoRotateEnabled,
   onToggleAutoRotate,
-  sceneDuration = 10, // シーン滞在時間（秒）
+  sceneDuration = 10,
   onSceneDurationChange,
-  rotateSpeed = 1, // 回転速度
+  rotateSpeed = 1,
   onRotateSpeedChange,
-  sceneProgress = 0, // 現在のシーン進行度 (0-100)
   settingsOpen = false,
   onSettingsToggle,
 }) => {
-
-  // 全体の進行度を計算
-  const overallProgress = totalScenes > 0
-    ? ((currentSceneIndex + sceneProgress / 100) / totalScenes) * 100
-    : 0;
-
   return (
-    <Paper
+    <Box
       sx={{
         position: 'absolute',
-        bottom: 80,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        bgcolor: 'rgba(0, 0, 0, 0.8)',
-        backdropFilter: 'blur(10px)',
-        borderRadius: 2,
-        p: 1,
+        bottom: 56,
+        right: 16,
         zIndex: 100,
-        minWidth: 280,
       }}
     >
-      {/* 進行バー */}
-      <Box sx={{ px: 1, mb: 1 }}>
-        <LinearProgress
-          variant="determinate"
-          value={overallProgress}
-          sx={{
-            height: 4,
-            borderRadius: 2,
-            bgcolor: 'rgba(255, 255, 255, 0.2)',
-            '& .MuiLinearProgress-bar': {
-              bgcolor: 'primary.main',
-              borderRadius: 2,
-            },
-          }}
-        />
-        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)', display: 'block', textAlign: 'center', mt: 0.5 }}>
-          {currentSceneIndex + 1} / {totalScenes}
-        </Typography>
-      </Box>
-
-      {/* コントロールボタン */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-        <Tooltip title="前のシーン">
-          <IconButton
-            onClick={onPrev}
-            disabled={currentSceneIndex === 0}
-            sx={{ color: 'white' }}
-            size="small"
-          >
-            <PrevIcon />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title={isPlaying ? '一時停止' : '再生'}>
-          <IconButton
-            onClick={onPlayPause}
-            sx={{
-              color: 'white',
-              bgcolor: 'primary.main',
-              '&:hover': { bgcolor: 'primary.dark' },
-            }}
-          >
-            {isPlaying ? <PauseIcon /> : <PlayIcon />}
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="次のシーン">
-          <IconButton
-            onClick={onNext}
-            disabled={currentSceneIndex >= totalScenes - 1}
-            sx={{ color: 'white' }}
-            size="small"
-          >
-            <NextIcon />
-          </IconButton>
-        </Tooltip>
-
-        <Box sx={{ width: 1, bgcolor: 'rgba(255, 255, 255, 0.2)', mx: 1 }} />
-
-        <Tooltip title={autoRotateEnabled ? '自動回転を停止' : '自動回転を開始'}>
-          <IconButton
-            onClick={onToggleAutoRotate}
-            sx={{
-              color: autoRotateEnabled ? 'primary.main' : 'white',
-            }}
-            size="small"
-          >
-            <RotateIcon />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="設定">
-          <IconButton
-            onClick={() => onSettingsToggle?.(!settingsOpen)}
-            sx={{ color: settingsOpen ? 'primary.main' : 'white' }}
-            size="small"
-          >
-            {settingsOpen ? <CloseIcon /> : <SettingsIcon />}
-          </IconButton>
-        </Tooltip>
-      </Box>
-
       {/* 設定パネル */}
       <Collapse in={settingsOpen}>
-        <Box sx={{ px: 2, pt: 2, pb: 1 }}>
+        <Box
+          sx={{
+            ...glassStyle,
+            borderRadius: 2,
+            p: 2,
+            mb: 1,
+            minWidth: 200,
+          }}
+        >
           <Box sx={{ mb: 2 }}>
-            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.7rem' }}>
               シーン滞在時間: {sceneDuration}秒
             </Typography>
             <Slider
@@ -160,14 +75,16 @@ const AutoplayControls = ({
               step={1}
               size="small"
               sx={{
-                color: 'primary.main',
-                '& .MuiSlider-thumb': { width: 14, height: 14 },
+                color: 'rgba(255, 255, 255, 0.7)',
+                '& .MuiSlider-thumb': { width: 12, height: 12, bgcolor: 'white' },
+                '& .MuiSlider-track': { bgcolor: 'rgba(255, 255, 255, 0.6)' },
+                '& .MuiSlider-rail': { bgcolor: 'rgba(255, 255, 255, 0.2)' },
               }}
             />
           </Box>
 
           <Box>
-            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.7rem' }}>
               回転速度: {rotateSpeed.toFixed(1)}x
             </Typography>
             <Slider
@@ -178,14 +95,110 @@ const AutoplayControls = ({
               step={0.5}
               size="small"
               sx={{
-                color: 'primary.main',
-                '& .MuiSlider-thumb': { width: 14, height: 14 },
+                color: 'rgba(255, 255, 255, 0.7)',
+                '& .MuiSlider-thumb': { width: 12, height: 12, bgcolor: 'white' },
+                '& .MuiSlider-track': { bgcolor: 'rgba(255, 255, 255, 0.6)' },
+                '& .MuiSlider-rail': { bgcolor: 'rgba(255, 255, 255, 0.2)' },
               }}
             />
           </Box>
         </Box>
       </Collapse>
-    </Paper>
+
+      {/* コントロール本体 - コンパクトピル型 */}
+      <Box
+        sx={{
+          ...glassStyle,
+          borderRadius: 1.5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.25,
+          px: 0.5,
+          py: 0.25,
+        }}
+      >
+        <Tooltip title="前のシーン">
+          <span>
+            <IconButton
+              onClick={onPrev}
+              disabled={currentSceneIndex === 0}
+              sx={{ color: 'white', p: 0.5 }}
+              size="small"
+            >
+              <PrevIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title={isPlaying ? '一時停止' : '再生'}>
+          <IconButton
+            onClick={onPlayPause}
+            sx={{
+              color: 'white',
+              bgcolor: 'rgba(255, 255, 255, 0.15)',
+              p: 0.75,
+              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.25)' },
+            }}
+            size="small"
+          >
+            {isPlaying ? <PauseIcon sx={{ fontSize: 18 }} /> : <PlayIcon sx={{ fontSize: 18 }} />}
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title="次のシーン">
+          <span>
+            <IconButton
+              onClick={onNext}
+              disabled={currentSceneIndex >= totalScenes - 1}
+              sx={{ color: 'white', p: 0.5 }}
+              size="small"
+            >
+              <NextIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        {/* シーンカウンター */}
+        <Typography
+          variant="caption"
+          sx={{
+            color: 'rgba(255, 255, 255, 0.6)',
+            fontSize: '0.65rem',
+            mx: 0.5,
+            minWidth: 24,
+            textAlign: 'center',
+          }}
+        >
+          {currentSceneIndex + 1}/{totalScenes}
+        </Typography>
+
+        <Tooltip title={autoRotateEnabled ? '自動回転を停止' : '自動回転を開始'}>
+          <IconButton
+            onClick={onToggleAutoRotate}
+            sx={{
+              color: autoRotateEnabled ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.4)',
+              p: 0.5,
+            }}
+            size="small"
+          >
+            <RotateIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title="設定">
+          <IconButton
+            onClick={() => onSettingsToggle?.(!settingsOpen)}
+            sx={{
+              color: settingsOpen ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.4)',
+              p: 0.5,
+            }}
+            size="small"
+          >
+            {settingsOpen ? <CloseIcon sx={{ fontSize: 16 }} /> : <SettingsIcon sx={{ fontSize: 16 }} />}
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Box>
   );
 };
 

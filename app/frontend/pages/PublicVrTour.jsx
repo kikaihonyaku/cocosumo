@@ -3,14 +3,17 @@ import { useParams, useSearchParams } from "react-router-dom";
 import {
   Box,
   Typography,
-  CircularProgress,
+  LinearProgress,
   Alert,
   AppBar,
   Toolbar,
   IconButton,
   Tooltip
 } from "@mui/material";
-import { Close as CloseIcon } from "@mui/icons-material";
+import {
+  Close as CloseIcon,
+  ThreeSixty as PanoramaIcon
+} from "@mui/icons-material";
 import VrTourViewerContent from "../components/VRTour/VrTourViewerContent";
 
 export default function PublicVrTour() {
@@ -39,7 +42,6 @@ export default function PublicVrTour() {
         const data = await response.json();
         setVrTour(data);
 
-        // シーンを取得
         if (data.vr_scenes && data.vr_scenes.length > 0) {
           setScenes(data.vr_scenes);
         }
@@ -58,8 +60,64 @@ export default function PublicVrTour() {
 
   if (loading) {
     return (
-      <Box sx={{ height: 'calc(100vh * var(--vh-correction, 1))', display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: '#000' }}>
-        <CircularProgress sx={{ color: 'white' }} />
+      <Box
+        sx={{
+          height: 'calc(100vh * var(--vh-correction, 1))',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          bgcolor: '#000',
+          gap: 3,
+        }}
+      >
+        {/* パルスアニメーション付きアイコン */}
+        <Box
+          sx={{
+            width: 72,
+            height: 72,
+            borderRadius: '50%',
+            bgcolor: 'rgba(255, 255, 255, 0.06)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            animation: 'splash-pulse 2s ease-in-out infinite',
+            '@keyframes splash-pulse': {
+              '0%, 100%': {
+                transform: 'scale(1)',
+                boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.15)',
+              },
+              '50%': {
+                transform: 'scale(1.08)',
+                boxShadow: '0 0 0 16px rgba(255, 255, 255, 0)',
+              },
+            },
+          }}
+        >
+          <PanoramaIcon sx={{ fontSize: 36, color: 'rgba(255, 255, 255, 0.7)' }} />
+        </Box>
+
+        {/* プログレスバー */}
+        <Box sx={{ width: 120 }}>
+          <LinearProgress
+            sx={{
+              height: 2,
+              borderRadius: 1,
+              bgcolor: 'rgba(255, 255, 255, 0.1)',
+              '& .MuiLinearProgress-bar': {
+                bgcolor: 'rgba(255, 255, 255, 0.5)',
+                borderRadius: 1,
+              },
+            }}
+          />
+        </Box>
+
+        <Typography
+          variant="caption"
+          sx={{ color: 'rgba(255, 255, 255, 0.4)', letterSpacing: 1 }}
+        >
+          VRツアーを準備中...
+        </Typography>
       </Box>
     );
   }
@@ -81,10 +139,8 @@ export default function PublicVrTour() {
     );
   }
 
-  // 現在のページのURLを取得
   const publicUrl = window.location.href;
 
-  // 閉じるボタンのハンドラー
   const handleClose = () => {
     window.close();
   };
@@ -97,7 +153,6 @@ export default function PublicVrTour() {
         isPreview={false}
         publicUrl={publicUrl}
       />
-      {/* 閉じるボタン（closable=trueの場合のみ表示） */}
       {isClosable && (
         <Tooltip title="閉じる">
           <IconButton

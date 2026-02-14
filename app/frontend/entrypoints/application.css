@@ -43,6 +43,17 @@
   }
 }
 
+@keyframes hotspot-breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
 @keyframes hotspot-float {
   0%, 100% {
     transform: translateY(0);
@@ -117,29 +128,31 @@
    ==================================== */
 .hotspot-theta {
   position: relative;
-  width: 50px;
-  height: 50px;
+  width: 44px;
+  height: 44px;
   cursor: pointer;
   user-select: none;
+  transition: transform 0.2s ease;
 }
 
 .hotspot-theta .hotspot-ring {
   position: absolute;
   inset: 0;
-  border: 3px solid rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.8);
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
   transition: all 0.3s ease;
 }
 
 .hotspot-theta .hotspot-ripple {
   position: absolute;
   inset: 0;
-  border: 2px solid rgba(255, 255, 255, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
   border-radius: 50%;
-  animation: hotspot-ripple 2s infinite;
+  animation: hotspot-breathe 2.5s ease-in-out infinite;
 }
 
 .hotspot-theta .hotspot-center {
@@ -147,23 +160,27 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .hotspot-theta .hotspot-center svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   fill: white;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
 
-.hotspot-theta:hover .hotspot-ring {
-  background: rgba(255, 255, 255, 0.2);
+.hotspot-theta:hover {
   transform: scale(1.1);
+}
+
+.hotspot-theta:hover .hotspot-ring {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.25);
 }
 
 .hotspot-theta .hotspot-tooltip {
@@ -210,16 +227,21 @@
 
 /* 情報リンク用スタイル */
 .hotspot-theta.hotspot-info .hotspot-ring {
-  border-color: rgba(100, 181, 246, 0.9);
-  background: rgba(33, 150, 243, 0.3);
+  border-color: rgba(144, 202, 249, 0.7);
+  background: rgba(33, 150, 243, 0.2);
+  box-shadow: 0 0 12px rgba(100, 181, 246, 0.2);
 }
 
 .hotspot-theta.hotspot-info .hotspot-ripple {
-  border-color: rgba(100, 181, 246, 0.5);
+  border-color: rgba(144, 202, 249, 0.3);
 }
 
 .hotspot-theta.hotspot-info .hotspot-center svg {
-  fill: #64B5F6;
+  fill: #90CAF9;
+}
+
+.hotspot-theta.hotspot-info:hover .hotspot-ring {
+  box-shadow: 0 0 20px rgba(100, 181, 246, 0.35);
 }
 
 /* 矢印の向き */

@@ -109,6 +109,26 @@ const PanoramaViewer = forwardRef(function PanoramaViewer({
       return false;
     },
     getViewer: () => viewerRef.current,
+    changePanorama: async (url, options = {}) => {
+      if (!viewerRef.current) return false;
+      try {
+        const {
+          speed = 1500,
+          effect = 'fade',
+          yaw = undefined,
+          pitch = undefined,
+        } = options;
+
+        const transitionOpts = { transition: { speed, effect } };
+        if (yaw !== undefined) transitionOpts.position = { yaw, pitch: pitch || 0 };
+
+        await viewerRef.current.setPanorama(url, transitionOpts);
+        return true;
+      } catch (err) {
+        console.error('changePanorama error:', err);
+        return false;
+      }
+    },
   }));
 
   // editableの最新値を保持するref（クロージャ問題を回避）
