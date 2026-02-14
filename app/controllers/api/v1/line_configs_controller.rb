@@ -17,8 +17,15 @@ class Api::V1::LineConfigsController < ApplicationController
   # PUT /api/v1/line_config
   def update
     config = current_user.tenant.line_config || current_user.tenant.build_line_config
+    filtered_params = config_params.to_h
 
-    if config.update(config_params)
+    if config.persisted?
+      %w[channel_id channel_secret channel_token].each do |key|
+        filtered_params.delete(key) if filtered_params.key?(key) && filtered_params[key].blank?
+      end
+    end
+
+    if config.update(filtered_params)
       render json: { success: true, config: config_json(config) }
     else
       render json: { errors: config.errors.full_messages }, status: :unprocessable_entity

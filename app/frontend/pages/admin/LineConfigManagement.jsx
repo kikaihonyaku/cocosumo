@@ -23,6 +23,8 @@ import {
   Error as ErrorIcon,
   ContentCopy as ContentCopyIcon,
   NetworkCheck as NetworkCheckIcon,
+  Lock as LockIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 
 export default function LineConfigManagement() {
@@ -32,6 +34,8 @@ export default function LineConfigManagement() {
   const [testing, setTesting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [testResult, setTestResult] = useState(null);
+
+  const [credentialsLocked, setCredentialsLocked] = useState(true);
 
   const [formData, setFormData] = useState({
     channel_id: '',
@@ -86,6 +90,16 @@ export default function LineConfigManagement() {
     setSnackbar({ open: true, message, severity });
   };
 
+  const handleUnlockCredentials = () => {
+    setCredentialsLocked(false);
+    setFormData(prev => ({ ...prev, channel_id: '', channel_secret: '', channel_token: '' }));
+  };
+
+  const handleLockCredentials = () => {
+    setCredentialsLocked(true);
+    setFormData(prev => ({ ...prev, channel_id: '', channel_secret: '', channel_token: '' }));
+  };
+
   const handleSave = async () => {
     // channel_id/secret/token は空の場合（変更しない場合）は送信しない
     const payload = { ...formData };
@@ -104,7 +118,7 @@ export default function LineConfigManagement() {
 
       if (response.ok) {
         showSnackbar('LINE設定を保存しました', 'success');
-        // 入力フィールドをクリア（保存済みのため）
+        setCredentialsLocked(true);
         setFormData(prev => ({
           ...prev,
           channel_id: '',
@@ -192,37 +206,84 @@ export default function LineConfigManagement() {
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           LINE Developers Console からチャネルの情報を入力してください。
-          {config?.configured && ' 既に設定済みの場合、空欄のまま保存すると現在の値が維持されます。'}
+          {config?.configured && credentialsLocked && ' 認証情報を変更するには「認証情報を変更する」ボタンを押してください。'}
         </Typography>
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <TextField
-            label="Channel ID"
-            value={formData.channel_id}
-            onChange={(e) => setFormData({ ...formData, channel_id: e.target.value })}
-            fullWidth
-            placeholder={config?.configured ? `設定済み: ${config.channel_id}` : 'Channel IDを入力'}
-            helperText="Messaging API チャネルのChannel ID"
-          />
-          <TextField
-            label="Channel Secret"
-            type="password"
-            value={formData.channel_secret}
-            onChange={(e) => setFormData({ ...formData, channel_secret: e.target.value })}
-            fullWidth
-            placeholder={config?.configured ? `設定済み: ${config.channel_secret}` : 'Channel Secretを入力'}
-            helperText="Messaging API チャネルのChannel Secret"
-          />
-          <TextField
-            label="Channel Access Token"
-            type="password"
-            value={formData.channel_token}
-            onChange={(e) => setFormData({ ...formData, channel_token: e.target.value })}
-            fullWidth
-            placeholder={config?.configured ? `設定済み: ${config.channel_token}` : 'Channel Access Tokenを入力'}
-            helperText="Messaging API チャネルの長期チャネルアクセストークン"
-          />
-        </Box>
+        {config?.configured && credentialsLocked ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {[
+              { label: 'Channel ID', value: config.channel_id },
+              { label: 'Channel Secret', value: config.channel_secret },
+              { label: 'Channel Access Token', value: config.channel_token },
+            ].map(({ label, value }) => (
+              <Box key={label}>
+                <Typography variant="caption" color="text.secondary">{label}</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'grey.50', p: 1.5, borderRadius: 1 }}>
+                  <LockIcon fontSize="small" color="action" />
+                  <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                    {value || '未設定'}
+                  </Typography>
+                </Box>
+              </Box>
+            ))}
+            <Box>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<EditIcon />}
+                onClick={handleUnlockCredentials}
+              >
+                認証情報を変更する
+              </Button>
+            </Box>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              label="Channel ID"
+              value={formData.channel_id}
+              onChange={(e) => setFormData({ ...formData, channel_id: e.target.value })}
+              fullWidth
+              placeholder="Channel IDを入力"
+              helperText="Messaging API チャネルのChannel ID"
+              autoComplete="new-password"
+              inputProps={{ 'data-1p-ignore': true, 'data-lpignore': 'true' }}
+            />
+            <TextField
+              label="Channel Secret"
+              type="password"
+              value={formData.channel_secret}
+              onChange={(e) => setFormData({ ...formData, channel_secret: e.target.value })}
+              fullWidth
+              placeholder="Channel Secretを入力"
+              helperText="Messaging API チャネルのChannel Secret"
+              autoComplete="new-password"
+              inputProps={{ 'data-1p-ignore': true, 'data-lpignore': 'true' }}
+            />
+            <TextField
+              label="Channel Access Token"
+              type="password"
+              value={formData.channel_token}
+              onChange={(e) => setFormData({ ...formData, channel_token: e.target.value })}
+              fullWidth
+              placeholder="Channel Access Tokenを入力"
+              helperText="Messaging API チャネルの長期チャネルアクセストークン"
+              autoComplete="new-password"
+              inputProps={{ 'data-1p-ignore': true, 'data-lpignore': 'true' }}
+            />
+            {config?.configured && (
+              <Box>
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={handleLockCredentials}
+                >
+                  キャンセル
+                </Button>
+              </Box>
+            )}
+          </Box>
+        )}
       </Paper>
 
       {/* Webhook URL */}
