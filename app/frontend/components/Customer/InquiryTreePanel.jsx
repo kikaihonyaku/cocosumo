@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -312,11 +311,13 @@ export default function InquiryTreePanel({
                                 </Box>
                                 <Box sx={{ display: 'flex', flexShrink: 0, ml: 0.5 }}>
                                   {pi.room?.id && (
-                                    <Tooltip title="部屋詳細を開く" placement="top">
+                                    <Tooltip title="部屋詳細を別タブで開く" placement="top">
                                       <IconButton
                                         size="small"
-                                        component={RouterLink}
-                                        to={`/room/${pi.room.id}`}
+                                        component="a"
+                                        href={`/room/${pi.room.id}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
                                         onClick={(e) => e.stopPropagation()}
                                         sx={{ p: 0.25 }}
                                       >
