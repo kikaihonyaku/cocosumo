@@ -791,7 +791,9 @@ class Api::V1::CustomerAccessesController < ApplicationController
       :expires_at,
       :notes,
       :customer_message,
-      :property_inquiry_id
+      :property_inquiry_id,
+      :customer_id,
+      :inquiry_id
     )
   end
 

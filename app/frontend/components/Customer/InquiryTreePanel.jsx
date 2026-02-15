@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -12,13 +12,10 @@ import {
 } from '@mui/material';
 import {
   Flag as FlagIcon,
-  Home as HomeIcon,
-  Key as KeyIcon,
   Edit as EditIcon,
   Add as AddIcon,
   Person as PersonIcon,
   OpenInNew as OpenInNewIcon,
-  ContentCopy as ContentCopyIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon
 } from '@mui/icons-material';
@@ -58,18 +55,8 @@ const getPIStatusInfo = (status) => {
   return statusMap[status] || { label: status || '未対応', color: 'default' };
 };
 
-const getAccessStatusInfo = (status) => {
-  const statusMap = {
-    active: { label: '有効', color: 'success' },
-    revoked: { label: '取消済', color: 'error' },
-    expired: { label: '期限切れ', color: 'default' }
-  };
-  return statusMap[status] || { label: status, color: 'default' };
-};
-
 export default function InquiryTreePanel({
   inquiries,
-  accesses,
   selectedInquiryId,
   selectedPropertyInquiryId,
   onInquirySelect,
@@ -79,8 +66,7 @@ export default function InquiryTreePanel({
   onAddActivity,
   onEditPropertyInquiry,
   onPIStatusClick,
-  onAddProperty,
-  handleCopyUrl
+  onAddProperty
 }) {
   const [expandedInquiries, setExpandedInquiries] = useState(new Set());
 
@@ -107,18 +93,6 @@ export default function InquiryTreePanel({
       return next;
     });
   };
-
-  // Group accesses by inquiry_id
-  const accessesByInquiryId = useMemo(() => {
-    const map = {};
-    accesses.forEach(a => {
-      const key = a.inquiry_id || '__unlinked__';
-      (map[key] ||= []).push(a);
-    });
-    return map;
-  }, [accesses]);
-
-  const unlinkedAccesses = accessesByInquiryId['__unlinked__'] || [];
 
   return (
     <>
@@ -152,7 +126,7 @@ export default function InquiryTreePanel({
       </Box>
 
       <Box sx={{ overflow: 'auto', flex: 1 }}>
-        {inquiries.length === 0 && unlinkedAccesses.length === 0 ? (
+        {inquiries.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <FlagIcon sx={{ fontSize: 48, color: 'grey.300', mb: 1 }} />
             <Typography color="text.secondary" sx={{ mb: 2 }}>
@@ -174,8 +148,7 @@ export default function InquiryTreePanel({
               const isSelected = selectedInquiryId === inquiry.id;
               const isExpanded = expandedInquiries.has(inquiry.id);
               const propertyInquiries = inquiry.property_inquiries || [];
-              const inquiryAccesses = accessesByInquiryId[inquiry.id] || [];
-              const hasChildren = propertyInquiries.length > 0 || inquiryAccesses.length > 0;
+              const hasChildren = propertyInquiries.length > 0;
 
               return (
                 <React.Fragment key={inquiry.id}>
@@ -255,238 +228,94 @@ export default function InquiryTreePanel({
                     </Box>
                   </ListItemButton>
 
-                  {/* Children (Property Inquiries + Accesses) */}
+                  {/* Children (Property Inquiries) */}
                   <Collapse in={isExpanded} unmountOnExit>
-                    <Box sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                      {/* Property Inquiries section */}
-                      {propertyInquiries.length > 0 && (
-                        <Box sx={{ pl: 2 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1.5, py: 0.5 }}>
-                            <HomeIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                            <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                              問い合わせ物件
-                            </Typography>
-                          </Box>
-                          {propertyInquiries.map((pi) => {
-                            const piStatusInfo = getPIStatusInfo(pi.status);
-                            const piDealStatusInfo = getDealStatusInfo(pi.deal_status);
-                            const isPiSelected = selectedPropertyInquiryId === pi.id;
-                            return (
-                              <ListItemButton
-                                key={pi.id}
-                                selected={isPiSelected}
-                                onClick={() => onPropertyInquirySelect(pi.id)}
-                                sx={{
-                                  py: 0.5,
-                                  pl: 3,
-                                  '&.Mui-selected': {
-                                    bgcolor: '#bbdefb',
-                                    borderLeft: '3px solid',
-                                    borderLeftColor: 'primary.main',
-                                    '&:hover': { bgcolor: '#90caf9' },
-                                  },
-                                }}
-                              >
-                                <Box sx={{ flex: 1, minWidth: 0 }}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                    <Typography variant="caption" fontWeight={600} noWrap sx={{ flex: 1 }}>
-                                      {pi.property_title || '物件名なし'}
-                                    </Typography>
-                                    <Chip
-                                      size="small"
-                                      label={pi.deal_status_label || piDealStatusInfo.label}
-                                      color={piDealStatusInfo.color}
-                                      sx={{ height: 16, fontSize: '0.6rem' }}
-                                    />
-                                    <Tooltip title="クリックしてステータスを変更">
-                                      <Chip
-                                        size="small"
-                                        label={pi.status_label || piStatusInfo.label}
-                                        color={piStatusInfo.color}
-                                        onClick={(e) => onPIStatusClick(e, pi.id)}
-                                        sx={{ height: 16, fontSize: '0.6rem', cursor: 'pointer' }}
-                                      />
-                                    </Tooltip>
-                                  </Box>
-                                </Box>
-                                <Box sx={{ display: 'flex', flexShrink: 0, ml: 0.5 }}>
-                                  {pi.room?.id && (
-                                    <Tooltip title="部屋詳細を別タブで開く" placement="top">
-                                      <IconButton
-                                        size="small"
-                                        component="a"
-                                        href={`/room/${pi.room.id}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        onClick={(e) => e.stopPropagation()}
-                                        sx={{ p: 0.25 }}
-                                      >
-                                        <OpenInNewIcon sx={{ fontSize: 12 }} />
-                                      </IconButton>
-                                    </Tooltip>
-                                  )}
-                                  <Tooltip title="編集" placement="top">
-                                    <IconButton
-                                      size="small"
-                                      onClick={(e) => { e.stopPropagation(); onEditPropertyInquiry(pi); }}
-                                      sx={{ p: 0.25 }}
-                                    >
-                                      <EditIcon sx={{ fontSize: 12 }} />
-                                    </IconButton>
-                                  </Tooltip>
-                                </Box>
-                              </ListItemButton>
-                            );
-                          })}
+                    <Box sx={{ borderBottom: '1px solid', borderColor: 'divider', pl: 2 }}>
+                      {propertyInquiries.map((pi) => {
+                        const piStatusInfo = getPIStatusInfo(pi.status);
+                        const piDealStatusInfo = getDealStatusInfo(pi.deal_status);
+                        const isPiSelected = selectedPropertyInquiryId === pi.id;
+                        return (
                           <ListItemButton
-                            onClick={(e) => { e.stopPropagation(); onAddProperty(inquiry.id); }}
-                            sx={{ py: 0.25, pl: 3 }}
+                            key={pi.id}
+                            selected={isPiSelected}
+                            onClick={() => onPropertyInquirySelect(pi.id)}
+                            sx={{
+                              py: 0.5,
+                              pl: 3,
+                              '&.Mui-selected': {
+                                bgcolor: '#bbdefb',
+                                borderLeft: '3px solid',
+                                borderLeftColor: 'primary.main',
+                                '&:hover': { bgcolor: '#90caf9' },
+                              },
+                            }}
                           >
-                            <AddIcon sx={{ fontSize: 14, color: 'primary.main', mr: 0.5 }} />
-                            <Typography variant="caption" color="primary">
-                              物件を追加
-                            </Typography>
-                          </ListItemButton>
-                        </Box>
-                      )}
-
-                      {/* Empty property inquiries */}
-                      {propertyInquiries.length === 0 && (
-                        <Box sx={{ pl: 2 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1.5, py: 0.5 }}>
-                            <HomeIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                            <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                              問い合わせ物件
-                            </Typography>
-                          </Box>
-                          <ListItemButton
-                            onClick={(e) => { e.stopPropagation(); onAddProperty(inquiry.id); }}
-                            sx={{ py: 0.25, pl: 3 }}
-                          >
-                            <AddIcon sx={{ fontSize: 14, color: 'primary.main', mr: 0.5 }} />
-                            <Typography variant="caption" color="primary">
-                              物件を追加
-                            </Typography>
-                          </ListItemButton>
-                        </Box>
-                      )}
-
-                      {/* Accesses (顧客マイページ) for this inquiry */}
-                      {inquiryAccesses.length > 0 && (
-                        <Box sx={{ pl: 2 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1.5, py: 0.5 }}>
-                            <KeyIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                            <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                              顧客マイページ
-                            </Typography>
-                          </Box>
-                          {inquiryAccesses.map((access) => {
-                            const accessStatusInfo = getAccessStatusInfo(access.status);
-                            return (
-                              <Box
-                                key={access.id}
-                                sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  py: 0.5,
-                                  pl: 3,
-                                  pr: 1,
-                                  '&:hover': { bgcolor: 'action.hover' }
-                                }}
-                              >
-                                <Box sx={{ flex: 1, minWidth: 0 }}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                    <Typography variant="caption" noWrap sx={{ flex: 1 }}>
-                                      {access.property_publication?.title || '物件名なし'}
-                                    </Typography>
-                                    <Chip
-                                      size="small"
-                                      label={accessStatusInfo.label}
-                                      color={accessStatusInfo.color}
-                                      sx={{ height: 16, fontSize: '0.6rem' }}
-                                    />
-                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-                                      {access.view_count}回
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                                {access.access_token && (
-                                  <Tooltip title="URLをコピー" placement="top">
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => handleCopyUrl(`${window.location.origin}/c/${access.access_token}`)}
-                                      sx={{ p: 0.25 }}
-                                    >
-                                      <ContentCopyIcon sx={{ fontSize: 12 }} />
-                                    </IconButton>
-                                  </Tooltip>
-                                )}
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Typography variant="caption" fontWeight={600} noWrap sx={{ flex: 1 }}>
+                                  {pi.property_title || '物件名なし'}
+                                </Typography>
+                                <Chip
+                                  size="small"
+                                  label={pi.deal_status_label || piDealStatusInfo.label}
+                                  color={piDealStatusInfo.color}
+                                  sx={{ height: 16, fontSize: '0.6rem' }}
+                                />
+                                <Tooltip title="クリックしてステータスを変更">
+                                  <Chip
+                                    size="small"
+                                    label={pi.status_label || piStatusInfo.label}
+                                    color={piStatusInfo.color}
+                                    onClick={(e) => onPIStatusClick(e, pi.id)}
+                                    sx={{ height: 16, fontSize: '0.6rem', cursor: 'pointer' }}
+                                  />
+                                </Tooltip>
                               </Box>
-                            );
-                          })}
-                        </Box>
-                      )}
+                            </Box>
+                            <Box sx={{ display: 'flex', flexShrink: 0, ml: 0.5 }}>
+                              {pi.room?.id && (
+                                <Tooltip title="部屋詳細を別タブで開く" placement="top">
+                                  <IconButton
+                                    size="small"
+                                    component="a"
+                                    href={`/room/${pi.room.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    sx={{ p: 0.25 }}
+                                  >
+                                    <OpenInNewIcon sx={{ fontSize: 12 }} />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                              <Tooltip title="編集" placement="top">
+                                <IconButton
+                                  size="small"
+                                  onClick={(e) => { e.stopPropagation(); onEditPropertyInquiry(pi); }}
+                                  sx={{ p: 0.25 }}
+                                >
+                                  <EditIcon sx={{ fontSize: 12 }} />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          </ListItemButton>
+                        );
+                      })}
+                      <ListItemButton
+                        onClick={(e) => { e.stopPropagation(); onAddProperty(inquiry.id); }}
+                        sx={{ py: 0.25, pl: 3 }}
+                      >
+                        <AddIcon sx={{ fontSize: 14, color: 'primary.main', mr: 0.5 }} />
+                        <Typography variant="caption" color="primary">
+                          物件を追加
+                        </Typography>
+                      </ListItemButton>
                     </Box>
                   </Collapse>
                 </React.Fragment>
               );
             })}
-
-            {/* Unlinked accesses */}
-            {unlinkedAccesses.length > 0 && (
-              <Box sx={{ borderTop: '1px solid', borderColor: 'divider' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 2, py: 0.75 }}>
-                  <KeyIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                    案件に紐づかないマイページ
-                  </Typography>
-                </Box>
-                {unlinkedAccesses.map((access) => {
-                  const accessStatusInfo = getAccessStatusInfo(access.status);
-                  return (
-                    <Box
-                      key={access.id}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        py: 0.5,
-                        pl: 3,
-                        pr: 1,
-                        '&:hover': { bgcolor: 'action.hover' }
-                      }}
-                    >
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Typography variant="caption" noWrap sx={{ flex: 1 }}>
-                            {access.property_publication?.title || '物件名なし'}
-                          </Typography>
-                          <Chip
-                            size="small"
-                            label={accessStatusInfo.label}
-                            color={accessStatusInfo.color}
-                            sx={{ height: 16, fontSize: '0.6rem' }}
-                          />
-                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-                            {access.view_count}回
-                          </Typography>
-                        </Box>
-                      </Box>
-                      {access.access_token && (
-                        <Tooltip title="URLをコピー" placement="top">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleCopyUrl(`${window.location.origin}/c/${access.access_token}`)}
-                            sx={{ p: 0.25 }}
-                          >
-                            <ContentCopyIcon sx={{ fontSize: 12 }} />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </Box>
-                  );
-                })}
-              </Box>
-            )}
           </List>
         )}
       </Box>

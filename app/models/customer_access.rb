@@ -138,8 +138,9 @@ class CustomerAccess < ApplicationRecord
 
   # 問い合わせから作成時に顧客も自動リンク
   def link_customer_from_inquiry
-    if property_inquiry.present? && customer.blank?
-      self.customer = property_inquiry.customer
+    if property_inquiry.present?
+      self.customer = property_inquiry.customer if customer.blank?
+      self.inquiry_id = property_inquiry.inquiry_id if inquiry_id.blank?
     end
   end
 end

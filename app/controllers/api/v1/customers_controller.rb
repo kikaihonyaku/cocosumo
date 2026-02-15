@@ -638,6 +638,7 @@ class Api::V1::CustomersController < ApplicationController
           channel: pi.channel,
           message: pi.message,
           created_at: pi.formatted_created_at,
+          property_publication_id: pi.property_publication_id,
           room: pi.room ? {
             id: pi.room.id,
             room_number: pi.room.room_number,

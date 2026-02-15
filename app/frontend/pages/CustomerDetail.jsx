@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { getZoomFactor } from '../utils/zoomUtils';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -53,6 +53,8 @@ import MergeCustomerDialog from '../components/Customer/MergeCustomerDialog';
 import DuplicateDetectionPanel from '../components/Customer/DuplicateDetectionPanel';
 import InquiryTreePanel from '../components/Customer/InquiryTreePanel';
 import ActivityDetailPanel from '../components/Customer/ActivityDetailPanel';
+import PropertyInquiryDetailPanel from '../components/Customer/PropertyInquiryDetailPanel';
+import InquiryDashboardPanel from '../components/Customer/InquiryDashboardPanel';
 
 // Customer status mapping
 const getStatusInfo = (status) => {
@@ -254,6 +256,15 @@ export default function CustomerDetail() {
     }
   }, [usersLoaded]);
 
+  const loadAccesses = useCallback(async () => {
+    try {
+      const res = await axios.get(`/api/v1/customers/${id}/accesses`);
+      setAccesses(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      // Silent failure
+    }
+  }, [id]);
+
   useEffect(() => {
     loadCustomer();
   }, [loadCustomer]);
@@ -265,10 +276,21 @@ export default function CustomerDetail() {
     }
   }, [editingInquiry, editingPropertyInquiry, createInquiryDialogOpen, addPropertyDialogOpen, loadUsers]);
 
-  const handleCopyUrl = (url) => {
-    navigator.clipboard.writeText(url);
-    alert('URLをコピーしました');
-  };
+  // Find the selected inquiry object
+  const selectedInquiry = useMemo(() => {
+    if (!selectedInquiryId) return null;
+    return inquiries.find(i => i.id === selectedInquiryId) || null;
+  }, [selectedInquiryId, inquiries]);
+
+  // Find the selected property inquiry object from inquiries
+  const selectedPropertyInquiry = useMemo(() => {
+    if (!selectedPropertyInquiryId) return null;
+    for (const inquiry of inquiries) {
+      const pi = (inquiry.property_inquiries || []).find(p => p.id === selectedPropertyInquiryId);
+      if (pi) return { ...pi, inquiry_id: inquiry.id };
+    }
+    return null;
+  }, [selectedPropertyInquiryId, inquiries]);
 
   if (loading) {
     return (
@@ -304,12 +326,14 @@ export default function CustomerDetail() {
     setSelectedInquiryId(prev => prev === inquiryId ? null : inquiryId);
     setSelectedPropertyInquiryId(null);
     setSelectedActivity(null);
+    if (isMobile) setMobilePanelIndex(2);
   };
 
   // Handler for property inquiry card click (toggle selection)
   const handlePropertyInquiryClick = (piId) => {
     setSelectedPropertyInquiryId(prev => prev === piId ? null : piId);
     setSelectedActivity(null);
+    if (isMobile) setMobilePanelIndex(2);
   };
 
   // PI status menu handlers (for pending/in_progress/completed)
@@ -665,7 +689,6 @@ export default function CustomerDetail() {
           <Box sx={{ flex: 1, overflow: 'auto', display: mobilePanelIndex === 0 ? 'flex' : 'none', flexDirection: 'column' }}>
             <InquiryTreePanel
               inquiries={inquiries}
-              accesses={accesses}
               selectedInquiryId={selectedInquiryId}
               selectedPropertyInquiryId={selectedPropertyInquiryId}
               onInquirySelect={handleInquiryClick}
@@ -683,17 +706,33 @@ export default function CustomerDetail() {
                 setSelectedInquiryId(inquiryId);
                 setAddPropertyDialogOpen(true);
               }}
-              handleCopyUrl={handleCopyUrl}
             />
           </Box>
           <Box sx={{ flex: 1, overflow: 'auto', display: mobilePanelIndex === 1 ? 'flex' : 'none', flexDirection: 'column' }}>
             {renderActivityPanel()}
           </Box>
           <Box sx={{ flex: 1, overflow: 'auto', display: mobilePanelIndex === 2 ? 'flex' : 'none', flexDirection: 'column' }}>
-            <ActivityDetailPanel
-              activity={selectedActivity}
-              onClose={() => setSelectedActivity(null)}
-            />
+            {selectedActivity ? (
+              <ActivityDetailPanel
+                activity={selectedActivity}
+                onClose={() => setSelectedActivity(null)}
+              />
+            ) : selectedPropertyInquiry ? (
+              <PropertyInquiryDetailPanel
+                propertyInquiry={selectedPropertyInquiry}
+                accesses={accesses}
+                customer={customer}
+                onAccessCreated={() => { loadAccesses(); loadActivities(); }}
+                onClose={() => setSelectedPropertyInquiryId(null)}
+              />
+            ) : (
+              <InquiryDashboardPanel
+                inquiry={selectedInquiry}
+                accesses={accesses}
+                activities={activities}
+                onClose={() => setSelectedInquiryId(null)}
+              />
+            )}
           </Box>
         </Box>
       ) : (
@@ -723,7 +762,6 @@ export default function CustomerDetail() {
           >
             <InquiryTreePanel
               inquiries={inquiries}
-              accesses={accesses}
               selectedInquiryId={selectedInquiryId}
               selectedPropertyInquiryId={selectedPropertyInquiryId}
               onInquirySelect={handleInquiryClick}
@@ -741,7 +779,6 @@ export default function CustomerDetail() {
                 setSelectedInquiryId(inquiryId);
                 setAddPropertyDialogOpen(true);
               }}
-              handleCopyUrl={handleCopyUrl}
             />
           </Paper>
 
@@ -806,7 +843,7 @@ export default function CustomerDetail() {
             }}
           />
 
-          {/* Right Column - Activity Detail Panel */}
+          {/* Right Column - Detail Panel */}
           <Paper
             elevation={2}
             sx={{
@@ -818,10 +855,27 @@ export default function CustomerDetail() {
               borderRadius: 2
             }}
           >
-            <ActivityDetailPanel
-              activity={selectedActivity}
-              onClose={() => setSelectedActivity(null)}
-            />
+            {selectedActivity ? (
+              <ActivityDetailPanel
+                activity={selectedActivity}
+                onClose={() => setSelectedActivity(null)}
+              />
+            ) : selectedPropertyInquiry ? (
+              <PropertyInquiryDetailPanel
+                propertyInquiry={selectedPropertyInquiry}
+                accesses={accesses}
+                customer={customer}
+                onAccessCreated={() => { loadAccesses(); loadActivities(); }}
+                onClose={() => setSelectedPropertyInquiryId(null)}
+              />
+            ) : (
+              <InquiryDashboardPanel
+                inquiry={selectedInquiry}
+                accesses={accesses}
+                activities={activities}
+                onClose={() => setSelectedInquiryId(null)}
+              />
+            )}
           </Paper>
         </Box>
       )}
