@@ -445,6 +445,7 @@ export default function SuumoImport() {
               {previewing ? 'プレビュー中...' : 'プレビュー'}
             </Button>
 
+            {/* 同期インポートは用途が限定的なため非表示
             <Button
               variant="contained"
               startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
@@ -453,6 +454,7 @@ export default function SuumoImport() {
             >
               {loading ? 'インポート中...' : '同期インポート'}
             </Button>
+            */}
 
             <Button
               variant="contained"
