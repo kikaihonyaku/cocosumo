@@ -10,6 +10,7 @@ export default function BlogList() {
 
   useEffect(() => {
     fetchPosts(currentPage);
+    window.scrollTo(0, 0);
   }, [currentPage]);
 
   const fetchPosts = async (page) => {
