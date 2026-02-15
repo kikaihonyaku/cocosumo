@@ -300,7 +300,8 @@ export default function InquiryForm({ publicationId, sourceType = 'public_page' 
       formLoadTimeRef.current = Date.now();
     } catch (err) {
       console.error('Error submitting inquiry:', err);
-      setError('お問い合わせの送信に失敗しました。もう一度お試しください。');
+      const serverMessage = err.response?.data?.error || err.response?.data?.errors?.join('、');
+      setError(serverMessage || 'お問い合わせの送信に失敗しました。もう一度お試しください。');
     } finally {
       setSubmitting(false);
     }
