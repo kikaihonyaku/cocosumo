@@ -21,6 +21,7 @@ class CustomerMergeService
       primary_snapshot = snapshot_customer(@primary)
       secondary_snapshot = build_secondary_snapshot
 
+      @secondary_original_values = @secondary.attributes.slice(*MERGEABLE_FIELDS)
       clear_secondary_unique_fields!
       apply_field_resolutions!
       move_related_records!
@@ -183,7 +184,7 @@ class CustomerMergeService
   def resolve_field_value(field)
     choice = @field_resolutions[field]
     primary_val = @primary.send(field)
-    secondary_val = @secondary.send(field)
+    secondary_val = secondary_value(field)
 
     case choice
     when "primary"
@@ -199,7 +200,7 @@ class CustomerMergeService
   def discarded_value(field)
     choice = @field_resolutions[field]
     primary_val = @primary.send(field)
-    secondary_val = @secondary.send(field)
+    secondary_val = secondary_value(field)
 
     case choice
     when "primary"
@@ -208,6 +209,14 @@ class CustomerMergeService
       primary_val
     else
       primary_val.present? ? secondary_val : primary_val
+    end
+  end
+
+  def secondary_value(field)
+    if @secondary_original_values
+      @secondary_original_values[field]
+    else
+      @secondary.send(field)
     end
   end
 
