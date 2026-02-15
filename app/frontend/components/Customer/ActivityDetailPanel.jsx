@@ -1,36 +1,57 @@
 import React from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   Box,
   Typography,
   Chip,
-  Divider
+  Divider,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import {
   Person as PersonIcon,
-  AccessTime as AccessTimeIcon
+  AccessTime as AccessTimeIcon,
+  Close as CloseIcon,
+  TouchApp as TouchAppIcon
 } from '@mui/icons-material';
 import { getActivityIcon, getActivityDotColor } from './activityUtils';
 import DeliveryStatusSection from './DeliveryStatusSection';
 
-export default function ActivityDetailDialog({ open, onClose, activity }) {
-  if (!activity) return null;
+export default function ActivityDetailPanel({ activity, onClose }) {
+  if (!activity) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', p: 3 }}>
+        <TouchAppIcon sx={{ fontSize: 48, color: 'grey.300', mb: 1.5 }} />
+        <Typography color="text.secondary" sx={{ textAlign: 'center' }}>
+          対応履歴を選択してください
+        </Typography>
+      </Box>
+    );
+  }
 
   const dotColor = getActivityDotColor(activity.activity_type);
   const showTracking = activity.direction === 'outbound' &&
     (activity.activity_type === 'email' || activity.activity_type === 'line_message' || activity.activity_type === 'inquiry_replied');
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      {/* Header */}
+      <Box
+        sx={{
+          px: 2,
+          py: 1.5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'grey.50',
+          flexShrink: 0
+        }}
+      >
         <Box
           sx={{
-            width: 40,
-            height: 40,
+            width: 36,
+            height: 36,
             borderRadius: '50%',
             bgcolor: `${dotColor}.light`,
             display: 'flex',
@@ -42,22 +63,45 @@ export default function ActivityDetailDialog({ open, onClose, activity }) {
         >
           {getActivityIcon(activity.activity_type, activity.direction)}
         </Box>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600, lineHeight: 1.3 }}>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, lineHeight: 1.3 }} noWrap>
             {activity.subject || activity.activity_type_label}
           </Typography>
-          <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-            <Chip size="small" label={activity.activity_type_label} sx={{ height: 20, fontSize: '0.7rem' }} />
+          <Box sx={{ display: 'flex', gap: 0.5, mt: 0.25 }}>
+            <Chip size="small" label={activity.activity_type_label} sx={{ height: 18, fontSize: '0.65rem' }} />
             {activity.direction_label && (
-              <Chip size="small" label={activity.direction_label} variant="outlined" sx={{ height: 20, fontSize: '0.7rem' }} />
+              <Chip size="small" label={activity.direction_label} variant="outlined" sx={{ height: 18, fontSize: '0.65rem' }} />
             )}
           </Box>
         </Box>
-      </DialogTitle>
+        <Tooltip title="閉じる">
+          <IconButton size="small" onClick={onClose} sx={{ flexShrink: 0 }}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
 
-      <Divider />
+      {/* Content */}
+      <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+        {/* LINE image message */}
+        {activity.activity_type === 'line_message' && activity.metadata?.image_url && (
+          <Box sx={{ mb: 2 }}>
+            <Box
+              component="img"
+              src={activity.metadata.image_url}
+              alt="LINE画像"
+              sx={{
+                maxWidth: '100%',
+                maxHeight: 300,
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: 'divider'
+              }}
+            />
+          </Box>
+        )}
 
-      <DialogContent sx={{ pt: 2 }}>
+        {/* Main content */}
         {activity.content ? (
           activity.content_format === 'html' ? (
             <Box
@@ -89,6 +133,7 @@ export default function ActivityDetailDialog({ open, onClose, activity }) {
 
         <Divider sx={{ my: 2 }} />
 
+        {/* Meta info */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <AccessTimeIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
@@ -110,6 +155,7 @@ export default function ActivityDetailDialog({ open, onClose, activity }) {
           </Box>
         </Box>
 
+        {/* Delivery status */}
         {showTracking && (
           <>
             <Divider sx={{ my: 2 }} />
@@ -119,11 +165,7 @@ export default function ActivityDetailDialog({ open, onClose, activity }) {
             />
           </>
         )}
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={onClose}>閉じる</Button>
-      </DialogActions>
-    </Dialog>
+      </Box>
+    </Box>
   );
 }

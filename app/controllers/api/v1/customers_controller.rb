@@ -668,7 +668,9 @@ class Api::V1::CustomersController < ApplicationController
         building_name: publication.room&.building&.name,
         room_number: publication.room&.room_number
       },
-      from_inquiry: access.property_inquiry_id.present?
+      from_inquiry: access.property_inquiry_id.present?,
+      inquiry_id: access.inquiry_id,
+      property_inquiry_id: access.property_inquiry_id
     }
   end
 
