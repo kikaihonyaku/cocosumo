@@ -532,7 +532,7 @@ class Api::V1::RoomsController < ApplicationController
   def published_content
     building = @room.building
 
-    vr_tours = @room.vr_tours.where(published: true).map do |vt|
+    vr_tours = @room.vr_tours.where(status: :published).map do |vt|
       {
         id: vt.id,
         title: vt.title,
@@ -543,7 +543,7 @@ class Api::V1::RoomsController < ApplicationController
       }
     end
 
-    virtual_stagings = @room.virtual_stagings.where(published: true).map do |vs|
+    virtual_stagings = @room.virtual_stagings.where(status: :published).map do |vs|
       {
         id: vs.id,
         title: vs.title,

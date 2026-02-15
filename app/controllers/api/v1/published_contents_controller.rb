@@ -8,12 +8,12 @@ class Api::V1::PublishedContentsController < ApplicationController
 
     vr_tours = VrTour.joins(room: :building)
                      .where(buildings: { tenant_id: current_tenant.id })
-                     .where(published: true)
+                     .where(status: :published)
                      .includes(room: :building)
 
     virtual_stagings = VirtualStaging.joins(room: :building)
                                      .where(buildings: { tenant_id: current_tenant.id })
-                                     .where(published: true)
+                                     .where(status: :published)
                                      .includes(room: :building)
 
     property_publications = PropertyPublication.joins(room: :building)
