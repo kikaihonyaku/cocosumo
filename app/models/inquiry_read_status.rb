@@ -12,6 +12,11 @@ class InquiryReadStatus < ApplicationRecord
     )
   end
 
+  # 特定の案件を未読に戻す
+  def self.mark_as_unread!(user:, inquiry:)
+    where(user_id: user.id, inquiry_id: inquiry.id).delete_all
+  end
+
   # 複数案件を一括既読にする
   def self.mark_all_as_read!(user:, inquiry_ids:)
     return if inquiry_ids.blank?

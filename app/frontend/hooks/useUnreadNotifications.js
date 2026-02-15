@@ -73,6 +73,20 @@ export default function useUnreadNotifications({ enabled = true } = {}) {
     }
   }, []);
 
+  // 特定案件を未読に戻す
+  const markUnread = useCallback(async (inquiryId) => {
+    try {
+      await axios.post('/api/v1/unread_notifications/mark_unread', { inquiry_id: inquiryId });
+      if (!mountedRef.current) return;
+
+      setUnreadCount((prev) => prev + 1);
+      // 詳細リストを再取得して最新状態にする
+      fetchDetails();
+    } catch {
+      // エラーは無視
+    }
+  }, [fetchDetails]);
+
   // 全件既読にする
   const markAllRead = useCallback(async () => {
     try {
@@ -132,6 +146,7 @@ export default function useUnreadNotifications({ enabled = true } = {}) {
     fetchCount,
     fetchDetails,
     markRead,
+    markUnread,
     markAllRead
   };
 }

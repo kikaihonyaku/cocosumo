@@ -11,15 +11,19 @@ import {
   Button,
   Divider,
   CircularProgress,
-  Chip
+  Chip,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import {
   Email as EmailIcon,
   Chat as ChatIcon,
   QuestionAnswer as QuestionAnswerIcon,
   DoneAll as DoneAllIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  RadioButtonUnchecked as UnreadDotIcon
 } from '@mui/icons-material';
+import { useToast } from '../../contexts/ToastContext';
 
 const activityTypeIcon = {
   line_message: <ChatIcon fontSize="small" color="success" />,
@@ -49,13 +53,36 @@ export default function UnreadNotificationDropdown({
   onClose,
   inquiries,
   loading,
+  onMarkRead,
+  onMarkUnread,
   onMarkAllRead
 }) {
   const navigate = useNavigate();
+  const toast = useToast();
 
+  // クリックで遷移 + 自動既読 + undoスナックバー
   const handleInquiryClick = (inquiry) => {
     onClose();
+    onMarkRead(inquiry.id);
     navigate(`/customers/${inquiry.customer.id}`);
+
+    toast.info(`${inquiry.customer.name} の通知を既読にしました`, {
+      actionLabel: '元に戻す',
+      onAction: () => onMarkUnread(inquiry.id),
+      duration: 5000
+    });
+  };
+
+  // 遷移せずに既読にする（ドットボタン）
+  const handleMarkReadOnly = (e, inquiry) => {
+    e.stopPropagation();
+    onMarkRead(inquiry.id);
+
+    toast.info(`${inquiry.customer.name} の通知を既読にしました`, {
+      actionLabel: '元に戻す',
+      onAction: () => onMarkUnread(inquiry.id),
+      duration: 5000
+    });
   };
 
   return (
@@ -112,7 +139,8 @@ export default function UnreadNotificationDropdown({
               onClick={() => handleInquiryClick(inquiry)}
               sx={{
                 py: 1.5,
-                '&:hover': { bgcolor: 'action.hover' }
+                '&:hover': { bgcolor: 'action.hover' },
+                '&:hover .mark-read-btn': { opacity: 1 }
               }}
             >
               <ListItemIcon sx={{ minWidth: 36 }}>
@@ -154,6 +182,22 @@ export default function UnreadNotificationDropdown({
                   </Box>
                 }
               />
+              <Tooltip title="既読にする" placement="left">
+                <IconButton
+                  size="small"
+                  className="mark-read-btn"
+                  onClick={(e) => handleMarkReadOnly(e, inquiry)}
+                  sx={{
+                    ml: 0.5,
+                    opacity: 0,
+                    transition: 'opacity 0.2s',
+                    color: 'primary.main',
+                    '&:hover': { bgcolor: 'primary.50' }
+                  }}
+                >
+                  <UnreadDotIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
             </ListItemButton>
           ))}
         </List>

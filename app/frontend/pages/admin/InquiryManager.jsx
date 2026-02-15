@@ -57,9 +57,12 @@ import {
   FilterList as FilterListIcon,
   Clear as ClearIcon,
   PersonAdd as PersonAddIcon,
-  FiberManualRecord as FiberManualRecordIcon
+  FiberManualRecord as FiberManualRecordIcon,
+  MarkunreadOutlined as MarkunreadIcon,
+  DraftsOutlined as DraftsIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import { useToast } from '../../contexts/ToastContext';
 import CustomerAccessDialog from '../../components/CustomerAccess/CustomerAccessDialog';
 import PublicationSelectDialog from '../../components/CustomerAccess/PublicationSelectDialog';
 
@@ -88,6 +91,7 @@ export default function InquiryManager() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [inquiries, setInquiries] = useState([]);
@@ -134,6 +138,37 @@ export default function InquiryManager() {
       // ignore
     }
   }, []);
+
+  const handleToggleRead = useCallback(async (e, inquiryId, customerName) => {
+    if (e) e.stopPropagation();
+    const isCurrentlyUnread = unreadInquiryIds.has(inquiryId);
+
+    try {
+      if (isCurrentlyUnread) {
+        await axios.post('/api/v1/unread_notifications/mark_read', { inquiry_id: inquiryId });
+        setUnreadInquiryIds((prev) => {
+          const next = new Set(prev);
+          next.delete(inquiryId);
+          return next;
+        });
+        toast.info(`${customerName} の通知を既読にしました`, {
+          actionLabel: '元に戻す',
+          onAction: () => handleToggleRead(null, inquiryId, customerName),
+          duration: 5000
+        });
+      } else {
+        await axios.post('/api/v1/unread_notifications/mark_unread', { inquiry_id: inquiryId });
+        setUnreadInquiryIds((prev) => new Set(prev).add(inquiryId));
+        toast.info(`${customerName} の通知を未読に戻しました`, {
+          actionLabel: '元に戻す',
+          onAction: () => handleToggleRead(null, inquiryId, customerName),
+          duration: 5000
+        });
+      }
+    } catch {
+      // ignore
+    }
+  }, [unreadInquiryIds, toast]);
 
   const loadInquiries = useCallback(async () => {
     try {
@@ -582,8 +617,20 @@ export default function InquiryManager() {
                       <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            {isUnread && (
-                              <FiberManualRecordIcon sx={{ fontSize: 8, color: 'primary.main' }} />
+                            {inquiry.inquiry_id && (
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  handleToggleRead(e, inquiry.inquiry_id, inquiry.name);
+                                }}
+                                sx={{ p: 0.25, color: isUnread ? 'primary.main' : 'text.disabled' }}
+                              >
+                                {isUnread
+                                  ? <MarkunreadIcon sx={{ fontSize: 16 }} />
+                                  : <DraftsIcon sx={{ fontSize: 16 }} />}
+                              </IconButton>
                             )}
                             <Typography variant="body2" fontWeight={isUnread ? 'bold' : 'medium'}>
                               {inquiry.name}
@@ -650,6 +697,7 @@ export default function InquiryManager() {
             <Table size="small">
               <TableHead>
                 <TableRow>
+                  <TableCell sx={{ width: 40, p: 0.5 }} />
                   <TableCell>日時</TableCell>
                   <TableCell>発生元</TableCell>
                   <TableCell>媒体</TableCell>
@@ -662,7 +710,7 @@ export default function InquiryManager() {
               <TableBody>
                 {paginatedInquiries.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                    <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                       <Typography color="text.secondary">
                         {hasActiveFilters ? '該当する問い合わせがありません' : '問い合わせがありません'}
                       </Typography>
@@ -686,15 +734,22 @@ export default function InquiryManager() {
                         }}
                         onClick={() => handleOpenDetail(inquiry)}
                       >
+                        <TableCell sx={{ p: 0.5, textAlign: 'center' }}>
+                          <Tooltip title={isUnread ? '既読にする' : '未読に戻す'}>
+                            <IconButton
+                              size="small"
+                              onClick={(e) => handleToggleRead(e, inquiry.inquiry_id, inquiry.name)}
+                              disabled={!inquiry.inquiry_id}
+                              sx={{ color: isUnread ? 'primary.main' : 'text.disabled' }}
+                            >
+                              {isUnread ? <MarkunreadIcon sx={{ fontSize: 18 }} /> : <DraftsIcon sx={{ fontSize: 18 }} />}
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
                         <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            {isUnread && (
-                              <FiberManualRecordIcon sx={{ fontSize: 8, color: 'primary.main' }} />
-                            )}
-                            <Typography variant="body2">
-                              {inquiry.formatted_created_at || formatDate(inquiry.created_at)}
-                            </Typography>
-                          </Box>
+                          <Typography variant="body2">
+                            {inquiry.formatted_created_at || formatDate(inquiry.created_at)}
+                          </Typography>
                         </TableCell>
                         <TableCell>
                           <Chip
@@ -847,6 +902,19 @@ export default function InquiryManager() {
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {selectedInquiry.inquiry_id && (
+                  <Tooltip title={unreadInquiryIds.has(selectedInquiry.inquiry_id) ? '既読にする' : '未読に戻す'}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleToggleRead(null, selectedInquiry.inquiry_id, selectedInquiry.name)}
+                      color={unreadInquiryIds.has(selectedInquiry.inquiry_id) ? 'primary' : 'default'}
+                    >
+                      {unreadInquiryIds.has(selectedInquiry.inquiry_id)
+                        ? <MarkunreadIcon fontSize="small" />
+                        : <DraftsIcon fontSize="small" />}
+                    </IconButton>
+                  </Tooltip>
+                )}
                 <IconButton
                   onClick={handlePrevInquiry}
                   disabled={selectedInquiryIndex <= 0}

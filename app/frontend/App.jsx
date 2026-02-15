@@ -8,6 +8,7 @@ import muiTheme from "./theme/muiTheme";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { ThemeContextProvider } from "./contexts/ThemeContext";
+import { ToastProvider } from "./contexts/ToastContext";
 import Header from "./components/shared/Header";
 import ImpersonationBanner from "./components/shared/ImpersonationBanner";
 // 公開ページ（lazy load — 認証不要のためバンドル分離）
@@ -156,6 +157,7 @@ export default function App() {
       <ThemeContextProvider disableMuiProvider>
         <AuthProvider>
           <TenantProvider>
+          <ToastProvider>
           <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>}>
           <Routes>
           {/* 公開ページ */}
@@ -228,6 +230,7 @@ export default function App() {
           </Route>
           </Routes>
           </Suspense>
+          </ToastProvider>
           </TenantProvider>
         </AuthProvider>
       </ThemeContextProvider>

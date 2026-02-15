@@ -86,6 +86,8 @@ export default function Header() {
     unreadInquiries,
     loading: notificationsLoading,
     fetchDetails,
+    markRead,
+    markUnread,
     markAllRead
   } = useUnreadNotifications({ enabled: !!user });
 
@@ -968,6 +970,8 @@ export default function Header() {
         onClose={handleNotificationClose}
         inquiries={unreadInquiries}
         loading={notificationsLoading}
+        onMarkRead={markRead}
+        onMarkUnread={markUnread}
         onMarkAllRead={handleMarkAllRead}
       />
     </>

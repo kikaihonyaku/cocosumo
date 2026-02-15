@@ -32,6 +32,17 @@ class Api::V1::UnreadNotificationsController < ApplicationController
     render json: { error: "案件が見つかりませんでした" }, status: :not_found
   end
 
+  # POST /api/v1/unread_notifications/mark_unread
+  # 特定案件を未読に戻す
+  def mark_unread
+    inquiry = current_user.tenant.inquiries.find(params[:inquiry_id])
+    InquiryReadStatus.mark_as_unread!(user: current_user, inquiry: inquiry)
+
+    render json: { success: true }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "案件が見つかりませんでした" }, status: :not_found
+  end
+
   # POST /api/v1/unread_notifications/mark_all_read
   # 全件既読にする
   def mark_all_read
