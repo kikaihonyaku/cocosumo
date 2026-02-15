@@ -36,6 +36,19 @@ export default function BlogList() {
           <Link to="/">
             <img src="/cocosumo-logo.png" alt="CoCoスモ" className="h-8" />
           </Link>
+          <button
+            onClick={() => {
+              const hostname = window.location.hostname;
+              if (hostname === 'cocosumo.space' || hostname === 'www.cocosumo.space') {
+                window.location.href = 'https://demo.cocosumo.space/home';
+              } else {
+                window.open('/home', '_blank');
+              }
+            }}
+            className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm hover:bg-blue-700 transition-colors"
+          >
+            ログイン
+          </button>
         </div>
       </header>
 

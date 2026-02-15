@@ -149,6 +149,7 @@ export default function BlogDetail() {
       }
     };
     fetchPost();
+    window.scrollTo(0, 0);
 
     return () => {
       document.title = 'CoCoスモ';
@@ -206,12 +207,19 @@ export default function BlogDetail() {
             <Link to="/blog" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
               ブログ一覧
             </Link>
-            <Link
-              to="/login"
+            <button
+              onClick={() => {
+                const hostname = window.location.hostname;
+                if (hostname === 'cocosumo.space' || hostname === 'www.cocosumo.space') {
+                  window.location.href = 'https://demo.cocosumo.space/home';
+                } else {
+                  window.open('/home', '_blank');
+                }
+              }}
               className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm hover:bg-blue-700 transition-colors"
             >
               ログイン
-            </Link>
+            </button>
           </nav>
         </div>
       </header>
