@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   Box, Paper, TextField, FormControl, InputLabel, Select, MenuItem,
   CircularProgress, Alert, Typography, useMediaQuery, useTheme,
-  Drawer, Snackbar, Button, Chip, Divider
+  Drawer, Button
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -15,8 +15,7 @@ import useEmailComposer from './useEmailComposer';
 import EmailComposerHeader from './EmailComposerHeader';
 import EmailComposerToolbar from './EmailComposerToolbar';
 import EmailEditorArea from './EmailEditorArea';
-import PropertyImagePicker from './PropertyImagePicker';
-import PropertyCardInserter from './PropertyCardInserter';
+import EmailSidebar from './EmailSidebar';
 import AttachmentPanel from './AttachmentPanel';
 import EmailConfirmDialog from './EmailConfirmDialog';
 
@@ -88,18 +87,17 @@ export default function EmailComposer() {
   };
 
   const sidebarContent = (
-    <Box sx={{ width: isMobile ? 300 : '100%', height: '100%', overflow: 'auto' }}>
-      <PropertyImagePicker
-        propertyPhotos={composer.propertyPhotos}
-        photosLoading={composer.photosLoading}
-        editor={editorInstance}
-      />
-      <Divider sx={{ my: 1 }} />
-      <PropertyCardInserter
-        propertyPhotos={composer.propertyPhotos}
-        editor={editorInstance}
-      />
-    </Box>
+    <EmailSidebar
+      propertyPhotos={composer.propertyPhotos}
+      photosLoading={composer.photosLoading}
+      editor={editorInstance}
+      roomContent={composer.roomContent}
+      roomContentLoading={composer.roomContentLoading}
+      onLoadRoomContent={composer.loadRoomContent}
+      customerAccesses={composer.customerAccesses}
+      customerAccessesLoading={composer.customerAccessesLoading}
+      isMobile={isMobile}
+    />
   );
 
   return (

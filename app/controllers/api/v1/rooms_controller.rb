@@ -1,7 +1,7 @@
 class Api::V1::RoomsController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :require_login
-  before_action :set_room, only: [:show, :update, :destroy, :upload_floorplan, :delete_floorplan, :analyze_floorplan, :regenerate_floorplan_thumbnail]
+  before_action :set_room, only: [:show, :update, :destroy, :upload_floorplan, :delete_floorplan, :analyze_floorplan, :regenerate_floorplan_thumbnail, :published_content]
 
   # GET /api/v1/rooms
   def index
@@ -525,6 +525,70 @@ class Api::V1::RoomsController < ApplicationController
     else
       render json: { error: 'サムネイルの生成に失敗しました' }, status: :unprocessable_entity
     end
+  end
+
+  # GET /api/v1/rooms/:id/published_content
+  # 指定Roomの写真 + 公開中コンテンツを一括で返す
+  def published_content
+    building = @room.building
+
+    vr_tours = @room.vr_tours.where(published: true).map do |vt|
+      {
+        id: vt.id,
+        title: vt.title,
+        public_id: vt.public_id,
+        public_url: vt.public_url,
+        thumbnail_url: vt.thumbnail_url,
+        scenes_count: vt.scenes_count
+      }
+    end
+
+    virtual_stagings = @room.virtual_stagings.where(published: true).map do |vs|
+      {
+        id: vs.id,
+        title: vs.title,
+        public_id: vs.public_id,
+        public_url: vs.public_url,
+        thumbnail_url: vs.thumbnail_url
+      }
+    end
+
+    property_publications = @room.property_publications.where(status: :published).map do |pp_record|
+      {
+        id: pp_record.id,
+        title: pp_record.title,
+        publication_id: pp_record.publication_id,
+        public_url: pp_record.public_url,
+        thumbnail_url: pp_record.thumbnail_url
+      }
+    end
+
+    room_photos = @room.room_photos.ordered.filter_map do |rp|
+      next unless rp.photo.attached?
+      { id: rp.id, url: rp.photo_url, photo_type: rp.photo_type, caption: rp.caption }
+    end
+
+    building_photos = (building&.building_photos || []).filter_map do |bp|
+      next unless bp.photo.attached?
+      { id: bp.id, url: bp.photo_url, photo_type: bp.photo_type, caption: bp.caption }
+    end
+
+    render json: {
+      room: {
+        id: @room.id,
+        room_number: @room.room_number,
+        building_name: building&.name,
+        rent: @room.rent,
+        area: @room.area&.to_f,
+        room_type: @room.room_type,
+        room_type_label: @room.room_type_label
+      },
+      vr_tours: vr_tours,
+      virtual_stagings: virtual_stagings,
+      property_publications: property_publications,
+      room_photos: room_photos,
+      building_photos: building_photos
+    }
   end
 
   private

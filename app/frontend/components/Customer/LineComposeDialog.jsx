@@ -16,6 +16,7 @@ import {
   Menu,
   Divider,
   CircularProgress,
+  Collapse,
   ToggleButton,
   ToggleButtonGroup,
   Autocomplete
@@ -26,9 +27,11 @@ import {
   Description as DescriptionIcon,
   Image as ImageIcon,
   TextFields as TextFieldsIcon,
-  Home as HomeIcon
+  Home as HomeIcon,
+  Link as LinkIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import ContentLinkPicker from './ContentLinkPicker';
 
 export default function LineComposeDialog({
   open,
@@ -46,6 +49,7 @@ export default function LineComposeDialog({
   const [error, setError] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [linkPickerOpen, setLinkPickerOpen] = useState(false);
 
   // Templates
   const [templates, setTemplates] = useState([]);
@@ -63,6 +67,7 @@ export default function LineComposeDialog({
       setError(null);
       setConfirmOpen(false);
       setSelectedRoom(null);
+      setLinkPickerOpen(false);
       loadTemplates();
       loadRooms();
     }
@@ -222,6 +227,17 @@ export default function LineComposeDialog({
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                 <Box sx={{ flex: 1 }} />
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<LinkIcon />}
+                  onClick={() => setLinkPickerOpen(prev => !prev)}
+                  sx={{ whiteSpace: 'nowrap', minWidth: 'auto' }}
+                  disabled={!hasLine}
+                  color={linkPickerOpen ? 'primary' : 'inherit'}
+                >
+                  リンク挿入
+                </Button>
                 {templates.length > 0 && (
                   <Button
                     variant="outlined"
@@ -235,6 +251,12 @@ export default function LineComposeDialog({
                   </Button>
                 )}
               </Box>
+              <Collapse in={linkPickerOpen}>
+                <ContentLinkPicker
+                  customerId={customer?.id}
+                  onInsertLink={(url) => setContent(prev => prev ? prev + '\n' + url : url)}
+                />
+              </Collapse>
               <TextField
                 label="メッセージ"
                 value={content}

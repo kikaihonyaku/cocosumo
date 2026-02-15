@@ -178,6 +178,7 @@ Rails.application.routes.draw do
           delete :delete_floorplan
           post :analyze_floorplan
           post :regenerate_floorplan_thumbnail
+          get :published_content
         end
 
         # 部屋写真管理
@@ -216,6 +217,9 @@ Rails.application.routes.draw do
           end
         end
       end
+
+      # 公開コンテンツ一覧（テナント全体）
+      get 'published_contents', to: 'published_contents#index'
 
       # VRツアー一覧・一括操作
       resources :vr_tours, only: [:index] do

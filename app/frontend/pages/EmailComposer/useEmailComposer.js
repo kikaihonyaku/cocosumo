@@ -32,6 +32,14 @@ export default function useEmailComposer({ customerId, inquiryId: initialInquiry
   const [propertyPhotos, setPropertyPhotos] = useState([]);
   const [photosLoading, setPhotosLoading] = useState(false);
 
+  // Room content for search tab
+  const [roomContent, setRoomContent] = useState(null);
+  const [roomContentLoading, setRoomContentLoading] = useState(false);
+
+  // Customer accesses (my page links)
+  const [customerAccesses, setCustomerAccesses] = useState([]);
+  const [customerAccessesLoading, setCustomerAccessesLoading] = useState(false);
+
   // Send state
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState(null);
@@ -80,6 +88,9 @@ export default function useEmailComposer({ customerId, inquiryId: initialInquiry
         if (drafts.length > 0) {
           setDraftRestorePrompt(drafts[0]);
         }
+
+        // Load customer accesses (my page links)
+        loadCustomerAccesses(customerId);
       } catch (err) {
         setError('データの読み込みに失敗しました');
       } finally {
@@ -111,6 +122,32 @@ export default function useEmailComposer({ customerId, inquiryId: initialInquiry
 
     loadPhotos();
   }, [selectedInquiryId]);
+
+  // Load customer accesses (my page links)
+  const loadCustomerAccesses = useCallback(async (cId) => {
+    try {
+      setCustomerAccessesLoading(true);
+      const res = await axios.get(`/api/v1/customers/${cId}/accesses`);
+      setCustomerAccesses(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setCustomerAccesses([]);
+    } finally {
+      setCustomerAccessesLoading(false);
+    }
+  }, []);
+
+  // Load room published content (for search tab)
+  const loadRoomContent = useCallback(async (roomId) => {
+    try {
+      setRoomContentLoading(true);
+      const res = await axios.get(`/api/v1/rooms/${roomId}/published_content`);
+      setRoomContent(res.data);
+    } catch {
+      setRoomContent(null);
+    } finally {
+      setRoomContentLoading(false);
+    }
+  }, []);
 
   // Restore draft
   const restoreDraft = useCallback((draft) => {
@@ -310,6 +347,15 @@ export default function useEmailComposer({ customerId, inquiryId: initialInquiry
     // Property photos
     propertyPhotos,
     photosLoading,
+
+    // Room content (search tab)
+    roomContent,
+    roomContentLoading,
+    loadRoomContent,
+
+    // Customer accesses (my page links)
+    customerAccesses,
+    customerAccessesLoading,
 
     // Send
     sending,
