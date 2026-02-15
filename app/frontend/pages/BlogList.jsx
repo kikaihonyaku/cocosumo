@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import LandingHeader from '../components/landing/LandingHeader';
 
 export default function BlogList() {
   const [posts, setPosts] = useState([]);
@@ -30,29 +31,9 @@ export default function BlogList() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ヘッダー */}
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link to="/">
-            <img src="/cocosumo-logo.png" alt="CoCoスモ" className="h-8" />
-          </Link>
-          <button
-            onClick={() => {
-              const hostname = window.location.hostname;
-              if (hostname === 'cocosumo.space' || hostname === 'www.cocosumo.space') {
-                window.location.href = 'https://demo.cocosumo.space/home';
-              } else {
-                window.open('/home', '_blank');
-              }
-            }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm hover:bg-blue-700 transition-colors"
-          >
-            ログイン
-          </button>
-        </div>
-      </header>
+      <LandingHeader />
 
-      <main className="container mx-auto px-4 py-12">
+      <main className="container mx-auto px-4 pt-24 pb-12">
         <h1 className="text-3xl font-bold text-center text-gray-900 mb-4">
           開発者ブログ
         </h1>

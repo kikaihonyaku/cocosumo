@@ -4,6 +4,7 @@ import axios from "axios";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import Icons from "../components/landing/LandingIcons";
+import LandingHeader from "../components/landing/LandingHeader";
 
 // FAQアイテムコンポーネント
 function FAQItem({ question, answer }) {
@@ -467,24 +468,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* ヘッダー */}
-      <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm shadow-sm z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <img src="/cocosumo-logo.png" alt="CoCoスモ" className="h-8" />
-          <nav className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-gray-600 hover:text-[#1e3a5f] transition-colors">機能</a>
-            <a href="#demo" className="text-gray-600 hover:text-[#1e3a5f] transition-colors">デモ</a>
-            <a href="#pricing" className="text-gray-600 hover:text-[#1e3a5f] transition-colors">料金</a>
-            <a href="#faq" className="text-gray-600 hover:text-[#1e3a5f] transition-colors">FAQ</a>
-          </nav>
-          <button
-            onClick={handleOpenHome}
-            className="bg-[#1e3a5f] hover:bg-[#2d5a8a] text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
-          >
-            ログイン
-          </button>
-        </div>
-      </header>
+      <LandingHeader />
 
       {/* DXバナーセクション */}
       <section className="pt-24 pb-4 bg-gradient-to-b from-gray-50 to-white">

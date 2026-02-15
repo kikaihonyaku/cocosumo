@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import LandingHeader from '../components/landing/LandingHeader';
 
 // カスタムMarkdownコンポーネント
 const MarkdownComponents = {
@@ -197,34 +198,9 @@ export default function BlogDetail() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* ヘッダー */}
-      <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link to="/" className="hover:opacity-80 transition-opacity">
-            <img src="/cocosumo-logo.png" alt="CoCoスモ" className="h-8" />
-          </Link>
-          <nav className="flex items-center gap-6">
-            <Link to="/blog" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
-              ブログ一覧
-            </Link>
-            <button
-              onClick={() => {
-                const hostname = window.location.hostname;
-                if (hostname === 'cocosumo.space' || hostname === 'www.cocosumo.space') {
-                  window.location.href = 'https://demo.cocosumo.space/home';
-                } else {
-                  window.open('/home', '_blank');
-                }
-              }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm hover:bg-blue-700 transition-colors"
-            >
-              ログイン
-            </button>
-          </nav>
-        </div>
-      </header>
+      <LandingHeader />
 
-      <main className="container mx-auto px-4 py-8 md:py-16">
+      <main className="container mx-auto px-4 pt-24 pb-8 md:pb-16">
         <article className="max-w-4xl mx-auto">
           {/* 戻るリンク（上部） */}
           <Link
