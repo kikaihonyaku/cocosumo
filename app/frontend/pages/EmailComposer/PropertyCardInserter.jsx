@@ -68,12 +68,12 @@ export default function PropertyCardInserter({ propertyPhotos, editor }) {
         <Card
           key={property.property_inquiry_id}
           variant="outlined"
-          sx={{ mx: 1, mb: 1, cursor: 'pointer', '&:hover': { borderColor: 'primary.main' } }}
+          sx={{ mx: 1, mb: 1, cursor: 'pointer', '&:hover': { borderColor: 'grey.600' } }}
           onClick={() => handleInsertCard(property)}
         >
           <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-              <HomeIcon sx={{ fontSize: 14, color: 'primary.main' }} />
+              <HomeIcon sx={{ fontSize: 14, color: 'grey.600' }} />
               <Typography variant="caption" sx={{ fontWeight: 600 }}>
                 {property.property_title}
               </Typography>
@@ -86,10 +86,10 @@ export default function PropertyCardInserter({ propertyPhotos, editor }) {
                 <Chip label={`${property.area}m²`} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.6rem' }} />
               )}
               {property.rent && (
-                <Chip label={formatRent(property.rent)} size="small" variant="outlined" color="primary" sx={{ height: 18, fontSize: '0.6rem' }} />
+                <Chip label={formatRent(property.rent)} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.6rem', borderColor: 'grey.400', color: 'grey.700' }} />
               )}
             </Box>
-            <Typography variant="caption" color="primary" sx={{ display: 'block', mt: 0.5, fontSize: '0.65rem' }}>
+            <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontSize: '0.65rem', color: 'grey.600' }}>
               <CardIcon sx={{ fontSize: 12, mr: 0.25, verticalAlign: 'middle' }} />
               クリックでカード挿入
             </Typography>

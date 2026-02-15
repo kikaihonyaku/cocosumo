@@ -52,7 +52,7 @@ export default function PropertyImagePicker({ propertyPhotos, photosLoading, edi
   if (photosLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-        <CircularProgress size={24} />
+        <CircularProgress size={24} sx={{ color: 'grey.500' }} />
       </Box>
     );
   }
@@ -85,7 +85,7 @@ export default function PropertyImagePicker({ propertyPhotos, photosLoading, edi
               sx={{ minHeight: 36, '& .MuiAccordionSummary-content': { my: 0.5 } }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <ApartmentIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+                <ApartmentIcon sx={{ fontSize: 16, color: 'grey.600' }} />
                 <Typography variant="caption" sx={{ fontWeight: 600 }}>
                   {group.property_title}
                 </Typography>
@@ -111,7 +111,7 @@ export default function PropertyImagePicker({ propertyPhotos, photosLoading, edi
                           overflow: 'hidden',
                           cursor: 'pointer',
                           border: '2px solid transparent',
-                          '&:hover': { borderColor: 'primary.main', opacity: 0.85 },
+                          '&:hover': { borderColor: 'grey.600', opacity: 0.85 },
                           transition: 'all 0.15s',
                         }}
                       >
@@ -145,7 +145,7 @@ export default function PropertyImagePicker({ propertyPhotos, photosLoading, edi
                           overflow: 'hidden',
                           cursor: 'pointer',
                           border: '2px solid transparent',
-                          '&:hover': { borderColor: 'primary.main', opacity: 0.85 },
+                          '&:hover': { borderColor: 'grey.600', opacity: 0.85 },
                           transition: 'all 0.15s',
                         }}
                       >

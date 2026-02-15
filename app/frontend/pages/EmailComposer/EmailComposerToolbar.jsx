@@ -268,7 +268,7 @@ export default function EmailComposerToolbar({
 
       {/* Image & Card */}
       <Tooltip title="画像・物件カード挿入">
-        <IconButton size="small" onClick={onToggleImagePicker} color="primary">
+        <IconButton size="small" onClick={onToggleImagePicker} sx={{ color: 'grey.700' }}>
           <ImageIcon fontSize="small" />
         </IconButton>
       </Tooltip>

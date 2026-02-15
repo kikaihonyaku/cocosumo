@@ -61,8 +61,11 @@ export default function EmailSidebar({
         value={tabIndex}
         onChange={(_, v) => setTabIndex(v)}
         variant="fullWidth"
+        textColor="inherit"
+        TabIndicatorProps={{ sx: { bgcolor: 'grey.600' } }}
         sx={{
           minHeight: 36,
+          color: 'grey.700',
           '& .MuiTab-root': { minHeight: 36, py: 0.5, px: 1, fontSize: '0.7rem', minWidth: 0 },
         }}
       >
@@ -126,9 +129,12 @@ export default function EmailSidebar({
               value={linkMode}
               onChange={(_, v) => setLinkMode(v)}
               variant="fullWidth"
+              textColor="inherit"
+              TabIndicatorProps={{ sx: { bgcolor: 'grey.600' } }}
               sx={{
                 minHeight: 28,
                 mb: 1,
+                color: 'grey.700',
                 '& .MuiTab-root': { minHeight: 28, py: 0.25, fontSize: '0.65rem', minWidth: 0 },
               }}
             >

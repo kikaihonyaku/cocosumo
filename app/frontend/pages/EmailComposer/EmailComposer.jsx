@@ -8,7 +8,8 @@ import {
 import {
   Home as HomeIcon,
   Restore as RestoreIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  ChevronLeft as ChevronLeftIcon
 } from '@mui/icons-material';
 
 import useEmailComposer from './useEmailComposer';
@@ -209,7 +210,7 @@ export default function EmailComposer() {
             flexDirection: 'column',
             overflow: 'hidden',
             m: 1,
-            mr: isLargeScreen ? 0.5 : 1,
+            mr: isLargeScreen ? 0.5 : 0,
             borderRadius: 2,
           }}
         >
@@ -240,6 +241,45 @@ export default function EmailComposer() {
           />
         </Paper>
 
+        {/* Edge rail for small/medium screens - full height sidebar toggle */}
+        {!isLargeScreen && !sidebarOpen && (
+          <Box
+            onClick={toggleSidebar}
+            sx={{
+              width: 40,
+              flexShrink: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 0.5,
+              my: 1,
+              bgcolor: 'grey.600',
+              color: 'white',
+              borderRadius: '0 8px 8px 0',
+              cursor: 'pointer',
+              '&:hover': {
+                bgcolor: 'grey.700',
+              },
+              transition: 'all 0.15s',
+            }}
+          >
+            <ChevronLeftIcon sx={{ fontSize: 20 }} />
+            <Typography
+              variant="caption"
+              sx={{
+                writingMode: 'vertical-rl',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                letterSpacing: '0.15em',
+                color: 'inherit',
+              }}
+            >
+              挿入
+            </Typography>
+          </Box>
+        )}
+
         {/* Sidebar - Desktop large screen: fixed panel */}
         {isLargeScreen && (
           <Paper
@@ -252,6 +292,9 @@ export default function EmailComposer() {
               ml: 0.5,
               borderRadius: 2,
               display: sidebarOpen || isLargeScreen ? 'block' : 'none',
+              '& .MuiAccordion-root': { bgcolor: 'transparent', color: 'text.primary' },
+              '& .MuiAccordionSummary-root': { bgcolor: 'transparent' },
+              '& .MuiAccordionSummary-expandIconWrapper': { color: 'text.secondary' },
             }}
           >
             {sidebarContent}
@@ -264,10 +307,19 @@ export default function EmailComposer() {
             anchor="right"
             open={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
-            PaperProps={{ sx: { width: 300 } }}
+            PaperProps={{
+              sx: {
+                width: 300,
+                bgcolor: 'white',
+                color: 'text.primary',
+                '& .MuiAccordion-root': { bgcolor: 'transparent', color: 'text.primary' },
+                '& .MuiAccordionSummary-root': { bgcolor: 'transparent' },
+                '& .MuiAccordionSummary-expandIconWrapper': { color: 'text.secondary' },
+              }
+            }}
           >
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 0.5 }}>
-              <Button size="small" onClick={() => setSidebarOpen(false)} startIcon={<CloseIcon />}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 0.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+              <Button size="small" onClick={() => setSidebarOpen(false)} startIcon={<CloseIcon />} sx={{ color: 'grey.700' }}>
                 閉じる
               </Button>
             </Box>
