@@ -12,7 +12,7 @@ import {
 import axios from 'axios';
 import RoomSearchField from '../../pages/EmailComposer/RoomSearchField';
 
-export default function ContentLinkPicker({ customerId, onInsertLink }) {
+export default function ContentLinkPicker({ customerId, onInsertLink, onRoomSelected }) {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [roomContent, setRoomContent] = useState(null);
   const [roomContentLoading, setRoomContentLoading] = useState(false);
@@ -42,6 +42,7 @@ export default function ContentLinkPicker({ customerId, onInsertLink }) {
       setRoomContent(null);
       return;
     }
+    onRoomSelected?.(room);
     try {
       setRoomContentLoading(true);
       const res = await axios.get(`/api/v1/rooms/${room.id}/published_content`);

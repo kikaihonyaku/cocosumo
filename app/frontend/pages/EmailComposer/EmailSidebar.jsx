@@ -22,7 +22,8 @@ export default function EmailSidebar({
   onLoadRoomContent,
   customerAccesses,
   customerAccessesLoading,
-  isMobile
+  isMobile,
+  onRoomSelected
 }) {
   const [tabIndex, setTabIndex] = useState(0);
   const [searchedRoom, setSearchedRoom] = useState(null);
@@ -31,13 +32,19 @@ export default function EmailSidebar({
 
   const handleSearchRoomChange = useCallback((room) => {
     setSearchedRoom(room);
-    if (room) onLoadRoomContent(room.id);
-  }, [onLoadRoomContent]);
+    if (room) {
+      onRoomSelected?.(room);
+      onLoadRoomContent(room.id);
+    }
+  }, [onLoadRoomContent, onRoomSelected]);
 
   const handleLinkSearchRoomChange = useCallback((room) => {
     setLinkSearchedRoom(room);
-    if (room) onLoadRoomContent(room.id);
-  }, [onLoadRoomContent]);
+    if (room) {
+      onRoomSelected?.(room);
+      onLoadRoomContent(room.id);
+    }
+  }, [onLoadRoomContent, onRoomSelected]);
 
   // Convert roomContent photos to the format PropertyImagePicker/PropertyCardInserter expects
   const searchedPropertyPhotos = roomContent ? [{

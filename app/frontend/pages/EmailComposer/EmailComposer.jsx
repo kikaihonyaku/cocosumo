@@ -13,12 +13,14 @@ import {
 } from '@mui/icons-material';
 
 import useEmailComposer from './useEmailComposer';
+import useConfirmAddProperty from '../../hooks/useConfirmAddProperty';
 import EmailComposerHeader from './EmailComposerHeader';
 import EmailComposerToolbar from './EmailComposerToolbar';
 import EmailEditorArea from './EmailEditorArea';
 import EmailSidebar from './EmailSidebar';
 import AttachmentPanel from './AttachmentPanel';
 import EmailConfirmDialog from './EmailConfirmDialog';
+import ConfirmAddPropertyDialog from '../../components/Customer/ConfirmAddPropertyDialog';
 
 export default function EmailComposer() {
   const [searchParams] = useSearchParams();
@@ -33,6 +35,13 @@ export default function EmailComposer() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const composer = useEmailComposer({ customerId, inquiryId });
+
+  const confirmAddProperty = useConfirmAddProperty({
+    inquiries: composer.inquiries,
+    selectedInquiryId: composer.selectedInquiryId,
+    mediaType: 'email',
+    onPropertyAdded: composer.reloadInquiries
+  });
 
   const handleBack = useCallback(() => {
     if (customerId) {
@@ -98,6 +107,7 @@ export default function EmailComposer() {
       customerAccesses={composer.customerAccesses}
       customerAccessesLoading={composer.customerAccessesLoading}
       isMobile={isMobile}
+      onRoomSelected={confirmAddProperty.checkAndPrompt}
     />
   );
 
@@ -336,6 +346,20 @@ export default function EmailComposer() {
         customer={composer.customer}
         subject={composer.subject}
         attachmentCount={composer.attachments.length}
+      />
+
+      {/* Confirm add property dialog */}
+      <ConfirmAddPropertyDialog
+        open={confirmAddProperty.dialogOpen}
+        onClose={confirmAddProperty.handleDismiss}
+        onConfirm={confirmAddProperty.handleConfirm}
+        loading={confirmAddProperty.dialogLoading}
+        roomName={
+          confirmAddProperty.pendingRoom
+            ? `${confirmAddProperty.pendingRoom.building_name || ''} ${confirmAddProperty.pendingRoom.room_number || ''}`.trim()
+            : ''
+        }
+        error={confirmAddProperty.dialogError}
       />
     </Box>
   );

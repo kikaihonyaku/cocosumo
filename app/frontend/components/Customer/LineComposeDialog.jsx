@@ -32,6 +32,8 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import ContentLinkPicker from './ContentLinkPicker';
+import ConfirmAddPropertyDialog from './ConfirmAddPropertyDialog';
+import useConfirmAddProperty from '../../hooks/useConfirmAddProperty';
 
 export default function LineComposeDialog({
   open,
@@ -39,7 +41,8 @@ export default function LineComposeDialog({
   customer,
   inquiries = [],
   selectedInquiryId = null,
-  onSent
+  onSent,
+  onInquiriesReload
 }) {
   const [messageType, setMessageType] = useState('text');
   const [content, setContent] = useState('');
@@ -57,6 +60,13 @@ export default function LineComposeDialog({
 
   // Rooms for property card
   const [rooms, setRooms] = useState([]);
+
+  const confirmAddProperty = useConfirmAddProperty({
+    inquiries,
+    selectedInquiryId: inquiryId,
+    mediaType: 'line',
+    onPropertyAdded: onInquiriesReload
+  });
 
   useEffect(() => {
     if (open) {
@@ -255,6 +265,7 @@ export default function LineComposeDialog({
                 <ContentLinkPicker
                   customerId={customer?.id}
                   onInsertLink={(url) => setContent(prev => prev ? prev + '\n' + url : url)}
+                  onRoomSelected={confirmAddProperty.checkAndPrompt}
                 />
               </Collapse>
               <TextField
@@ -309,7 +320,10 @@ export default function LineComposeDialog({
                   `${option.building_name || ''} ${option.room_number || ''}`.trim()
                 }
                 value={selectedRoom}
-                onChange={(e, v) => setSelectedRoom(v)}
+                onChange={(e, v) => {
+                  setSelectedRoom(v);
+                  if (v) confirmAddProperty.checkAndPrompt(v);
+                }}
                 disabled={!hasLine}
                 renderInput={(params) => (
                   <TextField
@@ -407,6 +421,20 @@ export default function LineComposeDialog({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* 案件外物件の登録確認ダイアログ */}
+      <ConfirmAddPropertyDialog
+        open={confirmAddProperty.dialogOpen}
+        onClose={confirmAddProperty.handleDismiss}
+        onConfirm={confirmAddProperty.handleConfirm}
+        loading={confirmAddProperty.dialogLoading}
+        roomName={
+          confirmAddProperty.pendingRoom
+            ? `${confirmAddProperty.pendingRoom.building_name || ''} ${confirmAddProperty.pendingRoom.room_number || ''}`.trim()
+            : ''
+        }
+        error={confirmAddProperty.dialogError}
+      />
     </>
   );
 }

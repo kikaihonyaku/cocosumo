@@ -204,6 +204,15 @@ export default function CustomerDetail() {
     }
   }, [id]);
 
+  const loadInquiries = useCallback(async () => {
+    try {
+      const res = await axios.get(`/api/v1/customers/${id}/inquiries`);
+      setInquiries(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      // Silent failure
+    }
+  }, [id]);
+
   const loadActivities = useCallback(async () => {
     try {
       const currentCount = Math.max(activities.length, 30);
@@ -938,6 +947,7 @@ export default function CustomerDetail() {
           loadActivities();
           loadCustomer();
         }}
+        onInquiriesReload={loadInquiries}
       />
 
       {/* Merge Customer Dialog */}

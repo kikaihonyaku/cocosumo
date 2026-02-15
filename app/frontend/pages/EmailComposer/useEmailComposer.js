@@ -123,6 +123,17 @@ export default function useEmailComposer({ customerId, inquiryId: initialInquiry
     loadPhotos();
   }, [selectedInquiryId]);
 
+  // Reload inquiries only (lightweight refresh after adding property)
+  const reloadInquiries = useCallback(async () => {
+    if (!customerId) return;
+    try {
+      const res = await axios.get(`/api/v1/customers/${customerId}/inquiries`);
+      setInquiries(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      // Silent failure
+    }
+  }, [customerId]);
+
   // Load customer accesses (my page links)
   const loadCustomerAccesses = useCallback(async (cId) => {
     try {
@@ -317,6 +328,7 @@ export default function useEmailComposer({ customerId, inquiryId: initialInquiry
     setSelectedInquiryId,
     loading,
     error,
+    reloadInquiries,
 
     // Email fields
     subject,
