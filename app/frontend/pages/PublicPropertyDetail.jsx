@@ -586,6 +586,15 @@ function PublicPropertyDetail() {
     availableSections.push('virtual-staging');
   }
   availableSections.push('property-info');
+  if (data.room?.building?.building_stations?.length > 0) {
+    availableSections.push('access');
+  }
+  if (data.room?.categorized_facilities && Object.keys(data.room.categorized_facilities).length > 0) {
+    availableSections.push('facilities');
+  }
+  if (data.room?.building?.latitude && data.room?.building?.longitude) {
+    availableSections.push('map');
+  }
   availableSections.push('inquiry');
 
   // Select template component based on template_type

@@ -76,4 +76,11 @@ class Room < ApplicationRecord
   def facility_names
     matched_facilities.pluck(:name)
   end
+
+  # カテゴリ別設備を返す（公開ページ用）
+  def categorized_facilities
+    matched_facilities.order(:display_order).group_by(&:category).transform_values do |facilities|
+      facilities.map { |f| { code: f.code, name: f.name, is_popular: f.is_popular, category_label: f.category_label } }
+    end
+  end
 end

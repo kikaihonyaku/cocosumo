@@ -23,7 +23,10 @@ import {
   Compare as CompareIcon,
   Info as InfoIcon,
   Mail as MailIcon,
-  KeyboardArrowUp as ScrollTopIcon
+  KeyboardArrowUp as ScrollTopIcon,
+  Train as TrainIcon,
+  Checklist as ChecklistIcon,
+  Map as MapIcon
 } from '@mui/icons-material';
 
 const sections = [
@@ -32,6 +35,9 @@ const sections = [
   { id: 'vr-tour', label: 'VRツアー', icon: VrIcon },
   { id: 'virtual-staging', label: 'ステージング', icon: CompareIcon },
   { id: 'property-info', label: '物件情報', icon: InfoIcon },
+  { id: 'access', label: 'アクセス', icon: TrainIcon },
+  { id: 'facilities', label: '設備', icon: ChecklistIcon },
+  { id: 'map', label: '地図', icon: MapIcon },
   { id: 'inquiry', label: 'お問い合わせ', icon: MailIcon }
 ];
 

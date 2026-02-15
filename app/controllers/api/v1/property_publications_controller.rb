@@ -70,11 +70,23 @@ class Api::V1::PropertyPublicationsController < ApplicationController
           }
         },
         room: {
-          only: [:id, :room_number, :floor, :room_type, :area, :rent, :management_fee, :deposit, :key_money, :status, :description],
-          methods: [:facility_names],
+          only: [:id, :room_number, :floor, :room_type, :area, :rent, :management_fee, :deposit, :key_money, :status, :description,
+                 :direction, :parking_fee, :renewal_fee, :available_date, :guarantor_required, :pets_allowed, :two_person_allowed, :office_use_allowed],
+          methods: [:facility_names, :categorized_facilities],
           include: {
             building: {
-              only: [:id, :name, :address, :building_type, :structure, :built_year, :floors, :latitude, :longitude]
+              only: [:id, :name, :address, :building_type, :structure, :built_year, :floors, :latitude, :longitude,
+                     :postcode, :total_units, :has_elevator, :has_bicycle_parking, :has_parking, :parking_spaces, :built_date],
+              include: {
+                building_stations: {
+                  only: [:id, :walking_minutes, :display_order],
+                  include: { station: { only: [:id, :name], include: { railway_line: { only: [:id, :name, :company, :color] } } } }
+                },
+                building_routes: {
+                  only: [:id, :name, :route_type, :travel_mode, :distance_meters, :duration_seconds, :display_order],
+                  methods: [:formatted_distance, :formatted_duration]
+                }
+              }
             }
           }
         }
@@ -91,7 +103,13 @@ class Api::V1::PropertyPublicationsController < ApplicationController
         property_publication_photos: { room_photo: { photo_attachment: :blob } },
         property_publication_vr_tours: :vr_tour,
         property_publication_virtual_stagings: :virtual_staging,
-        room: :building
+        room: [
+          :matched_facilities,
+          { building: [
+            { building_stations: { station: :railway_line } },
+            :building_routes
+          ] }
+        ]
       )
       .find_by!(publication_id: params[:publication_id])
 
@@ -154,11 +172,23 @@ class Api::V1::PropertyPublicationsController < ApplicationController
             }
           },
           room: {
-            only: [:id, :room_number, :floor, :room_type, :area, :rent, :management_fee, :deposit, :key_money, :description],
-            methods: [:facility_names],
+            only: [:id, :room_number, :floor, :room_type, :area, :rent, :management_fee, :deposit, :key_money, :description,
+                   :direction, :parking_fee, :renewal_fee, :available_date, :guarantor_required, :pets_allowed, :two_person_allowed, :office_use_allowed],
+            methods: [:facility_names, :categorized_facilities],
             include: {
               building: {
-                only: [:id, :name, :address, :building_type, :structure, :built_year, :floors, :latitude, :longitude]
+                only: [:id, :name, :address, :building_type, :structure, :built_year, :floors, :latitude, :longitude,
+                       :postcode, :total_units, :has_elevator, :has_bicycle_parking, :has_parking, :parking_spaces, :built_date],
+                include: {
+                  building_stations: {
+                    only: [:id, :walking_minutes, :display_order],
+                    include: { station: { only: [:id, :name], include: { railway_line: { only: [:id, :name, :company, :color] } } } }
+                  },
+                  building_routes: {
+                    only: [:id, :name, :route_type, :travel_mode, :distance_meters, :duration_seconds, :display_order],
+                    methods: [:formatted_distance, :formatted_duration]
+                  }
+                }
               }
             }
           }

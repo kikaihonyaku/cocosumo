@@ -161,22 +161,35 @@ class PropertyPublication < ApplicationRecord
   # Get visible fields (with defaults)
   def visible_fields_with_defaults
     defaults = {
+      # 物件情報
       'building_name' => true,
       'address' => true,
+      'postcode' => true,
       'building_type' => true,
       'structure' => true,
       'built_year' => true,
       'floors' => true,
+      'total_units' => true,
+      # 部屋情報
       'room_number' => true,
       'floor' => true,
       'room_type' => true,
       'area' => true,
+      'direction' => true,
+      'description' => true,
+      # 費用
       'rent' => true,
       'management_fee' => true,
       'deposit' => true,
       'key_money' => true,
-      'facilities' => true,
-      'description' => true
+      # セクション表示
+      'access_section' => true,
+      'cost_section' => true,
+      'facilities_section' => true,
+      'conditions_section' => true,
+      'building_amenities_section' => true,
+      'routes_section' => true,
+      'map_section' => true
     }
     defaults.merge(visible_fields || {})
   end
